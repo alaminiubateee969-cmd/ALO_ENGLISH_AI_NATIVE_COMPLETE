@@ -53,3 +53,69 @@ Stage Summary:
 - Free quota rule displayed: ALO students 3 free, public 1 free, backend-enforced.
 - Verified via agent-browser + VLM: all sections render, all interactions work, no errors, mobile responsive, footer sticky.
 - Status: PRODUCTION-READY SHOWCASE on / route.
+
+---
+Task ID: 1-upgrade
+Agent: image-generation
+Task: Generate premium destination + CRM dashboard images for ALO website upgrade
+
+Work Log:
+- Read existing worklog.md and confirmed 8 previously-generated images (hero-student, speaking-interview, writing-practice, counselor-session, mock-test-dashboard, exam-prep, brand-abstract, logo-mark) already exist in /home/z/my-project/public/images/ — did NOT regenerate any of them.
+- Generated 10 NEW images sequentially (one at a time) using `z-ai image -p "<prompt>" -o "<path>" -s <size>` to avoid API rate limits.
+- Used 1344x768 for all 9 landscape images (both dimensions are multiples of 32: 1344=42*32, 768=24*32, both within 512-2880) and 1024x1024 for the square counselor-meeting image.
+- All 10 images generated SUCCESSFULLY on the first attempt — no retries needed, no API errors encountered.
+- Verified with `ls -la /home/z/my-project/public/images/` that all 10 new files exist with sizes ranging from ~79KB to ~234KB, all well above the 15KB threshold.
+- Image 1 dest-uk.png (1344x768): SUCCESS first attempt.
+- Image 2 dest-canada.png (1344x768): SUCCESS first attempt.
+- Image 3 dest-australia.png (1344x768): SUCCESS first attempt.
+- Image 4 dest-usa.png (1344x768): SUCCESS first attempt.
+- Image 5 dest-ireland.png (1344x768): SUCCESS first attempt.
+- Image 6 dest-newzealand.png (1344x768): SUCCESS first attempt.
+- Image 7 dest-dubai.png (1344x768): SUCCESS first attempt.
+- Image 8 course-finder.png (1344x768): SUCCESS first attempt.
+- Image 9 crm-dashboard.png (1344x768): SUCCESS first attempt.
+- Image 10 counselor-meeting.png (1024x1024): SUCCESS first attempt.
+
+Stage Summary:
+- /home/z/my-project/public/images/dest-uk.png — SUCCESS (1344x768, ~192KB)
+- /home/z/my-project/public/images/dest-canada.png — SUCCESS (1344x768, ~192KB)
+- /home/z/my-project/public/images/dest-australia.png — SUCCESS (1344x768, ~234KB)
+- /home/z/my-project/public/images/dest-usa.png — SUCCESS (1344x768, ~225KB)
+- /home/z/my-project/public/images/dest-ireland.png — SUCCESS (1344x768, ~204KB)
+- /home/z/my-project/public/images/dest-newzealand.png — SUCCESS (1344x768, ~184KB)
+- /home/z/my-project/public/images/dest-dubai.png — SUCCESS (1344x768, ~171KB)
+- /home/z/my-project/public/images/course-finder.png — SUCCESS (1344x768, ~105KB)
+- /home/z/my-project/public/images/crm-dashboard.png — SUCCESS (1344x768, ~79KB)
+- /home/z/my-project/public/images/counselor-meeting.png — SUCCESS (1024x1024, ~93KB)
+- Failures: None. All 10 images generated cleanly on first attempt; no retries required. No blocking issues.
+
+---
+Task ID: 2-upgrade
+Agent: main (Z.ai Code)
+Task: Upgrade entire ALO application to world-class premium SaaS + CRM experience (Salesforce/HubSpot/monday/Zoho inspired) with destinations, course finder, services, scholarships, university carousel, student journey, AI counselor, portal previews (Student/Partner/Employee/CRM), new footer with animated graduation caps strip.
+
+Work Log:
+- Upgraded globals.css to exact design system spec: brand colors (navy #0B1F3A, blue #0057B8, orange #E8501A, success #16A34A, warning #F59E0B, danger #DC2626), soft backgrounds (#F8FAFC, #F1F5F9, #EEF6FF, #FFF7ED), card border #D9E8FF, soft SaaS shadows (alo-shadow-sm/lg/xl/blue/orange), gradients (alo-gradient-hero, alo-gradient-section, alo-gradient-navy), float/marquee animations, graduation cap drift keyframes (cap-drift-1/2/3 with translateX/translateY/rotate), custom scrollbar, status pills.
+- Rewrote src/lib/alo-data.ts with: 7 destinations (UK, Canada, Australia, USA, Ireland, NZ, Dubai) each with image/flag/accent/tagline/blurb/quickFacts/highlights/topUniversities/popularCourses/tuitionRange; 7 services; 6 scholarships; 10 universities; 9 course results; 6 journey steps; trust stats; CRM KPIs; CRM pipeline (6 stages); student/partner portal nav.
+- Updated layout.tsx metadata to ALO Education study abroad consultancy (title, description, keywords, OG).
+- Built new Navbar: sticky, Destinations dropdown (7 countries), Course Finder/Services/Language Prep/Scholarships/Portals/Contact links, Login + Book Free Consultation CTAs, mobile hamburger menu.
+- Built new Hero: rotating destination images (auto every 5s across 7 countries with accent color change), badge, H1 "From your ambition to admission", subtitle, CTAs, trust stats (12,500+ students, 4,000+ universities, 7 countries, 97% visa), floating score + applications cards, destination dots.
+- Built Destinations section: country tabs + active detail panel (image, quick facts grid, top universities, popular courses, tuition, CTA).
+- Built Course Finder: premium SaaS search panel (country/level/subject dropdowns, orange search button) + filterable results cards (university, course, tuition, duration, English req, scholarship, Apply Now) with save functionality.
+- Built Services (7 cards), Why ALO (6 reasons), Scholarships (6 cards + highlights), University carousel (marquee), Student Journey (6 steps), AI Counselor (features + interactive chat mock).
+- Built Language Prep section integrating: exam tabs (IELTS/PTE/TOEFL/Duolingo/OIETC/OET), free quota banner, interactive mock test engine (timer/palette/flag/autosave/submit/score report), speaking evaluator (record/pause/stop + 6-dimension feedback), writing evaluator (word count + band feedback).
+- Built Portals section: interactive tabs for Student/Partner/Employee/CRM dashboards. Student = sidebar (My Portal/AI Tools/Explore), KPIs, Global Admission Track, profile strength, AI next action, Copilot chat. Partner = KPIs + referrals table. Employee = counselor workspace with tasks + appointments. CRM = dark navy sidebar (Command/Operations/Intelligence), KPIs, admissions pipeline board, AI recommendations, activity timeline.
+- Built new Footer: Section 1 dark navy (logo, tagline "From your ambition to admission", social, 3 link columns Destinations/Quick Links/Company, trust strip). Section 2 animated graduation caps strip (3 layers drifting left→right with different speeds/opacity/colors — gray 40% slow, blue 70% medium, orange 100% faster, gentle float + rotation). Section 3 light gray bottom bar (© 2025 ALO Education, Cookie Policy).
+- Updated auth modal to ALO Education branding with portal quick-tabs.
+- Deleted old unused components (exam-types, free-quota, mock-test-demo, speaking-writing, dashboard-preview, pricing-ambassador-crm, how-it-works).
+- ESLint: clean. Dev server: all GET / 200, POST /api/lead 200.
+- Agent-browser + VLM verification: hero renders premium with rotating UK image + flag badge; destinations tabs work (clicked Australia, panel updated); course finder renders with search panel + result cards; student portal renders sidebar + KPIs + admission track; CRM dashboard renders navy sidebar + pipeline board + AI recommendations; partner portal renders KPIs + referrals table; mock test engine starts and shows reading question + palette; lead form submits (POST /api/lead 200); footer renders dark navy + animated caps strip + bottom bar with © 2025; mobile responsive at 390px with hamburger; no console/runtime errors. Full-page VLM confirmed all 16 sections render cohesively with premium design, no major issues.
+
+Stage Summary:
+- Premium SaaS + CRM design upgrade complete on single / route (constraint respected).
+- All existing features retained (mock test engine, speaking, writing, lead capture, auth modal, API routes).
+- New: 7 destinations with rotating hero, course finder, 7 services, scholarships, university carousel, student journey, AI counselor chat, 4 portal previews, animated graduation caps footer.
+- Design system applied exactly per spec (typography sizes, grid cols, card borders #D9E8FF, soft shadows, rounded-2xl/3xl, h-12 buttons, orange CTA).
+- Footer: 3-col links + animated caps strip (3 layers) + bottom bar © 2025 + Cookie Policy.
+- No admin/CRM wording shown to students in student portal; commission never shown publicly.
+- Verified desktop + mobile, no errors.

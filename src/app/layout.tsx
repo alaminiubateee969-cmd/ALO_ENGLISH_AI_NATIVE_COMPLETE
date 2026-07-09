@@ -14,30 +14,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ALO English Test Platform — Premium English Exam Practice | IELTS · PTE · TOEFL · Duolingo · OIETC · OET",
+  title: "ALO Education — Premium Study Abroad Consultancy & CRM Platform | UK · Canada · Australia · USA · Ireland · NZ · Dubai",
   description:
-    "Premium English language testing and preparation platform by ALO Education. Take free mock tests, practice speaking interviews, get writing evaluation, and smart score feedback for IELTS, PTE, TOEFL, Duolingo, OIETC and OET. ALO Education registered students receive 3 free mock tests.",
+    "ALO Education is Bangladesh's premium study-abroad consultancy and CRM platform. Expert counseling for UK, Canada, Australia, USA, Ireland, New Zealand & Dubai. Find courses, secure scholarships, ace your English test (IELTS, PTE, TOEFL, Duolingo, OIETC, OET) and get your visa — powered by ALO AI Copilot. 12,500+ students guided, 97% visa success.",
   keywords: [
-    "IELTS practice", "PTE practice", "TOEFL practice", "Duolingo English Test",
-    "OIETC", "OET", "English mock test", "speaking practice", "writing evaluation",
-    "ALO Education", "English exam preparation", "Bangladesh study abroad",
+    "study abroad", "ALO Education", "UK universities", "Canada study permit", "Australia student visa",
+    "USA F1 visa", "Ireland study", "New Zealand study", "Dubai universities",
+    "IELTS", "PTE", "TOEFL", "Duolingo", "OIETC", "OET", "English test prep",
+    "scholarships", "university application", "visa guidance", "Bangladesh education consultancy",
   ],
   authors: [{ name: "ALO Education" }],
   icons: {
     icon: "/images/logo-mark.png",
   },
   openGraph: {
-    title: "ALO English Test Platform — Premium English Exam Practice",
+    title: "ALO Education — Premium Study Abroad Consultancy & CRM Platform",
     description:
-      "Free mock tests, speaking practice, writing evaluation and smart score feedback. ALO Education students get 3 free mock tests.",
-    url: "https://english.aloeducation.com",
-    siteName: "ALO English Test Platform",
+      "From your ambition to admission, we're with you all the way. Expert counseling, course finder, scholarships, English test prep, visa guidance and AI Copilot across 7 destinations.",
+    url: "https://aloeducation.com",
+    siteName: "ALO Education",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ALO English Test Platform",
-    description: "Premium English exam practice — IELTS, PTE, TOEFL, Duolingo, OIETC, OET.",
+    title: "ALO Education — Study Abroad Consultancy & CRM",
+    description: "Premium study-abroad guidance across 7 destinations. 12,500+ students. 97% visa success.",
   },
 };
 
