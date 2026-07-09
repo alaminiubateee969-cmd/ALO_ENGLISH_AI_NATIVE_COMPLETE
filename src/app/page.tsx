@@ -5,12 +5,14 @@ import { AloAuthModal } from "@/components/alo/auth-modal";
 import { AloNavbar } from "@/components/alo/navbar";
 import { AloFooter } from "@/components/alo/footer";
 import {
-  PublicHero, PublicExams, PublicFreeQuota, PublicMockTests, PublicPricing,
+  PublicHero, PublicFreeQuota, PublicMockTests, PublicPricing,
   PublicAmbassador, PublicCrmIntegration, PublicTestimonials, PublicFaq,
   PublicLeadCapture, PublicFinalCta,
 } from "@/components/alo/public-sections";
+import { CbtExamCatalog } from "@/components/alo/cbt-catalog";
 import { StudentPortal } from "@/components/alo/student-portal";
 import { AdminPortal, ExaminerPortal, AmbassadorPortal } from "@/components/alo/portals";
+import type { ExamType } from "@/lib/question-bank";
 
 function AppContent() {
   const { view, openAuth, exitPortal } = useApp();
@@ -23,13 +25,17 @@ function AppContent() {
   // Public site
   const handleFooterAction = (action: string) => {
     if (action.startsWith("portal:")) {
-      const role = action.split(":")[1] as "student" | "admin" | "examiner" | "ambassador";
       openAuth("login");
-      // The auth modal default role selection; user picks the role there.
       return;
     }
     const el = document.getElementById(action);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const startExam = (examType: ExamType | null, _slug: string) => {
+    // In production this would route to /exam/[slug] with a backend quota check.
+    // Here we open the auth modal; the student portal mock test engine loads the examType.
+    openAuth("register");
   };
 
   return (
@@ -37,7 +43,7 @@ function AppContent() {
       <AloNavbar />
       <main className="flex-1">
         <PublicHero />
-        <PublicExams onStart={() => openAuth("register")} />
+        <CbtExamCatalog onStartExam={startExam} />
         <PublicFreeQuota onVerify={() => openAuth("register")} />
         <PublicMockTests onStart={() => openAuth("register")} />
         <PublicPricing onStart={() => openAuth("register")} />
