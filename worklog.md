@@ -119,3 +119,73 @@ Stage Summary:
 - Footer: 3-col links + animated caps strip (3 layers) + bottom bar © 2025 + Cookie Policy.
 - No admin/CRM wording shown to students in student portal; commission never shown publicly.
 - Verified desktop + mobile, no errors.
+
+---
+Task ID: 2-questions
+Agent: general-purpose (question-bank author)
+Task: Create original, exam-aligned TypeScript question bank module for the ALO English Test Platform
+
+Work Log:
+- Read existing /home/z/my-project/worklog.md to absorb project context (ALO English Test Platform on Next.js 16, brand navy #0B1F3A / blue #0057B8 / orange #E8501A, mandatory disclaimers: "Practice estimate only", "Original exam-aligned practice", "Not official exam content").
+- Inspected existing src/lib/alo-data.ts to match the project's TypeScript coding style (double-quoted strings, exported type + const pairs, kebab-case string identifiers).
+- Authored 100% original content (no IELTS/PTE/TOEFL/Duolingo/OIETC official material reproduced) at /home/z/my-project/src/lib/question-bank.ts. Used template literals for long passages/audio scripts/model answers to preserve paragraph structure; double quotes for short strings.
+- Defined strict types: Difficulty, QuestionType (27 variants), ExamType, Question (16 optional+required fields). Exported QUESTIONS[], EXAM_SECTIONS, PRACTICE_DISCLAIMER, and four helper query functions (getQuestionsByExam, getQuestionsBySection, getQuestionsByDifficulty, getQuestionsByTag) plus TOTAL_QUESTION_COUNT and QUESTION_COUNT_BY_EXAM convenience exports.
+- Wrote 6 ORIGINAL IELTS Academic reading passages (urban green spaces, history of coffee, coral reef ecology, remote work economics, sleep science, renewable energy storage), each 3 paragraphs, with 3 questions each (mix of multiple-choice, true-false-not-given, sentence-completion, matching-headings). 18 IELTS Reading questions.
+- Wrote 4 ORIGINAL IELTS Listening audio scripts (university orientation talk, library tour, marine biology lecture on the mesopelagic zone, accommodation phone enquiry) with 2 questions each (fill-blanks, short-answer, multiple-choice). 8 IELTS Listening questions.
+- Wrote 6 IELTS Writing prompts: 3 Task 1 (line chart on EV ownership, recycling process diagram, monthly rainfall bar chart) with imagePrompt descriptions and 150+ word model answers; 3 Task 2 essays (remote work, free university, technology in classrooms) with 250+ word Band 8-9 model answers and explanations. 6 IELTS Writing questions.
+- Wrote 9 IELTS Speaking prompts: 3 Part 1 (hometown, cooking, weekends), 3 Part 2 cue cards (skill to learn, important decision, impressive place), 3 Part 3 (practical vs academic, technology and decisions, heritage vs infrastructure) with structured modelAnswer hints. 9 IELTS Speaking questions.
+- Wrote 10 PTE questions: 2 read-aloud (monarch butterflies, renewable energy), 2 repeat-sentence (auditorium move, assignment deadline), 2 describe-image (smartphone sales line graph, household expenditure pie chart) with imagePrompt text, 2 summarize-written-text in ONE sentence (beavers as ecosystem engineers, penicillin discovery), 1 essay (childhood obesity: government vs parents) with 270-word model, 1 write-from-dictation. 10 PTE questions.
+- Wrote 8 TOEFL questions: 2 reading (octopus intelligence inference + crop rotation vocabulary-in-context), 2 listening (Dust Bowl lecture detail + plant circadian rhythms gist), 2 speaking independent (study alone vs group, instrument vs second language), 2 writing (integrated on honeybee waggle dance with reading + lecture audioScript + 220-word model; academic discussion on grades vs narrative evaluations with 130-word model). 8 TOEFL questions.
+- Wrote 6 Duolingo questions: 2 read-and-select (real vs misspelled words with correctAnswer listing the genuine words), 1 writing-sample (community tradition), 1 speaking-sample (influential person), 1 describe-image (book reading bar chart, 5 countries), 1 complete-the-sentence cloze (participle 'deciding'). 6 Duolingo questions.
+- Wrote 5 OIETC/ELLT questions: 1 reading (urban beekeeping MCQ), 1 listening (time management lecture fill-blanks), 1 writing (vocational decline essay with 330-word model), 1 speaking Part 1 interview prompt, 1 vocabulary-in-context ('conciliatory'). 5 OIETC questions.
+- Every question has: unique kebab-case id, examType, section, type, difficulty (easy/medium/hard/advanced), tags drawn from the required skill vocabulary (grammar, vocabulary, coherence, fluency, pronunciation, academic-reading, listening-detail, inference, main-idea, task-response), plausible-but-wrong MCQ distractors with a clearly correct option (correctIndex), explanation that teaches the concept, and timeSeconds guideline.
+- All MCQ distractors designed to be plausible: they reuse vocabulary from the passage, play on near-synonyms, or invert quantifiers, but the correct option is unambiguously supported by the source text.
+- PRACTICE_DISCLAIMER constant embedded and exported: "This is original exam-aligned practice for preparation only. Scores are practice estimates. Not official exam content. No guarantee of real-exam repetition." This text is also restated in the file header comment block.
+- Verified the file with `npx tsc --noEmit --strict src/lib/question-bank.ts` — zero type errors. Verified with `npx eslint src/lib/question-bank.ts` — zero lint errors. Verified question count programmatically: 70 id entries, breakdown by prefix matches the spec exactly (ielts-reading 18, ielts-listening 8, ielts-writing 6, ielts-speaking 9, pte-* 10, toefl-* 8, duolingo-* 6, oietc-* 5).
+- Appended (did NOT overwrite) this Task ID 2-questions section to /home/z/my-project/worklog.md using `cat >>`.
+
+Stage Summary:
+- /home/z/my-project/src/lib/question-bank.ts — SUCCESS (70 original questions, strict TypeScript, zero tsc errors, zero eslint errors).
+- Total question count: 70 (target was 60+).
+- Per-exam-type breakdown:
+  - IELTS: 41 questions (Reading 18, Listening 8, Writing 6, Speaking 9)
+  - PTE: 10 questions (read-aloud 2, repeat-sentence 2, describe-image 2, summarize-written-text 2, essay 1, write-from-dictation 1)
+  - TOEFL: 8 questions (reading 2, listening 2, speaking 2, writing 2)
+  - Duolingo: 6 questions (read-and-select 2, writing-sample 1, speaking-sample 1, describe-image 1, complete-the-sentence 1)
+  - OIETC: 5 questions (reading 1, listening 1, writing 1, speaking 1, vocabulary-in-context 1)
+- All content is original; no official IELTS/PTE/TOEFL/Duolingo/OIETC questions reproduced; no claim made that any item will appear in a real exam.
+- Exports available for downstream UI components: QUESTIONS, EXAM_SECTIONS, PRACTICE_DISCLAIMER, getQuestionsByExam, getQuestionsBySection, getQuestionsByDifficulty, getQuestionsByTag, TOTAL_QUESTION_COUNT, QUESTION_COUNT_BY_EXAM.
+- Failures: None. File compiles and lints cleanly; question counts match the spec.
+
+---
+Task ID: 3-full-platform
+Agent: main (Z.ai Code / Codex)
+Task: Build full production-ready ALO English Test Platform as multi-portal Next.js app — public site + Student/Admin/Examiner/Ambassador portals + real mock test engine with 70 original questions + voucher system + CRM integration + audit logs + certificate branding.
+
+Work Log:
+- Copied official ALO Education logo (Copy of logo.webp) to public/images/alo-logo.webp — blue graduation cap + orange sun, tagline "Your Dream — Our Commitment".
+- Question bank generated via subagent: 70 100%-original exam-aligned questions across IELTS (41), PTE (10), TOEFL (8), Duolingo (6), OIETC (5) with passages, audio scripts, prompts, model answers, difficulties, tags, explanations. PRACTICE_DISCLAIMER exported.
+- Built platform-data.ts: 8 exam modules, 4 pricing plans, 6 FAQs, 4 testimonials, journey steps, CRM sync fields, free quota rules, plus full portal demo data (student KPIs/results/vouchers/feedback/appointments, admin KPIs/students/vouchers/CRM-sync/audit-logs/pipeline, examiner queue/performance, ambassador KPIs/referrals/marketing-kit).
+- Built app-shell.tsx: AppProvider context with view state (public/student/admin/examiner/ambassador), enterPortal/exitPortal/openAuth/closeAuth.
+- Built auth-modal.tsx: role selector (4 portals), name/email/phone/password fields, ALO Student ID terms for student register, RBAC/CSRF messaging.
+- Built navbar.tsx: sticky, Tests dropdown (8 exams), nav links, Login + Start Free Practice CTAs, mobile hamburger. Uses official ALO logo.
+- Built footer.tsx: 3-col links + animated graduation caps strip (3 layers drifting left→right with different speeds/opacity/colors — gray 40% / blue 70% / orange 100%, gentle float + rotation) + bottom bar (© 2025 ALO Education · Cookie Policy). Practice disclaimer included.
+- Built public-sections.tsx: Hero (badge, H1 "10x better", subtitle, CTAs, trust stats, floating score+speaking cards, hero-student image), Exams (8 module cards + active detail panel with sections + disclaimer), FreeQuota (3 free ALO / 1 free public + 6 security rules), MockTests explainer (preview interface), Pricing (4 plans + payment gateways), Ambassador (navy section with portal mock), CRM Integration (sync flow diagram), Testimonials, FAQ accordion, LeadCapture (working POST /api/lead), FinalCta.
+- Built mock-test-engine.tsx: FULLY INTERACTIVE — setup (exam selector, question count, duration, sections, disclaimer) → active test (sticky timer, question palette with 41 IELTS Qs, flag-for-review, autosave, passage/audio-script/image-prompt rendering, MCQ + writing textarea + speaking recorder + short-answer input, prev/next, pause) → ScoreReport (correct/total, accuracy %, band estimate, CEFR estimate, skill breakdown bars, question review with explanations, disclaimer, Try Again + Download PDF).
+- Built student-portal.tsx: PortalLayout (sidebar nav + topbar + exit) shared by all portals. Student pages: Dashboard (KPIs, recent results, profile strength, AI next action, appointments, vouchers), Practice Tests (exam cards + Quick Start), Take Mock Test (embeds MockTestEngine), My Results (table with L/R/W/S + CEFR + download), My Vouchers (cards), Practice Feedback (stats + history), Study Plan (7-day plan), Messages (chat UI), Settings (profile + notifications + security).
+- Built portals.tsx: Admin portal (Dashboard with 8 KPIs + pipeline chart + AI recommendations + top weakness, Students table with search/filter, Question Bank with exam counts + recent questions + compliance note, Vouchers table, CRM Sync with stats + logs, Audit Logs, Reports grid, Settings with integrations + security toggles). Examiner portal (Dashboard with performance KPIs + queues, Writing Queue, Speaking Queue, Review screen with essay + score sliders + feedback + resubmit/submit, My Reviews table). Ambassador portal (Dashboard with KPIs + referral link + recent referrals, Referrals table, Vouchers, Commission with payout history, Marketing Kit downloads).
+- Assembled page.tsx with AppProvider — switches between public site and 4 portals based on view state. Footer actions route to portal login or scroll.
+- Removed old unused components (hero, destinations, course-finder, services-journey, language-prep, testimonials-faq-lead).
+- Fixed duplicate ChevronRight import in mock-test-engine.
+- ESLint: clean (0 errors). Dev server: all GET / 200, POST /api/lead 200.
+- Agent-browser + VLM verification: public hero renders premium with ALO logo; auth modal with 4 portal selector works; Student portal dashboard loads (sidebar, KPIs, results, AI next action, appointments, vouchers); Practice Tests page with exam cards; Mock test setup → active test (41 IELTS questions, real original passage about greenery/cortisol, MCQ options) → answer → submit → Smart Score Report (correct/total, accuracy, band ~5.0, CEFR, skill breakdown, question review with explanations, disclaimer, Try Again + Download PDF); Admin portal dashboard (8 KPIs, pipeline chart, AI recommendations, top weakness); Examiner portal dashboard → Writing Queue → Open Review (essay + score sliders + feedback + resubmit/submit); Ambassador portal dashboard (KPIs, referral link, recent referrals); mobile responsive at 390px; footer with animated graduation caps strip renders on desktop + mobile; no console/runtime errors.
+
+Stage Summary:
+- Full multi-portal ALO English Test Platform built on single / route (environment constraint respected) using client-side view state.
+- 4 fully interactive portals: Student (9 pages), Admin (8 pages), Examiner (5 pages with review flow), Ambassador (6 pages).
+- Real mock test engine with 70 original exam-aligned questions, timed, autosaved, score report with band/CEFR/skill breakdown + disclaimers.
+- Voucher system, CRM sync flow, audit logs, partner-student benefit messaging all represented.
+- Official ALO Education logo + certificate branding context applied.
+- All disclaimers present: "Practice estimate only", "Original exam-aligned practice", "Not official exam content", "No guarantee of real-exam repetition".
+- No admin/CRM wording in student portal; no commission shown publicly; RBAC messaging throughout.
+- Verified desktop + mobile, no errors, lint clean.
