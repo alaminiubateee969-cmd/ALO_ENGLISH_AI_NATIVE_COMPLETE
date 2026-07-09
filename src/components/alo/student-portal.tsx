@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { MockTestEngine } from "./mock-test-engine";
 import { STUDENT_KPIS, STUDENT_RESULTS, STUDENT_VOUCHERS, STUDENT_FEEDBACK, STUDENT_APPOINTMENTS, PRACTICE_DISCLAIMER } from "@/lib/platform-data";
+import { EXAM_MODULES, EXAM_CATEGORIES, type ExamCategory } from "@/lib/exam-catalog";
+import { QUESTIONS, type ExamType } from "@/lib/question-bank";
 
 type Page = "dashboard" | "tests" | "mock-test" | "results" | "vouchers" | "feedback" | "study-plan" | "messages" | "settings";
 
@@ -20,11 +22,12 @@ const NAV = [
 
 export function StudentPortal({ onExit }: { onExit: () => void }) {
   const [page, setPage] = useState<Page>("dashboard");
+  const [selectedExam, setSelectedExam] = useState<ExamType | undefined>(undefined);
   return (
     <PortalLayout role="STUDENT" userName="Tania Islam" userMeta="Student · AE-2026000042" accent="bg-alo-blue" nav={NAV} activePage={page} setPage={(p) => setPage(p as Page)} onExit={onExit}>
       {page === "dashboard" && <StudentDashboard onNavigate={(p) => setPage(p as Page)} />}
-      {page === "tests" && <StudentTests onStart={() => setPage("mock-test")} />}
-      {page === "mock-test" && <div className="max-w-5xl mx-auto"><MockTestEngine /></div>}
+      {page === "tests" && <StudentTests onStart={() => { setSelectedExam(undefined); setPage("mock-test"); }} onSelectExam={(et) => { setSelectedExam(et); setPage("mock-test"); }} />}
+      {page === "mock-test" && <div className="max-w-5xl mx-auto"><MockTestEngine initialExam={selectedExam} /></div>}
       {page === "results" && <StudentResults />}
       {page === "vouchers" && <StudentVouchers />}
       {page === "feedback" && <StudentFeedback />}
@@ -192,29 +195,39 @@ function StudentDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
   );
 }
 
-function StudentTests({ onStart }: { onStart: () => void }) {
-  const exams = [
-    { name: "IELTS Academic", icon: BookOpen, accent: "blue", qCount: 41, desc: "Listening, Reading, Writing & Speaking" },
-    { name: "PTE Academic", icon: Mic, accent: "orange", qCount: 10, desc: "Speaking & Writing, Reading, Listening" },
-    { name: "TOEFL iBT", icon: PenLine, accent: "blue", qCount: 8, desc: "Reading, Listening, Speaking, Writing" },
-    { name: "Duolingo", icon: Sparkles, accent: "orange", qCount: 6, desc: "Adaptive literacy, comprehension, conversation" },
-    { name: "OIETC / ELLT", icon: FileText, accent: "blue", qCount: 5, desc: "Reading, Listening, Writing, Speaking" },
-  ];
+function StudentTests({ onStart, onSelectExam }: { onStart: () => void; onSelectExam?: (examType: ExamType) => void }) {
+  const [cat, setCat] = useState<ExamCategory | "all">("all");
+  const filtered = EXAM_MODULES.filter((e) => cat === "all" || e.category === cat);
+  const qCount = (et: ExamType | null) => et ? QUESTIONS.filter((q) => q.examType === et).length : 0;
   return (
     <div>
-      <PageHeader title="Practice Tests" subtitle="Choose an exam to start a timed mock test with original questions." action={<Button onClick={onStart} className="h-10 rounded-xl bg-alo-orange text-white hover:bg-[#cc3f10]"><Sparkles className="mr-2 h-4 w-4" />Quick Start</Button>} />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {exams.map((e) => (
-          <div key={e.name} className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm hover:alo-shadow-lg transition-all">
-            <div className="flex items-center justify-between">
-              <div className={cn("grid h-11 w-11 place-items-center rounded-xl text-white", e.accent === "orange" ? "bg-alo-orange" : "bg-alo-blue")}><e.icon className="h-5 w-5" /></div>
-              <span className="rounded-full bg-alo-soft-blue px-2 py-0.5 text-[10px] font-bold text-alo-blue">{e.qCount} questions</span>
-            </div>
-            <h3 className="mt-3 text-lg font-bold text-alo-navy">{e.name}</h3>
-            <p className="text-xs text-alo-faint mt-1">{e.desc}</p>
-            <Button onClick={onStart} className="mt-4 w-full h-11 rounded-xl bg-alo-blue text-white hover:bg-[#004a9e]">Start Mock Test<ChevronRight className="ml-1 h-4 w-4" /></Button>
-          </div>
+      <PageHeader title="Practice Tests" subtitle="Choose any computer-based exam to start a timed mock with original questions." action={<Button onClick={onStart} className="h-10 rounded-xl bg-alo-orange text-white hover:bg-[#cc3f10]"><Sparkles className="mr-2 h-4 w-4" />Quick Start</Button>} />
+      <div className="flex flex-wrap gap-2 mb-4">
+        {([["all", `All (${EXAM_MODULES.length})`], ...EXAM_CATEGORIES.map((c) => [c.id, `${c.name} (${EXAM_MODULES.filter((e) => e.category === c.id).length})`] as const)] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setCat(id as ExamCategory | "all")} className={cn("rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all", cat === id ? "border-transparent bg-alo-navy text-white" : "border-slate-200 bg-white text-alo-navy hover:bg-alo-soft-blue")}>{label}</button>
         ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map((e) => {
+          const a = e.accent === "orange" ? "bg-alo-orange" : e.accent === "royal" ? "bg-alo-royal" : e.accent === "green" ? "bg-emerald-500" : e.accent === "purple" ? "bg-purple-500" : "bg-alo-blue";
+          const qc = qCount(e.examType);
+          return (
+            <div key={e.id} className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm hover:alo-shadow-lg transition-all flex flex-col">
+              <div className="flex items-center justify-between">
+                <div className={cn("grid h-11 w-11 place-items-center rounded-xl text-white", a)}><BookOpen className="h-5 w-5" /></div>
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-alo-soft-blue text-alo-blue">{e.badge}</span>
+              </div>
+              <h3 className="mt-3 text-base font-bold text-alo-navy">{e.name}</h3>
+              <p className="text-xs text-alo-faint mt-1 flex-1 line-clamp-2">{e.tagline}</p>
+              <div className="mt-2 flex items-center gap-3 text-[11px] text-alo-faint">
+                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{e.duration}</span>
+                <span className="flex items-center gap-1"><Award className="h-3 w-3" />{e.scale}</span>
+                {qc > 0 && <span className="font-semibold text-alo-blue">{qc} Qs</span>}
+              </div>
+              <Button onClick={() => onSelectExam ? onSelectExam(e.examType || "IELTS") : onStart()} className="mt-3 w-full h-10 rounded-xl bg-alo-blue text-white hover:bg-[#004a9e] text-sm">Start Mock Test<ChevronRight className="ml-1 h-4 w-4" /></Button>
+            </div>
+          );
+        })}
       </div>
       <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs text-amber-800 leading-relaxed"><span className="font-semibold">Practice disclaimer:</span> {PRACTICE_DISCLAIMER}</p></div>
     </div>

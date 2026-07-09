@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { useApp } from "./app-shell";
-import { EXAM_MODULES, PRICING_PLANS, FAQS, TESTIMONIALS, TRUST_STATS, JOURNEY_STEPS, FREE_QUOTA_RULES, CRM_SYNC_FIELDS, PRACTICE_DISCLAIMER, type Role } from "@/lib/platform-data";
+import { PRICING_PLANS, FAQS, TESTIMONIALS, TRUST_STATS, JOURNEY_STEPS, FREE_QUOTA_RULES, CRM_SYNC_FIELDS, PRACTICE_DISCLAIMER, type Role } from "@/lib/platform-data";
 
 /* ============== HERO ============== */
 export function PublicHero() {
@@ -98,80 +98,6 @@ export function PublicHero() {
                   ))}
                 </div>
                 <div className="mt-2 flex items-center gap-1 text-[10px] text-alo-faint"><Clock className="h-3 w-3" />ALO Speaking Evaluator</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============== EXAM MODULES ============== */
-export function PublicExams({ onStart }: { onStart: () => void }) {
-  const [activeId, setActiveId] = useState(EXAM_MODULES[0].id);
-  const active = EXAM_MODULES.find((e) => e.id === activeId)!;
-  const sectionIcons: Record<string, any> = { Listening: Headphones, Reading: BookOpen, Writing: PenLine, Speaking: Mic, "Speaking & Writing": Mic, Literacy: BookOpen, Comprehension: Headphones, Conversation: Mic, Production: PenLine, Grammar: BookOpen, Vocabulary: PenLine, "Academic English": BookOpen, "Interview practice": Mic, "Essay practice": PenLine };
-  return (
-    <section id="exams" className="py-16 lg:py-24 bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <div className="text-sm font-bold uppercase tracking-wide text-alo-orange">Exam Modules</div>
-          <h2 className="mt-3 text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight text-alo-navy">One platform. Every major English exam.</h2>
-          <p className="mt-4 text-base md:text-lg leading-8 text-alo-muted">Original, exam-aligned practice for 8 test types. Tap an exam to see sections, timing and score scale.</p>
-        </div>
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {EXAM_MODULES.map((exam) => {
-            const a = exam.accent === "orange" ? { bg: "bg-alo-orange", soft: "bg-alo-soft-orange", text: "text-alo-orange", border: "border-alo-orange/20", ring: "ring-alo-orange/20" } : exam.accent === "royal" ? { bg: "bg-alo-royal", soft: "bg-blue-50", text: "text-alo-royal", border: "border-alo-royal/20", ring: "ring-alo-royal/20" } : { bg: "bg-alo-blue", soft: "bg-alo-soft-blue", text: "text-alo-blue", border: "border-alo-blue/20", ring: "ring-alo-blue/20" };
-            const isActive = activeId === exam.id;
-            return (
-              <div key={exam.id} onClick={() => setActiveId(exam.id)} className={cn("group relative cursor-pointer rounded-2xl border bg-white p-5 transition-all duration-300 alo-shadow-sm hover:alo-shadow-xl hover:-translate-y-1", isActive ? `${a.border} ring-2 ${a.ring}` : "border-alo-card")}>
-                <div className="flex items-start justify-between">
-                  <div className={cn("grid h-11 w-11 place-items-center rounded-xl text-white", a.bg)}><GraduationCap className="h-5 w-5" /></div>
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", a.soft, a.text)}>{exam.badge}</span>
-                </div>
-                <h3 className="mt-4 text-lg font-bold text-alo-navy">{exam.name}</h3>
-                <p className="mt-1 text-sm text-alo-faint line-clamp-2 leading-relaxed">{exam.tagline}</p>
-                <div className="mt-4 flex items-center gap-3 text-xs text-alo-faint">
-                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{exam.duration}</span>
-                  <span className="flex items-center gap-1"><Award className="h-3.5 w-3.5" />{exam.scale}</span>
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); setActiveId(exam.id); onStart(); }} className={cn("mt-4 text-sm font-semibold inline-flex items-center gap-1", a.text)}>Practice now<ChevronRight className="h-4 w-4" /></button>
-              </div>
-            );
-          })}
-        </div>
-        {/* Active exam detail */}
-        <div className="mt-10 rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 lg:p-8">
-          <div className="grid lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-4">
-              <h3 className="text-2xl font-extrabold text-alo-navy">{active.name}</h3>
-              <p className="text-sm text-alo-faint">{active.tagline}</p>
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-3"><div className="text-[10px] uppercase tracking-wider text-alo-faint">Duration</div><div className="text-sm font-bold text-alo-navy mt-0.5">{active.duration}</div></div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3"><div className="text-[10px] uppercase tracking-wider text-alo-faint">Score</div><div className="text-sm font-bold text-alo-navy mt-0.5">{active.scale}</div></div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3"><div className="text-[10px] uppercase tracking-wider text-alo-faint">Sections</div><div className="text-sm font-bold text-alo-navy mt-0.5">{active.sections.length}</div></div>
-              </div>
-              <Button onClick={onStart} className="mt-5 h-12 px-6 rounded-xl bg-alo-orange text-white font-semibold hover:bg-[#cc3f10]">Start {active.name} Practice</Button>
-            </div>
-            <div className="lg:col-span-5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-alo-faint mb-3">Sections</h4>
-              <div className="space-y-2.5">
-                {active.sections.map((section) => {
-                  const Icon = sectionIcons[section] || BookOpen;
-                  return (
-                    <div key={section} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
-                      <div className="grid h-9 w-9 place-items-center rounded-lg bg-alo-soft-blue text-alo-blue"><Icon className="h-4 w-4" /></div>
-                      <div className="text-sm font-bold text-alo-navy">{section}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="lg:col-span-3">
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <div className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-1.5">Practice disclaimer</div>
-                <p className="text-xs text-amber-800 leading-relaxed">{PRACTICE_DISCLAIMER}</p>
               </div>
             </div>
           </div>

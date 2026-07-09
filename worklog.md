@@ -189,3 +189,92 @@ Stage Summary:
 - All disclaimers present: "Practice estimate only", "Original exam-aligned practice", "Not official exam content", "No guarantee of real-exam repetition".
 - No admin/CRM wording in student portal; no commission shown publicly; RBAC messaging throughout.
 - Verified desktop + mobile, no errors, lint clean.
+
+---
+Task ID: 1-cbt
+Agent: general-purpose (CBT question-bank expansion author)
+Task: Expand the ALO English Test Platform question bank to cover additional computer-based exam types (Digital SAT, GRE, GMAT, ACT, LSAT, MCAT, LanguageCert, Linguaskill, University Placement, Visa Interview) with ~50 new 100%-original questions, while keeping the existing 70 IELTS/PTE/TOEFL/Duolingo/OIETC questions and types fully intact (backward compatible).
+
+Work Log:
+- Read /home/z/my-project/worklog.md to absorb project context (ALO English Test Platform on Next.js 16, brand navy #0B1F3A / blue #0057B8 / orange #E8501A, mandatory disclaimers: "Original exam-aligned practice", "Not official exam content", "Practice estimates only").
+- Read existing /home/z/my-project/src/lib/question-bank.ts (1537 lines) to understand the EXISTING structure: Difficulty union, QuestionType union (27 variants), ExamType union ("IELTS" | "PTE" | "TOEFL" | "Duolingo" | "OIETC"), Question interface (16 fields), 6 IELTS reading passages + 4 IELTS listening scripts declared as const, QUESTIONS[] array of 70 questions, EXAM_SECTIONS, PRACTICE_DISCLAIMER, 4 helper queries, TOTAL_QUESTION_COUNT, QUESTION_COUNT_BY_EXAM.
+- Extended (backward-compatibly) the TypeScript types:
+  - QuestionType union: appended 13 new variants (text-completion, sentence-equivalence, quantitative-comparison, grid-in, data-sufficiency, critical-reasoning, sentence-correction, data-insights, logic-game, issue-task, central-idea, standard-english, data-interpretation). All 27 existing variants preserved.
+  - ExamType union: appended 10 new values (SAT, GRE, GMAT, ACT, LSAT, MCAT, LanguageCert, Linguaskill, Placement, VisaInterview). All 5 existing values preserved.
+  - Question interface: added 8 new optional fields per spec (numericAnswer, correctIndices, reorderItems, correctOrder, matchingPairs, dropdownOptions, correctDropdowns, quantityA, quantityB). All existing fields preserved.
+- Updated file header comment to list all 15 supported exam types (was 5) for clarity.
+- Authored 9 NEW original passage/audio-script constants inserted before the MAIN QUESTION BANK header (so they can be referenced by the new questions):
+  - SAT_PASSAGE_CITIZEN_SCIENCE (ornithology + backyard birder citizen science, 3 paragraphs)
+  - SAT_PASSAGE_WHEAT (reciprocal domestication of wheat, 3 paragraphs)
+  - ACT_PASSAGE_BICYCLE (history of the bicycle from draisine to Rover Safety, 2 paragraphs)
+  - LSAT_PASSAGE_STANDING (legal doctrine of standing in environmental litigation, 3 paragraphs)
+  - MCAT_PASSAGE_PROGRESS (Victorian belief in progress vs. Spengler/Butterfield critique, 3 paragraphs)
+  - LC_PASSAGE_FOLK (Cecil Sharp & Maud Karpeles Appalachian ballad collecting, 3 paragraphs)
+  - LING_PASSAGE_ESCOOTER (shared electric scooter industry rise/consolidation, 3 paragraphs)
+  - PL_PASSAGE_PRINTING (Gutenberg press and its political consequences, 3 paragraphs)
+  - LC_SCRIPT_CAREERS (original university careers service briefing audio transcript, 4 paragraphs)
+- Appended 50 NEW 100%-original questions to the SAME QUESTIONS array (no new array, no breaking changes to existing entries), grouped by exam type with comment dividers. Every question has: unique kebab/kebab-style ID (Q-SAT-R-001 etc.), examType, section, type, difficulty (easy/medium/hard/advanced), tags, prompt, explanation, timeSeconds, and type-appropriate answer fields (options/correctIndex, correctAnswer, numericAnswer, correctIndices, dropdownOptions/correctDropdowns, quantityA/quantityB, modelAnswer, passage, audioScript).
+- Per-exam-type authoring breakdown:
+  - SAT (8): Q-SAT-R-001 inference (reading-mcq on citizen-science passage), Q-SAT-R-002 vocabulary-in-context ("frivolous"), Q-SAT-M-001 algebra system-of-equations MCQ ($3 croissants / $2 bagels), Q-SAT-M-002 geometry (circle inside path → 100π), Q-SAT-M-003 grid-in (3x−7=2x+5 → x²+1=145), Q-SAT-M-004 grid-in (mean of 5 ints = 7 → fifth = 6), Q-SAT-W-001 standard-english (subject-verb agreement), Q-SAT-R-003 central-idea (wheat domestication reciprocity).
+  - GRE (8): Q-GRE-V-001 single-blank text-completion (listless), Q-GRE-V-002 3-blank text-completion (reactionary / engaging with / peevish) using new dropdownOptions+correctDropdowns fields, Q-GRE-V-003 sentence-equivalence (specious, fallacious) using correctIndices, Q-GRE-V-004 sentence-equivalence (recondite, obscure), Q-GRE-Q-001 quantitative-comparison (2^x+2^x vs 2^(x+1) → equal) using quantityA/quantityB, Q-GRE-Q-002 quant-comparison (P(even) vs P(>4) → A greater), Q-GRE-Q-003 data-interpretation (library memberships percent change → 24%), Q-GRE-AW-001 issue-task with model essay outline (practical vs theoretical knowledge).
+  - GMAT (6): Q-GMAT-Q-001 problem solving (markup+discount → wholesale $80), Q-GMAT-Q-002 work problem (combined rate 3.6h), Q-GMAT-Q-003 data-sufficiency (two proportional equations → E), Q-GMAT-V-001 critical-reasoning (coffee roaster weaken → B new competitors), Q-GMAT-V-002 sentence-correction (team has/its → D), Q-GMAT-DI-001 data-insights (consumer electronics table → Smart Home 260% increase).
+  - ACT (5): Q-ACT-E-001 English rhetoric ("In fact" keep/delete), Q-ACT-E-002 English grammar (neither/nor agreement → were), Q-ACT-M-001 math (y=mx+4 through (3,13) → m=3), Q-ACT-R-001 reading central-idea (bicycle history), Q-ACT-S-001 science (Elodea photosynthesis light-intensity data interpretation).
+  - LSAT (4): Q-LSAT-LR-001 logical-reasoning assumption (B+ counts as B or higher), Q-LSAT-LR-002 logical-reasoning weaken (cat-owning households in newer buildings), Q-LSAT-RC-001 reading-comprehension inference (Douglas dissent on natural-object standing), Q-LSAT-AR-001 analytical-reasoning logic-game (5 students / 5 days sequencing puzzle, only option C valid).
+  - MCAT (3): Q-MCAT-CARS-001 CARS inference (Victorian progress critique → D), Q-MCAT-BB-001 biochem (Km increase → reduced affinity, Vmax unchanged → B), Q-MCAT-CP-001 chem/physics (calorimetry: 50g@80 + 100g@20 → 40°C).
+  - LanguageCert (4): Q-LC-R-001 reading (Appalachian ballad collecting MCQ), Q-LC-L-001 listening fill-blanks (Great Hall / ten / January / term from careers script), Q-LC-W-001 writing (hotel complaint email 195-word model), Q-LC-S-001 speaking Part 2 (woodworking hobby, 2-min model).
+  - Linguaskill (3): Q-LING-RL-001 reading (e-scooter NOT-cited concern → battery explosions), Q-LING-W-001 writing email (presentation help request 140-word model), Q-LING-S-001 speaking (Porto journey 60-second model).
+  - Placement (4): Q-PL-G-001 grammar (past perfect "had been stranded"), Q-PL-V-001 vocabulary-in-context ("surprisingly laudatory" with poor draft), Q-PL-R-001 reading (Gutenberg press → Luther's pamphlets spread), Q-PL-W-001 writing diagnostic (homework vs project-based learning 370-word model essay).
+  - VisaInterview (5): Q-VISA-001 (UK credibility — why UK), Q-VISA-002 (CAS — course/university/career alignment), Q-VISA-003 (finances — 28-day funds evidence), Q-VISA-004 (scholarship — Chevening coverage + conditions), Q-VISA-005 (university choice — Aston MBA research process). All speaking-part1 type with examType "VisaInterview" and structured model-answer hints.
+- Extended EXAM_SECTIONS (Record<ExamType, ...>) to include all 10 new exam types with realistic section names, plausible durations (seconds), and representative question counts. Legacy IELTS/PTE/TOEFL/Duolingo/OIETC entries preserved verbatim. Example entries: SAT has 4 modules (R&W Module 1/2 2040s × 27 Qs, Math Module 1/2 2100s × 22 Qs); MCAT has 4 sections at ~95 min each × 53-59 Qs; VisaInterview has 1 Credibility Interview section 600s × 5 Qs.
+- Extended QUESTION_COUNT_BY_EXAM to compute counts dynamically for all 15 exam types (legacy + 10 new) via QUESTIONS.filter(...).length.
+- PRACTICE_DISCLAIMER export already present from prior task — preserved unchanged: "This is original exam-aligned practice for preparation only. Scores are practice estimates. Not official exam content. No guarantee of real-exam repetition."
+- All MCQ distractors designed to be plausible (reuse vocabulary from passage, play on near-synonyms, invert quantifiers) with one unambiguously correct option.
+- All math problems solved and verified manually: SAT (180 croissants, 100π, 145, 6), GRE (equal, A greater, 24%), GMAT ($80, 3.6h, E, Smart Home 260%), ACT (m=3), MCAT (40°C). All logic game options verified against all three rules (only option C satisfies all).
+- Verified the file: `npx tsc --noEmit --strict src/lib/question-bank.ts` → ZERO type errors. `npx eslint src/lib/question-bank.ts` → ZERO lint errors.
+- Programmatic verification script confirmed: 120 total questions (70 legacy + 50 new), zero duplicate IDs, every new question has all required fields (difficulty, tags, prompt, explanation, timeSeconds), per-exam counts exactly match the spec (SAT 8, GRE 8, GMAT 6, ACT 5, LSAT 4, MCAT 3, LanguageCert 4, Linguaskill 3, Placement 4, VisaInterview 5 = 50 new), legacy counts unchanged (IELTS 41, PTE 10, TOEFL 8, Duolingo 6, OIETC 5 = 70).
+
+Stage Summary:
+- /home/z/my-project/src/lib/question-bank.ts — SUCCESS (extended from 1537 to 2690 lines, 50 new original questions added, all 70 legacy questions + types + interfaces preserved backward-compatibly, zero tsc errors, zero eslint errors).
+- Total NEW question count: 50 (target was ~50).
+- Per-exam-type breakdown:
+  - SAT: 8 questions (Reading/Writing 4, Math 4 [2 MCQ + 2 grid-in])
+  - GRE: 8 questions (Verbal 4 [2 text-completion + 2 sentence-equivalence], Quantitative 3 [2 QC + 1 data-interpretation], Analytical Writing 1 [issue-task])
+  - GMAT: 6 questions (Quantitative 3 [2 PS + 1 DS], Verbal 2 [1 CR + 1 SC], Data Insights 1)
+  - ACT: 5 questions (English 2, Math 1, Reading 1, Science 1)
+  - LSAT: 4 questions (Logical Reasoning 2, Reading Comprehension 1, Analytical Reasoning / Logic Game 1)
+  - MCAT: 3 questions (CARS 1, Biological & Biochemical 1, Chemical & Physical 1)
+  - LanguageCert: 4 questions (Reading 1, Listening 1, Writing 1, Speaking 1)
+  - Linguaskill: 3 questions (Reading & Listening 1, Writing 1, Speaking 1)
+  - Placement: 4 questions (Grammar 1, Vocabulary 1, Reading 1, Writing 1)
+  - VisaInterview: 5 questions (5 speaking-style prompts: credibility, CAS, finances, scholarship, university choice)
+- Existing questions/types remain INTACT: IELTS 41, PTE 10, TOEFL 8, Duolingo 6, OIETC 5 = 70 legacy questions unchanged; Difficulty, all 27 original QuestionType variants, all 5 original ExamType values, and all 16 original Question interface fields preserved verbatim. EXAM_SECTIONS legacy entries and PRACTICE_DISCLAIMER unchanged.
+- Backward compatibility: every consumer of question-bank.ts (mock-test-engine.tsx, portal question-bank tables, etc.) continues to compile and work without any change. New optional Question fields default to undefined, new QuestionType variants only appear on the 50 new questions, and new ExamType values only appear via the appended EXAM_SECTIONS / QUESTION_COUNT_BY_EXAM entries.
+- All content is 100% original. No official SAT/GRE/GMAT/ACT/LSAT/MCAT/LanguageCert/Linguaskill/Placement/Visa question is reproduced. No claim is made that any item will appear in a real exam. PRACTICE_DISCLAIMER surfaces this throughout the UI.
+- Failures: None. File compiles and lints cleanly; question counts match the spec exactly; legacy bank is byte-for-byte preserved.
+
+---
+Task ID: 4-cbt-engine
+Agent: main (Z.ai Code)
+Task: Add ALL computer-based exam systems — universal CBT engine supporting 32 exams across 5 categories (English Proficiency, Study Abroad Entrance, University Internal, Visa/Interview, ALO Internal) with 26+ question types.
+
+Work Log:
+- Subagent generated 50 NEW original questions for SAT (8), GRE (8), GMAT (6), ACT (5), LSAT (4), MCAT (3), LanguageCert (4), Linguaskill (3), Placement (4), VisaInterview (5). Extended ExamType + QuestionType unions + Question interface (numericAnswer, quantityA/B, reorderItems, correctOrder, matchingPairs, dropdownOptions, correctDropdowns, correctIndices) — backward compatible. Total bank now 120 original questions.
+- Built src/lib/exam-catalog.ts: 32 exam modules across 5 categories (English Proficiency 11: IELTS Academic/General/UKVI, PTE, TOEFL, Duolingo, OIETC, OET, LanguageCert, Linguaskill, ALO Placement; Study Abroad 6: Digital SAT, ACT, GRE, GMAT, LSAT, MCAT; University Internal 5: English/Math Placement, Foundation, Pre-Master, Scholarship; Visa/Interview 5: UK Credibility, CAS, Visa, Scholarship, Admission; ALO Internal 5: Counselor, Student Readiness, English Diagnostic, Document, Visa Readiness). Each with styleLabel ("X-style practice test"), sections, highlights, duration, scale, accent, badge. Plus CBT_ENGINE_FEATURES (8), CBT_QUESTION_TYPES (26+), PRACTICE_DISCLAIMER.
+- Rewrote src/components/alo/mock-test-engine.tsx as UNIVERSAL CBT engine: accepts initialExam prop, supports all 15 ExamTypes, universal AnswerRenderer handles single MCQ, multi-select MCQ (sentence equivalence), quantitative comparison (Quantity A/B + 4 options), data sufficiency (5 options A-E), numeric/grid-in (number input), dropdown blanks (text completion), reorder paragraphs (up/down buttons), writing (textarea + word count), speaking (recorder), short answer. Setup screen shows all exam types with question counts + sections. Score report grades all objective types including numeric + multi-select.
+- Built src/components/alo/cbt-catalog.tsx: CbtExamCatalog public section with category filters (All/English/StudyAbroad/University/Visa/ALO), search, grid/list view toggle, 32 exam cards, CBT engine features strip, 26+ question types display, disclaimer. ExamLanding page per exam with sections, highlights, free quota sidebar, CBT features, Start button.
+- Updated navbar: Tests dropdown shows popular exams + "View all 32 computer-based exams" CTA; nav link points to #computer-based-exams.
+- Updated page.tsx: replaced old PublicExams with CbtExamCatalog; startExam opens auth → student portal mock test engine with selected exam.
+- Updated student-portal StudentTests: now uses full EXAM_MODULES catalog with category filter tabs (All + 5 categories), question counts per exam, passes selectedExam to MockTestEngine via onSelectExam.
+- Removed unused PublicExams from public-sections + EXAM_MODULES import.
+- Fixed: duplicate ChevronRight import, missing Send import in cbt-catalog, setState-in-effect lint error (removed useEffect sync, use initialExam directly in useState).
+- ESLint: clean (0 errors). Dev server: all GET / 200.
+- Agent-browser + VLM verification: CBT catalog renders with 5 category filters (English 11, Study Abroad 6, University 5, Visa 5, ALO 5) + 32 exam cards; category filter works (Study Abroad shows SAT/ACT/GRE/GMAT/LSAT/MCAT); exam landing page renders (GRE with sections/highlights/quota sidebar); student portal Practice Tests page shows all exams with category tabs; GRE mock test: setup (8 Qs, Verbal/Quant/AW sections) → active test renders text completion (dropdown blanks), sentence equivalence (multi-select "select exactly two"), quantitative comparison (Quantity A vs B side by side + 4 options) → submit → Smart Score Report (correct/total, accuracy, band, CEFR, skill breakdown, question review with explanations, disclaimer, Try Again + Download PDF); mobile responsive at 390px; no console/runtime errors.
+
+Stage Summary:
+- Universal CBT engine supports 32 computer-based exams across 5 categories with 26+ question types.
+- 120 original exam-aligned questions (70 English + 50 study-abroad/placement/interview).
+- All compliance wording: "X-style practice test", "Practice estimate only", "Original exam-aligned practice", "Not official exam content", "No guarantee of real-exam repetition". No official partnership claims.
+- Free quota rule (3 ALO / 1 public, shared across all CBT exams) represented.
+- Full mock test flow verified end-to-end with new question types (text completion, sentence equivalence, quantitative comparison) + score report.
+- Public CBT catalog + exam landing pages + student portal exam picker all functional.
+- Mobile responsive, lint clean, no errors.

@@ -4,10 +4,11 @@
 // All questions, passages, audio scripts, prompts and model answers in this
 // file are 100% ORIGINAL content written for the ALO English Test Platform.
 // They are exam-aligned practice only: they mimic the *structure* of well-
-// known English proficiency tests (IELTS, PTE, TOEFL, Duolingo, OIETC) but
-// do NOT reproduce any official exam content. No claim is made that any of
-// these items will appear in a real exam. Scores shown to learners are
-// practice estimates only.
+// known English-proficiency and admissions tests (IELTS, PTE, TOEFL, Duolingo,
+// OIETC, SAT, GRE, GMAT, ACT, LSAT, MCAT, LanguageCert, Linguaskill,
+// University Placement, Visa Interview) but do NOT reproduce any official
+// exam content. No claim is made that any of these items will appear in a
+// real exam. Scores shown to learners are practice estimates only.
 // =============================================================================
 
 export type Difficulty = "easy" | "medium" | "hard" | "advanced";
@@ -38,9 +39,39 @@ export type QuestionType =
   | "writing-sample"
   | "speaking-sample"
   | "complete-the-sentence"
-  | "vocabulary-in-context";
+  | "vocabulary-in-context"
+  // CBT expansion (Task 1-cbt) — additional computer-based exam item types
+  | "text-completion"
+  | "sentence-equivalence"
+  | "quantitative-comparison"
+  | "grid-in"
+  | "data-sufficiency"
+  | "critical-reasoning"
+  | "sentence-correction"
+  | "data-insights"
+  | "logic-game"
+  | "issue-task"
+  | "central-idea"
+  | "standard-english"
+  | "data-interpretation";
 
-export type ExamType = "IELTS" | "PTE" | "TOEFL" | "Duolingo" | "OIETC";
+export type ExamType =
+  | "IELTS"
+  | "PTE"
+  | "TOEFL"
+  | "Duolingo"
+  | "OIETC"
+  // CBT expansion (Task 1-cbt)
+  | "SAT"
+  | "GRE"
+  | "GMAT"
+  | "ACT"
+  | "LSAT"
+  | "MCAT"
+  | "LanguageCert"
+  | "Linguaskill"
+  | "Placement"
+  | "VisaInterview";
 
 export type Question = {
   id: string;
@@ -57,6 +88,16 @@ export type Question = {
   correctIndex?: number; // for MCQ
   correctAnswer?: string; // for fill-blanks / short-answer / multi-select
   modelAnswer?: string; // for writing/speaking prompts
+  // CBT expansion (Task 1-cbt) — additional fields for new question types
+  numericAnswer?: number; // for grid-in / numeric answers
+  correctIndices?: number[]; // for multi-select (e.g. sentence equivalence)
+  reorderItems?: string[]; // for reorder-paragraphs / reorder items
+  correctOrder?: number[]; // correct ordering indices for reorderItems
+  matchingPairs?: { left: string; right: string }[]; // for matching items
+  dropdownOptions?: { blank: number; options: string[] }[]; // for multi-blank dropdowns
+  correctDropdowns?: number[]; // correct index per dropdownOptions blank
+  quantityA?: string; // for quantitative-comparison
+  quantityB?: string; // for quantitative-comparison
   explanation: string;
   timeSeconds: number; // suggested time
 };
@@ -132,6 +173,68 @@ Student: Is there a laundry?
 Receptionist: Yes, a shared laundry in the basement — two pounds eighty per wash, and one pound fifty for the dryer. There's also a secure bike store, a small gym, and a common room with a TV on the ground floor.
 Student: Sounds great. Could I book a viewing?
 Receptionist: Absolutely — we run viewings Tuesday and Thursday afternoons at two, three, and four. Which would suit you?`;
+
+// -----------------------------------------------------------------------------
+// CBT EXPANSION (Task 1-cbt) — original passages, audio scripts, and data
+// descriptions for the additional computer-based exam types: Digital SAT, GRE,
+// GMAT, ACT, LSAT, MCAT, LanguageCert, Linguaskill, University Placement, Visa
+// Interview. All content 100% original to the ALO English Test Platform. Not
+// official exam content.
+// -----------------------------------------------------------------------------
+
+const SAT_PASSAGE_CITIZEN_SCIENCE = `In the spring of 1995, a team of ornithologists at a North American university launched an unusual experiment: they asked backyard birders across the continent to count the birds at their feeders on a single weekend and mail in their tallies. The response overwhelmed them. More than ten thousand volunteers participated, generating a dataset no research grant could have funded. Three decades later, that initiative has accumulated over twenty million individual records and has become one of the longest-running citizen-science programs in the world.
+
+The scientific value of such data lies not in any single observation, which may be flawed by misidentification, but in aggregate patterns that emerge only at scale. By pooling observations from thousands of sites, researchers have documented northward shifts in species ranges that track warming winter temperatures, declines in once-common species such as the evening grosbeak, and the slow expansion of cardinals into regions once too cold for them. These findings have appeared in peer-reviewed journals and influenced conservation policy.
+
+Critics of citizen science worry about data quality, and the concern is not frivolous. A birder who misidentifies a sharp-shinned hawk as a Cooper's hawk introduces error. Yet the team has shown that with clear protocols, online training modules, and statistical filters that flag outliers, the signal-to-noise ratio becomes acceptable — and in some analyses, superior to that of professionally collected data, which is often constrained to a few well-studied sites.`;
+
+const SAT_PASSAGE_WHEAT = `The domestication of wheat, which began roughly ten thousand years ago in the Fertile Crescent, represents one of the most consequential transformations in human history. Wild einkorn and emmer wheats had brittle seed heads that shattered upon ripening, scattering their grains — a useful trait for a wild plant intent on reproduction, but disastrous for a harvester. Early farmers selected, generation after generation, for mutations in which the seed head remained intact until threshed. Within a few centuries, the plant had been so thoroughly altered that it could no longer reproduce without human intervention.
+
+This transformation was not the result of conscious breeding in the modern sense. The first farmers had no knowledge of genetics and could not have predicted the long-term consequences of their choices. Yet their steady preference for non-shattering heads, larger grains, and easier-to-thresh husks created a selective pressure as powerful as any later directed by Mendelian principles. The wheat, in turn, reshaped the humans who grew it: settled agriculture required permanent villages, stored surpluses invited taxation, and surplus-fed populations expanded into new territories.
+
+The reciprocity at the heart of this story is often lost in modern accounts that celebrate human ingenuity. The archaeobotanist Jacob Pestel has argued, provocatively, that wheat domesticated humans as much as humans domesticated wheat — that the plant's evolutionary success, measured in hectares cultivated and tonnes harvested, far exceeds anything our species has achieved on its own behalf.`;
+
+const ACT_PASSAGE_BICYCLE = `The modern bicycle, with two wheels of equal size driven by a chain and pedals, emerged only in the late nineteenth century after decades of experimentation. The earliest recognizable ancestor, the "draisine" patented by Karl Drais in 1817, had no pedals at all: riders propelled themselves by pushing against the ground with their feet. The pedaled "boneshaker" of the 1860s added cranks to the front wheel but transmitted every cobblestone directly to the rider's spine, earning its nickname. The high-wheeled "penny-farthing" of the 1870s increased speed through a massive front wheel but posed a constant risk of headers — riders pitching forward over the handlebars.
+
+The breakthrough came in 1885 with John Kemp Starley's "Rover Safety Bicycle," which used a chain drive to power the rear wheel and matched the two wheels in size. Suddenly a rider of average height could travel at speed without risking life and limb. Pneumatic tires, introduced by John Dunlop in 1888, smoothed the ride further. Within a decade the bicycle had become not merely a toy for athletic young men but practical transport for commuters, delivery services, and — most subversively — women, whose newfound mobility is sometimes credited with advancing the late-Victorian campaign for female suffrage.`;
+
+const LSAT_PASSAGE_STANDING = `The doctrine of standing — the requirement that a plaintiff demonstrate a personal stake in the outcome of a lawsuit — has long been a contested boundary in environmental litigation. In the mid-twentieth century, several United States courts began to relax standing requirements for environmental organizations, allowing them to sue on behalf of members who used affected natural areas for recreation. This "aesthetic injury" theory held that a hiker who valued a particular wilderness area had suffered a concrete, redressable injury when that area was degraded, even if no economic harm could be shown.
+
+The Supreme Court's 1972 decision in a landmark environmental case narrowed this trend somewhat. The Court agreed that aesthetic and environmental harm could constitute injury, but insisted that the organization itself, lacking direct injury, could not sue in its own name — it had to identify specific members who would themselves be injured. One influential dissent argued that natural objects themselves ought to have standing, with guardians appointed to speak for them, but this view has never been adopted by a majority.
+
+In the decades since, the precise contours of environmental standing have shifted with the Court's composition, but the core requirement has remained: a plaintiff must show concrete, particularized, and redressable injury. Critics argue that this requirement leaves many environmental harms without any effective champion in court, since harms to public goods such as clean air are by definition widely shared rather than particularized.`;
+
+const MCAT_PASSAGE_PROGRESS = `The Victorian belief in progress — the assumption that human history moves steadily toward higher levels of moral and material achievement — was so pervasive in nineteenth-century European thought that even its critics often accepted its premises while rejecting its conclusions. The historian Thomas Babington Macaulay, writing in 1848, declared that any sensible person comparing his own age with the previous century would find it "impossible not to perceive" that improvement was visible in every dimension of life. The Whig interpretation of history, with its teleological narrative of expanding liberty and enlightenment, drew strength from such confidence.
+
+By the early twentieth century, that confidence had cracked. The industrial slaughter of the First World War, the economic collapse of the 1930s, and the moral catastrophe of totalitarianism suggested to many thinkers that "progress" was at best an illusion and at worst a dangerous myth that concealed the persistence of human cruelty. Oswald Spengler's Decline of the West (1918) argued that civilizations, like organisms, pass through inevitable seasons of growth and decay, and that the West had entered its autumn. Herbert Butterfield's The Whig Interpretation of History (1931) attacked the progressive narrative not as false in its conclusions but as methodologically corrupt: teleological history, he argued, inevitably distorted the past by reading it through the lens of the present.
+
+The contemporary historian's relationship to progress is, if anything, more complicated. Few serious scholars now defend an unqualified narrative of human improvement, yet the language of progress persists in public discourse and in the justifications offered for technological and political projects. To think historically, in the modern sense, may require holding two ideas simultaneously: that some things have demonstrably improved (life expectancy, literacy, the abolition of certain practices) and that improvement in one dimension does not guarantee improvement in others.`;
+
+const LC_PASSAGE_FOLK = `In the early twentieth century, the folklorists Cecil Sharp and Maud Karpeles traveled through the Appalachian Mountains of the eastern United States collecting songs that had been carried across the Atlantic by British and Irish settlers and preserved, often with remarkable fidelity, in isolated mountain communities. Sharp was astonished to find versions of ballads that had been printed in seventeenth-century broadsides still in active circulation, sung by people who could not read music and had learned the songs orally from their parents and grandparents.
+
+The discovery was both exhilarating and bittersweet. Exhilarating, because it suggested that oral tradition could preserve texts across centuries with an accuracy few scholars had credited. Bittersweet, because the same modernization that was bringing roads, radios, and schools to the Appalachians was already eroding the conditions under which such transmission had been possible. Sharp and Karpeles worked against what they understood to be a closing window.
+
+Subsequent scholarship has complicated the romantic picture of pure, unbroken tradition. Some of the ballads Sharp collected had in fact been modified, sometimes substantially, by the singers who performed them — a finding that does not diminish the music's value but does complicate the notion of faithful preservation. Other songs were not "ancient" at all but had been composed in America in styles that mimicked older forms. The folklorists' enterprise, it turns out, was not simply an act of recovery but also, inevitably, of construction.`;
+
+const LING_PASSAGE_ESCOOTER = `Shared electric scooters, introduced to European and North American cities around 2018, spread with remarkable speed. Within three years, dozens of operators were competing for riders in cities from Paris to Los Angeles, attracted by low start-up costs and eager venture capital. The appeal to users was obvious: scooters filled the gap between walking and transit for trips of one to three kilometres, required no parking, and could be unlocked with a smartphone.
+
+City authorities, however, were less enthusiastic. Abandoned scooters cluttered sidewalks, blocking wheelchair ramps and prompting complaints from disability advocates. Safety concerns mounted: hospital admissions for scooter-related injuries rose sharply in the first two years, with head and limb injuries predominating. Several cities, including Paris and Barcelona, eventually imposed strict regulations or outright bans on shared scooter schemes.
+
+The industry has since consolidated. Several high-profile operators have withdrawn from unprofitable markets, and survivors have invested in sturdier hardware, geofencing technology to prevent sidewalk riding, and battery-swapping systems to reduce operating costs. Whether shared scooters will find a sustainable long-term niche in urban transport, or whether they will be remembered as a brief, venture-funded fad, remains an open question.`;
+
+const PL_PASSAGE_PRINTING = `Johannes Gutenberg's introduction of movable metal type to Europe in the 1450s is often described as one of the most consequential inventions in human history, and the description is not hyperbole. Before Gutenberg, books were copied by hand — a slow, expensive process that confined literacy and learning to a small clerical and aristocratic elite. A single Bible could take a scribe a year to produce and cost the equivalent of a skilled worker's annual wages.
+
+Gutenberg's press did not merely make existing books cheaper; it fundamentally restructured what books could be and who could read them. Within fifty years, printing presses had spread to more than two hundred European cities, and the number of books in circulation had increased by several orders of magnitude. Scholars could consult far more sources than ever before; standardization of texts made cross-referencing reliable; and new genres — newspapers, pamphlets, novels, scientific journals — emerged to exploit the new medium.
+
+The political consequences were profound. The Protestant Reformation, which might have remained a local controversy in a manuscript culture, became a continent-spanning upheaval in part because Martin Luther's theses and pamphlets could be printed in thousands of copies and distributed within weeks. Centuries later, the same logic would make the American and French revolutions possible: ideas traveled faster and farther than any mounted messenger.`;
+
+const LC_SCRIPT_CAREERS = `Good morning, and welcome to the careers service briefing for final-year students. My name is Janet Okafor and I'm the head of careers. I want to use the next ten minutes to walk you through three things: the autumn careers fair, our internship scheme, and the alumni mentoring programme.
+
+First, the careers fair. It takes place on Wednesday the fifteenth of November in the Great Hall, from ten in the morning until four in the afternoon. We have over seventy employers confirmed, including three of the big four accounting firms, several regional law practices, and a strong contingent from the technology and renewable energy sectors. Bring at least ten printed copies of your CV, dress in business attire, and prepare a short introduction — we call it an "elevator pitch" — that you can deliver in thirty seconds.
+
+Second, the internship scheme. Applications open on the first of December and close on the twelfth of January. Placements run for eight weeks during the summer, are paid at the national living wage, and are open to all penultimate and final-year students regardless of discipline. The application requires a CV, a cover letter tailored to the host organisation, and the names of two academic referees.
+
+Third, the alumni mentoring programme. This pairs you with a graduate of the university who is now working in a field that interests you. Mentors offer two one-hour sessions per term, typically by video call. To apply, complete the short form on the careers portal by the end of October.`;
 
 // =============================================================================
 // MAIN QUESTION BANK
@@ -1461,6 +1564,986 @@ Reversing the trend will require more than exhortation. Schools must present voc
       "Context is decisive here. The employees remain skeptical 'despite' the manager's tone, implying the tone was meant to reassure or appease them — 'apologetic and intended to placate' (option B). The contrast word 'despite' signals that the tone should have reassured them but did not. Options A, C, and D would not produce that contrast.",
     timeSeconds: 60,
   },
+
+  // ===========================================================================
+  // CBT EXPANSION — Task 1-cbt
+  // 50 NEW original exam-aligned questions across Digital SAT, GRE, GMAT, ACT,
+  // LSAT, MCAT, LanguageCert, Linguaskill, University Placement, Visa Interview.
+  // All passages, prompts, scenarios, charts/tables (described in text), audio
+  // scripts, and model answers are 100% original to the ALO English Test
+  // Platform. Not official exam content. Practice estimates only.
+  // ===========================================================================
+
+  // ---------------------------------------------------------------------------
+  // DIGITAL SAT (8 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-SAT-R-001",
+    examType: "SAT",
+    section: "Reading & Writing",
+    type: "reading-mcq",
+    difficulty: "hard",
+    tags: ["inference", "academic-reading"],
+    passage: SAT_PASSAGE_CITIZEN_SCIENCE,
+    prompt:
+      "The passage suggests that the Cornell team's response to concerns about data quality is best characterized as:",
+    options: [
+      "dismissive of the criticism as uninformed",
+      "accepting of the criticism but defensive of volunteer motives",
+      "acknowledging the criticism while arguing it can be mitigated through protocol and statistical methods",
+      "conceding that the criticism invalidates most findings",
+    ],
+    correctIndex: 2,
+    explanation:
+      "The final paragraph explicitly states the concern is 'not frivolous' but then describes how clear protocols, online training, and statistical filters make the signal-to-noise ratio acceptable and sometimes superior to professionally collected data. This matches option C — the team acknowledges the concern and argues it can be mitigated.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-SAT-R-002",
+    examType: "SAT",
+    section: "Reading & Writing",
+    type: "vocabulary-in-context",
+    difficulty: "medium",
+    tags: ["vocabulary", "inference"],
+    passage: SAT_PASSAGE_CITIZEN_SCIENCE,
+    prompt:
+      'As used in the final paragraph, the word "frivolous" most nearly means:',
+    options: [
+      "trivial or lacking serious foundation",
+      "humorous or lighthearted",
+      "expensive or wasteful",
+      "inappropriate for the setting",
+    ],
+    correctIndex: 0,
+    explanation:
+      'In the sentence "the concern is not frivolous," the writer is affirming that the criticism has serious foundation — it is not trivial. Option A captures this meaning. The other options do not fit the logical context of evaluating a methodological criticism.',
+    timeSeconds: 60,
+  },
+  {
+    id: "Q-SAT-M-001",
+    examType: "SAT",
+    section: "Math",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["algebra", "systems-of-equations"],
+    prompt:
+      "A bakery sells croissants for $3 each and bagels for $2 each. On Saturday, the bakery sold a total of 240 pastries and collected $660 in revenue. How many croissants were sold?",
+    options: ["120", "140", "160", "180"],
+    correctIndex: 3,
+    explanation:
+      "Let c = croissants and b = bagels. We have c + b = 240 and 3c + 2b = 660. Substituting b = 240 − c gives 3c + 2(240 − c) = 660, so 3c + 480 − 2c = 660, hence c = 180. Verify: 180 croissants × $3 + 60 bagels × $2 = $540 + $120 = $660. ✓",
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-SAT-M-002",
+    examType: "SAT",
+    section: "Math",
+    type: "multiple-choice",
+    difficulty: "hard",
+    tags: ["geometry", "circles"],
+    prompt:
+      "A circular garden has a circumference of 24π metres. A path of uniform width 2 metres is paved around the inside edge of the garden, leaving a smaller circular flower bed in the centre. What is the area, in square metres, of the flower bed?",
+    options: ["64π", "100π", "144π", "40π"],
+    correctIndex: 1,
+    explanation:
+      "Circumference C = 2πr, so 24π = 2πr → r = 12 m. The path is 2 m wide on the inside, so the inner flower-bed radius is 12 − 2 = 10 m. Area = πr² = π(10)² = 100π. ✓",
+    timeSeconds: 150,
+  },
+  {
+    id: "Q-SAT-M-003",
+    examType: "SAT",
+    section: "Math",
+    type: "grid-in",
+    difficulty: "easy",
+    tags: ["algebra", "linear-equations"],
+    prompt:
+      "If 3x − 7 = 2x + 5, what is the value of x² + 1? Enter your answer as a non-negative integer.",
+    numericAnswer: 145,
+    explanation:
+      "Subtract 2x from both sides and add 7 to both sides: x = 12. Then x² + 1 = 144 + 1 = 145. Grid-in 145.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-SAT-M-004",
+    examType: "SAT",
+    section: "Math",
+    type: "grid-in",
+    difficulty: "medium",
+    tags: ["statistics", "arithmetic-mean"],
+    prompt:
+      "The average (arithmetic mean) of five positive integers is 7. If four of the integers are 4, 6, 9, and 10, what is the value of the fifth integer? Enter your answer as a non-negative integer.",
+    numericAnswer: 6,
+    explanation:
+      "Sum of all five integers = 5 × 7 = 35. Sum of the four known integers = 4 + 6 + 9 + 10 = 29. Fifth integer = 35 − 29 = 6. Grid-in 6.",
+    timeSeconds: 100,
+  },
+  {
+    id: "Q-SAT-W-001",
+    examType: "SAT",
+    section: "Reading & Writing",
+    type: "standard-english",
+    difficulty: "medium",
+    tags: ["grammar", "subject-verb-agreement"],
+    prompt:
+      'Choose the revision that best corrects the error in the sentence: "The architect\'s drawings, which had been misplaced for decades, was finally discovered in the basement of the city archives."',
+    options: [
+      "NO CHANGE",
+      "The architect's drawings, which had been misplaced for decades, were finally discovered in the basement of the city archives.",
+      "The architect's drawings, which had been misplaced for decades, finally discovered in the basement of the city archives.",
+      "The architect's drawings which had been misplaced for decades was finally discovered in the basement of the city archives.",
+    ],
+    correctIndex: 1,
+    explanation:
+      'The subject is "drawings" (plural), so the verb must be the plural "were" — option B. The original "was" is a subject-verb agreement error. Option C drops the auxiliary verb, leaving a fragment. Option D removes the necessary commas around the non-restrictive relative clause and keeps the singular verb.',
+    timeSeconds: 70,
+  },
+  {
+    id: "Q-SAT-R-003",
+    examType: "SAT",
+    section: "Reading & Writing",
+    type: "central-idea",
+    difficulty: "hard",
+    tags: ["main-idea", "academic-reading"],
+    passage: SAT_PASSAGE_WHEAT,
+    prompt: "The central idea of the passage is that:",
+    options: [
+      "early farmers understood genetics better than is typically assumed",
+      "the domestication of wheat was a mutual process that fundamentally reshaped both the plant and human societies",
+      "wheat was the first domesticated crop in human history",
+      "modern accounts of agricultural origins are biased against non-European civilizations",
+    ],
+    correctIndex: 1,
+    explanation:
+      'The passage emphasises reciprocity: humans shaped wheat through repeated selection, but wheat also "reshaped the humans who grew it" by requiring settled agriculture, villages, and surplus storage. The closing paragraph reinforces this with Pestel\'s argument that wheat domesticated humans as much as the reverse. Option B captures this mutuality. A is contradicted by paragraph two; C and D are not supported.',
+    timeSeconds: 90,
+  },
+
+  // ---------------------------------------------------------------------------
+  // GRE (8 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-GRE-V-001",
+    examType: "GRE",
+    section: "Verbal",
+    type: "text-completion",
+    difficulty: "medium",
+    tags: ["vocabulary", "sentence-completion"],
+    prompt:
+      "Complete the sentence by selecting the word that best fits the blank. The candidate's performance in the debate was so (i) ______ that even her most ardent supporters struggled to find anything positive to say about it.",
+    options: ["luminous", "cogent", "listless", "incandescent", "redolent"],
+    correctIndex: 2,
+    explanation:
+      'The phrase "even her most ardent supporters struggled to find anything positive" signals a poor performance. "Listless" (lacking energy or enthusiasm) fits. "Luminous," "cogent," "incandescent," and "redolent" are all positive or neutral and would not produce the described reaction.',
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-GRE-V-002",
+    examType: "GRE",
+    section: "Verbal",
+    type: "text-completion",
+    difficulty: "hard",
+    tags: ["vocabulary", "sentence-completion"],
+    prompt:
+      "For each blank, select one entry from the corresponding column. The critic's review was (i) ______ rather than analytical: rather than (ii) ______ the film's themes with care, she dismissed them with (iii) ______ adjectives that revealed more about her mood than about the movie.",
+    dropdownOptions: [
+      { blank: 1, options: ["tedious", "reactionary", "judicious"] },
+      { blank: 2, options: ["engaging with", "glossing over", "distrusting"] },
+      { blank: 3, options: ["measured", "peevish", "laudatory"] },
+    ],
+    correctDropdowns: [1, 0, 1],
+    explanation:
+      'Blank (i): the review is described as emotional rather than analytical, so "reactionary" (impulsive and emotional) fits. Blank (ii): the contrast "rather than ___ with care" requires the careful, analytical alternative — "engaging with" the themes. Blank (iii): adjectives that "reveal more about her mood than the movie" suggest irritability — "peevish".',
+    timeSeconds: 150,
+  },
+  {
+    id: "Q-GRE-V-003",
+    examType: "GRE",
+    section: "Verbal",
+    type: "sentence-equivalence",
+    difficulty: "medium",
+    tags: ["vocabulary", "synonyms"],
+    prompt:
+      "Select exactly TWO words that fit the blank and produce sentences that are alike in meaning. Although the experiment appeared rigorous at first glance, subsequent review revealed that the methodology was so ______ as to render the conclusions dubious.",
+    options: [
+      "sound",
+      "specious",
+      "cogent",
+      "fallacious",
+      "meticulous",
+      "preliminary",
+    ],
+    correctIndices: [1, 3],
+    explanation:
+      'The conclusions are "dubious" because the methodology was flawed. "Specious" (false but plausibly argued) and "fallacious" (based on flawed reasoning) are near-synonyms that both fit. "Sound," "cogent," and "meticulous" are positive. "Preliminary" does not imply flawed reasoning.',
+    timeSeconds: 100,
+  },
+  {
+    id: "Q-GRE-V-004",
+    examType: "GRE",
+    section: "Verbal",
+    type: "sentence-equivalence",
+    difficulty: "hard",
+    tags: ["vocabulary", "synonyms"],
+    prompt:
+      "Select exactly TWO words that fit the blank and produce sentences that are alike in meaning. The professor's lectures were so ______ that students often left more confused than when they had arrived.",
+    options: [
+      "lucid",
+      "recondite",
+      "perspicuous",
+      "obscure",
+      "trenchant",
+      "illuminating",
+    ],
+    correctIndices: [1, 3],
+    explanation:
+      'Students leaving "more confused" requires words meaning unclear or difficult. "Recondite" (obscure, dealing with abstruse matters) and "obscure" both fit and are near-synonyms in this context. "Lucid," "perspicuous," and "illuminating" mean clear; "trenchant" means incisive.',
+    timeSeconds: 100,
+  },
+  {
+    id: "Q-GRE-Q-001",
+    examType: "GRE",
+    section: "Quantitative",
+    type: "quantitative-comparison",
+    difficulty: "medium",
+    tags: ["algebra", "exponents"],
+    prompt:
+      "x is a positive integer greater than 1. Compare Quantity A and Quantity B and select the answer choice that best describes the relationship.",
+    quantityA: "2^x + 2^x",
+    quantityB: "2^(x+1)",
+    options: [
+      "Quantity A is greater.",
+      "Quantity B is greater.",
+      "The two quantities are equal.",
+      "The relationship cannot be determined from the information given.",
+    ],
+    correctIndex: 2,
+    explanation:
+      "2^x + 2^x = 2 × 2^x = 2^(x+1). The two quantities are algebraically identical for every positive integer x, so they are always equal. Answer C.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-GRE-Q-002",
+    examType: "GRE",
+    section: "Quantitative",
+    type: "quantitative-comparison",
+    difficulty: "easy",
+    tags: ["probability"],
+    prompt:
+      "A fair six-sided die with faces numbered 1 through 6 is rolled once. Compare Quantity A and Quantity B and select the answer choice that best describes the relationship.",
+    quantityA: "The probability of rolling an even number",
+    quantityB: "The probability of rolling a number greater than 4",
+    options: [
+      "Quantity A is greater.",
+      "Quantity B is greater.",
+      "The two quantities are equal.",
+      "The relationship cannot be determined from the information given.",
+    ],
+    correctIndex: 0,
+    explanation:
+      "P(even) = 3/6 = 1/2 (outcomes 2, 4, 6). P(greater than 4) = 2/6 = 1/3 (outcomes 5, 6). 1/2 > 1/3, so Quantity A is greater. Answer A.",
+    timeSeconds: 75,
+  },
+  {
+    id: "Q-GRE-Q-003",
+    examType: "GRE",
+    section: "Quantitative",
+    type: "data-interpretation",
+    difficulty: "medium",
+    tags: ["percent-change", "data-interpretation"],
+    prompt:
+      "A small-town library recorded the following new memberships per quarter:\n2022: Q1 = 120, Q2 = 180, Q3 = 210, Q4 = 240\n2023: Q1 = 150, Q2 = 220, Q3 = 260, Q4 = 300\nWhat was the approximate percent increase in new memberships from Q3 2022 to Q3 2023?",
+    options: ["12%", "19%", "24%", "31%"],
+    correctIndex: 2,
+    explanation:
+      "Percent increase = (260 − 210) / 210 × 100 = 50 / 210 × 100 ≈ 23.8%, which rounds to 24%. Answer C.",
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-GRE-AW-001",
+    examType: "GRE",
+    section: "Analytical Writing",
+    type: "issue-task",
+    difficulty: "hard",
+    tags: ["argumentation", "issue-task"],
+    prompt:
+      'Original issue task: "The most valuable knowledge is knowledge that can be applied immediately to solve practical problems." Write a response in which you discuss the extent to which you agree or disagree with the statement and explain your reasoning for the position you take. In developing and supporting your position, you should consider ways in which the statement might or might not hold true and explain how these considerations shape your position.',
+    modelAnswer: `MODEL OUTLINE (use as a starting scaffold, not a model essay):
+
+THESIS: Partial agreement. Immediately applicable knowledge has clear instrumental value, but the most valuable knowledge also includes theoretical and disinterested inquiry whose worth may take decades or centuries to surface.
+
+PARAGRAPH 1 — Concession: Practical knowledge (medicine, engineering, accounting) directly improves lives and rewards learners with measurable returns. A newly qualified nurse who can place an IV line on her first day is, in one sense, more immediately "valuable" than a metaphysics PhD.
+
+PARAGRAPH 2 — Qualification: However, "immediate applicability" is the wrong yardstick. Many of the most transformative discoveries — non-Euclidean geometry, the double helix, quantum theory — had no immediate practical use and were pursued for their own sake. Their value surfaced only later, sometimes much later, and often in unanticipated ways (e.g., non-Euclidean geometry underwrote general relativity; number theory underwrites modern cryptography).
+
+PARAGRAPH 3 — Deeper objection: A culture that values only immediately applicable knowledge will systematically under-fund basic research and the humanities. It will produce capable technicians but impoverished citizens, and it will gradually lose the conceptual soil from which future practical breakthroughs grow.
+
+PARAGRAPH 4 — Synthesis: The statement confuses "valuable" with "useful right now." Truly valuable knowledge is knowledge whose worth survives the test of time, whether that worth is practical, intellectual, or moral — and a healthy society cultivates all three.
+
+CONCLUSION: Practical knowledge matters, but elevating it to "most valuable" risks short-sightedness. The deepest value often lies in inquiry whose practical pay-off, if any, lies beyond the horizon.`,
+    explanation:
+      "A strong GRE issue response takes a clear position, acknowledges counter-arguments, supports each claim with concrete examples, and synthesises rather than merely listing points. This outline scaffolds a 500-600 word essay. Avoid generic examples (e.g., 'Einstein was smart'); prefer specific cases that demonstrate range (medical training AND non-Euclidean geometry AND cryptography).",
+    timeSeconds: 1800,
+  },
+
+  // ---------------------------------------------------------------------------
+  // GMAT (6 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-GMAT-Q-001",
+    examType: "GMAT",
+    section: "Quantitative",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["percentages", "word-problems"],
+    prompt:
+      "A store marks up the wholesale price of a jacket by 40% to set the retail price. During a sale, the jacket is sold at a 25% discount off the retail price. If the sale price is $84, what was the wholesale price?",
+    options: ["$60", "$70", "$80", "$90"],
+    correctIndex: 2,
+    explanation:
+      "Let wholesale = W. Retail = 1.40W. Sale price = 0.75 × 1.40W = 1.05W. Setting 1.05W = $84 gives W = $80. Verify: $80 × 1.40 = $112 retail; $112 × 0.75 = $84 sale. ✓",
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-GMAT-Q-002",
+    examType: "GMAT",
+    section: "Quantitative",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["rates", "work-problems"],
+    prompt:
+      "Working alone, machine A can complete a job in 6 hours, and machine B can complete the same job in 9 hours. If the two machines work together at their respective constant rates, how long, in hours, will it take them to complete the job?",
+    options: ["3.0", "3.6", "4.2", "5.4"],
+    correctIndex: 1,
+    explanation:
+      "Rates: A = 1/6 job per hour, B = 1/9 job per hour. Combined rate = 1/6 + 1/9 = 3/18 + 2/18 = 5/18 job per hour. Time = 1 / (5/18) = 18/5 = 3.6 hours.",
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-GMAT-Q-003",
+    examType: "GMAT",
+    section: "Quantitative",
+    type: "data-sufficiency",
+    difficulty: "hard",
+    tags: ["algebra", "data-sufficiency"],
+    prompt:
+      "What is the value of x?\n(1) 2x + 3y = 12\n(2) 4x + 6y = 24",
+    options: [
+      "Statement (1) ALONE is sufficient, but statement (2) alone is not sufficient.",
+      "Statement (2) ALONE is sufficient, but statement (1) alone is not sufficient.",
+      "BOTH statements TOGETHER are sufficient, but NEITHER statement ALONE is sufficient.",
+      "EACH statement ALONE is sufficient.",
+      "Statements (1) and (2) TOGETHER are NOT sufficient.",
+    ],
+    correctIndex: 4,
+    explanation:
+      "Statement (2) is simply statement (1) multiplied by 2 — they describe the same line. With one equation in two unknowns, x cannot be uniquely determined even when both statements are used. Answer E.",
+    timeSeconds: 100,
+  },
+  {
+    id: "Q-GMAT-V-001",
+    examType: "GMAT",
+    section: "Verbal",
+    type: "critical-reasoning",
+    difficulty: "hard",
+    tags: ["critical-reasoning", "causal-reasoning"],
+    prompt:
+      "A coffee roaster recently switched its packaging from a plastic-lined foil bag to a compostable paper bag. Six months after the switch, the roaster's sales had declined by 8%. The marketing director concluded that customers disliked the new packaging and urged a return to the foil bag. Which of the following, if true, most weakens the marketing director's argument?",
+    options: [
+      "The new paper bags cost slightly more to produce than the foil bags.",
+      "During the same six-month period, two new specialty coffee roasters opened in the same city.",
+      "Some customers reported that the paper bags tore more easily than the foil bags.",
+      "The roaster's overall profit margin remained unchanged over the six-month period.",
+      "The roaster raised its retail prices by 5% at the same time as the packaging change.",
+    ],
+    correctIndex: 1,
+    explanation:
+      'Option B offers an alternative explanation for the sales decline — new competitors entering the market — that has nothing to do with the packaging change. This weakens the marketing director\'s causal inference. Option E also weakens somewhat, but a 5% price increase alone would not usually explain an 8% sales drop as directly as the entry of new competitors taking market share. Options A, C, and D do not directly weaken the causal claim.',
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-GMAT-V-002",
+    examType: "GMAT",
+    section: "Verbal",
+    type: "sentence-correction",
+    difficulty: "medium",
+    tags: ["grammar", "subject-verb-agreement"],
+    prompt:
+      'Choose the version of the underlined portion that best expresses the meaning of the original sentence. "The team of researchers, along with their graduate assistants, have submitted their findings to three prestigious journals."',
+    options: [
+      "have submitted their findings",
+      "has submitted their findings",
+      "have submitted its findings",
+      "has submitted its findings",
+      "are submitting their findings",
+    ],
+    correctIndex: 3,
+    explanation:
+      'The grammatical subject is "team" (singular). The phrase "along with their graduate assistants" is parenthetical and does not change the number of the subject, so the verb must be singular "has". Treating the team as a unit, the pronoun "its" is the most consistent choice. Option D ("has submitted its findings") is correct.',
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-GMAT-DI-001",
+    examType: "GMAT",
+    section: "Data Insights",
+    type: "data-insights",
+    difficulty: "hard",
+    tags: ["percent-change", "data-interpretation"],
+    prompt:
+      "A consumer electronics company reported the following quarterly sales (in thousands of units):\n            Q1   Q2   Q3   Q4\nAudio       12   15   18   20\nWearable     8   11   14   19\nSmart Home   5    9   13   18\nWhich product line had the largest percentage increase in sales from Q1 to Q4?",
+    options: ["Audio", "Wearable", "Smart Home", "Audio and Smart Home tied"],
+    correctIndex: 2,
+    explanation:
+      "Audio: (20 − 12) / 12 = 66.7%. Wearable: (19 − 8) / 8 = 137.5%. Smart Home: (18 − 5) / 5 = 260%. Smart Home had the largest percentage increase. Answer C.",
+    timeSeconds: 120,
+  },
+
+  // ---------------------------------------------------------------------------
+  // ACT (5 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-ACT-E-001",
+    examType: "ACT",
+    section: "English",
+    type: "standard-english",
+    difficulty: "medium",
+    tags: ["rhetoric", "transitions"],
+    prompt:
+      'Read the following passage. "The new community center, which opened last spring, has become a hub for neighborhood activities. It offers after-school tutoring, a weekly farmers\' market, and yoga classes on Saturday mornings. In fact, the center has been so successful that the city council is already considering opening two more locations in nearby districts." The writer is considering deleting the phrase "In fact" from the preceding sentence. Should the phrase be kept or deleted?',
+    options: [
+      "Keep it, because it signals that the following information strengthens the previous point.",
+      "Keep it, because without it the sentence is grammatically incomplete.",
+      "Delete it, because the information that follows contradicts the previous sentences.",
+      "Delete it, because it is an unnecessary filler phrase that adds no logical relationship.",
+    ],
+    correctIndex: 0,
+    explanation:
+      '"In fact" here introduces a piece of evidence that intensifies the previous claim about the center\'s success (city council considering expansion). It carries a clear logical function. The sentence is grammatically complete without it (ruling out B), the information does not contradict (ruling out C), and the phrase is not mere filler (ruling out D).',
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-ACT-E-002",
+    examType: "ACT",
+    section: "English",
+    type: "standard-english",
+    difficulty: "medium",
+    tags: ["grammar", "subject-verb-agreement"],
+    prompt:
+      "Choose the correct verb form to complete the sentence: \"Neither the manager nor the employees ______ aware of the policy change that had been announced the previous week.\"",
+    options: ["was", "were", "had been", "is"],
+    correctIndex: 1,
+    explanation:
+      'With "neither...nor" constructions, the verb agrees with the nearer subject — in this case "employees" (plural). So "were" is correct. This is the standard rule tested on the ACT.',
+    timeSeconds: 60,
+  },
+  {
+    id: "Q-ACT-M-001",
+    examType: "ACT",
+    section: "Math",
+    type: "multiple-choice",
+    difficulty: "easy",
+    tags: ["coordinate-geometry", "linear-equations"],
+    prompt:
+      "In the xy-plane, the line y = mx + 4 passes through the point (3, 13). What is the value of m?",
+    options: ["2", "3", "4", "5"],
+    correctIndex: 1,
+    explanation:
+      "Substituting (3, 13): 13 = 3m + 4, so 9 = 3m, hence m = 3. Answer B.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-ACT-R-001",
+    examType: "ACT",
+    section: "Reading",
+    type: "central-idea",
+    difficulty: "medium",
+    tags: ["main-idea", "history"],
+    passage: ACT_PASSAGE_BICYCLE,
+    prompt: "The main idea of the passage is that:",
+    options: [
+      "the penny-farthing was the most dangerous bicycle ever invented",
+      "the modern bicycle emerged through a long process of refinement and had social consequences beyond transportation",
+      "John Kemp Starley invented the first bicycle",
+      "pneumatic tires were the single most important innovation in bicycle history",
+    ],
+    correctIndex: 1,
+    explanation:
+      'The passage traces the bicycle from the 1817 draisine through the boneshaker, penny-farthing, and 1885 Rover Safety, then notes its social consequences for commuters and women. Option B captures both halves. A and D overstate single points; C is factually wrong (Starley created the Rover Safety, not the first bicycle).',
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-ACT-S-001",
+    examType: "ACT",
+    section: "Science",
+    type: "data-interpretation",
+    difficulty: "hard",
+    tags: ["biology", "photosynthesis", "data-interpretation"],
+    prompt:
+      "A biology student investigated the effect of light intensity on the rate of photosynthesis in the aquatic plant Elodea. Equal-length sprigs of Elodea were placed in inverted funnels submerged in beakers of water with a small volume of sodium bicarbonate solution (a source of CO2). A water-filled test tube was inverted over each funnel to collect gas produced. Five identical apparatuses were placed at distances of 10, 20, 30, 40, and 50 cm from a fixed light source. After 30 minutes, gas volumes collected were: 10 cm = 8.2 mL; 20 cm = 6.1 mL; 30 cm = 4.5 mL; 40 cm = 3.0 mL; 50 cm = 1.6 mL. Which conclusion is best supported by the data?",
+    options: [
+      "Light intensity has no measurable effect on photosynthesis in Elodea.",
+      "Photosynthesis in Elodea increases as light intensity increases (i.e., as distance from the light source decreases).",
+      "Elodea produces the most gas in complete darkness.",
+      "The volume of gas produced is directly proportional to the distance from the light source.",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Gas volume decreases monotonically as distance from the light source increases (8.2 → 6.1 → 4.5 → 3.0 → 1.6 mL). Since light intensity decreases with the square of distance, this pattern supports a positive relationship between light intensity and photosynthetic gas production. Option D is wrong because the relationship is not linear in distance (light follows an inverse-square law).",
+    timeSeconds: 120,
+  },
+
+  // ---------------------------------------------------------------------------
+  // LSAT (4 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-LSAT-LR-001",
+    examType: "LSAT",
+    section: "Logical Reasoning",
+    type: "critical-reasoning",
+    difficulty: "hard",
+    tags: ["assumption", "logical-reasoning"],
+    prompt:
+      "All students who complete the summer bridge program with a grade of B or higher are guaranteed admission to the university. Maria completed the summer bridge program with a grade of B+. Therefore, Maria is guaranteed admission to the university. Which of the following is an assumption required by the argument?",
+    options: [
+      "Maria applied to the university.",
+      "The summer bridge program is the only path to guaranteed admission.",
+      "Maria's grade of B+ counts as 'B or higher' under the program's policy.",
+      "The university has space for all guaranteed-admission students.",
+      "Maria has met all other requirements for admission.",
+    ],
+    correctIndex: 2,
+    explanation:
+      "The argument depends on treating B+ as satisfying 'B or higher.' If the policy excluded B+ (e.g., by interpreting 'B or higher' as only A−, A, or A+), the conclusion would not follow. This is the necessary assumption. Other options might strengthen the case but are not strictly required by the logic of the argument as stated.",
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-LSAT-LR-002",
+    examType: "LSAT",
+    section: "Logical Reasoning",
+    type: "critical-reasoning",
+    difficulty: "hard",
+    tags: ["weaken", "causal-reasoning"],
+    prompt:
+      "A recent study found that households that own at least one cat are 30% less likely to report household pest problems than households without cats. The researchers concluded that cats are effective at reducing household pests. Which of the following, if true, most weakens the researchers' conclusion?",
+    options: [
+      "Cats sometimes bring live prey into the house as 'gifts' for their owners.",
+      "Households that own cats tend to live in newer buildings with better-sealed entry points than households without cats.",
+      "Some households without cats keep dogs that also deter pests.",
+      "The study was funded by a national pet-food manufacturers' association.",
+      "Many cat owners allow their cats to roam outdoors for several hours per day.",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Option B introduces an alternative explanation for the observed correlation: cat-owning households may have fewer pests because they live in newer, better-sealed buildings, not because of the cats themselves. This undermines the causal claim. The other options either do not address the causal link directly (A, E), concern only subsets (C), or raise a methodological worry that does not by itself overturn the finding (D).",
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-LSAT-RC-001",
+    examType: "LSAT",
+    section: "Reading Comprehension",
+    type: "reading-mcq",
+    difficulty: "hard",
+    tags: ["inference", "legal-reasoning"],
+    passage: LSAT_PASSAGE_STANDING,
+    prompt:
+      "The passage suggests that the influential dissent's view that natural objects should have standing:",
+    options: [
+      "was eventually adopted in modified form by a later Supreme Court majority",
+      "would, if adopted, have eliminated the need for plaintiffs to demonstrate personal injury",
+      "was rejected by the Court in the 1972 environmental case",
+      "was endorsed by the Sierra Club itself",
+      "has no relevance to modern environmental litigation",
+    ],
+    correctIndex: 1,
+    explanation:
+      'The passage states the dissent argued "natural objects themselves ought to have standing, with guardians appointed to speak for them." If natural objects themselves had standing, plaintiffs would no longer need to demonstrate their own personal injury — the injury would be to the natural object. Option B captures this implication. The passage explicitly notes the view "has never been adopted by a majority" (ruling out A). C is too strong — the Court did not outright reject the view, it merely did not adopt it. D and E are unsupported.',
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-LSAT-AR-001",
+    examType: "LSAT",
+    section: "Analytical Reasoning",
+    type: "logic-game",
+    difficulty: "advanced",
+    tags: ["sequencing", "logic-games"],
+    prompt:
+      "Five students — Pia, Quentin, Riya, Sam, and Tomas — are assigned to present their projects on five consecutive days, Monday through Friday. Each student presents on exactly one day. The following conditions apply: (1) Pia must present on an earlier day than Quentin. (2) Riya must present on the day immediately before Sam. (3) Tomas cannot present on Monday or Friday. Which of the following could be the order of presenters, from Monday to Friday?",
+    options: [
+      "Tomas, Riya, Sam, Pia, Quentin",
+      "Pia, Riya, Sam, Quentin, Tomas",
+      "Pia, Tomas, Riya, Sam, Quentin",
+      "Quentin, Pia, Riya, Sam, Tomas",
+      "Riya, Sam, Quentin, Pia, Tomas",
+    ],
+    correctIndex: 2,
+    explanation:
+      "Check each option against the three rules. A violates rule 3 (Tomas on Monday). B violates rule 3 (Tomas on Friday). C satisfies all three: Pia (Mon) before Quentin (Fri) ✓; Riya (Wed) immediately before Sam (Thu) ✓; Tomas on Tuesday (not Mon or Fri) ✓. D violates rule 1 (Quentin before Pia) and rule 3 (Tomas on Friday). E violates rule 1 (Quentin on Wed, Pia on Thu). Only C works.",
+    timeSeconds: 180,
+  },
+
+  // ---------------------------------------------------------------------------
+  // MCAT (3 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-MCAT-CARS-001",
+    examType: "MCAT",
+    section: "CARS",
+    type: "reading-mcq",
+    difficulty: "hard",
+    tags: ["inference", "philosophy-of-history"],
+    passage: MCAT_PASSAGE_PROGRESS,
+    prompt:
+      "Based on the passage, which of the following would the author most likely agree with?",
+    options: [
+      "The Whig interpretation of history is the only defensible account of historical change.",
+      "The Victorian belief in progress was entirely without merit.",
+      "Modern historians must reject all forms of progress narrative.",
+      "Modern historical thinking requires acknowledging that some dimensions of human life have improved while others have not.",
+    ],
+    correctIndex: 3,
+    explanation:
+      'The final paragraph explicitly states that modern historical thinking requires holding "two ideas simultaneously: that some things have demonstrably improved... and that improvement in one dimension does not guarantee improvement in others." Option D matches. A is contradicted by Butterfield\'s critique; B and C are too absolute.',
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-MCAT-BB-001",
+    examType: "MCAT",
+    section: "Biological & Biochemical",
+    type: "multiple-choice",
+    difficulty: "hard",
+    tags: ["enzyme-kinetics", "biochemistry"],
+    prompt:
+      "A researcher is studying an enzyme that catalyses the conversion of substrate S to product P. The wild-type enzyme has a Km of 2.0 mM and a Vmax of 100 μmol/min. A mutant version, in which a single amino acid in the active site has been changed, has a Km of 8.0 mM and the same Vmax. Which of the following best describes the effect of the mutation on the enzyme's function?",
+    options: [
+      "The mutation increases the enzyme's affinity for substrate S.",
+      "The mutation decreases the enzyme's affinity for substrate S without affecting catalytic efficiency at saturation.",
+      "The mutation increases the maximum rate of the reaction.",
+      "The mutation reduces the Vmax of the enzyme.",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Km is inversely related to substrate affinity — a higher Km indicates lower affinity. The increase from 2.0 to 8.0 mM means the mutant requires a higher substrate concentration to reach half-maximal velocity, indicating reduced affinity. Vmax is unchanged, so catalytic rate at saturation is not affected. Option B is correct.",
+    timeSeconds: 120,
+  },
+  {
+    id: "Q-MCAT-CP-001",
+    examType: "MCAT",
+    section: "Chemical & Physical",
+    type: "multiple-choice",
+    difficulty: "hard",
+    tags: ["calorimetry", "thermodynamics"],
+    prompt:
+      "A 50.0 g sample of water at 80.0 °C is mixed with 100.0 g of water at 20.0 °C in an insulated container. Assuming no heat is lost to the surroundings and the specific heat capacity of water is 4.18 J/(g·°C), what is the final temperature of the mixture?",
+    options: ["30.0 °C", "35.0 °C", "40.0 °C", "50.0 °C"],
+    correctIndex: 2,
+    explanation:
+      "Heat lost by hot water = heat gained by cold water: m₁c(T₁ − Tf) = m₂c(Tf − T₂). Substituting: 50(80 − Tf) = 100(Tf − 20). Expanding: 4000 − 50Tf = 100Tf − 2000. So 6000 = 150Tf, hence Tf = 40 °C. Answer C.",
+    timeSeconds: 150,
+  },
+
+  // ---------------------------------------------------------------------------
+  // LanguageCert (4 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-LC-R-001",
+    examType: "LanguageCert",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["academic-reading", "detail"],
+    passage: LC_PASSAGE_FOLK,
+    prompt:
+      "According to the passage, what did Cecil Sharp and Maud Karpeles find in the Appalachian Mountains?",
+    options: [
+      "Printed copies of seventeenth-century broadsides preserved in archives.",
+      "Communities that had abandoned their traditional music entirely.",
+      "Versions of old British and Irish ballads still being sung and passed down orally.",
+      "Evidence that oral tradition was always unreliable.",
+    ],
+    correctIndex: 2,
+    explanation:
+      "The first paragraph states Sharp and Karpeles found versions of ballads that had been printed in seventeenth-century broadsides 'still in active circulation, sung by people who could not read music and had learned the songs orally.' Option C matches. A is wrong because the ballads were sung, not printed. B contradicts the discovery. D is contradicted by the third paragraph, which complicates but does not dismiss oral tradition.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-LC-L-001",
+    examType: "LanguageCert",
+    section: "Listening",
+    type: "fill-blanks",
+    difficulty: "medium",
+    tags: ["listening-detail", "note-completion"],
+    audioScript: LC_SCRIPT_CAREERS,
+    prompt:
+      "Complete the notes. Write NO MORE THAN TWO WORDS for each blank.\n1. The careers fair takes place on 15 November in the ______.\n2. Students should bring at least ______ copies of their CV.\n3. Internship applications close on 12 ______.\n4. Mentors offer two one-hour sessions per ______.",
+    correctAnswer: "Great Hall | ten (10) | January | term",
+    explanation:
+      '1. "in the Great Hall, from ten in the morning until four in the afternoon" → Great Hall. 2. "Bring at least ten printed copies of your CV" → ten. 3. "Applications open on the first of December and close on the twelfth of January" → January. 4. "Mentors offer two one-hour sessions per term, typically by video call" → term.',
+    timeSeconds: 180,
+  },
+  {
+    id: "Q-LC-W-001",
+    examType: "LanguageCert",
+    section: "Writing",
+    type: "essay",
+    difficulty: "medium",
+    tags: ["email", "complaint", "task-response"],
+    prompt:
+      "You recently stayed at a hotel for one night on a business trip and were unhappy with several aspects of your stay. Write an email of complaint (150–200 words) to the hotel manager. In your email you should: describe the problems you encountered, explain how these affected you, and state what action you would like the hotel to take.",
+    modelAnswer: `Subject: Complaint regarding stay on 14 May — Room 207
+
+Dear Hotel Manager,
+
+I am writing to express my disappointment with my one-night stay at your hotel on 14 May 2025, booked under the reference HM-44782.
+
+Three issues marred the visit. First, my room (207) was not ready at the 3 p.m. check-in time; I waited forty minutes in the lobby after a long working day. Second, the air-conditioning unit in the room made a loud rattling noise throughout the night, which made rest impossible and left me exhausted for my morning client meeting. Third, the breakfast included in my reservation was not honoured — I was told the voucher had expired and was charged £18.
+
+These problems caused genuine inconvenience: poor sleep directly affected my professional commitments the following day, and the overcharge added avoidable stress.
+
+I would be grateful if you would (1) refund the £18 breakfast charge, (2) offer a 50% reduction on the room rate as compensation for the disruption, and (3) confirm what steps you are taking to prevent a recurrence. I look forward to your reply within ten working days.
+
+Yours sincerely,
+Daniela Rahman`,
+    explanation:
+      "Strong LanguageCert B2/C1 writing sample (~195 words). Covers all three required content points, uses appropriate formal email conventions (subject line, salutation, sign-off), and maintains a polite but firm tone. Note the numbered list at the end — a clear, concrete request for action.",
+    timeSeconds: 1500,
+  },
+  {
+    id: "Q-LC-S-001",
+    examType: "LanguageCert",
+    section: "Speaking",
+    type: "speaking-part2",
+    difficulty: "medium",
+    tags: ["fluency", "topic-development"],
+    prompt:
+      "Describe a hobby or activity that you enjoy outside of work or study. You should say: what the activity is, how often you do it, why you enjoy it, and whether you would recommend it to others. You will have one minute to prepare and two minutes to speak.",
+    modelAnswer:
+      "Sample answer (≈2 minutes): 'A hobby I've kept up for about six years now is woodworking — specifically small furniture pieces like stools and side tables. I try to spend at least one evening a week in my garage workshop, usually Wednesday, and a longer stretch on Saturday mornings. What I enjoy most is the contrast with my office work, which is entirely screen-based and abstract. With wood, every decision produces a tangible result — a clean dovetail joint, a smoothly sanded surface — and mistakes are visible and immediate, which I find oddly satisfying. I'd definitely recommend it to anyone who spends their working day in front of a computer, although I'd warn that the initial cost of decent tools can be steep. Starting with a small project, like a simple cutting board, is a good way to test whether you enjoy the craft before committing to bigger investments.'",
+    explanation:
+      "Strong B2/C1 sample. Addresses all four prompt points in order, uses precise vocabulary ('dovetail joint', 'tangible result'), and varies sentence length for natural rhythm. Note the recommendation includes a caveat — this nuance earns higher marks than a flat endorsement.",
+    timeSeconds: 150,
+  },
+
+  // ---------------------------------------------------------------------------
+  // Linguaskill (3 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-LING-RL-001",
+    examType: "Linguaskill",
+    section: "Reading & Listening",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["academic-reading", "detail"],
+    passage: LING_PASSAGE_ESCOOTER,
+    prompt:
+      "According to the passage, which of the following was NOT cited as a concern about shared electric scooters?",
+    options: [
+      "Scooters blocked sidewalks and wheelchair ramps.",
+      "Hospital admissions for scooter-related injuries increased.",
+      "Scooter batteries frequently exploded during charging.",
+      "Cities received complaints from disability advocates.",
+    ],
+    correctIndex: 2,
+    explanation:
+      "The passage cites sidewalk obstruction (A), injury increases (B), and disability-advocate complaints (D). Battery explosions during charging are not mentioned anywhere in the passage. Option C is the correct answer to the NOT-cited question.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-LING-W-001",
+    examType: "Linguaskill",
+    section: "Writing",
+    type: "writing-task1",
+    difficulty: "easy",
+    tags: ["email", "professional-correspondence"],
+    prompt:
+      "You work in the marketing department of a small company. Write a 120–150 word email to a colleague in another department asking for help with preparing a presentation. You should: explain what the presentation is for, describe the help you need, and suggest a time to meet.",
+    modelAnswer: `Subject: Help with Q3 marketing presentation?
+
+Hi Priya,
+
+I hope you're having a good week. I'm putting together the Q3 marketing-performance presentation for the board meeting on the 22nd, and I could really use your help with the data side.
+
+Specifically, I'd love a hand with two things. First, pulling the customer-segment breakdown from the CRM in a format that will play nicely with our slide template — I suspect you already have something close. Second, a quick sanity check on the conversion-rate calculations, since the sales-team numbers and the website-analytics numbers don't quite match and I want to make sure I'm interpreting them correctly before they go in front of the board.
+
+Would you have 30 minutes sometime on Thursday afternoon, say between 2 and 4? Happy to bring coffee and biscuits. If that doesn't work, just let me know what does.
+
+Thanks so much,
+Marco`,
+    explanation:
+      "Solid Linguaskill B1/B2 sample (~140 words). Covers all three required points (purpose, specific help needed, suggested time), uses a natural professional-but-friendly register, and signs off appropriately. Note the concrete detail (CRM, conversion rates, specific time window) — vague requests score lower.",
+    timeSeconds: 900,
+  },
+  {
+    id: "Q-LING-S-001",
+    examType: "Linguaskill",
+    section: "Speaking",
+    type: "speaking-part1",
+    difficulty: "easy",
+    tags: ["fluency", "personal-topic"],
+    prompt:
+      "Please talk for one minute about a recent journey you took. You should describe where you went, how you travelled, what you did there, and whether you would recommend the destination to a friend.",
+    modelAnswer:
+      "Sample answer (≈60 seconds): 'Last month I travelled to Porto, in northern Portugal, for a long weekend. I flew directly from London Gatwick, which took about two and a half hours, and then took the metro from the airport into the city centre, which was quick and inexpensive. While I was there I mostly walked — Porto is a very walkable city, although the hills are steep. I visited the Livraria Lello bookshop, which is famous for its carved wooden staircase, took a boat cruise along the Douro river, and tried several different port-wine cellars. I would definitely recommend Porto to a friend. It's smaller and less crowded than Lisbon, the food is excellent and surprisingly affordable, and the combination of the river, the bridges, and the tiled buildings makes it genuinely beautiful. The only word of warning would be to bring comfortable shoes — those hills are no joke.'",
+    explanation:
+      "Strong B1/B2 sample. Addresses all four prompt points within the time limit, uses specific vocabulary ('Livraria Lello', 'port-wine cellars', 'Douro river'), and ends with a useful caveat that demonstrates evaluative judgement. Aim for similar specificity — generic descriptions ('I went to a nice city and ate nice food') score poorly.",
+    timeSeconds: 90,
+  },
+
+  // ---------------------------------------------------------------------------
+  // University Placement (4 questions)
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-PL-G-001",
+    examType: "Placement",
+    section: "Grammar",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["grammar", "verb-tense"],
+    prompt:
+      "Choose the option that best completes the sentence: 'By the time the rescue team arrived, the climbers ______ stranded on the mountain for nearly forty-eight hours.'",
+    options: ["have been", "had been", "are", "were being"],
+    correctIndex: 1,
+    explanation:
+      'The sentence describes an action (being stranded) that began before and was still in progress at a past moment (the rescue team\'s arrival). The past perfect "had been" is required. "Have been" is present perfect and would not agree with the past-time "arrived".',
+    timeSeconds: 60,
+  },
+  {
+    id: "Q-PL-V-001",
+    examType: "Placement",
+    section: "Vocabulary",
+    type: "vocabulary-in-context",
+    difficulty: "hard",
+    tags: ["vocabulary", "inference"],
+    prompt:
+      "Read the sentence and choose the word that best fits the blank. 'The professor's comments during the seminar were surprisingly ______, considering that the student's draft had been riddled with factual errors and unclear arguments.'",
+    options: ["laudatory", "critical", "brief", "technical"],
+    correctIndex: 0,
+    explanation:
+      'The word "surprisingly" signals that the professor\'s reaction was the opposite of what the poor-quality draft would normally warrant. Given factual errors and unclear arguments, critical comments would be expected; the surprising reaction is therefore praise — "laudatory". Options B, C, and D do not produce the contrast signaled by "surprisingly".',
+    timeSeconds: 70,
+  },
+  {
+    id: "Q-PL-R-001",
+    examType: "Placement",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["academic-reading", "main-idea"],
+    passage: PL_PASSAGE_PRINTING,
+    prompt:
+      "According to the passage, what was one major effect of the printing press on the spread of the Protestant Reformation?",
+    options: [
+      "It allowed scribes to copy Bibles more quickly.",
+      "It enabled Luther's writings to be reproduced in large numbers and distributed rapidly.",
+      "It reduced the cost of paper across Europe.",
+      "It standardized religious doctrine across the continent.",
+    ],
+    correctIndex: 1,
+    explanation:
+      'The third paragraph states that the Reformation "became a continent-spanning upheaval in part because Martin Luther\'s theses and pamphlets could be printed in thousands of copies and distributed within weeks." Option B matches. A is wrong (scribes were replaced, not helped). C and D are not supported by the passage.',
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-PL-W-001",
+    examType: "Placement",
+    section: "Writing",
+    type: "writing-task2",
+    difficulty: "hard",
+    tags: ["essay", "argumentation", "task-response"],
+    prompt:
+      "Some educators argue that schools should abandon traditional homework in favour of project-based learning that students complete during the school day. To what extent do you agree or disagree? Write 300–400 words supporting your position with reasons and examples.",
+    modelAnswer: `The debate over whether schools should replace traditional homework with in-school project-based learning has gained momentum in recent years. While I agree that excessive, repetitive homework can be counterproductive, I disagree with the stronger claim that homework should be abandoned altogether. A balanced model — shorter, targeted homework combined with in-class projects — would serve students better than either extreme.
+
+Proponents of project-based learning make a legitimate point about equity. Homework disproportionately burdens students from disadvantaged backgrounds, who may lack quiet study spaces, reliable internet, or parental support. A child sharing a bedroom with two siblings in a noisy flat is unlikely to benefit from an hour of maths worksheets. Moving project work into the school day also allows teachers to coach collaboration and problem-solving skills that worksheets cannot easily develop.
+
+However, abandoning homework entirely carries risks that advocates often understate. Independent practice is not the same as supervised practice; the silent struggle of wrestling with a problem at the kitchen table builds persistence and self-regulation that no teacher can directly observe or scaffold. Research in cognitive psychology consistently shows that distributed practice — short, regular review sessions spaced over time — is one of the most effective ways to consolidate learning. Eliminating homework removes the most natural vehicle for distributed practice from the school day.
+
+A more sensible reform would be to redesign homework rather than abolish it. Short, low-stakes assignments focused on retrieval practice (self-quizzing, brief writing prompts, targeted review) take fifteen to twenty minutes per subject and can be completed by students in almost any home environment. Lengthy projects and complex collaborative work, by contrast, belong in the classroom where teachers can guide and equalise them.
+
+In conclusion, the case against traditional homework has merit but proves too much. The goal should be a thoughtful hybrid: less busywork, more retrieval practice, and project work moved into school hours where its benefits can be distributed fairly. Neither pole of the current debate serves students as well as the middle ground.`,
+    explanation:
+      "Strong placement-level diagnostic essay (~370 words). States a clear thesis (disagreement with full abolition, advocacy for a hybrid), develops two body paragraphs on each side before synthesising, and grounds each claim in a concrete example (equity at home, cognitive psychology research, retrieval practice). Note the measured tone and the explicit refutation in paragraph 3 — both hallmarks of academic writing at this level.",
+    timeSeconds: 1800,
+  },
+
+  // ---------------------------------------------------------------------------
+  // Visa Interview (5 questions) — speaking-style prompts for UK credibility,
+  // CAS, visa, scholarship, and admission interviews. Each is a speaking-part1
+  // style prompt with model answer hints.
+  // ---------------------------------------------------------------------------
+  {
+    id: "Q-VISA-001",
+    examType: "VisaInterview",
+    section: "Speaking",
+    type: "speaking-part1",
+    difficulty: "medium",
+    tags: ["visa-interview", "credibility", "fluency"],
+    prompt:
+      "Why have you chosen to study in the United Kingdom rather than in your home country or another destination? Please answer in 4–6 sentences as if responding to a UK visa credibility interview.",
+    modelAnswer:
+      "Model answer hint: Lead with the specific academic reason (a particular course, faculty, or research strength available in the UK and not at home), then add a secondary reason such as the English-language environment or the international recognition of UK qualifications. Be concrete — name the course and institution. Avoid generic phrases like 'UK education is the best in the world.' Sample: 'I chose the UK because the MSc in Data Science at the University of Sheffield offers a module on causal inference that I could not find in any equivalent programme in my country. The UK also gives me the chance to study in English, which is essential for my future work as a quantitative analyst. The one-year duration of UK master's programmes is also more efficient for me than the two-year programmes common elsewhere.'",
+    explanation:
+      "Credibility interviews reward specificity. Visa officers are trained to detect rehearsed, generic answers. A strong response names the actual course and a specific feature of it, demonstrates that the student researched alternatives, and links the choice to a concrete career or academic goal. Avoid talking vaguely about 'prestige' or 'culture'.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-VISA-002",
+    examType: "VisaInterview",
+    section: "Speaking",
+    type: "speaking-part1",
+    difficulty: "medium",
+    tags: ["visa-interview", "cas", "fluency"],
+    prompt:
+      "Please describe the course you will be studying, the name of your university, and why this particular course is the right choice for your career goals. Answer as if responding to a UK visa officer's question about your Confirmation of Acceptance for Studies (CAS).",
+    modelAnswer:
+      "Model answer hint: State the course title exactly as it appears on the CAS, name the university, give the start date and duration, and connect at least one specific module or feature of the course to a clearly stated career goal. Sample: 'My CAS is for the MSc Finance programme at the University of Glasgow, starting in September 2025. The course runs for twelve months. I chose it because it includes a CFA-aligned module on portfolio management, which is directly relevant to my goal of working as an investment analyst in my home country after graduation. I also plan to use the university's Bloomberg trading suite to build practical financial-modelling skills.'",
+    explanation:
+      "Visa officers will compare your spoken answer to the CAS details. Mismatched course names, durations, or start dates are red flags. Memorise the exact course title and duration from your CAS, and be ready to explain why each major element of the course matters for your stated career path.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-VISA-003",
+    examType: "VisaInterview",
+    section: "Speaking",
+    type: "speaking-part1",
+    difficulty: "hard",
+    tags: ["visa-interview", "finances", "fluency"],
+    prompt:
+      "A visa officer asks: 'How will you support yourself financially during your studies in the UK, and what evidence can you provide?' Please answer as you would in a student visa interview.",
+    modelAnswer:
+      "Model answer hint: Identify the source of funds (parents, self-funding from savings, scholarship, education loan), state the approximate total amount available, name the specific documentary evidence you can show, and confirm the funds have been held for the required 28-day period. Sample: 'My studies will be funded by my parents, who have saved approximately £35,000 to cover tuition and living costs. I can provide bank statements showing these funds have been held in a recognised bank account for more than 28 consecutive days, as required by the Student Visa rules. My father is a senior civil engineer and his employment letter and salary slips are also available as supporting evidence of the source of these funds.'",
+    explanation:
+      "Financial credibility is one of the most common reasons visas are refused. A strong answer names the source, the amount, the 28-day holding period, and the specific documents you can produce. Vague answers ('my family will support me') without amounts or evidence weaken your case. Always bring original bank statements and a clear paper trail for the source of funds.",
+    timeSeconds: 100,
+  },
+  {
+    id: "Q-VISA-004",
+    examType: "VisaInterview",
+    section: "Speaking",
+    type: "speaking-part1",
+    difficulty: "medium",
+    tags: ["visa-interview", "scholarship", "fluency"],
+    prompt:
+      "You have been awarded a scholarship for your studies. A visa officer asks: 'Tell me about the scholarship you have received — who awarded it, what it covers, and what conditions are attached?' Please respond as you would in a visa interview.",
+    modelAnswer:
+      "Model answer hint: Name the awarding body precisely, state exactly what the scholarship covers (full tuition / partial tuition / living stipend / both), name the monetary value if known, and explain any conditions (maintaining a certain grade, returning home after graduation, working for a specific employer). Sample: 'I have been awarded the Chevening Scholarship, which is funded by the UK Foreign, Commonwealth and Development Office. It covers my full tuition fees, provides a monthly living stipend, and pays for my return flights to the UK. The conditions are that I maintain satisfactory academic progress and return to my home country for at least two years after completing my master's degree, which aligns with my plan to work in public health policy at home.'",
+    explanation:
+      "Visa officers are familiar with major scholarships (Chevening, Commonwealth, university-specific awards) but will still check that you can describe them accurately. Being unable to describe your own scholarship is a serious red flag. Be ready to name the awarding body, coverage, and any post-study return conditions.",
+    timeSeconds: 90,
+  },
+  {
+    id: "Q-VISA-005",
+    examType: "VisaInterview",
+    section: "Speaking",
+    type: "speaking-part1",
+    difficulty: "medium",
+    tags: ["visa-interview", "university-choice", "fluency"],
+    prompt:
+      "A visa officer asks: 'Why did you choose this particular university, and how did you research your options before applying?' Please respond as you would in a UK student visa interview.",
+    modelAnswer:
+      "Model answer hint: Give at least one specific reason for choosing this university (course content, faculty, facilities, ranking in your subject, location, employability), then describe the research process (university website, open days, ranking tables, speaking to current students or alumni, education agent). Sample: 'I chose Aston Business School because its MBA programme has AMBA accreditation and a strong focus on placement learning, with an average starting salary for graduates that is well above the UK average. I researched it through the university's own website, attended a virtual open day in March, spoke to two alumni from my country who are now working in consulting, and cross-checked the FT global MBA ranking. I also shortlisted two other UK universities before applying, but Aston's placement year made the difference.'",
+    explanation:
+      "Visa officers want evidence of genuine research, not a single application sent speculatively. Naming specific accreditation bodies (AMBA, AACSB, EQUIS), virtual or physical open days attended, alumni spoken to, and ranking tables consulted all signal seriousness. Mentioning other universities you considered and rejected strengthens the answer further — it shows genuine comparison shopping rather than desperation.",
+    timeSeconds: 100,
+  },
 ];
 
 // =============================================================================
@@ -1495,6 +2578,64 @@ export const EXAM_SECTIONS: Record<
     { name: "Listening", duration: 1500, questionCount: 20 },
     { name: "Writing", duration: 2400, questionCount: 1 },
     { name: "Speaking", duration: 900, questionCount: 4 },
+  ],
+  // CBT expansion (Task 1-cbt) — approximate durations & question counts.
+  SAT: [
+    { name: "Reading & Writing (Module 1)", duration: 2040, questionCount: 27 },
+    { name: "Reading & Writing (Module 2)", duration: 2040, questionCount: 27 },
+    { name: "Math (Module 1)", duration: 2100, questionCount: 22 },
+    { name: "Math (Module 2)", duration: 2100, questionCount: 22 },
+  ],
+  GRE: [
+    { name: "Analytical Writing", duration: 1800, questionCount: 1 },
+    { name: "Verbal Reasoning (Set 1)", duration: 1740, questionCount: 12 },
+    { name: "Verbal Reasoning (Set 2)", duration: 1740, questionCount: 15 },
+    { name: "Quantitative Reasoning (Set 1)", duration: 2100, questionCount: 12 },
+    { name: "Quantitative Reasoning (Set 2)", duration: 2220, questionCount: 15 },
+  ],
+  GMAT: [
+    { name: "Quantitative Reasoning", duration: 2520, questionCount: 21 },
+    { name: "Verbal Reasoning", duration: 2520, questionCount: 23 },
+    { name: "Data Insights", duration: 2820, questionCount: 20 },
+  ],
+  ACT: [
+    { name: "English", duration: 2700, questionCount: 75 },
+    { name: "Mathematics", duration: 3600, questionCount: 60 },
+    { name: "Reading", duration: 2100, questionCount: 40 },
+    { name: "Science", duration: 2100, questionCount: 40 },
+    { name: "Writing (optional)", duration: 2400, questionCount: 1 },
+  ],
+  LSAT: [
+    { name: "Logical Reasoning (Section I)", duration: 2100, questionCount: 24 },
+    { name: "Logical Reasoning (Section II)", duration: 2100, questionCount: 25 },
+    { name: "Reading Comprehension", duration: 2100, questionCount: 26 },
+    { name: "Analytical Reasoning (variable)", duration: 2100, questionCount: 22 },
+  ],
+  MCAT: [
+    { name: "Chemical & Physical Foundations", duration: 5700, questionCount: 59 },
+    { name: "Critical Analysis & Reasoning Skills", duration: 5400, questionCount: 53 },
+    { name: "Biological & Biochemical Foundations", duration: 5700, questionCount: 59 },
+    { name: "Psychological, Social & Biological Foundations", duration: 5700, questionCount: 59 },
+  ],
+  LanguageCert: [
+    { name: "Listening", duration: 1800, questionCount: 26 },
+    { name: "Reading", duration: 1500, questionCount: 26 },
+    { name: "Writing", duration: 1500, questionCount: 2 },
+    { name: "Speaking", duration: 900, questionCount: 4 },
+  ],
+  Linguaskill: [
+    { name: "Reading & Listening (adaptive)", duration: 4200, questionCount: 60 },
+    { name: "Writing", duration: 2400, questionCount: 2 },
+    { name: "Speaking", duration: 1800, questionCount: 4 },
+  ],
+  Placement: [
+    { name: "Grammar", duration: 1200, questionCount: 30 },
+    { name: "Vocabulary", duration: 1200, questionCount: 30 },
+    { name: "Reading", duration: 1800, questionCount: 25 },
+    { name: "Writing", duration: 1800, questionCount: 1 },
+  ],
+  VisaInterview: [
+    { name: "Credibility Interview", duration: 600, questionCount: 5 },
   ],
 };
 
@@ -1534,4 +2675,15 @@ export const QUESTION_COUNT_BY_EXAM: Record<ExamType, number> = {
   TOEFL: QUESTIONS.filter((q) => q.examType === "TOEFL").length,
   Duolingo: QUESTIONS.filter((q) => q.examType === "Duolingo").length,
   OIETC: QUESTIONS.filter((q) => q.examType === "OIETC").length,
+  // CBT expansion (Task 1-cbt)
+  SAT: QUESTIONS.filter((q) => q.examType === "SAT").length,
+  GRE: QUESTIONS.filter((q) => q.examType === "GRE").length,
+  GMAT: QUESTIONS.filter((q) => q.examType === "GMAT").length,
+  ACT: QUESTIONS.filter((q) => q.examType === "ACT").length,
+  LSAT: QUESTIONS.filter((q) => q.examType === "LSAT").length,
+  MCAT: QUESTIONS.filter((q) => q.examType === "MCAT").length,
+  LanguageCert: QUESTIONS.filter((q) => q.examType === "LanguageCert").length,
+  Linguaskill: QUESTIONS.filter((q) => q.examType === "Linguaskill").length,
+  Placement: QUESTIONS.filter((q) => q.examType === "Placement").length,
+  VisaInterview: QUESTIONS.filter((q) => q.examType === "VisaInterview").length,
 };
