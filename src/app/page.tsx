@@ -1,60 +1,63 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { AloNavbar } from "@/components/alo/navbar";
-import { AloHero } from "@/components/alo/hero";
-import { AloDestinations } from "@/components/alo/destinations";
-import { AloCourseFinder } from "@/components/alo/course-finder";
-import { AloServices, AloWhyAlo, AloScholarships, AloUniversityCarousel, AloJourney, AloAiCounselor } from "@/components/alo/services-journey";
-import { AloLanguagePrep } from "@/components/alo/language-prep";
-import { AloPortals } from "@/components/alo/portals";
-import { AloTestimonials, AloFaq, AloLeadCapture, AloFinalCta } from "@/components/alo/testimonials-faq-lead";
-import { AloFooter } from "@/components/alo/footer";
+import { AppProvider, useApp } from "@/components/alo/app-shell";
 import { AloAuthModal } from "@/components/alo/auth-modal";
+import { AloNavbar } from "@/components/alo/navbar";
+import { AloFooter } from "@/components/alo/footer";
+import {
+  PublicHero, PublicExams, PublicFreeQuota, PublicMockTests, PublicPricing,
+  PublicAmbassador, PublicCrmIntegration, PublicTestimonials, PublicFaq,
+  PublicLeadCapture, PublicFinalCta,
+} from "@/components/alo/public-sections";
+import { StudentPortal } from "@/components/alo/student-portal";
+import { AdminPortal, ExaminerPortal, AmbassadorPortal } from "@/components/alo/portals";
 
-export default function Home() {
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register">("register");
+function AppContent() {
+  const { view, openAuth, exitPortal } = useApp();
 
-  const openAuth = useCallback((mode: "login" | "register") => {
-    setAuthMode(mode);
-    setAuthOpen(true);
-  }, []);
+  if (view === "student") return <StudentPortal onExit={exitPortal} />;
+  if (view === "admin") return <AdminPortal onExit={exitPortal} />;
+  if (view === "examiner") return <ExaminerPortal onExit={exitPortal} />;
+  if (view === "ambassador") return <AmbassadorPortal onExit={exitPortal} />;
 
-  const scrollToContact = useCallback(() => {
-    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+  // Public site
+  const handleFooterAction = (action: string) => {
+    if (action.startsWith("portal:")) {
+      const role = action.split(":")[1] as "student" | "admin" | "examiner" | "ambassador";
+      openAuth("login");
+      // The auth modal default role selection; user picks the role there.
+      return;
+    }
+    const el = document.getElementById(action);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <AloNavbar onOpenAuth={openAuth} />
-
+      <AloNavbar />
       <main className="flex-1">
-        <AloHero onStart={scrollToContact} onOpenAuth={openAuth} />
-        <AloDestinations onCta={scrollToContact} />
-        <AloCourseFinder onCta={scrollToContact} />
-        <AloServices onCta={scrollToContact} />
-        <AloWhyAlo />
-        <AloScholarships onCta={scrollToContact} />
-        <AloUniversityCarousel />
-        <AloJourney />
-        <AloLanguagePrep onCta={scrollToContact} />
-        <AloAiCounselor onCta={scrollToContact} />
-        <AloPortals onOpenAuth={openAuth} />
-        <AloTestimonials />
-        <AloFaq />
-        <AloLeadCapture />
-        <AloFinalCta onStart={scrollToContact} />
+        <PublicHero />
+        <PublicExams onStart={() => openAuth("register")} />
+        <PublicFreeQuota onVerify={() => openAuth("register")} />
+        <PublicMockTests onStart={() => openAuth("register")} />
+        <PublicPricing onStart={() => openAuth("register")} />
+        <PublicAmbassador onEnter={() => openAuth("login")} />
+        <PublicCrmIntegration />
+        <PublicTestimonials />
+        <PublicFaq />
+        <PublicLeadCapture />
+        <PublicFinalCta onStart={() => openAuth("register")} />
       </main>
-
-      <AloFooter />
-
-      <AloAuthModal
-        open={authOpen}
-        mode={authMode}
-        onClose={() => setAuthOpen(false)}
-        onModeChange={setAuthMode}
-      />
+      <AloFooter onAction={handleFooterAction} />
+      <AloAuthModal />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
   );
 }
