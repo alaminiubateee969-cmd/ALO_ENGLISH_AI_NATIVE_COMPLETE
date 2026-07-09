@@ -3,13 +3,11 @@
 import { useState, useCallback } from "react";
 import { AloNavbar } from "@/components/alo/navbar";
 import { AloHero } from "@/components/alo/hero";
-import { AloExamTypes } from "@/components/alo/exam-types";
-import { AloFreeQuota } from "@/components/alo/free-quota";
-import { AloMockTestSection } from "@/components/alo/mock-test-demo";
-import { AloSpeakingPractice, AloWritingEvaluation } from "@/components/alo/speaking-writing";
-import { AloDashboardPreview } from "@/components/alo/dashboard-preview";
-import { AloPricing, AloAmbassador, AloCrmIntegration } from "@/components/alo/pricing-ambassador-crm";
-import { AloHowItWorks } from "@/components/alo/how-it-works";
+import { AloDestinations } from "@/components/alo/destinations";
+import { AloCourseFinder } from "@/components/alo/course-finder";
+import { AloServices, AloWhyAlo, AloScholarships, AloUniversityCarousel, AloJourney, AloAiCounselor } from "@/components/alo/services-journey";
+import { AloLanguagePrep } from "@/components/alo/language-prep";
+import { AloPortals } from "@/components/alo/portals";
 import { AloTestimonials, AloFaq, AloLeadCapture, AloFinalCta } from "@/components/alo/testimonials-faq-lead";
 import { AloFooter } from "@/components/alo/footer";
 import { AloAuthModal } from "@/components/alo/auth-modal";
@@ -23,14 +21,8 @@ export default function Home() {
     setAuthOpen(true);
   }, []);
 
-  const scrollToMockTests = useCallback(() => {
-    const el = document.getElementById("mock-tests");
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Slight delay then trigger the demo start button
-    setTimeout(() => {
-      const startBtn = document.querySelector<HTMLButtonElement>("#mock-tests button");
-      // The first button in mock-tests section that says "Launch Mock Test Demo" — we just scroll.
-    }, 300);
+  const scrollToContact = useCallback(() => {
+    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   return (
@@ -38,21 +30,21 @@ export default function Home() {
       <AloNavbar onOpenAuth={openAuth} />
 
       <main className="flex-1">
-        <AloHero onStart={() => openAuth("register")} onOpenAuth={openAuth} />
-        <AloExamTypes onStart={() => openAuth("register")} />
-        <AloHowItWorks onStart={() => openAuth("register")} />
-        <AloFreeQuota onVerify={() => openAuth("register")} />
-        <AloMockTestSection onStart={() => openAuth("register")} />
-        <AloSpeakingPractice />
-        <AloWritingEvaluation />
-        <AloDashboardPreview onOpenAuth={openAuth} />
-        <AloPricing onOpenAuth={openAuth} />
-        <AloAmbassador />
-        <AloCrmIntegration />
+        <AloHero onStart={scrollToContact} onOpenAuth={openAuth} />
+        <AloDestinations onCta={scrollToContact} />
+        <AloCourseFinder onCta={scrollToContact} />
+        <AloServices onCta={scrollToContact} />
+        <AloWhyAlo />
+        <AloScholarships onCta={scrollToContact} />
+        <AloUniversityCarousel />
+        <AloJourney />
+        <AloLanguagePrep onCta={scrollToContact} />
+        <AloAiCounselor onCta={scrollToContact} />
+        <AloPortals onOpenAuth={openAuth} />
         <AloTestimonials />
         <AloFaq />
         <AloLeadCapture />
-        <AloFinalCta onStart={() => openAuth("register")} />
+        <AloFinalCta onStart={scrollToContact} />
       </main>
 
       <AloFooter />

@@ -48,19 +48,23 @@
   --color-alo-orange: #E8501A;
   --color-alo-soft-blue: #EEF6FF;
   --color-alo-soft-orange: #FFF7ED;
+  --color-alo-success: #16A34A;
+  --color-alo-warning: #F59E0B;
+  --color-alo-danger: #DC2626;
+  --color-alo-card-border: #D9E8FF;
   --color-alo-ink: #111827;
   --color-alo-muted: #4B5563;
+  --color-alo-faint: #6B7280;
 }
 
 :root {
   --radius: 0.75rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: #111827;
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: #111827;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* ALO blue as primary */
+  --popover-foreground: #111827;
   --primary: #0057B8;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: #EEF6FF;
@@ -69,22 +73,22 @@
   --muted-foreground: #4B5563;
   --accent: #FFF7ED;
   --accent-foreground: #E8501A;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #E2E8F0;
+  --destructive: #DC2626;
+  --border: #E5E7EB;
   --input: oklch(0.922 0 0);
   --ring: #0057B8;
   --chart-1: #0057B8;
   --chart-2: #E8501A;
   --chart-3: #0B63CE;
-  --chart-4: #10B981;
+  --chart-4: #16A34A;
   --chart-5: #F59E0B;
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-foreground: #111827;
   --sidebar-primary: #0057B8;
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent-foreground: #0B1F3A;
+  --sidebar-border: #E5E7EB;
   --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -132,66 +136,112 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 
-/* ALO brand utility classes */
+/* ===== ALO PREMIUM SaaS DESIGN SYSTEM ===== */
 @layer utilities {
+  /* Brand colors */
   .text-alo-navy { color: #0B1F3A; }
   .text-alo-blue { color: #0057B8; }
   .text-alo-orange { color: #E8501A; }
   .text-alo-muted { color: #4B5563; }
+  .text-alo-faint { color: #6B7280; }
+  .text-alo-success { color: #16A34A; }
+  .text-alo-warning { color: #F59E0B; }
+  .text-alo-danger { color: #DC2626; }
   .bg-alo-navy { background-color: #0B1F3A; }
   .bg-alo-blue { background-color: #0057B8; }
   .bg-alo-orange { background-color: #E8501A; }
   .bg-alo-soft-blue { background-color: #EEF6FF; }
   .bg-alo-soft-orange { background-color: #FFF7ED; }
+  .bg-alo-soft-gray { background-color: #F8FAFC; }
+  .bg-alo-gray { background-color: #F1F5F9; }
   .border-alo-blue { border-color: #0057B8; }
   .border-alo-orange { border-color: #E8501A; }
+  .border-alo-card { border-color: #D9E8FF; }
 
-  .hero-gradient-blob {
+  /* Premium soft SaaS shadows */
+  .alo-shadow-sm { box-shadow: 0 1px 2px rgba(11, 31, 58, 0.04), 0 1px 3px rgba(11, 31, 58, 0.06); }
+  .alo-shadow { box-shadow: 0 2px 4px rgba(11, 31, 58, 0.04), 0 4px 12px rgba(11, 31, 58, 0.06); }
+  .alo-shadow-lg { box-shadow: 0 4px 8px rgba(11, 31, 58, 0.05), 0 12px 28px rgba(11, 31, 58, 0.10); }
+  .alo-shadow-xl { box-shadow: 0 8px 16px rgba(11, 31, 58, 0.06), 0 20px 40px rgba(11, 31, 58, 0.14); }
+  .alo-shadow-blue { box-shadow: 0 8px 24px rgba(0, 87, 184, 0.18); }
+  .alo-shadow-orange { box-shadow: 0 8px 24px rgba(232, 80, 26, 0.20); }
+
+  /* Gradients */
+  .alo-gradient-hero {
     background:
-      radial-gradient(60% 60% at 80% 20%, rgba(232, 80, 26, 0.12) 0%, transparent 60%),
-      radial-gradient(60% 60% at 10% 80%, rgba(0, 87, 184, 0.14) 0%, transparent 60%),
-      radial-gradient(40% 40% at 50% 50%, rgba(11, 99, 206, 0.06) 0%, transparent 70%);
+      radial-gradient(55% 55% at 85% 15%, rgba(232, 80, 26, 0.10) 0%, transparent 60%),
+      radial-gradient(60% 60% at 10% 85%, rgba(0, 87, 184, 0.12) 0%, transparent 60%),
+      radial-gradient(40% 40% at 50% 50%, rgba(11, 99, 206, 0.05) 0%, transparent 70%);
   }
-
-  .alo-card-shadow {
-    box-shadow: 0 1px 2px rgba(11, 31, 58, 0.04), 0 4px 12px rgba(11, 31, 58, 0.05);
+  .alo-gradient-section {
+    background: linear-gradient(135deg, #EEF6FF 0%, #FFFFFF 50%, #FFF7ED 100%);
   }
-  .alo-card-shadow-hover {
-    box-shadow: 0 12px 32px rgba(11, 31, 58, 0.12), 0 4px 8px rgba(11, 31, 58, 0.06);
+  .alo-gradient-navy {
+    background: linear-gradient(135deg, #0B1F3A 0%, #0057B8 100%);
   }
 
   .alphanumeric-grid {
     background-image:
-      linear-gradient(rgba(0, 87, 184, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 87, 184, 0.05) 1px, transparent 1px);
-    background-size: 32px 32px;
+      linear-gradient(rgba(0, 87, 184, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 87, 184, 0.04) 1px, transparent 1px);
+    background-size: 36px 36px;
   }
 
-  .animate-float-slow {
-    animation: alo-float 6s ease-in-out infinite;
-  }
-  .animate-float-slower {
-    animation: alo-float 8s ease-in-out infinite;
-  }
+  /* Floating animations */
+  .animate-float-slow { animation: alo-float 6s ease-in-out infinite; }
+  .animate-float-slower { animation: alo-float 8s ease-in-out infinite; }
   @keyframes alo-float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-12px); }
   }
 
-  .animate-marquee {
-    animation: alo-marquee 32s linear infinite;
-  }
+  /* Marquee */
+  .animate-marquee { animation: alo-marquee 36s linear infinite; }
+  .animate-marquee-rev { animation: alo-marquee-rev 40s linear infinite; }
   @keyframes alo-marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
+  @keyframes alo-marquee-rev {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+  }
 
-  /* Custom scrollbar for lists */
+  /* Fade-up entrance */
+  .animate-fade-up { animation: alo-fade-up 0.6s ease-out both; }
+  @keyframes alo-fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Graduation cap drift animations (footer strip) */
+  .cap-drift-1 { animation: cap-drift 22s linear infinite, cap-float 5s ease-in-out infinite, cap-rot 8s ease-in-out infinite; }
+  .cap-drift-2 { animation: cap-drift 28s linear infinite, cap-float 6s ease-in-out infinite, cap-rot 10s ease-in-out infinite; }
+  .cap-drift-3 { animation: cap-drift 34s linear infinite, cap-float 7s ease-in-out infinite, cap-rot 12s ease-in-out infinite; }
+  @keyframes cap-drift {
+    from { transform: translateX(-10vw); }
+    to { transform: translateX(110vw); }
+  }
+  @keyframes cap-float {
+    0%, 100% { margin-top: 0; }
+    50% { margin-top: -8px; }
+  }
+  @keyframes cap-rot {
+    0%, 100% { rotate: -4deg; }
+    50% { rotate: 5deg; }
+  }
+
+  /* Custom scrollbar */
   .alo-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
   .alo-scroll::-webkit-scrollbar-track { background: transparent; }
   .alo-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
   .alo-scroll::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+  /* Status pills */
+  .pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
 }
