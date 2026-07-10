@@ -12,16 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PortalLayout } from "./student-portal";
 import { ADMIN_KPIS, ADMIN_STUDENTS, ADMIN_VOUCHERS, ADMIN_CRM_SYNC, ADMIN_AUDIT, ADMIN_PIPELINE, EXAMINER_QUEUE, EXAMINER_PERFORMANCE, AMBASSADOR_KPIS, AMBASSADOR_REFERRALS, AMBASSADOR_MARKETING_KIT, type Role } from "@/lib/platform-data";
+import { AI_AGENTS, AGENT_STATS, AGENT_APPROVAL_QUEUE, AGENT_RECENT_LOGS, type AiAgent } from "@/lib/agent-data";
 
 /* ============== ADMIN PORTAL ============== */
 export function AdminPortal({ onExit }: { onExit: () => void }) {
   const [page, setPage] = useState("dashboard");
-  const nav = [{ group: "Command", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard }, { id: "students", label: "Students", icon: Users }, { id: "questions", label: "Question Bank", icon: BookOpen }, { id: "vouchers", label: "Vouchers", icon: Gift }, { id: "crm", label: "CRM Sync", icon: RefreshCw }, { id: "audit", label: "Audit Logs", icon: ShieldCheck }, { id: "reports", label: "Reports", icon: BarChart3 }, { id: "settings", label: "Settings", icon: Settings }] }];
+  const nav = [{ group: "Command", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard }, { id: "students", label: "Students", icon: Users }, { id: "questions", label: "Question Bank", icon: BookOpen }, { id: "agents", label: "AI Agent Employees", icon: Sparkles }, { id: "vouchers", label: "Vouchers", icon: Gift }, { id: "crm", label: "CRM Sync", icon: RefreshCw }, { id: "audit", label: "Audit Logs", icon: ShieldCheck }, { id: "reports", label: "Reports", icon: BarChart3 }, { id: "settings", label: "Settings", icon: Settings }] }];
   return (
     <PortalLayout role="ADMIN" userName="Super Admin" userMeta="Admin · SUPER_ADMIN" accent="bg-alo-navy" nav={nav} activePage={page} setPage={setPage} onExit={onExit}>
       {page === "dashboard" && <AdminDashboard />}
       {page === "students" && <AdminStudents />}
       {page === "questions" && <AdminQuestions />}
+      {page === "agents" && <AdminAiAgents />}
       {page === "vouchers" && <AdminVouchers />}
       {page === "crm" && <AdminCrm />}
       {page === "audit" && <AdminAudit />}
@@ -303,6 +305,155 @@ function AdminSettings() {
               <div className={cn("h-5 w-9 rounded-full p-0.5", s.on ? "bg-alo-success" : "bg-slate-300")}><div className={cn("h-4 w-4 rounded-full bg-white", s.on && "translate-x-4")} /></div>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============== ADMIN AI AGENT EMPLOYEES ============== */
+function AdminAiAgents() {
+  const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
+  const agent = AI_AGENTS.find((a) => a.id === selectedAgent);
+  if (agent) return <AgentDetail agent={agent} onBack={() => setSelectedAgent(null)} />;
+  return (
+    <div>
+      <PageHeader title="AI Agent Employees" subtitle="Internal operations layer — 20 automated agents operate all 32 exam types. NOT visible to students." action={<span className="rounded-full bg-alo-soft-blue px-2.5 py-1 text-[11px] font-bold text-alo-blue">20 Active Agents</span>} />
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+        {[
+          { l: "Active Agents", v: AGENT_STATS.activeAgents, c: "blue" },
+          { l: "Tasks Today", v: AGENT_STATS.tasksToday.toLocaleString(), c: "orange" },
+          { l: "Failed Tasks", v: AGENT_STATS.failedTasks, c: "warning" },
+          { l: "Pending Approvals", v: AGENT_STATS.pendingApprovals, c: "orange" },
+          { l: "Avg Success Rate", v: `${AGENT_STATS.avgSuccessRate}%`, c: "blue" },
+        ].map((k) => (
+          <div key={k.l} className="rounded-2xl border border-alo-card bg-white p-4 alo-shadow-sm">
+            <div className={cn("text-2xl font-extrabold", k.c === "orange" ? "text-alo-orange" : k.c === "warning" ? "text-alo-warning" : "text-alo-blue")}>{k.v}</div>
+            <div className="text-xs text-alo-faint">{k.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Task breakdown */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
+        {[
+          { l: "Scoring", v: AGENT_STATS.scoringTasks }, { l: "Speaking", v: AGENT_STATS.speakingTasks },
+          { l: "Writing", v: AGENT_STATS.writingTasks }, { l: "Reports", v: AGENT_STATS.reportTasks },
+          { l: "Weekly Update", v: AGENT_STATS.weeklyUpdateTasks }, { l: "Compliance Warnings", v: AGENT_STATS.complianceWarnings },
+        ].map((t) => (
+          <div key={t.l} className="rounded-xl border border-alo-card bg-white p-3 alo-shadow-sm text-center">
+            <div className="text-xl font-extrabold text-alo-navy">{t.v}</div>
+            <div className="text-[10px] text-alo-faint">{t.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Approval queue */}
+      <div className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-bold text-alo-navy">Approval Queue</div>
+          <span className="rounded-full bg-alo-soft-orange px-2.5 py-1 text-[11px] font-bold text-alo-orange">{AGENT_APPROVAL_QUEUE.length} pending</span>
+        </div>
+        <div className="space-y-2">
+          {AGENT_APPROVAL_QUEUE.map((a) => (
+            <div key={a.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-alo-soft-blue text-alo-blue"><Sparkles className="h-4 w-4" /></div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-alo-navy">{a.agent}</div>
+                <div className="text-[11px] text-alo-faint">{a.type} · {a.detail}</div>
+              </div>
+              <span className="hidden sm:inline text-[10px] text-alo-faint">{a.requestedAt}</span>
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", a.priority === "high" ? "bg-red-50 text-alo-danger" : "bg-slate-100 text-alo-faint")}>{a.priority}</span>
+              <div className="flex gap-1">
+                <button className="grid h-7 w-7 place-items-center rounded-lg bg-alo-success text-white"><Check className="h-3.5 w-3.5" /></button>
+                <button className="grid h-7 w-7 place-items-center rounded-lg bg-alo-danger text-white"><X className="h-3.5 w-3.5" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Agent grid */}
+      <div className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm mb-5">
+        <div className="text-sm font-bold text-alo-navy mb-3">All 20 Agent Employees</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {AI_AGENTS.map((a) => (
+            <button key={a.id} onClick={() => setSelectedAgent(a.id)} className="text-left rounded-xl border border-slate-200 p-3.5 hover:alo-shadow-lg hover:border-alo-blue/40 transition-all">
+              <div className="flex items-start justify-between">
+                <div className="grid h-9 w-9 place-items-center rounded-lg bg-alo-navy text-white"><Sparkles className="h-4 w-4" /></div>
+                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", a.isActive ? "bg-emerald-50 text-alo-success" : "bg-slate-200 text-alo-faint")}>{a.isActive ? "active" : "inactive"}</span>
+              </div>
+              <div className="mt-2 text-sm font-bold text-alo-navy">{a.internalLabel}</div>
+              <div className="text-[10px] font-mono text-alo-faint">{a.agentCode}</div>
+              <div className="text-[11px] text-alo-faint mt-1 line-clamp-2">{a.responsibility}</div>
+              <div className="mt-2 flex items-center gap-2 text-[10px]">
+                <span className="rounded bg-alo-soft-blue px-1.5 py-0.5 font-semibold text-alo-blue">{a.department}</span>
+                <span className="text-alo-faint">{a.tasksToday} tasks today</span>
+                <span className={cn("font-bold", a.successRate >= 95 ? "text-alo-success" : "text-alo-warning")}>{a.successRate}%</span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-1.5 text-[9px]">
+                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-alo-faint">Public: {a.publicLabel}</span>
+                {a.requiresAdminApproval && <span className="rounded bg-alo-soft-orange px-1.5 py-0.5 text-alo-orange">Approval req.</span>}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent logs */}
+      <div className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm">
+        <div className="text-sm font-bold text-alo-navy mb-3">Recent Agent Activity</div>
+        <div className="space-y-1.5">
+          {AGENT_RECENT_LOGS.map((l) => (
+            <div key={l.id} className="flex items-center gap-3 py-1.5 border-b border-slate-100 last:border-0">
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-alo-soft-blue text-alo-blue"><Sparkles className="h-3.5 w-3.5" /></div>
+              <div className="min-w-0 flex-1"><span className="text-xs font-semibold text-alo-navy">{l.agent}</span> <span className="text-[11px] text-alo-faint">{l.action}</span></div>
+              <span className="font-mono text-[10px] text-alo-faint">{l.entity}</span>
+              <span className="text-[10px] text-alo-faint shrink-0">{l.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-alo-blue/20 bg-alo-soft-blue p-3 flex items-start gap-2">
+        <ShieldCheck className="h-4 w-4 text-alo-blue mt-0.5 shrink-0" />
+        <p className="text-[11px] text-alo-navy"><span className="font-semibold">Compliance:</span> Students never see "AI Agent", "bot", or "robot" wording. Public-facing labels use approved terms only (ALO Practice Examiner, Digital Practice Session, Smart Score Report, etc.). Weekly Update Agent never auto-publishes — admin approval required.</p>
+      </div>
+    </div>
+  );
+}
+
+function AgentDetail({ agent, onBack }: { agent: AiAgent; onBack: () => void }) {
+  return (
+    <div>
+      <button onClick={onBack} className="text-sm font-semibold text-alo-blue hover:underline mb-4 inline-flex items-center gap-1"><ChevronRight className="h-4 w-4 rotate-180" />Back to all agents</button>
+      <div className="rounded-2xl border border-alo-card bg-white p-6 alo-shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-alo-navy text-white"><Sparkles className="h-7 w-7" /></div>
+            <div>
+              <h2 className="text-2xl font-extrabold text-alo-navy">{agent.internalLabel}</h2>
+              <div className="text-xs font-mono text-alo-faint">{agent.agentCode} · {agent.department}</div>
+            </div>
+          </div>
+          <span className={cn("rounded-full px-3 py-1 text-xs font-bold", agent.isActive ? "bg-emerald-50 text-alo-success" : "bg-slate-200 text-alo-faint")}>{agent.isActive ? "Active" : "Inactive"}</span>
+        </div>
+        <p className="mt-4 text-sm text-alo-muted leading-relaxed">{agent.responsibility}</p>
+        <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { l: "Tasks Today", v: agent.tasksToday }, { l: "Completed", v: agent.tasksCompleted },
+            { l: "Failed", v: agent.tasksFailed }, { l: "Success Rate", v: `${agent.successRate}%` },
+          ].map((k) => (
+            <div key={k.l} className="rounded-xl border border-slate-200 bg-slate-50 p-3"><div className="text-xl font-extrabold text-alo-navy">{k.v}</div><div className="text-[11px] text-alo-faint">{k.l}</div></div>
+          ))}
+        </div>
+        <div className="mt-5 grid md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-slate-200 p-4"><div className="text-[10px] font-bold uppercase tracking-wider text-alo-faint mb-1">Public Label (student-visible)</div><div className="text-sm font-bold text-alo-blue">{agent.publicLabel}</div></div>
+          <div className="rounded-xl border border-slate-200 p-4"><div className="text-[10px] font-bold uppercase tracking-wider text-alo-faint mb-1">Internal Label (admin-only)</div><div className="text-sm font-bold text-alo-navy">{agent.internalLabel}</div></div>
+          <div className="rounded-xl border border-slate-200 p-4"><div className="text-[10px] font-bold uppercase tracking-wider text-alo-faint mb-1">Can Auto-Execute</div><div className={cn("text-sm font-bold", agent.canAutoExecute ? "text-alo-success" : "text-alo-warning")}>{agent.canAutoExecute ? "Yes" : "No"}</div></div>
+          <div className="rounded-xl border border-slate-200 p-4"><div className="text-[10px] font-bold uppercase tracking-wider text-alo-faint mb-1">Requires Admin Approval</div><div className={cn("text-sm font-bold", agent.requiresAdminApproval ? "text-alo-orange" : "text-alo-success")}>{agent.requiresAdminApproval ? "Yes" : "No"}</div></div>
         </div>
       </div>
     </div>

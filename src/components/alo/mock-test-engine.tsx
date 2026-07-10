@@ -104,6 +104,7 @@ function SetupScreen({ examType, setExamType, onStart }: { examType: ExamType; s
         </div>
         <div className="mt-4 w-full max-w-sm rounded-xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-[11px] text-amber-800 leading-relaxed"><span className="font-semibold">Practice disclaimer:</span> {PRACTICE_DISCLAIMER}</p>
+          <p className="text-[11px] text-amber-800 leading-relaxed mt-1.5">Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result.</p>
         </div>
         <Button onClick={onStart} className="mt-5 h-12 px-8 rounded-xl bg-alo-orange text-white font-semibold hover:bg-[#cc3f10]"><Play className="mr-2 h-4 w-4" />Start Practice ({count || 8} Qs)</Button>
       </div>
