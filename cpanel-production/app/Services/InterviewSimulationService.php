@@ -17,8 +17,22 @@
  *   - scoreInterview: returns a confidence score (0–100), a risk level
  *     (low / medium / high), and structured feedback
  *
+ * NO-HUMAN PRACTICE EXAM MODE (Task ID: NO-HUMAN):
+ *   - scoreInterview() returns the no-human-mode keys:
+ *     credibility_risk_level, financial_explanation_quality,
+ *     course_knowledge_quality, career_plan_consistency,
+ *     follow_up_question_suggestions, improvement_tips,
+ *     confidence_level, provider_used, disclaimer.
+ *   - Every task row is stamped with provider_used, fallback_used,
+ *     confidence_score, auto_completed=1, requires_human=0.
+ *
  * All wording is practice-focused. The disclaimer appears on every output.
- * External LLM AI is OPTIONAL and DISABLED by default per .env.
+ * External LLM AI is OPTIONAL and DISABLED by default per env.
+ *
+ * COMPLIANCE: Never claims to be a "real examiner", "official examiner",
+ * "AI teacher", "bot", "real interviewer", or to produce an "official
+ * assessment". External AI is OPTIONAL; local_rule_engine always works
+ * without any API key.
  *
  * PHP 8.2+.
  */
@@ -50,6 +64,9 @@ final class InterviewSimulationService
 
     /** Max questions per session before scoring is forced. */
     public const MAX_QUESTIONS = 8;
+
+    /** Short practice-only disclaimer (NO-HUMAN mode spec). */
+    public const PRACTICE_DISCLAIMER = 'Practice only. Not an official interview assessment.';
 
     /**
      * Start a new practice interview session.
@@ -183,14 +200,30 @@ final class InterviewSimulationService
     }
 
     /**
-     * Score the interview session: confidence (0–100), risk_level
-     * (low / medium / high), and structured feedback.
+     * Score the interview session.
+     *
+     * Returns the legacy fields plus the no-human-mode keys:
+     *   - credibility_risk_level (low / medium / high)
+     *   - financial_explanation_quality (0–100)
+     *   - course_knowledge_quality (0–100)
+     *   - career_plan_consistency (0–100)
+     *   - follow_up_question_suggestions (string[])
+     *   - improvement_tips (string[])
+     *   - confidence_level (high / medium / low)
+     *   - provider_used (string)
+     *   - disclaimer ("Practice only. Not an official interview assessment.")
      *
      * @return array{
      *   session_token:string, interview_type:string, questions_asked:int,
-     *   confidence:int, risk_level:string, feedback:array<int,string>,
+     *   confidence:int, risk_level:string, credibility_risk_level:string,
+     *   financial_explanation_quality:int, course_knowledge_quality:int,
+     *   career_plan_consistency:int,
+     *   follow_up_question_suggestions:array<int,string>,
+     *   feedback:array<int,string>, improvement_tips:array<int,string>,
      *   strengths:array<int,string>, weaknesses:array<int,string>,
-     *   disclaimer:string
+     *   is_estimated:bool, confidence_level:string, confidence_score:float,
+     *   provider_used:string, fallback_used:bool,
+     *   disclaimer:string, disclaimer_full:string
      * }
      */
     public static function scoreInterview(string $sessionToken): array
@@ -203,20 +236,65 @@ final class InterviewSimulationService
                 'questions_asked'=> 0,
                 'confidence'     => 0,
                 'risk_level'     => 'high',
+                'credibility_risk_level' => 'high',
+                'financial_explanation_quality' => 0,
+                'course_knowledge_quality'      => 0,
+                'career_plan_consistency'       => 0,
+                'follow_up_question_suggestions' => [],
                 'feedback'       => ['Session not found. Please start a new interview.'],
+                'improvement_tips' => ['Session not found. Please start a new interview.'],
                 'strengths'      => [],
                 'weaknesses'     => ['No responses recorded.'],
-                'disclaimer'     => SmartScoreReportService::getDisclaimer(),
+                'is_estimated'   => true,
+                'confidence_level' => 'low',
+                'confidence_score' => 0.20,
+                'provider_used'  => 'local_rule_engine',
+                'fallback_used'  => false,
+                'disclaimer'     => self::PRACTICE_DISCLAIMER,
+                'disclaimer_full'=> SmartScoreReportService::getDisclaimer(),
             ];
         }
+
+        // ----- No-Human mode: provider resolution -----
+        [$providerUsed, $fallbackUsed] = self::resolveProvider();
 
         $responses = $state['responses'];
         $questionsAsked = count($state['questions']);
         $confidence = self::scoreConfidence($responses);
         $riskLevel = self::riskLevelFromConfidence($confidence);
 
+        // ----- No-Human mode: domain dimension scores (0–100) -----
+        $financialQuality = self::scoreFinancialExplanation($responses);
+        $courseQuality    = self::scoreCourseKnowledge($responses);
+        $careerConsistency= self::scoreCareerPlanConsistency($responses);
+
         [$strengths, $weaknesses] = self::strengthsWeaknesses($responses, $state['interview_type']);
         $feedback = self::buildFeedback($state['interview_type'], $confidence, $weaknesses);
+        $improvementTips = self::buildImprovementTips($weaknesses);
+        $followUpSuggestions = self::buildFollowUpSuggestions($state['interview_type'], $weaknesses);
+
+        // ----- Optional external AI enhancement hook -----
+        if (self::isOptionalAiProvider($providerUsed)) {
+            if (!self::hasAiApiKey()) {
+                $providerUsed = 'local_rule_engine';
+                $fallbackUsed = true;
+            } else {
+                // @codeCoverageIgnoreStart
+                // PLACEHOLDER: actual external AI API call goes here to
+                // refine follow-up suggestions and domain scores. Until
+                // the external client is wired, fall back so the platform
+                // never depends on an external API.
+                $providerUsed = 'local_rule_engine';
+                $fallbackUsed = true;
+                // @codeCoverageIgnoreEnd
+            }
+        }
+
+        // ----- No-Human mode: confidence scoring (0.00–1.00) -----
+        $confidenceScore = self::computeConfidenceScore(
+            $confidence, $financialQuality, $courseQuality, $careerConsistency, $questionsAsked
+        );
+        $confidenceLevel = self::confidenceLevelFromScore($confidenceScore);
 
         $result = [
             'session_token'  => $sessionToken,
@@ -224,27 +302,251 @@ final class InterviewSimulationService
             'questions_asked'=> $questionsAsked,
             'confidence'     => $confidence,
             'risk_level'     => $riskLevel,
+            'credibility_risk_level' => $riskLevel, // alias for no-human mode
+            'financial_explanation_quality' => $financialQuality,
+            'course_knowledge_quality'      => $courseQuality,
+            'career_plan_consistency'       => $careerConsistency,
+            'follow_up_question_suggestions' => $followUpSuggestions,
             'feedback'       => $feedback,
+            'improvement_tips' => $improvementTips,
             'strengths'      => $strengths,
             'weaknesses'     => $weaknesses,
             'is_estimated'   => true,
-            'disclaimer'     => SmartScoreReportService::getDisclaimer(),
+            'confidence_level' => $confidenceLevel,
+            'confidence_score' => $confidenceScore,
+            'provider_used'  => $providerUsed,
+            'fallback_used'  => $fallbackUsed,
+            'disclaimer'     => self::PRACTICE_DISCLAIMER,
+            'disclaimer_full'=> SmartScoreReportService::getDisclaimer(),
         ];
 
-        // Complete the AGENT-INTERVIEW-01 task and persist the score.
+        // Complete the AGENT-INTERVIEW-01 task and stamp the no-human-mode
+        // provenance columns on the task row.
         if (!empty($state['task_id'])) {
             AiAgentEmployeeService::completeTask((int) $state['task_id'], $result);
+            self::stampNoHumanTaskColumns(
+                (int) $state['task_id'], $providerUsed, $fallbackUsed, $confidenceScore
+            );
         }
         self::deleteSession($sessionToken);
 
         AuditService::log(null, 'interview.scored', 'student', (int) $state['student_id'], [
-            'interview_type' => $state['interview_type'],
-            'confidence'     => $confidence,
-            'risk_level'     => $riskLevel,
-            'questions_asked'=> $questionsAsked,
+            'interview_type'  => $state['interview_type'],
+            'confidence'      => $confidence,
+            'risk_level'      => $riskLevel,
+            'questions_asked' => $questionsAsked,
+            'method'          => $providerUsed,
+            'fallback_used'   => $fallbackUsed,
+            'confidence_level'=> $confidenceLevel,
         ]);
 
         return $result;
+    }
+
+    // ---------- No-Human mode helpers ----------
+
+    /**
+     * Resolve the active evaluation provider + initial fallback flag from env.
+     * @return array{0:string,1:bool}
+     */
+    private static function resolveProvider(): array
+    {
+        $mode = strtolower((string) (getenv('EVALUATION_MODE') ?: 'automated'));
+        if ($mode !== 'automated') {
+            return ['local_rule_engine', false];
+        }
+        $provider = strtolower((string) (getenv('EVALUATION_PROVIDER') ?: 'local_rule_engine'));
+        $allowed = ['local_rule_engine', 'local_llm_optional', 'external_ai_optional'];
+        if (!in_array($provider, $allowed, true)) {
+            $provider = 'local_rule_engine';
+        }
+        return [$provider, false];
+    }
+
+    private static function isOptionalAiProvider(string $provider): bool
+    {
+        return $provider === 'local_llm_optional' || $provider === 'external_ai_optional';
+    }
+
+    private static function hasAiApiKey(): bool
+    {
+        foreach (['OPENROUTER_API_KEY', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'HUGGINGFACE_API_KEY'] as $k) {
+            $v = (string) (getenv($k) ?: '');
+            if ($v !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Score the financial-explanation quality (0–100) based on keyword
+     * coverage of sponsor / funds / fees / evidence / bank statements.
+     *
+     * @param string[] $responses
+     */
+    private static function scoreFinancialExplanation(array $responses): int
+    {
+        if ($responses === []) {
+            return 0;
+        }
+        $lower = ' ' . strtolower(implode(' ', $responses)) . ' ';
+        $keywords = [
+            'sponsor', 'funds', 'funded', 'finance', 'fees', 'tuition',
+            'bank statement', 'bank account', 'savings', 'loan', 'scholarship',
+            'evidence', 'documents', 'proof', 'income', 'parent', 'family',
+        ];
+        $hits = 0;
+        foreach ($keywords as $k) {
+            if (str_contains($lower, ' ' . $k . ' ') || str_contains($lower, ' ' . $k . ',') || str_contains($lower, ' ' . $k . '.')) {
+                $hits++;
+            }
+        }
+        return (int) max(0, min(100, 30 + $hits * 10));
+    }
+
+    /**
+     * Score course-knowledge quality (0–100) based on keyword coverage of
+     * module / subject / topic / course / programme / research interest.
+     *
+     * @param string[] $responses
+     */
+    private static function scoreCourseKnowledge(array $responses): int
+    {
+        if ($responses === []) {
+            return 0;
+        }
+        $lower = ' ' . strtolower(implode(' ', $responses)) . ' ';
+        $keywords = [
+            'module', 'subject', 'topic', 'course', 'programme', 'program',
+            'curriculum', 'syllabus', 'research', 'specialise', 'specialize',
+            'module', 'faculty', 'professor', 'dissertation', 'thesis',
+            'career', 'industry', 'market', 'ranking', 'reputation',
+        ];
+        $hits = 0;
+        foreach ($keywords as $k) {
+            if (str_contains($lower, ' ' . $k . ' ') || str_contains($lower, ' ' . $k . ',') || str_contains($lower, ' ' . $k . '.')) {
+                $hits++;
+            }
+        }
+        return (int) max(0, min(100, 25 + $hits * 9));
+    }
+
+    /**
+     * Score career-plan consistency (0–100) based on return-home / future
+     * / career goal keyword coverage.
+     *
+     * @param string[] $responses
+     */
+    private static function scoreCareerPlanConsistency(array $responses): int
+    {
+        if ($responses === []) {
+            return 0;
+        }
+        $lower = ' ' . strtolower(implode(' ', $responses)) . ' ';
+        $keywords = [
+            'return home', 'home country', 'go back', 'come back',
+            'future', 'plan', 'goal', 'career', 'work as', 'become',
+            'aim to', 'intend to', 'long-term', 'five year', '5 year',
+            'apply', 'job', 'position', 'company',
+        ];
+        $hits = 0;
+        foreach ($keywords as $k) {
+            if (str_contains($lower, ' ' . $k . ' ') || str_contains($lower, ' ' . $k . ',') || str_contains($lower, ' ' . $k . '.')) {
+                $hits++;
+            }
+        }
+        return (int) max(0, min(100, 25 + $hits * 9));
+    }
+
+    /**
+     * @param string[] $weaknesses
+     * @return string[]
+     */
+    private static function buildImprovementTips(array $weaknesses): array
+    {
+        $tips = [];
+        foreach ($weaknesses as $w) {
+            $tips[] = 'Improvement tip: ' . $w;
+        }
+        if ($tips === []) {
+            $tips[] = 'Continue timed mock interviews to refine pacing and clarity.';
+        }
+        $tips[] = 'Remember: this is a practice estimate, not an official interview assessment.';
+        return $tips;
+    }
+
+    /**
+     * @param string[] $weaknesses
+     * @return string[]
+     */
+    private static function buildFollowUpSuggestions(string $interviewType, array $weaknesses): array
+    {
+        $suggestions = [];
+        foreach ($weaknesses as $w) {
+            $suggestions[] = 'Follow-up to rehearse: ' . $w;
+        }
+        $bank = self::followUpBank($interviewType);
+        foreach ($bank as $q) {
+            if (count($suggestions) >= 5) {
+                break;
+            }
+            $suggestions[] = $q;
+        }
+        return array_slice($suggestions, 0, 5);
+    }
+
+    /**
+     * Compute a 0.00–1.00 confidence score from the rule-based signals.
+     *
+     * @param int $confidence       0–100 overall confidence
+     * @param int $financialQuality 0–100
+     * @param int $courseQuality    0–100
+     * @param int $careerConsistency 0–100
+     * @param int $questionsAsked   number of questions completed
+     */
+    private static function computeConfidenceScore(
+        int $confidence, int $financialQuality, int $courseQuality,
+        int $careerConsistency, int $questionsAsked
+    ): float {
+        if ($questionsAsked === 0) {
+            return 0.20;
+        }
+        $domainAvg = ($financialQuality + $courseQuality + $careerConsistency) / 3.0 / 100.0;
+        $confScore = $confidence / 100.0;
+        $coverage  = min(1.0, $questionsAsked / self::MAX_QUESTIONS);
+        // Weight: 40% overall confidence, 40% domain quality, 20% coverage.
+        $score = ($confScore * 0.4) + ($domainAvg * 0.4) + ($coverage * 0.2);
+        return round(max(0.0, min(1.0, $score)), 2);
+    }
+
+    private static function confidenceLevelFromScore(float $score): string
+    {
+        $low = (float) (getenv('LOW_CONFIDENCE_THRESHOLD') ?: '0.60');
+        $med = (float) (getenv('MEDIUM_CONFIDENCE_THRESHOLD') ?: '0.80');
+        if ($score >= $med) {
+            return 'high';
+        }
+        if ($score >= $low) {
+            return 'medium';
+        }
+        return 'low';
+    }
+
+    private static function stampNoHumanTaskColumns(int $taskId, string $providerUsed, bool $fallbackUsed, float $confidenceScore): void
+    {
+        try {
+            Database::update('exam_ai_agent_tasks', [
+                'provider_used'     => $providerUsed,
+                'fallback_used'     => $fallbackUsed ? 1 : 0,
+                'confidence_score'  => number_format($confidenceScore, 2, '.', ''),
+                'auto_completed'    => 1,
+                'requires_human'    => 0,
+                'updated_at'        => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $taskId]);
+        } catch (\Throwable $e) {
+            @error_log('[interview_eval] stamp no-human cols failed: ' . $e->getMessage());
+        }
     }
 
     // ---------- Question banks (rule-based, original content) ----------
@@ -569,15 +871,17 @@ final class InterviewSimulationService
     // ----------------------------------------------------------------------
     // EXTERNAL AI HOOK (optional, disabled by default)
     // ----------------------------------------------------------------------
-    // When AI_ENABLED=true AND an API key is configured in config/exams.php,
-    // an optional enhancement can be plugged in to generate more natural
-    // follow-up questions and a richer confidence estimate via an external
-    // LLM call. The signature would be:
+    // When EVALUATION_PROVIDER=local_llm_optional|external_ai_optional AND
+    // an API key is configured in env, an optional enhancement can be
+    // plugged in to generate more natural follow-up questions and a richer
+    // confidence estimate via an external LLM call. The signature would be:
     //
     //   private static function enhanceFollowUpWithExternalAi(string $type, string $lastResponse, array $history): ?array
     //
     // It should fall back to the rule-based pickFollowUp() above on any
     // error or timeout, never claim to be a real examiner, and always
-    // append the practice-only disclaimer.
+    // append the practice-only disclaimer. Until that hook is implemented,
+    // scoreInterview() detects the optional provider, falls back to
+    // local_rule_engine, and sets fallback_used=true.
     // ----------------------------------------------------------------------
 }

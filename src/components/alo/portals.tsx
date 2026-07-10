@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PortalLayout } from "./student-portal";
 import { ADMIN_KPIS, ADMIN_STUDENTS, ADMIN_VOUCHERS, ADMIN_CRM_SYNC, ADMIN_AUDIT, ADMIN_PIPELINE, EXAMINER_QUEUE, EXAMINER_PERFORMANCE, AMBASSADOR_KPIS, AMBASSADOR_REFERRALS, AMBASSADOR_MARKETING_KIT, type Role } from "@/lib/platform-data";
-import { AI_AGENTS, AGENT_STATS, AGENT_APPROVAL_QUEUE, AGENT_RECENT_LOGS, type AiAgent } from "@/lib/agent-data";
+import { AI_AGENTS, AGENT_STATS, AGENT_APPROVAL_QUEUE, AGENT_RECENT_LOGS, NO_HUMAN_MODE_STATS, NO_HUMAN_CONFIDENCE_LOGIC, NO_HUMAN_REVIEW_QUEUE, EVALUATION_PROVIDERS, type AiAgent } from "@/lib/agent-data";
 
 /* ============== ADMIN PORTAL ============== */
 export function AdminPortal({ onExit }: { onExit: () => void }) {
@@ -314,11 +314,148 @@ function AdminSettings() {
 /* ============== ADMIN AI AGENT EMPLOYEES ============== */
 function AdminAiAgents() {
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
+  const [tab, setTab] = useState<"agents" | "no-human">("agents");
   const agent = AI_AGENTS.find((a) => a.id === selectedAgent);
   if (agent) return <AgentDetail agent={agent} onBack={() => setSelectedAgent(null)} />;
   return (
     <div>
       <PageHeader title="AI Agent Employees" subtitle="Internal operations layer — 20 automated agents operate all 32 exam types. NOT visible to students." action={<span className="rounded-full bg-alo-soft-blue px-2.5 py-1 text-[11px] font-bold text-alo-blue">20 Active Agents</span>} />
+      {/* Tabs */}
+      <div className="flex gap-2 mb-5">
+        <button onClick={() => setTab("agents")} className={cn("rounded-xl border px-4 py-2 text-sm font-semibold transition-all", tab === "agents" ? "border-transparent bg-alo-navy text-white" : "border-slate-200 bg-white text-alo-navy hover:bg-alo-soft-blue")}>Agent Workforce</button>
+        <button onClick={() => setTab("no-human")} className={cn("rounded-xl border px-4 py-2 text-sm font-semibold transition-all", tab === "no-human" ? "border-transparent bg-alo-navy text-white" : "border-slate-200 bg-white text-alo-navy hover:bg-alo-soft-blue")}>No-Human Exam Mode</button>
+      </div>
+      {tab === "agents" && <AgentWorkforceTab setSelectedAgent={setSelectedAgent} />}
+      {tab === "no-human" && <NoHumanModeTab />}
+    </div>
+  );
+}
+
+function NoHumanModeTab() {
+  return (
+    <div>
+      {/* Mode status banner */}
+      <div className={cn("rounded-2xl border-2 p-5 mb-5", NO_HUMAN_MODE_STATS.enabled ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-slate-50")}>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cn("grid h-12 w-12 place-items-center rounded-2xl text-white", NO_HUMAN_MODE_STATS.enabled ? "bg-alo-success" : "bg-slate-400")}><Sparkles className="h-6 w-6" /></div>
+            <div>
+              <div className="text-lg font-extrabold text-alo-navy">No-Human Practice Exam Mode: {NO_HUMAN_MODE_STATS.enabled ? "ENABLED" : "DISABLED"}</div>
+              <div className="text-xs text-alo-muted">All 32 exam types can run end-to-end without human staff. Evaluation: <span className="font-semibold">{NO_HUMAN_MODE_STATS.evaluationMode}</span> · Provider: <span className="font-semibold">{NO_HUMAN_MODE_STATS.evaluationProvider}</span></div>
+            </div>
+          </div>
+          <Button className="h-9 rounded-xl bg-alo-navy text-white text-xs hover:bg-alo-blue">Toggle Mode</Button>
+        </div>
+        <p className="mt-3 text-[11px] text-alo-muted">Students always receive their Smart Score Report automatically. Human review is <span className="font-semibold">optional</span> ("Optional ALO Academic Team Review"), never blocking.</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        {[
+          { l: "Automated attempts today", v: NO_HUMAN_MODE_STATS.automatedAttemptsToday, c: "blue" },
+          { l: "Writing auto-evals", v: NO_HUMAN_MODE_STATS.writingAutoEvals, c: "orange" },
+          { l: "Speaking auto-evals", v: NO_HUMAN_MODE_STATS.speakingAutoEvals, c: "blue" },
+          { l: "Interview auto-evals", v: NO_HUMAN_MODE_STATS.interviewAutoEvals, c: "orange" },
+          { l: "Low-confidence attempts", v: NO_HUMAN_MODE_STATS.lowConfidenceAttempts, c: "warning" },
+          { l: "Optional review queue", v: NO_HUMAN_MODE_STATS.optionalReviewQueue, c: "orange" },
+          { l: "Failed agent tasks", v: NO_HUMAN_MODE_STATS.failedAgentTasks, c: "danger" },
+          { l: "Fallback engine used", v: NO_HUMAN_MODE_STATS.fallbackEngineUsed, c: "blue" },
+        ].map((k) => (
+          <div key={k.l} className="rounded-2xl border border-alo-card bg-white p-4 alo-shadow-sm">
+            <div className={cn("text-2xl font-extrabold", k.c === "orange" ? "text-alo-orange" : k.c === "warning" ? "text-alo-warning" : k.c === "danger" ? "text-alo-danger" : "text-alo-blue")}>{k.v}</div>
+            <div className="text-xs text-alo-faint">{k.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Confidence distribution */}
+      <div className="grid lg:grid-cols-2 gap-4 mb-5">
+        <div className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm">
+          <div className="text-sm font-bold text-alo-navy mb-3">Confidence Distribution (today)</div>
+          <div className="space-y-3">
+            {[
+              { l: "High (≥ 0.80)", v: NO_HUMAN_MODE_STATS.highConfidence, c: "bg-alo-success", pct: 76 },
+              { l: "Medium (0.60–0.79)", v: NO_HUMAN_MODE_STATS.mediumConfidence, c: "bg-alo-warning", pct: 18 },
+              { l: "Low (< 0.60)", v: NO_HUMAN_MODE_STATS.lowConfidence, c: "bg-alo-danger", pct: 5 },
+            ].map((c) => (
+              <div key={c.l}>
+                <div className="flex items-center justify-between text-xs mb-1"><span className="font-semibold text-alo-navy">{c.l}</span><span className="font-bold text-alo-navy">{c.v}</span></div>
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className={cn("h-full rounded-full", c.c)} style={{ width: `${c.pct}%` }} /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm">
+          <div className="text-sm font-bold text-alo-navy mb-3">Confidence → Action Logic</div>
+          <div className="space-y-2.5">
+            {NO_HUMAN_CONFIDENCE_LOGIC.map((l) => (
+              <div key={l.level} className="flex items-start gap-2.5 rounded-lg border border-slate-200 p-2.5">
+                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shrink-0", l.color === "emerald" ? "bg-emerald-50 text-alo-success" : l.color === "amber" ? "bg-amber-50 text-alo-warning" : "bg-red-50 text-alo-danger")}>{l.level}</span>
+                <div className="min-w-0"><div className="text-xs font-bold text-alo-navy">{l.action}</div><div className="text-[11px] text-alo-faint">Threshold: {l.threshold} · Review: {l.review}</div></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Optional review queue */}
+      <div className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-bold text-alo-navy">Optional ALO Academic Team Review Queue</div>
+          <span className="rounded-full bg-alo-soft-orange px-2.5 py-1 text-[11px] font-bold text-alo-orange">{NO_HUMAN_REVIEW_QUEUE.length} optional</span>
+        </div>
+        <p className="text-[11px] text-alo-faint mb-3">These attempts received automated reports already. Review is optional — students are never blocked.</p>
+        <div className="space-y-2">
+          {NO_HUMAN_REVIEW_QUEUE.map((r) => (
+            <div key={r.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5">
+              <div className={cn("grid h-9 w-9 place-items-center rounded-lg text-white text-xs font-bold", r.level === "low" ? "bg-alo-danger" : "bg-alo-warning")}>{Math.round(r.confidence * 100)}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-alo-navy">{r.student} · {r.exam}</div>
+                <div className="text-[11px] text-alo-faint">{r.attempt} · {r.reason}</div>
+              </div>
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", r.level === "low" ? "bg-red-50 text-alo-danger" : "bg-amber-50 text-alo-warning")}>{r.level} confidence</span>
+              <Button variant="outline" size="sm" className="h-7 rounded-lg text-xs border-alo-blue/30 text-alo-blue">Assign reviewer</Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Evaluation providers */}
+      <div className="rounded-2xl border border-alo-card bg-white p-5 alo-shadow-sm mb-5">
+        <div className="text-sm font-bold text-alo-navy mb-3">Evaluation Provider Status</div>
+        <div className="grid md:grid-cols-3 gap-3">
+          {EVALUATION_PROVIDERS.map((p) => (
+            <div key={p.id} className={cn("rounded-xl border-2 p-4", NO_HUMAN_MODE_STATS.evaluationProvider === p.id ? "border-alo-blue bg-alo-soft-blue" : "border-slate-200")}>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-alo-navy">{p.label}</span>
+                {p.recommended && <span className="rounded-full bg-alo-success px-2 py-0.5 text-[9px] font-bold text-white">DEFAULT</span>}
+              </div>
+              <p className="mt-1 text-[11px] text-alo-faint leading-relaxed">{p.desc}</p>
+              <div className="mt-2 flex items-center gap-2 text-[10px]">
+                <span className={cn("rounded px-1.5 py-0.5 font-bold", p.requiresKey ? "bg-amber-50 text-alo-warning" : "bg-emerald-50 text-alo-success")}>{p.requiresKey ? "Key required" : "No key needed"}</span>
+                {NO_HUMAN_MODE_STATS.evaluationProvider === p.id && <span className="rounded bg-alo-blue px-1.5 py-0.5 font-bold text-white">ACTIVE</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-alo-faint">Provider status: <span className="font-semibold text-alo-navy">{NO_HUMAN_MODE_STATS.providerStatus}</span>. If external AI key is missing, system falls back to local_rule_engine automatically (fallback_used logged).</p>
+      </div>
+
+      {/* Compliance */}
+      <div className="rounded-xl border border-alo-blue/20 bg-alo-soft-blue p-4 flex items-start gap-2">
+        <ShieldCheck className="h-4 w-4 text-alo-blue mt-0.5 shrink-0" />
+        <div>
+          <p className="text-[11px] text-alo-navy"><span className="font-semibold">No-Human Mode compliance:</span> Students always receive automated Smart Score Reports. No "Required human examiner" wording anywhere. Low-confidence cases get provisional reports + optional review recommendation — never blocked. All evaluations labeled "Practice estimate only." Disclosure text on every report.</p>
+          <p className="text-[11px] text-alo-navy mt-1.5 italic">"Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result."</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AgentWorkforceTab({ setSelectedAgent }: { setSelectedAgent: (id: number) => void }) {
+  return (
+    <div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">

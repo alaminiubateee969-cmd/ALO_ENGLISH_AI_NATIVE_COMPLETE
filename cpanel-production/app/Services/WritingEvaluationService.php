@@ -13,13 +13,20 @@
  * The result is written to `exam_writing_submissions` and a task row is
  * created for AGENT-WRITING-01 (public_label "Automated Practice Feedback").
  *
- * IMPORTANT: external LLM AI is OPTIONAL and DISABLED by default per .env
- * (AI_ENABLED=false). When enabled + an API key is configured, an optional
- * enhancement hook (`WritingEvaluationService::enhanceWithExternalAi`) can
- * be plugged in to refine the band estimate. Until then, the rule-based
- * estimate is the only source of truth. See the comment block at the bottom.
+ * NO-HUMAN PRACTICE EXAM MODE (Task ID: NO-HUMAN):
+ *   - The active evaluation provider is read from env (EVALUATION_PROVIDER).
+ *   - local_rule_engine (default) is always available with NO external API.
+ *   - local_llm_optional / external_ai_optional are used ONLY when an AI
+ *     API key is configured; otherwise the service falls back to
+ *     local_rule_engine and sets fallback_used=true.
+ *   - Every task row logs provider_used, fallback_used, confidence_score,
+ *     auto_completed=1, requires_human=0.
+ *   - Every result carries the practice-only disclaimer. The student is
+ *     NEVER blocked from seeing their report.
  *
- * Every result carries the practice-only disclaimer.
+ * COMPLIANCE: Never claims to be a "real examiner", "official examiner",
+ * "AI teacher", "bot", or to produce an "official score". External AI is
+ * OPTIONAL; local_rule_engine always works without any API key.
  *
  * PHP 8.2+.
  */
@@ -63,15 +70,22 @@ final class WritingEvaluationService
         'research', 'result', 'structure', 'theory', 'trend',
     ];
 
+    /** Short practice-only disclaimer (NO-HUMAN mode spec). */
+    public const PRACTICE_DISCLAIMER = 'Practice estimate only. Not an official exam result.';
+
     /**
      * Evaluate a writing submission.
      *
      * @param int $submissionId   exam_writing_submissions.id
      * @param int $attemptId      exam_mock_attempts.id (for agent task context)
      * @return array{
-     *   submission_id:int, word_count:int, estimated_band:float,
-     *   task_achievement:float, coherence:float, lexical:float, grammar:float,
-     *   improvement_plan:array<int,string>, disclaimer:string
+     *   submission_id:int, attempt_id:int, word_count:int, target_word_count:int,
+     *   estimated_band:float, estimated_score:float,
+     *   task_achievement:float, coherence:float, lexical:float, vocabulary:float,
+     *   grammar:float, improvement_plan:array<int,string>, suggested_improvement:string,
+     *   is_estimated:bool, confidence_level:string, confidence_score:float,
+     *   provider_used:string, fallback_used:bool,
+     *   disclaimer:string, disclaimer_full:string
      * }
      */
     public static function evaluate(int $submissionId, int $attemptId): array
@@ -87,6 +101,9 @@ final class WritingEvaluationService
         if ($sub === null) {
             return self::emptyResult($submissionId);
         }
+
+        // ----- No-Human mode: read provider config from env -----
+        [$providerUsed, $fallbackUsed] = self::resolveProvider();
 
         $text = (string) ($sub['response_text'] ?? '');
         $wordCount = self::countWords($text);
@@ -107,22 +124,64 @@ final class WritingEvaluationService
             $wordCount, $target, $taskAchievement, $coherence, $lexical, $grammar
         );
 
+        // ----- Optional external AI enhancement hook -----
+        // If an optional AI provider is configured AND an API key exists,
+        // an external enhancement call would happen here. On any failure
+        // (no key, timeout, malformed response), we fall back to the
+        // rule-based estimate above and set fallback_used=true.
+        if (self::isOptionalAiProvider($providerUsed)) {
+            if (!self::hasAiApiKey()) {
+                $providerUsed = 'local_rule_engine';
+                $fallbackUsed = true;
+            } else {
+                // @codeCoverageIgnoreStart
+                // PLACEHOLDER: actual external AI API call goes here.
+                //   $enhanced = self::enhanceWithExternalAi($text, [...]);
+                // On success: merge enhanced fields, keep provider_used as-is.
+                // On any error: fall back as below.
+                // Until the external client is wired, we fall back so the
+                // platform never depends on an external API.
+                $providerUsed = 'local_rule_engine';
+                $fallbackUsed = true;
+                // @codeCoverageIgnoreEnd
+            }
+        }
+
+        // ----- No-Human mode: confidence scoring (0.00–1.00) -----
+        $confidenceScore = self::computeConfidenceScore(
+            $wordCount, $target, $taskAchievement, $coherence, $lexical, $grammar
+        );
+        $confidenceLevel = self::confidenceLevelFromScore($confidenceScore);
+
+        $suggestedImprovement = $improvementPlan[0] ?? 'Continue practising timed writing prompts.';
+
         $result = [
-            'submission_id'     => $submissionId,
-            'attempt_id'        => $attemptId,
-            'word_count'        => $wordCount,
-            'target_word_count' => $target,
-            'estimated_band'    => $estimatedBand,
-            'task_achievement'  => $taskAchievement,
-            'coherence'         => $coherence,
-            'lexical'           => $lexical,
-            'grammar'           => $grammar,
-            'improvement_plan'  => $improvementPlan,
-            'is_estimated'      => true,
-            'disclaimer'        => SmartScoreReportService::getDisclaimer(),
+            'submission_id'       => $submissionId,
+            'attempt_id'          => $attemptId,
+            'word_count'          => $wordCount,
+            'target_word_count'   => $target,
+            'estimated_band'      => $estimatedBand,
+            'estimated_score'     => $estimatedBand, // alias for no-human mode
+            'task_achievement'    => $taskAchievement,
+            'coherence'           => $coherence,
+            'lexical'             => $lexical,
+            'vocabulary'          => $lexical,        // alias for no-human mode
+            'grammar'             => $grammar,
+            'improvement_plan'    => $improvementPlan,
+            'suggested_improvement' => $suggestedImprovement,
+            'is_estimated'        => true,
+            'confidence_level'    => $confidenceLevel,
+            'confidence_score'    => $confidenceScore,
+            'provider_used'       => $providerUsed,
+            'fallback_used'       => $fallbackUsed,
+            'disclaimer'          => self::PRACTICE_DISCLAIMER,
+            'disclaimer_full'     => SmartScoreReportService::getDisclaimer(),
         ];
 
-        // Persist scoring back to the submission row.
+        // Persist scoring back to the submission row. The base columns below
+        // exist on every install; the no-human-mode columns are added by
+        // no_human_mode_addon.sql. The no-human UPDATE is wrapped in
+        // try/catch so a legacy (pre-addon) install does not fail scoring.
         Database::update('exam_writing_submissions', [
             'task_achievement'   => $taskAchievement,
             'coherence_cohesion' => $coherence,
@@ -135,8 +194,29 @@ final class WritingEvaluationService
             'reviewed_at'        => date('Y-m-d H:i:s'),
         ], 'id = :id', ['id' => $submissionId]);
 
+        try {
+            Database::update('exam_writing_submissions', [
+                'agent_feedback_json'=> json_encode([
+                    'provider_used'     => $providerUsed,
+                    'fallback_used'     => $fallbackUsed,
+                    'confidence_level'  => $confidenceLevel,
+                    'confidence_score'  => $confidenceScore,
+                    'estimated_band'    => $estimatedBand,
+                    'disclaimer'        => self::PRACTICE_DISCLAIMER,
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'evaluation_provider'=> $providerUsed,
+                'task_score'         => number_format($taskAchievement, 1, '.', ''),
+                'coherence_score'    => number_format($coherence, 1, '.', ''),
+                'vocabulary_score'   => number_format($lexical, 1, '.', ''),
+                'grammar_score'      => number_format($grammar, 1, '.', ''),
+            ], 'id = :id', ['id' => $submissionId]);
+        } catch (\Throwable $e) {
+            @error_log('[writing_eval] stamp submission no-human cols failed: ' . $e->getMessage());
+        }
+
         // Create + complete the AGENT-WRITING-01 task (public_label:
-        // "Automated Practice Feedback").
+        // "Automated Practice Feedback"). Then stamp the no-human-mode
+        // provenance columns on the task row.
         $agent = AiAgentEmployeeService::getAgent('AGENT-WRITING-01');
         if ($agent !== null) {
             $taskId = AiAgentEmployeeService::createTask(
@@ -144,19 +224,26 @@ final class WritingEvaluationService
                 'writing_evaluation',
                 $attemptId,
                 [
-                    'submission_id' => $submissionId,
-                    'word_count'    => $wordCount,
-                    'target'        => $target,
+                    'submission_id'    => $submissionId,
+                    'word_count'       => $wordCount,
+                    'target'           => $target,
+                    'provider_used'    => $providerUsed,
+                    'fallback_used'    => $fallbackUsed,
+                    'confidence_level' => $confidenceLevel,
+                    'confidence_score' => $confidenceScore,
                 ]
             );
             AiAgentEmployeeService::completeTask($taskId, $result);
+            self::stampNoHumanTaskColumns($taskId, $providerUsed, $fallbackUsed, $confidenceScore);
         }
 
         AuditService::log(null, 'writing.evaluated', 'writing_submission', $submissionId, [
-            'attempt_id'     => $attemptId,
-            'word_count'     => $wordCount,
-            'estimated_band' => $estimatedBand,
-            'method'         => 'rule_based',
+            'attempt_id'      => $attemptId,
+            'word_count'      => $wordCount,
+            'estimated_band'  => $estimatedBand,
+            'method'          => $providerUsed,
+            'fallback_used'   => $fallbackUsed,
+            'confidence'      => $confidenceLevel,
         ]);
 
         return $result;
@@ -171,6 +258,104 @@ final class WritingEvaluationService
             ['key' => 'lexical',                 'label' => 'Lexical Resource',                'max' => 9.0],
             ['key' => 'grammar',                 'label' => 'Grammatical Range & Accuracy',    'max' => 9.0],
         ];
+    }
+
+    // ---------- No-Human mode helpers ----------
+
+    /**
+     * Resolve the active evaluation provider + initial fallback flag from env.
+     * Returns [provider, fallbackUsed].
+     *
+     * @return array{0:string,1:bool}
+     */
+    private static function resolveProvider(): array
+    {
+        $mode = strtolower((string) (getenv('EVALUATION_MODE') ?: 'automated'));
+        if ($mode !== 'automated') {
+            // human_assisted mode would still use rule-based for the baseline.
+            return ['local_rule_engine', false];
+        }
+        $provider = strtolower((string) (getenv('EVALUATION_PROVIDER') ?: 'local_rule_engine'));
+        $allowed = ['local_rule_engine', 'local_llm_optional', 'external_ai_optional'];
+        if (!in_array($provider, $allowed, true)) {
+            $provider = 'local_rule_engine';
+        }
+        return [$provider, false];
+    }
+
+    private static function isOptionalAiProvider(string $provider): bool
+    {
+        return $provider === 'local_llm_optional' || $provider === 'external_ai_optional';
+    }
+
+    /** True if ANY external AI API key is configured in env. */
+    private static function hasAiApiKey(): bool
+    {
+        foreach (['OPENROUTER_API_KEY', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'HUGGINGFACE_API_KEY'] as $k) {
+            $v = (string) (getenv($k) ?: '');
+            if ($v !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Compute a 0.00–1.00 confidence score from rule-based signals:
+     * length ratio, paragraph structure, dimension scores.
+     */
+    private static function computeConfidenceScore(
+        int $wordCount, int $target,
+        float $ta, float $co, float $le, float $gr
+    ): float {
+        if ($wordCount === 0) {
+            return 0.20;
+        }
+        $lengthRatio = min(1.0, $wordCount / max(1, $target));
+        $dimAvg = ($ta + $co + $le + $gr) / 4.0 / 9.0; // 0..1
+        // Weight: 50% dimension quality, 50% length ratio.
+        $score = ($dimAvg * 0.5) + ($lengthRatio * 0.5);
+        return round(max(0.0, min(1.0, $score)), 2);
+    }
+
+    /**
+     * Map a 0.00–1.00 confidence score to high/medium/low using the env
+     * thresholds (LOW_CONFIDENCE_THRESHOLD, MEDIUM_CONFIDENCE_THRESHOLD).
+     */
+    private static function confidenceLevelFromScore(float $score): string
+    {
+        $low = (float) (getenv('LOW_CONFIDENCE_THRESHOLD') ?: '0.60');
+        $med = (float) (getenv('MEDIUM_CONFIDENCE_THRESHOLD') ?: '0.80');
+        if ($score >= $med) {
+            return 'high';
+        }
+        if ($score >= $low) {
+            return 'medium';
+        }
+        return 'low';
+    }
+
+    /**
+     * Stamp the no-human-mode provenance columns on an exam_ai_agent_tasks
+     * row. Always sets auto_completed=1 and requires_human=0 (no-human mode
+     * never blocks the student report).
+     */
+    private static function stampNoHumanTaskColumns(int $taskId, string $providerUsed, bool $fallbackUsed, float $confidenceScore): void
+    {
+        try {
+            Database::update('exam_ai_agent_tasks', [
+                'provider_used'     => $providerUsed,
+                'fallback_used'     => $fallbackUsed ? 1 : 0,
+                'confidence_score'  => number_format($confidenceScore, 2, '.', ''),
+                'auto_completed'    => 1,
+                'requires_human'    => 0,
+                'updated_at'        => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $taskId]);
+        } catch (\Throwable $e) {
+            // The columns may not exist on legacy installs (pre-addon). Log
+            // and continue — never block the evaluation result.
+            @error_log('[writing_eval] stamp no-human cols failed: ' . $e->getMessage());
+        }
     }
 
     // ---------- Heuristics (rule-based) ----------
@@ -350,36 +535,49 @@ final class WritingEvaluationService
 
     /**
      * @return array{
-     *   submission_id:int, word_count:int, estimated_band:float,
-     *   task_achievement:float, coherence:float, lexical:float, grammar:float,
-     *   improvement_plan:array<int,string>, disclaimer:string
+     *   submission_id:int, attempt_id:int, word_count:int, target_word_count:int,
+     *   estimated_band:float, estimated_score:float,
+     *   task_achievement:float, coherence:float, lexical:float, vocabulary:float,
+     *   grammar:float, improvement_plan:array<int,string>, suggested_improvement:string,
+     *   is_estimated:bool, confidence_level:string, confidence_score:float,
+     *   provider_used:string, fallback_used:bool,
+     *   disclaimer:string, disclaimer_full:string
      * }
      */
     private static function emptyResult(int $submissionId): array
     {
         return [
-            'submission_id'    => $submissionId,
-            'attempt_id'       => 0,
-            'word_count'       => 0,
-            'target_word_count'=> self::DEFAULT_TARGET,
-            'estimated_band'   => 0.0,
-            'task_achievement' => 0.0,
-            'coherence'        => 0.0,
-            'lexical'          => 0.0,
-            'grammar'          => 0.0,
-            'improvement_plan' => ['Submission not found. Please retry.'],
-            'is_estimated'     => true,
-            'disclaimer'       => SmartScoreReportService::getDisclaimer(),
+            'submission_id'         => $submissionId,
+            'attempt_id'            => 0,
+            'word_count'            => 0,
+            'target_word_count'     => self::DEFAULT_TARGET,
+            'estimated_band'        => 0.0,
+            'estimated_score'       => 0.0,
+            'task_achievement'      => 0.0,
+            'coherence'             => 0.0,
+            'lexical'               => 0.0,
+            'vocabulary'            => 0.0,
+            'grammar'               => 0.0,
+            'improvement_plan'      => ['Submission not found. Please retry.'],
+            'suggested_improvement' => 'Submission not found. Please retry.',
+            'is_estimated'          => true,
+            'confidence_level'      => 'low',
+            'confidence_score'      => 0.20,
+            'provider_used'         => 'local_rule_engine',
+            'fallback_used'         => false,
+            'disclaimer'            => self::PRACTICE_DISCLAIMER,
+            'disclaimer_full'       => SmartScoreReportService::getDisclaimer(),
         ];
     }
 
     // ----------------------------------------------------------------------
     // EXTERNAL AI HOOK (optional, disabled by default)
     // ----------------------------------------------------------------------
-    // When AI_ENABLED=true AND an API key is configured in config/exams.php
-    // (config key: 'ai.providers.openrouter|gemini|groq|huggingface'),
-    // an optional enhancement can be plugged in here to refine the band
-    // estimate via an external LLM call. The signature would be:
+    // When EVALUATION_PROVIDER=local_llm_optional|external_ai_optional AND
+    // an API key is configured in env (OPENROUTER_API_KEY, GEMINI_API_KEY,
+    // GROQ_API_KEY, HUGGINGFACE_API_KEY), an optional enhancement can be
+    // plugged in to refine the band estimate via an external LLM call.
+    // The signature would be:
     //
     //   private static function enhanceWithExternalAi(string $text, array $ruleBased): array
     //
@@ -390,9 +588,9 @@ final class WritingEvaluationService
     //   - NEVER claim to be a real examiner or to produce an official score
     //   - ALWAYS append the practice-only disclaimer
     //
-    // Until that hook is implemented and AI_ENABLED=true, the rule-based
-    // estimate returned above is the only source of truth. This guarantees
-    // the platform works offline and remains compliant with the disclosure
-    // wording in config/exams.php.
+    // Until that hook is implemented, evaluate() detects the optional
+    // provider, falls back to local_rule_engine, and sets fallback_used=true.
+    // This guarantees the platform works offline and remains compliant with
+    // the disclosure wording in config/exams.php.
     // ----------------------------------------------------------------------
 }

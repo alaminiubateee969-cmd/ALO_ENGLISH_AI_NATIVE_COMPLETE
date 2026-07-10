@@ -108,3 +108,41 @@ export const SCORE_MAPPINGS: Record<string, { label: string; scale: string }> = 
 };
 
 export const DISCLOSURE_TEXT = "Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result.";
+
+// ===== NO-HUMAN PRACTICE EXAM MODE =====
+export const NO_HUMAN_MODE_STATS = {
+  enabled: true,
+  evaluationMode: "automated",
+  evaluationProvider: "local_rule_engine",
+  automatedAttemptsToday: 76,
+  writingAutoEvals: 18,
+  speakingAutoEvals: 15,
+  interviewAutoEvals: 8,
+  lowConfidenceAttempts: 4,
+  optionalReviewQueue: 4,
+  failedAgentTasks: 2,
+  fallbackEngineUsed: 76,
+  providerStatus: "local_rule_engine (no external API key required)",
+  highConfidence: 58,
+  mediumConfidence: 14,
+  lowConfidence: 4,
+};
+
+export const NO_HUMAN_CONFIDENCE_LOGIC = [
+  { level: "high", threshold: "≥ 0.80", action: "Report generated automatically", review: "None required", color: "emerald" },
+  { level: "medium", threshold: "0.60 – 0.79", action: "Report generated automatically", review: "Optional ALO Academic Team Review recommended", color: "amber" },
+  { level: "low", threshold: "< 0.60", action: "Provisional report generated (student still sees feedback)", review: "Recommended for ALO Academic Team Review (not blocking)", color: "red" },
+];
+
+export const NO_HUMAN_REVIEW_QUEUE = [
+  { id: "REV-004", attempt: "ATT-2026-008", exam: "IELTS Speaking Part 2", confidence: 0.52, level: "low", student: "Arif R.", reason: "Short response (38s vs 120s expected)", status: "optional" },
+  { id: "REV-003", attempt: "ATT-2026-007", exam: "PTE Write from Dictation", confidence: 0.58, level: "low", student: "Nadia K.", reason: "Low word-match confidence on 2 items", status: "optional" },
+  { id: "REV-002", attempt: "ATT-2026-006", exam: "IELTS Writing Task 2", confidence: 0.72, level: "medium", student: "Sadia M.", reason: "Essay structure heuristic borderline", status: "optional" },
+  { id: "REV-001", attempt: "ATT-2026-005", exam: "UK Credibility Interview", confidence: 0.68, level: "medium", student: "Rakib H.", reason: "Financial explanation vague — follow-up suggested", status: "optional" },
+];
+
+export const EVALUATION_PROVIDERS = [
+  { id: "local_rule_engine", label: "Local Rule Engine", desc: "Default — works without any external API. Heuristic-based scoring.", recommended: true, requiresKey: false },
+  { id: "local_llm_optional", label: "Local LLM (optional)", desc: "Self-hosted language model for richer feedback. Requires local LLM endpoint.", recommended: false, requiresKey: true },
+  { id: "external_ai_optional", label: "External AI (optional)", desc: "Cloud AI provider (OpenRouter/Gemini/Groq). Requires API key in .env. Falls back to local if unavailable.", recommended: false, requiresKey: true },
+];
