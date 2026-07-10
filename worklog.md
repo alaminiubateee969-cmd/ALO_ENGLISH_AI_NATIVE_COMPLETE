@@ -821,3 +821,106 @@ Stage Summary:
 - Compliance: public labels use approved wording only (ALO Practice Examiner, Digital Practice Session, Smart Score Report, Automated Practice Feedback, ALO Estimated Score Engine, ALO Evaluation System, Practice Interview Coach). No "AI teacher", "bot", "fake human", "real examiner", "official examiner", "official score" in public UI. Disclosure text on exam setup + reports.
 - Weekly Update Agent never auto-publishes (requires admin approval).
 - Writing/Speaking evaluation rule-based (external AI optional/disabled).
+
+---
+Task ID: NO-HUMAN
+Agent: general-purpose (Z.ai Code)
+Task: Add strict No-Human Practice Exam Mode to the cPanel production package — DB schema addon, PHP service updates, .env keys, and install.sql append.
+
+Work Log:
+- Read /home/z/my-project/worklog.md to absorb prior project history (Tasks 1–7 + 7-ai-agent-layer). Confirmed the AI Agent Employee layer (Task 7) is the foundation: 20 agents, public_label-only student UI, rule-based writing/speaking evaluation with optional external-AI hooks documented but disabled.
+- Scanned install.sql tables: exam_mock_attempts (status enum, free_or_paid enum, no no-human cols), exam_scores (overall_score/band/cefr/percentile, no provider/confidence cols), exam_speaking_sessions (fluency_score/pronunciation_score/grammar_score/vocabulary_score/coherence_score as DECIMAL(4,2), no provider/confidence/completeness/agent_feedback cols), exam_writing_submissions (task_achievement/coherence_cohesion/lexical_resource/grammar_accuracy DECIMAL(4,2), no provider/per-dim-int/agent_feedback cols), exam_ai_agent_tasks (status enum, no requires_human/auto_completed/confidence_score/fallback_used/provider_used cols). Confirmed exam_settings uses `is_public` (NOT `is_secret`) — adapted the addon INSERTs accordingly. Confirmed no existing exam_settings INSERT block exists.
+- Scanned the 5 target PHP services and confirmed their patterns: all use App\Core\Database (prepared statements via :named placeholders), AiAgentEmployeeService::createTask/completeTask for task lifecycle, SmartScoreReportService::getDisclaimer() for the canonical disclaimer, AuditService::log for audit trail, getenv() for env reads. Confirmed AiAgentEmployeeService::createTask signature: createTask(int $agentId, string $taskType, ?int $attemptId, array $payload): int.
+- Scanned .env.example: confirmed AI section ends at line 64 (AI_REQUEST_TIMEOUT_SECONDS) followed by the SMTP section. Inserted the new "No-Human Practice Exam Mode" section between them so keys live next to the AI provider config they extend.
+- Created /home/z/my-project/cpanel-production/database/no_human_mode_addon.sql:
+    * 4 exam_settings INSERTs (no_human_exam_mode=1, evaluation_mode=automated, evaluation_provider=local_rule_engine, human_review_default=optional) with ON DUPLICATE KEY UPDATE — idempotent.
+    * ALTER TABLE exam_mock_attempts ADD 7 cols (evaluation_mode, evaluation_provider, no_human_mode, agent_confidence_score, human_review_required, human_review_optional, final_report_status).
+    * ALTER TABLE exam_scores ADD 4 cols (scoring_provider, scoring_confidence, automated_feedback_json, review_recommendation).
+    * ALTER TABLE exam_speaking_sessions ADD 4 NEW cols (evaluation_provider, confidence_score INT, answer_completeness INT, agent_feedback_json) — the existing DECIMAL(4,2) per-dim cols are NOT re-added (already exist).
+    * ALTER TABLE exam_writing_submissions ADD 5 NEW cols (evaluation_provider, task_score, coherence_score, vocabulary_score, grammar_score — all DECIMAL(3,1), agent_feedback_json) — word_count already exists, not re-added.
+    * ALTER TABLE exam_ai_agent_tasks ADD 5 cols (requires_human, auto_completed, confidence_score, fallback_used, provider_used).
+    * Each ALTER is a single forward-only statement (MySQL 8 doesn't support ADD COLUMN IF NOT EXISTS); file header documents the "ignore Duplicate column name on re-run" pattern.
+- Updated /home/z/my-project/cpanel-production/.env.example: added the "No-Human Practice Exam Mode" section after the AI block, with 6 keys (NO_HUMAN_EXAM_MODE=true, EVALUATION_MODE=automated, EVALUATION_PROVIDER=local_rule_engine with the inline Options comment, HUMAN_REVIEW_DEFAULT=optional, LOW_CONFIDENCE_THRESHOLD=0.60, MEDIUM_CONFIDENCE_THRESHOLD=0.80) and explanatory comments.
+- Updated /home/z/my-project/cpanel-production/app/Services/WritingEvaluationService.php:
+    * Kept all existing rule-based heuristics (countWords, scoreTaskAchievement/Coherence/Lexical/Grammar, aggregateBand, buildImprovementPlan, splitSentences/Paragraphs, tokenize) and the existing return shape.
+    * Added resolveProvider() that reads EVALUATION_MODE + EVALUATION_PROVIDER from env, defaults to local_rule_engine.
+    * Added isOptionalAiProvider() + hasAiApiKey() (checks OPENROUTER/GEMINI/GROQ/HUGGINGFACE keys). When an optional provider is selected but no key is configured (or the enhanceWithExternalAi hook is not yet wired), the service falls back to local_rule_engine and sets fallback_used=true.
+    * Added computeConfidenceScore() — 0.00–1.00 blend of dimension average and length ratio; confidenceLevelFromScore() maps via env thresholds (LOW=0.60, MEDIUM=0.80) to high/medium/low.
+    * evaluate() now also returns: estimated_score (alias of estimated_band), vocabulary (alias of lexical), suggested_improvement (first improvement_plan item), confidence_level, confidence_score, provider_used, fallback_used, disclaimer (="Practice estimate only. Not an official exam result."), disclaimer_full (the canonical long disclaimer).
+    * Splits the submission UPDATE: base columns (always-exist) updated first; new no-human cols (agent_feedback_json, evaluation_provider, task_score, coherence_score, vocabulary_score, grammar_score) updated in a try/catch so a legacy (pre-addon) install does not fail scoring.
+    * After AiAgentEmployeeService::createTask + completeTask, calls stampNoHumanTaskColumns() which sets provider_used, fallback_used, confidence_score, auto_completed=1, requires_human=0 on the exam_ai_agent_tasks row (try/catch wrapped).
+    * Audit log now records method=provider_used, fallback_used, confidence=level.
+- Updated /home/z/my-project/cpanel-production/app/Services/SpeakingEvaluationService.php:
+    * Same provider/confidence scaffolding as writing (resolveProvider, isOptionalAiProvider, hasAiApiKey, computeConfidenceScore, confidenceLevelFromScore, stampNoHumanTaskColumns).
+    * Added scoreAnswerCompleteness() — 0–100 blend of length + lexical + coherence.
+    * evaluate() now also returns: pronunciation_estimate (alias of pronunciation), lexical_resource (alias of lexical), answer_completeness, improvement_tips (alias of tips), confidence_level, confidence_score, provider_used, fallback_used, disclaimer (="Practice estimate only. Not an official exam result."), disclaimer_full.
+    * Splits the session UPDATE: base cols first; new no-human cols (confidence_score INT, answer_completeness INT, agent_feedback_json, evaluation_provider) in try/catch.
+    * Task stamping + audit log identical to writing.
+- Updated /home/z/my-project/cpanel-production/app/Services/InterviewSimulationService.php:
+    * Kept startInterview/getNextQuestion/scoreInterview flow + all question banks + rule-based scoring (scoreConfidence, riskLevelFromConfidence, strengthsWeaknesses, buildFeedback, followUpBank, pickFollowUp, firstQuestionFor).
+    * scoreInterview() now also returns the no-human-mode keys: credibility_risk_level (alias of risk_level), financial_explanation_quality (0–100 from keyword coverage of sponsor/funds/fees/bank/evidence/etc.), course_knowledge_quality (0–100 from module/subject/topic/curriculum/etc.), career_plan_consistency (0–100 from return-home/future/career/goal keywords), follow_up_question_suggestions[], improvement_tips[], confidence_level, confidence_score, provider_used, fallback_used, disclaimer (="Practice only. Not an official interview assessment."), disclaimer_full.
+    * computeConfidenceScore() blends overall confidence + the 3 new domain dims + question coverage.
+    * Stamp AGENT-INTERVIEW-01 task with provider_used/fallback_used/confidence_score/auto_completed=1/requires_human=0 after completeTask.
+- Updated /home/z/my-project/cpanel-production/app/Services/ExamConductorService.php:
+    * startExam() — after TestEngineService::startAttempt, calls stampAttemptNoHumanStart() which sets no_human_mode=1, evaluation_mode, evaluation_provider, human_review_required=0, human_review_optional=1, final_report_status='pending' on the attempt row (try/catch wrapped). All START-phase agents (intake/eligibility/setup/proctor) already auto-assigned by the existing flow — no human approval required.
+    * startExam() now returns no_human_mode=true, evaluation_mode, evaluation_provider alongside the existing attempt_id/attempt_code/exam_type/assigned_agents.
+    * submitExam() — runs scoring → feedback → report → CRM as before (all automatic). Then computes agent_confidence_score from AVG(confidence_score) over the attempt's exam_ai_agent_tasks rows (writing/speaking/scoring confidence), falling back to percent/100 when no task rows have confidence (e.g. multiple-choice only attempts). Maps to high/medium/low via env thresholds.
+    * Stamps the attempt with agent_confidence_score, human_review_required (0 unless confidence is low — recommendation flag ONLY, never blocks the student), human_review_optional=1 (always), final_report_status='auto_generated'.
+    * Stamps the exam_scores row with scoring_provider, scoring_confidence, review_recommendation ('none' if high, 'optional' if medium, 'recommended' if low) — try/catch wrapped.
+    * submitExam() now returns agent_confidence_score, human_review_required, human_review_optional, final_report_status, review_recommendation alongside the existing percent/score_id/assigned_agents.
+- Updated /home/z/my-project/cpanel-production/app/Services/SmartScoreReportService.php:
+    * Added PRACTICE_DISCLAIMER const ("Practice estimate only. Not an official exam result.") and HUMAN_REVIEW_LINE const ("human_review: optional (ALO Academic Team Review available on request)").
+    * Added readAttemptNoHuman() — reads evaluation_mode, evaluation_provider, agent_confidence_score from the attempt row (falls back to env defaults + percent-derived confidence on legacy installs without the addon).
+    * Added confidenceLevelFromScore() + reviewRecommendationFromLevel() — maps 0.00–1.00 → high/medium/low → none/optional/recommended (recommendation is non-blocking).
+    * generate() now also returns no_human_mode=true, evaluation_mode, evaluation_provider, agent_confidence_score, confidence_level, review_recommendation, human_review (the HUMAN_REVIEW_LINE), disclosure_text, practice_disclaimer. Audit log records the new keys.
+    * emptyReport() updated to include all new keys (with conservative defaults: confidence_level=low, review_recommendation=recommended).
+    * The report NEVER requires human review for generation — the report is always returned to the student.
+- Appended the full no_human_mode_addon.sql content to the END of /home/z/my-project/cpanel-production/database/install.sql (after the existing "End of install.sql" marker), wrapped in a "NO-HUMAN PRACTICE EXAM MODE — Schema Addon (Task ID: NO-HUMAN)" header. A single import of install.sql now applies everything.
+- Compliance verification (manual + grep):
+    * No occurrence of "AI teacher", "bot", "robot", "fake human", "real examiner", "official examiner", "official score" in any of the 5 updated PHP services or the new SQL files.
+    * Every evaluation result includes the short disclaimer ("Practice estimate only. Not an official exam result." for writing/speaking; "Practice only. Not an official interview assessment." for interview).
+    * The report always includes the human_review line ("human_review: optional (ALO Academic Team Review available on request)") — never "Required human examiner".
+    * External AI is OPTIONAL — local_rule_engine is the default and works without any API key (verified by resolveProvider() default + hasAiApiKey() check + fallback to local_rule_engine with fallback_used=true).
+    * Every agent task is stamped with provider_used + fallback_used + confidence_score + auto_completed=1 + requires_human=0.
+    * No-human mode NEVER blocks the student from seeing their report (final_report_status='auto_generated', human_review_optional=1 always, human_review_required is a recommendation flag only).
+    * All DB writes use prepared statements via Database::insert/update (named placeholders).
+- Structural sanity check: brace counts match on all 5 PHP files (WritingEval 58/58, SpeakingEval 64/64, InterviewSim 99/99, Conductor 49/49, SmartReport 87/87). PHP binary not available in this sandbox so `php -l` could not be run; structural + manual review confirms valid syntax.
+
+Stage Summary:
+- /home/z/my-project/cpanel-production/database/no_human_mode_addon.sql — SUCCESS (~111 lines) — 4 idempotent exam_settings INSERTs + 5 ALTER TABLE statements covering exam_mock_attempts (7 cols), exam_scores (4 cols), exam_speaking_sessions (4 new cols), exam_writing_submissions (5 new cols), exam_ai_agent_tasks (5 cols). Header documents the MySQL 8 "no IF NOT EXISTS on ADD COLUMN" caveat and the re-run pattern.
+- /home/z/my-project/cpanel-production/database/install.sql — SUCCESS (now 1575 lines, +95) — full no-human-mode addon appended at the end so a single import applies the complete schema.
+- /home/z/my-project/cpanel-production/.env.example — SUCCESS (+18 lines) — "No-Human Practice Exam Mode" section added after the AI block with all 6 keys + explanatory comments.
+- /home/z/my-project/cpanel-production/app/Services/WritingEvaluationService.php — SUCCESS (~590 lines) — rule-based 4-dim writing eval + provider resolution + confidence scoring + no-human-mode return keys + task-row stamping + try/catch-wrapped legacy-safe UPDATEs.
+- /home/z/my-project/cpanel-production/app/Services/SpeakingEvaluationService.php — SUCCESS (~620 lines) — rule-based 6-dim speaking eval + provider resolution + answer_completeness + confidence scoring + no-human-mode return keys + task-row stamping + try/catch-wrapped legacy-safe UPDATEs.
+- /home/z/my-project/cpanel-production/app/Services/InterviewSimulationService.php — SUCCESS (~890 lines) — practice interview coach + 3 new domain dimensions (financial/course/career) + follow_up_question_suggestions + improvement_tips + confidence scoring + task-row stamping.
+- /home/z/my-project/cpanel-production/app/Services/ExamConductorService.php — SUCCESS (~590 lines) — startExam() stamps no_human_mode=1 + evaluation_mode + evaluation_provider; submitExam() computes agent_confidence_score + stamps human_review_required (0 unless low) + human_review_optional=1 + final_report_status='auto_generated'; student NEVER blocked from seeing their report.
+- /home/z/my-project/cpanel-production/app/Services/SmartScoreReportService.php — SUCCESS (~665 lines) — report now includes evaluation_mode, evaluation_provider, agent_confidence_score, confidence_level, review_recommendation (none/optional/recommended), human_review line, disclosure_text, practice_disclaimer; review is NEVER required for report generation.
+- Compliance: external AI is OPTIONAL (local_rule_engine works without any API key); no "AI teacher"/"bot"/"robot"/"fake human"/"real examiner"/"official examiner"/"official score" in any output; ALO Academic Team Review is OPTIONAL on request (never "Required human examiner"); every evaluation task logs provider_used + fallback_used + confidence_score + auto_completed=1; no-human mode NEVER blocks the student from seeing their Smart Score Report.
+- Next actions (out of scope for this task): (1) when AI_ENABLED=true and an API key is configured, implement the optional enhanceWithExternalAi hooks in WritingEvaluationService/SpeakingEvaluationService/InterviewSimulationService per the documented placeholder signatures — until then they correctly fall back to local_rule_engine; (2) add an admin UI panel to view per-attempt agent_confidence_score, review_recommendation, and human_review flags; (3) add a "Request ALO Academic Team Review" button on the student report page that flips human_review_optional from 1 to 'requested' (still never blocks the report).
+
+---
+Task ID: 8-no-human-mode
+Agent: main (Z.ai Code)
+Task: Add strict No-Human Practice Exam Mode — all 32 CBT exams conductable end-to-end without human staff, with confidence-based escalation and optional (never blocking) review.
+
+Work Log:
+- Subagent NO-HUMAN: created database/no_human_mode_addon.sql (4 exam_settings INSERTs: no_human_exam_mode=1, evaluation_mode=automated, evaluation_provider=local_rule_engine, human_review_default=optional; 5 ALTER TABLEs adding 25 columns across exam_mock_attempts, exam_scores, exam_speaking_sessions, exam_writing_submissions, exam_ai_agent_tasks). Appended to install.sql. Updated .env.example with NO_HUMAN_EXAM_MODE, EVALUATION_MODE, EVALUATION_PROVIDER, HUMAN_REVIEW_DEFAULT, LOW/MEDIUM_CONFIDENCE_THRESHOLD.
+- Subagent updated 5 PHP services: WritingEvaluationService (returns estimated_score, task_achievement, coherence, vocabulary, grammar, word_count, suggested_improvement, confidence_level, provider_used, fallback_used, disclaimer), SpeakingEvaluationService (fluency, pronunciation_estimate, grammar, lexical_resource, coherence, confidence, answer_completeness, improvement_tips, confidence_level, disclaimer), InterviewSimulationService (credibility_risk_level, financial_explanation_quality, course_knowledge_quality, career_plan_consistency, follow_up_suggestions, improvement_tips, disclaimer), ExamConductorService (startExam sets no_human_mode=1 + evaluation_mode + evaluation_provider; submitExam runs full pipeline automatically, sets agent_confidence_score, human_review_required=0 unless low confidence, human_review_optional=1 always, final_report_status=auto_generated), SmartScoreReportService (includes evaluation_mode/provider/confidence, review_recommendation none/optional/recommended, human_review="optional (ALO Academic Team Review available on request)", NEVER blocks).
+- All 5 PHP services syntax-validated (5/5 OK via php-parser).
+- Added NO_HUMAN_MODE_STATS, NO_HUMAN_CONFIDENCE_LOGIC (high/medium/low with thresholds + actions), NO_HUMAN_REVIEW_QUEUE (4 optional reviews), EVALUATION_PROVIDERS (local_rule_engine default, local_llm_optional, external_ai_optional) to agent-data.ts.
+- Added NoHumanModeTab to AdminAiAgents page: mode status banner (ENABLED), 8 stats (automated attempts, writing/speaking/interview auto-evals, low-confidence, optional review queue, failed tasks, fallback engine), confidence distribution chart, confidence→action logic, optional ALO Academic Team Review queue (4 items, all "optional" not blocking), evaluation provider status (3 providers, local_rule_engine active), compliance banner with disclosure text.
+- Added tab system to AdminAiAgents (Agent Workforce | No-Human Exam Mode).
+- Updated student score report: "Automated Practice Feedback" banner (confidence High, ALO Evaluation System, local rule engine, Optional ALO Academic Team Review available), full disclosure text, "Request Optional Review" button (non-blocking).
+- ESLint: clean. PHP: 5/5 OK. Next.js: 200.
+- Agent-browser + VLM verified: Admin → AI Agent Employees → No-Human Exam Mode tab renders with ENABLED banner, stats, confidence distribution, review queue, provider status, compliance. Student score report shows automated feedback + optional review.
+- Recreated zip: dist/ALO_ENGLISH_TEST_PLATFORM_CPANEL_PRODUCTION.zip (382KB, 147 files).
+
+Stage Summary:
+- No-Human Practice Exam Mode: ENABLED. All 32 CBT exams run start→report without human staff.
+- Evaluation: automated via local_rule_engine (no external API key needed). External AI optional (falls back to local if key missing).
+- Confidence logic: high → auto report; medium → auto report + optional review; low → provisional report + recommended review (NEVER blocks student).
+- Writing/Speaking/Interview agents return full feedback + confidence + disclaimer automatically.
+- Smart Score Report generated automatically with evaluation_mode, provider, confidence, review_recommendation.
+- "Optional ALO Academic Team Review" wording used (NOT "Required human examiner").
+- Admin No-Human Mode panel: stats, confidence distribution, optional review queue, provider status, compliance.
+- Student UI: "Automated Practice Feedback" + "Optional ALO Academic Team Review" + full disclosure. No "AI teacher", "bot", "real examiner", "official examiner", "official score" anywhere.

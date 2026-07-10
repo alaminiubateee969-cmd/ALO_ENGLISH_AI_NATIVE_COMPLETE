@@ -13,6 +13,18 @@
  * labels use the agents' `public_label` column — never "AI" / "bot" / "agent"
  * in student-visible output.
  *
+ * NO-HUMAN PRACTICE EXAM MODE (Task ID: NO-HUMAN):
+ *   - startExam() stamps `no_human_mode=1`, `evaluation_mode`, and
+ *     `evaluation_provider` on the exam_mock_attempts row, and assigns all
+ *     start-phase agents automatically (no human approval required for the
+ *     basic flow).
+ *   - submitExam() runs scoring → feedback → report automatically, stamps
+ *     `agent_confidence_score`, `human_review_required` (0 unless confidence
+ *     is low), `human_review_optional=1` (always available, never blocking),
+ *     and `final_report_status='auto_generated'`.
+ *   - The student is NEVER blocked from seeing their Smart Score Report.
+ *     ALO Academic Team Review remains OPTIONAL on request.
+ *
  * PHP 8.2+.
  */
 
@@ -41,6 +53,13 @@ final class ExamConductorService
         'AGENT-CRM-01',
     ];
 
+    /** Allowed evaluation providers (mirrors .env.example). */
+    public const ALLOWED_PROVIDERS = [
+        'local_rule_engine',
+        'local_llm_optional',
+        'external_ai_optional',
+    ];
+
     /**
      * Begin a new exam attempt.
      *
@@ -52,10 +71,16 @@ final class ExamConductorService
      *   3. Run the setup agent (validates the practice set + sections).
      *   4. Call TestEngineService::startAttempt() to actually create the
      *      exam_mock_attempts row.
-     *   5. Assign the proctor agent and log proctor start.
+     *   5. Stamp no-human-mode columns on the attempt row
+     *      (no_human_mode=1, evaluation_mode, evaluation_provider).
+     *   6. Assign the proctor agent and log proctor start.
+     *
+     * In no-human mode, all START-phase agents are assigned automatically —
+     * no human approval is required for the basic intake → proctor flow.
      *
      * @return array{
      *   attempt_id:int, attempt_code:string, exam_type:string,
+     *   no_human_mode:bool, evaluation_mode:string, evaluation_provider:string,
      *   assigned_agents:array<int,array{code:string,label:string}>
      * }
      * @throws RuntimeException on quota/permission/setup failure.
@@ -67,7 +92,7 @@ final class ExamConductorService
             'SELECT s.id, s.user_id, s.alo_student_id, s.is_partner, s.ambassador_id,
                     u.email, u.full_name
                FROM exam_students s
-               JOIN exam_users u ON u.id = s.user_id
+            JOIN exam_users u ON u.id = s.user_id
               WHERE s.id = :sid LIMIT 1',
             ['sid' => $studentId]
         );
@@ -149,7 +174,13 @@ final class ExamConductorService
         $attempt = TestEngineService::startAttempt($studentId, $practiceSetId);
         $attemptId = (int) $attempt['attempt_id'];
 
-        // 6. Proctor agent — start monitoring the attempt.
+        // 6. Stamp no-human-mode columns on the attempt row.
+        //    In no-human mode, evaluation_mode + evaluation_provider are read
+        //    from env and persisted on the attempt for downstream audit.
+        [$evalMode, $evalProvider] = self::resolveNoHumanConfig();
+        self::stampAttemptNoHumanStart($attemptId, $evalMode, $evalProvider);
+
+        // 7. Proctor agent — start monitoring the attempt.
         $proctorAgent = AiAgentEmployeeService::getAgent('AGENT-PROCTOR-01');
         if ($proctorAgent !== null) {
             AiAgentEmployeeService::createTask(
@@ -168,16 +199,22 @@ final class ExamConductorService
         }
 
         AuditService::log($userId, 'exam_conductor.start', 'attempt', $attemptId, [
-            'student_id'      => $studentId,
-            'practice_set_id' => $practiceSetId,
-            'exam_type'       => $set['type_code'],
-            'assigned_agents' => self::START_AGENTS,
+            'student_id'        => $studentId,
+            'practice_set_id'   => $practiceSetId,
+            'exam_type'         => $set['type_code'],
+            'assigned_agents'   => self::START_AGENTS,
+            'no_human_mode'     => true,
+            'evaluation_mode'   => $evalMode,
+            'evaluation_provider' => $evalProvider,
         ]);
 
         return [
-            'attempt_id'   => $attemptId,
-            'attempt_code' => $attempt['attempt_code'],
-            'exam_type'    => (string) $set['type_code'],
+            'attempt_id'      => $attemptId,
+            'attempt_code'    => $attempt['attempt_code'],
+            'exam_type'       => (string) $set['type_code'],
+            'no_human_mode'   => true,
+            'evaluation_mode' => $evalMode,
+            'evaluation_provider' => $evalProvider,
             'assigned_agents' => self::publicLabelsFor(self::START_AGENTS),
         ];
     }
@@ -185,16 +222,25 @@ final class ExamConductorService
     /**
      * Submit an attempt and trigger the post-attempt agent pipeline.
      *
-     * Flow:
+     * Flow (no-human mode — fully automatic, never blocks the student):
      *   1. Submit + score via TestEngineService (objective answers scored,
-     *      writing/speaking marked pending examiner, quota consumed).
+     *      writing/speaking evaluations queued via the rule engine, quota
+     *      consumed).
      *   2. Scoring agent — finalises estimated score + scale mapping.
      *   3. Feedback agent — generates strengths / weaknesses / study plan.
      *   4. Report agent — generates Smart Score Report payload (PDF async).
      *   5. CRM agent — pushes the result to CRM (queued for retry on failure).
+     *   6. Stamp the attempt with agent_confidence_score,
+     *      human_review_required=0 (unless confidence is low),
+     *      human_review_optional=1 (always), final_report_status='auto_generated'.
+     *
+     * The student is ALWAYS able to view their report. ALO Academic Team
+     * Review remains OPTIONAL on request — never a blocking step.
      *
      * @return array{
      *   attempt_id:int, percent:float, score_id:int,
+     *   agent_confidence_score:float, human_review_required:bool,
+     *   human_review_optional:bool, final_report_status:string,
      *   assigned_agents:array<int,array{code:string,label:string}>
      * }
      */
@@ -219,23 +265,24 @@ final class ExamConductorService
 
         // 2. Scoring agent.
         $scoringAgent = AiAgentEmployeeService::getAgent('AGENT-SCORING-01');
+        $scoreRow = null;
         if ($scoringAgent !== null) {
-            $score = Database::one(
-                'SELECT percent, band_score, scaled_score, cefr_level
+            $scoreRow = Database::one(
+                'SELECT id, percent, band_score, scaled_score, cefr_level
                    FROM exam_scores WHERE attempt_id = :aid ORDER BY id DESC LIMIT 1',
                 ['aid' => $attemptId]
             );
             $mapped = SmartScoreReportService::mapScoreByExam(
                 (string) $attempt['type_code'],
-                (float) ($score['percent'] ?? 0.0)
+                (float) ($scoreRow['percent'] ?? 0.0)
             );
             $taskPayload = [
-                'attempt_id'  => $attemptId,
-                'exam_type'   => $attempt['type_code'],
-                'percent'     => (float) ($score['percent'] ?? 0),
-                'mapped'      => $mapped,
+                'attempt_id'   => $attemptId,
+                'exam_type'    => $attempt['type_code'],
+                'percent'      => (float) ($scoreRow['percent'] ?? 0),
+                'mapped'       => $mapped,
                 'is_estimated' => true,
-                'disclaimer'  => SmartScoreReportService::getDisclaimer(),
+                'disclaimer'   => SmartScoreReportService::getDisclaimer(),
             ];
             $taskId = AiAgentEmployeeService::createTask(
                 (int) $scoringAgent['id'],
@@ -261,7 +308,7 @@ final class ExamConductorService
             );
         }
 
-        // 4. Report agent.
+        // 4. Report agent — always generate (no-human mode never blocks).
         $reportAgent = AiAgentEmployeeService::getAgent('AGENT-REPORT-01');
         if ($reportAgent !== null) {
             $report = SmartScoreReportService::generate($attemptId);
@@ -270,9 +317,10 @@ final class ExamConductorService
                 'report_generation',
                 $attemptId,
                 [
-                    'report'        => $report,
-                    'sync_to_crm'   => true,
-                    'include_disclaimer' => true,
+                    'report'              => $report,
+                    'sync_to_crm'         => true,
+                    'include_disclaimer'  => true,
+                    'no_human_mode'       => true,
                 ]
             );
         }
@@ -297,17 +345,63 @@ final class ExamConductorService
             );
         }
 
+        // 6. Compute agent_confidence_score from rule-based task rows
+        //    (writing + speaking + scoring confidence). Falls back to a
+        //    percent-derived score if no agent rows exist.
+        $agentConfidence = self::computeAttemptConfidence(
+            $attemptId,
+            (float) ($scoreRow['percent'] ?? 0.0)
+        );
+
+        // 7. Determine review flags based on confidence:
+        //    - human_review_required: 0 unless confidence is low
+        //      (NEVER blocks the student — it's a recommendation flag only).
+        //    - human_review_optional: 1 always (ALO Academic Team Review
+        //      available on request).
+        //    - final_report_status: 'auto_generated' (the report is
+        //      released to the student immediately).
+        $reviewLevel  = self::confidenceLevelFromScore($agentConfidence);
+        $reviewRequired = $reviewLevel === 'low' ? 1 : 0;
+
+        self::stampAttemptNoHumanSubmit(
+            $attemptId,
+            $agentConfidence,
+            $reviewRequired,
+            1, // optional, always
+            'auto_generated'
+        );
+
+        // 8. Persist the review recommendation on exam_scores (new column).
+        $reviewRecommendation = match ($reviewLevel) {
+            'high'   => 'none',
+            'medium' => 'optional',
+            default  => 'recommended',
+        };
+        if ($scoreRow !== null) {
+            self::stampScoreNoHuman((int) $scoreRow['id'], $reviewRecommendation, $agentConfidence);
+        }
+
         AuditService::log($userId, 'exam_conductor.submit', 'attempt', $attemptId, [
-            'student_id'      => $studentId,
-            'percent'         => $result['percent'] ?? null,
-            'assigned_agents' => self::SUBMIT_AGENTS,
+            'student_id'             => $studentId,
+            'percent'                => $result['percent'] ?? null,
+            'assigned_agents'        => self::SUBMIT_AGENTS,
+            'agent_confidence_score' => $agentConfidence,
+            'human_review_required'  => (bool) $reviewRequired,
+            'human_review_optional'  => true,
+            'final_report_status'    => 'auto_generated',
+            'review_recommendation'  => $reviewRecommendation,
         ]);
 
         return [
-            'attempt_id'      => $attemptId,
-            'percent'         => (float) ($result['percent'] ?? 0.0),
-            'score_id'        => (int) ($result['score_id'] ?? 0),
-            'assigned_agents' => self::publicLabelsFor(self::SUBMIT_AGENTS),
+            'attempt_id'             => $attemptId,
+            'percent'                => (float) ($result['percent'] ?? 0.0),
+            'score_id'               => (int) ($result['score_id'] ?? 0),
+            'agent_confidence_score' => $agentConfidence,
+            'human_review_required'  => (bool) $reviewRequired,
+            'human_review_optional'  => true,
+            'final_report_status'    => 'auto_generated',
+            'review_recommendation'  => $reviewRecommendation,
+            'assigned_agents'        => self::publicLabelsFor(self::SUBMIT_AGENTS),
         ];
     }
 
@@ -339,6 +433,131 @@ final class ExamConductorService
             'expires_at'      => $attempt['expires_at'],
             'assigned_agents' => self::publicLabelsFor(self::START_AGENTS),
         ];
+    }
+
+    // ---------- No-Human mode helpers ----------
+
+    /**
+     * Resolve evaluation_mode + evaluation_provider from env (with sane
+     * defaults). Returns [mode, provider].
+     *
+     * @return array{0:string,1:string}
+     */
+    private static function resolveNoHumanConfig(): array
+    {
+        $mode = strtolower((string) (getenv('EVALUATION_MODE') ?: 'automated'));
+        if (!in_array($mode, ['automated', 'human_assisted'], true)) {
+            $mode = 'automated';
+        }
+        $provider = strtolower((string) (getenv('EVALUATION_PROVIDER') ?: 'local_rule_engine'));
+        if (!in_array($provider, self::ALLOWED_PROVIDERS, true)) {
+            $provider = 'local_rule_engine';
+        }
+        return [$mode, $provider];
+    }
+
+    /**
+     * Stamp the no-human-mode START columns on an attempt row. The columns
+     * are added by no_human_mode_addon.sql. Wrapped in try/catch so a
+     * legacy (pre-addon) install does not break the start flow.
+     */
+    private static function stampAttemptNoHumanStart(int $attemptId, string $evalMode, string $evalProvider): void
+    {
+        try {
+            Database::update('exam_mock_attempts', [
+                'no_human_mode'       => 1,
+                'evaluation_mode'     => $evalMode,
+                'evaluation_provider' => $evalProvider,
+                'human_review_required' => 0,
+                'human_review_optional' => 1,
+                'final_report_status'   => 'pending',
+                'updated_at'          => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $attemptId]);
+        } catch (\Throwable $e) {
+            @error_log('[conductor.start] stamp no-human cols failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Stamp the no-human-mode SUBMIT columns on an attempt row.
+     */
+    private static function stampAttemptNoHumanSubmit(
+        int $attemptId,
+        float $agentConfidence,
+        int $reviewRequired,
+        int $reviewOptional,
+        string $finalReportStatus
+    ): void {
+        try {
+            Database::update('exam_mock_attempts', [
+                'agent_confidence_score' => number_format($agentConfidence, 2, '.', ''),
+                'human_review_required'  => $reviewRequired,
+                'human_review_optional'  => $reviewOptional,
+                'final_report_status'    => $finalReportStatus,
+                'updated_at'             => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $attemptId]);
+        } catch (\Throwable $e) {
+            @error_log('[conductor.submit] stamp no-human cols failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Stamp the no-human-mode columns on the exam_scores row.
+     */
+    private static function stampScoreNoHuman(int $scoreId, string $reviewRecommendation, float $agentConfidence): void
+    {
+        try {
+            Database::update('exam_scores', [
+                'scoring_provider'      => (string) (getenv('EVALUATION_PROVIDER') ?: 'local_rule_engine'),
+                'scoring_confidence'    => number_format($agentConfidence, 2, '.', ''),
+                'review_recommendation' => $reviewRecommendation,
+                'updated_at'            => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $scoreId]);
+        } catch (\Throwable $e) {
+            @error_log('[conductor.submit] stamp score no-human cols failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Compute the attempt-level agent confidence score (0.00–1.00) from
+     * the confidence_score values stamped on the attempt's agent task rows
+     * (writing, speaking, interview). Falls back to a percent-derived
+     * score when no task rows exist (e.g. multiple-choice only attempts).
+     */
+    private static function computeAttemptConfidence(int $attemptId, float $percent): float
+    {
+        $row = null;
+        try {
+            $row = Database::one(
+                'SELECT AVG(NULLIF(confidence_score, 0)) AS avg_conf, COUNT(*) AS n
+                   FROM exam_ai_agent_tasks
+                  WHERE attempt_id = :aid
+                    AND confidence_score IS NOT NULL',
+                ['aid' => $attemptId]
+            );
+        } catch (\Throwable $e) {
+            @error_log('[conductor.submit] confidence lookup failed: ' . $e->getMessage());
+        }
+        $avg = $row === null ? null : $row['avg_conf'];
+        if ($avg !== null && $avg !== '' && (float) $avg > 0) {
+            return round(max(0.0, min(1.0, (float) $avg)), 2);
+        }
+        // Fallback: derive from percent / 100.
+        $pctScore = max(0.0, min(100.0, $percent)) / 100.0;
+        return round($pctScore, 2);
+    }
+
+    private static function confidenceLevelFromScore(float $score): string
+    {
+        $low = (float) (getenv('LOW_CONFIDENCE_THRESHOLD') ?: '0.60');
+        $med = (float) (getenv('MEDIUM_CONFIDENCE_THRESHOLD') ?: '0.80');
+        if ($score >= $med) {
+            return 'high';
+        }
+        if ($score >= $low) {
+            return 'medium';
+        }
+        return 'low';
     }
 
     // ---------- Helpers ----------

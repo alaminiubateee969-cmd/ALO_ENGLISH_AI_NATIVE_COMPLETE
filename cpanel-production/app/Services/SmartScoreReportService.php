@@ -15,6 +15,16 @@
  *   - disclaimer (always present)
  *   - crm_sync_status (pending / synced / failed)
  *
+ * NO-HUMAN PRACTICE EXAM MODE (Task ID: NO-HUMAN):
+ *   - The report includes evaluation_mode, evaluation_provider,
+ *     agent_confidence_score, and review_recommendation.
+ *   - review_recommendation: 'none' (high confidence), 'optional'
+ *     (medium), 'recommended' (low). It is a recommendation only —
+ *     NEVER a requirement. The student always sees their report.
+ *   - The report includes the line:
+ *       "human_review: optional (ALO Academic Team Review available on request)"
+ *   - The disclosure text is always included.
+ *
  * mapScoreByExam handles all 32 exam types: IELTS band 0–9, PTE 10–90,
  * TOEFL 0–120, Duolingo 10–160, SAT range, GRE V/Q, GMAT, OET grade,
  * Placement A1–C2, plus the remaining English proficiency, study-abroad,
@@ -42,6 +52,12 @@ final class SmartScoreReportService
     public const DISCLAIMER_TEXT = 'Practice exam only. Estimated score only. '
         . 'Not an official exam result. No guarantee that questions will appear in real exam.';
 
+    /** Short no-human-mode practice disclaimer. */
+    public const PRACTICE_DISCLAIMER = 'Practice estimate only. Not an official exam result.';
+
+    /** Human-review availability line included in every no-human-mode report. */
+    public const HUMAN_REVIEW_LINE = 'human_review: optional (ALO Academic Team Review available on request)';
+
     /**
      * Generate the Smart Score Report for an attempt.
      *
@@ -52,7 +68,11 @@ final class SmartScoreReportService
      *   time_used_seconds:int, strengths:array<int,string>,
      *   weaknesses:array<int,string>, study_plan:array<int,string>,
      *   next_recommendation:string, counseling_cta:bool,
-     *   disclaimer:string, crm_sync_status:string
+     *   disclaimer:string, crm_sync_status:string,
+     *   no_human_mode:bool, evaluation_mode:string, evaluation_provider:string,
+     *   agent_confidence_score:float, confidence_level:string,
+     *   review_recommendation:string, human_review:string,
+     *   disclosure_text:string, practice_disclaimer:string
      * }
      */
     public static function generate(int $attemptId): array
@@ -107,6 +127,15 @@ final class SmartScoreReportService
         $nextRec = self::nextRecommendation($percent, $counselingCta, $examType);
         $crmStatus = self::crmSyncStatus($attemptId);
 
+        // ----- No-Human mode: read attempt-level confidence + provider -----
+        [$evalMode, $evalProvider, $agentConfidence] = self::readAttemptNoHuman(
+            $attemptId,
+            (float) ($score['scoring_confidence'] ?? 0.0),
+            $percent
+        );
+        $confidenceLevel = self::confidenceLevelFromScore($agentConfidence);
+        $reviewRecommendation = self::reviewRecommendationFromLevel($confidenceLevel);
+
         $report = [
             'attempt_id'         => $attemptId,
             'attempt_code'       => (string) $attempt['attempt_code'],
@@ -138,6 +167,16 @@ final class SmartScoreReportService
             'counseling_cta'     => $counselingCta,
             'disclaimer'         => self::getDisclaimer(),
             'crm_sync_status'    => $crmStatus,
+            // ----- No-Human mode keys -----
+            'no_human_mode'          => true,
+            'evaluation_mode'        => $evalMode,
+            'evaluation_provider'    => $evalProvider,
+            'agent_confidence_score' => $agentConfidence,
+            'confidence_level'       => $confidenceLevel,
+            'review_recommendation'  => $reviewRecommendation,
+            'human_review'           => self::HUMAN_REVIEW_LINE,
+            'disclosure_text'        => self::DISCLOSURE_TEXT,
+            'practice_disclaimer'    => self::PRACTICE_DISCLAIMER,
         ];
 
         // Persist the report summary into exam_reports (no PDF generation here —
@@ -157,13 +196,105 @@ final class SmartScoreReportService
         }
 
         AuditService::log(null, 'report.generated', 'attempt', $attemptId, [
-            'exam_type'  => $examType,
-            'percent'    => $percent,
-            'score'      => $mapped['score'],
-            'label'      => $mapped['label'],
+            'exam_type'             => $examType,
+            'percent'               => $percent,
+            'score'                 => $mapped['score'],
+            'label'                 => $mapped['label'],
+            'evaluation_provider'   => $evalProvider,
+            'agent_confidence_score'=> $agentConfidence,
+            'review_recommendation' => $reviewRecommendation,
+            'no_human_mode'         => true,
         ]);
 
         return $report;
+    }
+
+    // ---------- No-Human mode helpers ----------
+
+    /**
+     * Read the no-human-mode columns from the attempt row. Returns
+     * [evaluation_mode, evaluation_provider, agent_confidence_score].
+     * Falls back to env defaults + percent-derived confidence on legacy
+     * installs that have not yet applied no_human_mode_addon.sql.
+     *
+     * @return array{0:string,1:string,2:float}
+     */
+    private static function readAttemptNoHuman(int $attemptId, float $scoringConfidence, float $percent): array
+    {
+        $evalMode    = strtolower((string) (getenv('EVALUATION_MODE') ?: 'automated'));
+        if (!in_array($evalMode, ['automated', 'human_assisted'], true)) {
+            $evalMode = 'automated';
+        }
+        $evalProvider = strtolower((string) (getenv('EVALUATION_PROVIDER') ?: 'local_rule_engine'));
+        if (!in_array($evalProvider, ['local_rule_engine', 'local_llm_optional', 'external_ai_optional'], true)) {
+            $evalProvider = 'local_rule_engine';
+        }
+        $confidence = 0.0;
+
+        try {
+            $row = Database::one(
+                'SELECT evaluation_mode, evaluation_provider, no_human_mode,
+                        agent_confidence_score
+                   FROM exam_mock_attempts
+                  WHERE id = :id LIMIT 1',
+                ['id' => $attemptId]
+            );
+            if ($row !== null) {
+                if (!empty($row['evaluation_mode'])) {
+                    $evalMode = (string) $row['evaluation_mode'];
+                }
+                if (!empty($row['evaluation_provider'])) {
+                    $evalProvider = (string) $row['evaluation_provider'];
+                }
+                if ($row['agent_confidence_score'] !== null && (float) $row['agent_confidence_score'] > 0) {
+                    $confidence = (float) $row['agent_confidence_score'];
+                }
+            }
+        } catch (\Throwable $e) {
+            @error_log('[smart_report] read attempt no-human cols failed: ' . $e->getMessage());
+        }
+
+        // If the attempt row had no confidence stamp, fall back to the
+        // exam_scores.scoring_confidence column or a percent-derived value.
+        if ($confidence <= 0.0) {
+            if ($scoringConfidence > 0.0) {
+                $confidence = $scoringConfidence;
+            } else {
+                $confidence = max(0.0, min(100.0, $percent)) / 100.0;
+            }
+        }
+
+        return [$evalMode, $evalProvider, round($confidence, 2)];
+    }
+
+    /**
+     * Map a 0.00–1.00 confidence score to high/medium/low using the env
+     * thresholds (LOW_CONFIDENCE_THRESHOLD, MEDIUM_CONFIDENCE_THRESHOLD).
+     */
+    private static function confidenceLevelFromScore(float $score): string
+    {
+        $low = (float) (getenv('LOW_CONFIDENCE_THRESHOLD') ?: '0.60');
+        $med = (float) (getenv('MEDIUM_CONFIDENCE_THRESHOLD') ?: '0.80');
+        if ($score >= $med) {
+            return 'high';
+        }
+        if ($score >= $low) {
+            return 'medium';
+        }
+        return 'low';
+    }
+
+    /**
+     * Convert a confidence level into a non-blocking review recommendation.
+     * The student ALWAYS sees their report — this is a recommendation only.
+     */
+    private static function reviewRecommendationFromLevel(string $level): string
+    {
+        return match ($level) {
+            'high'   => 'none',
+            'medium' => 'optional',
+            default  => 'recommended',
+        };
     }
 
     /**
@@ -494,28 +625,41 @@ final class SmartScoreReportService
      *   overall_score:array, module_scores:array,
      *   counts:array, time_used_seconds:int, strengths:array,
      *   weaknesses:array, study_plan:array, next_recommendation:string,
-     *   counseling_cta:bool, disclaimer:string, crm_sync_status:string
+     *   counseling_cta:bool, disclaimer:string, crm_sync_status:string,
+     *   no_human_mode:bool, evaluation_mode:string, evaluation_provider:string,
+     *   agent_confidence_score:float, confidence_level:string,
+     *   review_recommendation:string, human_review:string,
+     *   disclosure_text:string, practice_disclaimer:string
      * }
      */
     private static function emptyReport(int $attemptId): array
     {
         return [
-            'attempt_id'          => $attemptId,
-            'attempt_code'        => '',
-            'student'             => [],
-            'exam'                => [],
-            'generated_at'        => date('Y-m-d H:i:s'),
-            'overall_score'       => ['percent' => 0.0, 'score' => '0', 'label' => 'Practice Score', 'is_estimated' => true],
-            'module_scores'       => [],
-            'counts'              => ['correct' => 0, 'incorrect' => 0, 'unanswered' => 0],
-            'time_used_seconds'   => 0,
-            'strengths'           => ['No data available.'],
-            'weaknesses'          => ['Attempt not found — please retry.'],
-            'study_plan'          => ['Re-take the practice attempt to generate a fresh Smart Score Report.'],
-            'next_recommendation' => 'Re-attempt the practice set.',
-            'counseling_cta'      => false,
-            'disclaimer'          => self::getDisclaimer(),
-            'crm_sync_status'     => 'pending',
+            'attempt_id'             => $attemptId,
+            'attempt_code'           => '',
+            'student'                => [],
+            'exam'                   => [],
+            'generated_at'           => date('Y-m-d H:i:s'),
+            'overall_score'          => ['percent' => 0.0, 'score' => '0', 'label' => 'Practice Score', 'is_estimated' => true],
+            'module_scores'          => [],
+            'counts'                 => ['correct' => 0, 'incorrect' => 0, 'unanswered' => 0],
+            'time_used_seconds'      => 0,
+            'strengths'              => ['No data available.'],
+            'weaknesses'             => ['Attempt not found — please retry.'],
+            'study_plan'             => ['Re-take the practice attempt to generate a fresh Smart Score Report.'],
+            'next_recommendation'    => 'Re-attempt the practice set.',
+            'counseling_cta'         => false,
+            'disclaimer'             => self::getDisclaimer(),
+            'crm_sync_status'        => 'pending',
+            'no_human_mode'          => true,
+            'evaluation_mode'        => 'automated',
+            'evaluation_provider'    => 'local_rule_engine',
+            'agent_confidence_score' => 0.20,
+            'confidence_level'       => 'low',
+            'review_recommendation'  => 'recommended',
+            'human_review'           => self::HUMAN_REVIEW_LINE,
+            'disclosure_text'        => self::DISCLOSURE_TEXT,
+            'practice_disclaimer'    => self::PRACTICE_DISCLAIMER,
         ];
     }
 }

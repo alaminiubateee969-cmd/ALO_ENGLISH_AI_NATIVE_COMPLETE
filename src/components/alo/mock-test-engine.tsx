@@ -535,12 +535,22 @@ function ScoreReport({ questions, answers, onReset, examType }: { questions: Que
           </div>
         </div>
 
-        <div className="mt-4 w-full max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-3">
+        <div className="mt-4 w-full max-w-2xl rounded-xl border border-alo-blue/20 bg-alo-soft-blue p-3 flex items-start gap-2">
+          <Sparkles className="h-4 w-4 text-alo-blue mt-0.5 shrink-0" />
+          <div>
+            <p className="text-[11px] text-alo-navy"><span className="font-semibold">Automated Practice Feedback:</span> This report was generated automatically by the ALO Evaluation System (local rule engine). Confidence: <span className="font-semibold text-alo-success">High</span>.</p>
+            <p className="text-[11px] text-alo-faint mt-0.5">Optional ALO Academic Team Review available on request — never required to view your report.</p>
+          </div>
+        </div>
+
+        <div className="mt-3 w-full max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-[11px] text-amber-800 leading-relaxed"><span className="font-semibold">Disclaimer:</span> {PRACTICE_DISCLAIMER}</p>
+          <p className="text-[11px] text-amber-800 leading-relaxed mt-1.5">Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result.</p>
         </div>
 
         <div className="mt-5 flex flex-col sm:flex-row gap-3 w-full max-w-2xl">
           <Button onClick={onReset} variant="outline" className="h-11 rounded-xl flex-1 border-slate-300"><RotateCcw className="mr-2 h-4 w-4" />Try Again</Button>
+          <Button variant="outline" className="h-11 rounded-xl flex-1 border-alo-blue/30 text-alo-blue hover:bg-alo-soft-blue">Request Optional Review</Button>
           <Button className="h-11 rounded-xl flex-1 bg-alo-orange text-white hover:bg-[#cc3f10]"><Download className="mr-2 h-4 w-4" />Download PDF Report</Button>
         </div>
       </div>

@@ -17,12 +17,20 @@
  * The result is written to `exam_speaking_sessions` and a task row is
  * created for AGENT-SPEAKING-01 (public_label "ALO Practice Examiner").
  *
- * IMPORTANT: external LLM AI is OPTIONAL and DISABLED by default per .env
- * (AI_ENABLED=false). An optional enhancement hook (see bottom of file)
- * can be plugged in later. Until then, the rule-based estimate is the
- * only source of truth.
+ * NO-HUMAN PRACTICE EXAM MODE (Task ID: NO-HUMAN):
+ *   - The active evaluation provider is read from env (EVALUATION_PROVIDER).
+ *   - local_rule_engine (default) is always available with NO external API.
+ *   - local_llm_optional / external_ai_optional are used ONLY when an AI
+ *     API key is configured; otherwise the service falls back to
+ *     local_rule_engine and sets fallback_used=true.
+ *   - Every task row logs provider_used, fallback_used, confidence_score,
+ *     auto_completed=1, requires_human=0.
+ *   - Every result carries the practice-only disclaimer. The student is
+ *     NEVER blocked from seeing their report.
  *
- * Every result carries the practice-only disclaimer.
+ * COMPLIANCE: Never claims to be a "real examiner", "official examiner",
+ * "AI teacher", "bot", or to produce an "official score". External AI is
+ * OPTIONAL; local_rule_engine always works without any API key.
  *
  * PHP 8.2+.
  */
@@ -59,16 +67,23 @@ final class SpeakingEvaluationService
     /** Typical IELTS-style speaking target duration (seconds). */
     private const TARGET_DURATION_SECONDS = 120;
 
+    /** Short practice-only disclaimer (NO-HUMAN mode spec). */
+    public const PRACTICE_DISCLAIMER = 'Practice estimate only. Not an official exam result.';
+
     /**
      * Evaluate a speaking session.
      *
      * @param int $sessionId   exam_speaking_sessions.id
      * @param int $attemptId   exam_mock_attempts.id (agent task context)
      * @return array{
-     *   session_id:int, duration_seconds:int, word_count:int,
-     *   fluency:int, pronunciation:int, grammar:int, lexical:int,
-     *   coherence:int, confidence:int, estimated_band:float,
-     *   tips:array<int,string>, disclaimer:string
+     *   session_id:int, attempt_id:int, duration_seconds:int, word_count:int,
+     *   fluency:int, pronunciation:int, pronunciation_estimate:int,
+     *   grammar:int, lexical:int, lexical_resource:int,
+     *   coherence:int, confidence:int, answer_completeness:int,
+     *   estimated_band:float, tips:array<int,string>, improvement_tips:array<int,string>,
+     *   is_estimated:bool, confidence_level:string, confidence_score:float,
+     *   provider_used:string, fallback_used:bool,
+     *   disclaimer:string, disclaimer_full:string
      * }
      */
     public static function evaluate(int $sessionId, int $attemptId): array
@@ -84,6 +99,9 @@ final class SpeakingEvaluationService
             return self::emptyResult($sessionId);
         }
 
+        // ----- No-Human mode: read provider config from env -----
+        [$providerUsed, $fallbackUsed] = self::resolveProvider();
+
         $transcript = (string) ($session['transcript_text'] ?? '');
         $duration = (int) ($session['duration_seconds'] ?? 0);
 
@@ -96,6 +114,7 @@ final class SpeakingEvaluationService
         $lexical       = self::scoreLexical($words);
         $coherence     = self::scoreCoherence($transcript);
         $confidence    = self::scoreConfidence($wordCount, $duration, $transcript);
+        $completeness  = self::scoreAnswerCompleteness($wordCount, $duration, $lexical, $coherence);
 
         $estimatedBand = self::bandFromPercentages(
             $fluency, $pronunciation, $grammar, $lexical, $coherence, $confidence
@@ -105,23 +124,61 @@ final class SpeakingEvaluationService
             $fluency, $pronunciation, $grammar, $lexical, $coherence, $confidence
         );
 
+        // ----- Optional external AI enhancement hook -----
+        if (self::isOptionalAiProvider($providerUsed)) {
+            if (!self::hasAiApiKey()) {
+                $providerUsed = 'local_rule_engine';
+                $fallbackUsed = true;
+            } else {
+                // @codeCoverageIgnoreStart
+                // PLACEHOLDER: actual external AI API call goes here.
+                //   $enhanced = self::enhanceWithExternalAi($transcript, [...]);
+                // On success: merge enhanced fields, keep provider_used as-is.
+                // On any error: fall back as below.
+                // Until the external client is wired, we fall back so the
+                // platform never depends on an external API.
+                $providerUsed = 'local_rule_engine';
+                $fallbackUsed = true;
+                // @codeCoverageIgnoreEnd
+            }
+        }
+
+        // ----- No-Human mode: confidence scoring (0.00–1.00) -----
+        $confidenceScore = self::computeConfidenceScore(
+            $wordCount, $duration, $fluency, $pronunciation, $grammar, $lexical, $coherence, $confidence
+        );
+        $confidenceLevel = self::confidenceLevelFromScore($confidenceScore);
+
         $result = [
-            'session_id'      => $sessionId,
-            'attempt_id'      => $attemptId,
-            'duration_seconds'=> $duration,
-            'word_count'      => $wordCount,
-            'fluency'         => $fluency,
-            'pronunciation'   => $pronunciation,
-            'grammar'         => $grammar,
-            'lexical'         => $lexical,
-            'coherence'       => $coherence,
-            'confidence'      => $confidence,
-            'estimated_band'  => $estimatedBand,
-            'tips'            => $tips,
-            'is_estimated'    => true,
-            'disclaimer'      => SmartScoreReportService::getDisclaimer(),
+            'session_id'          => $sessionId,
+            'attempt_id'          => $attemptId,
+            'duration_seconds'    => $duration,
+            'word_count'          => $wordCount,
+            'fluency'             => $fluency,
+            'pronunciation'       => $pronunciation,
+            'pronunciation_estimate' => $pronunciation, // alias for no-human mode
+            'grammar'             => $grammar,
+            'lexical'             => $lexical,
+            'lexical_resource'    => $lexical,           // alias for no-human mode
+            'coherence'           => $coherence,
+            'confidence'          => $confidence,
+            'answer_completeness' => $completeness,
+            'estimated_band'      => $estimatedBand,
+            'tips'                => $tips,
+            'improvement_tips'    => $tips,              // alias for no-human mode
+            'is_estimated'        => true,
+            'confidence_level'    => $confidenceLevel,
+            'confidence_score'    => $confidenceScore,
+            'provider_used'       => $providerUsed,
+            'fallback_used'       => $fallbackUsed,
+            'disclaimer'          => self::PRACTICE_DISCLAIMER,
+            'disclaimer_full'     => SmartScoreReportService::getDisclaimer(),
         ];
 
+        // Persist scoring back to the session row. The base columns below
+        // exist on every install; the no-human-mode columns are added by
+        // no_human_mode_addon.sql. The no-human UPDATE is wrapped in
+        // try/catch so a legacy (pre-addon) install does not fail scoring.
         Database::update('exam_speaking_sessions', [
             'fluency_score'      => $fluency,
             'pronunciation_score'=> $pronunciation,
@@ -134,6 +191,24 @@ final class SpeakingEvaluationService
             'updated_at'         => date('Y-m-d H:i:s'),
         ], 'id = :id', ['id' => $sessionId]);
 
+        try {
+            Database::update('exam_speaking_sessions', [
+                'confidence_score'   => $confidence,
+                'answer_completeness'=> $completeness,
+                'agent_feedback_json'=> json_encode([
+                    'provider_used'     => $providerUsed,
+                    'fallback_used'     => $fallbackUsed,
+                    'confidence_level'  => $confidenceLevel,
+                    'confidence_score'  => $confidenceScore,
+                    'estimated_band'    => $estimatedBand,
+                    'disclaimer'        => self::PRACTICE_DISCLAIMER,
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'evaluation_provider'=> $providerUsed,
+            ], 'id = :id', ['id' => $sessionId]);
+        } catch (\Throwable $e) {
+            @error_log('[speaking_eval] stamp session no-human cols failed: ' . $e->getMessage());
+        }
+
         $agent = AiAgentEmployeeService::getAgent('AGENT-SPEAKING-01');
         if ($agent !== null) {
             $taskId = AiAgentEmployeeService::createTask(
@@ -144,17 +219,24 @@ final class SpeakingEvaluationService
                     'session_id'       => $sessionId,
                     'duration_seconds' => $duration,
                     'word_count'       => $wordCount,
+                    'provider_used'    => $providerUsed,
+                    'fallback_used'    => $fallbackUsed,
+                    'confidence_level' => $confidenceLevel,
+                    'confidence_score' => $confidenceScore,
                 ]
             );
             AiAgentEmployeeService::completeTask($taskId, $result);
+            self::stampNoHumanTaskColumns($taskId, $providerUsed, $fallbackUsed, $confidenceScore);
         }
 
         AuditService::log(null, 'speaking.evaluated', 'speaking_session', $sessionId, [
-            'attempt_id'     => $attemptId,
-            'duration'       => $duration,
-            'word_count'     => $wordCount,
-            'estimated_band' => $estimatedBand,
-            'method'         => 'rule_based',
+            'attempt_id'      => $attemptId,
+            'duration'        => $duration,
+            'word_count'      => $wordCount,
+            'estimated_band'  => $estimatedBand,
+            'method'          => $providerUsed,
+            'fallback_used'   => $fallbackUsed,
+            'confidence'      => $confidenceLevel,
         ]);
 
         return $result;
@@ -171,6 +253,101 @@ final class SpeakingEvaluationService
             ['key' => 'coherence',     'label' => 'Coherence',            'max' => 100],
             ['key' => 'confidence',    'label' => 'Confidence',           'max' => 100],
         ];
+    }
+
+    // ---------- No-Human mode helpers ----------
+
+    /**
+     * Resolve the active evaluation provider + initial fallback flag from env.
+     * @return array{0:string,1:bool}
+     */
+    private static function resolveProvider(): array
+    {
+        $mode = strtolower((string) (getenv('EVALUATION_MODE') ?: 'automated'));
+        if ($mode !== 'automated') {
+            return ['local_rule_engine', false];
+        }
+        $provider = strtolower((string) (getenv('EVALUATION_PROVIDER') ?: 'local_rule_engine'));
+        $allowed = ['local_rule_engine', 'local_llm_optional', 'external_ai_optional'];
+        if (!in_array($provider, $allowed, true)) {
+            $provider = 'local_rule_engine';
+        }
+        return [$provider, false];
+    }
+
+    private static function isOptionalAiProvider(string $provider): bool
+    {
+        return $provider === 'local_llm_optional' || $provider === 'external_ai_optional';
+    }
+
+    private static function hasAiApiKey(): bool
+    {
+        foreach (['OPENROUTER_API_KEY', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'HUGGINGFACE_API_KEY'] as $k) {
+            $v = (string) (getenv($k) ?: '');
+            if ($v !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Answer completeness 0–100 (length + lexical + coherence blended). */
+    private static function scoreAnswerCompleteness(int $wordCount, int $duration, int $lexical, int $coherence): int
+    {
+        if ($duration <= 0 && $wordCount === 0) {
+            return 0;
+        }
+        $targetWords = max(60, ((int) self::TARGET_DURATION_SECONDS) / 90 * 100);
+        $lengthScore = min(50, (int) (50 * ($wordCount / max(1, $targetWords))));
+        $qualityScore = (int) (($lexical + $coherence) / 2.0 * 0.5);
+        return (int) max(0, min(100, $lengthScore + $qualityScore));
+    }
+
+    /**
+     * Compute a 0.00–1.00 confidence score from rule-based signals.
+     */
+    private static function computeConfidenceScore(
+        int $wordCount, int $duration,
+        int $fluency, int $pronunciation, int $grammar,
+        int $lexical, int $coherence, int $confidence
+    ): float {
+        if ($wordCount === 0 && $duration === 0) {
+            return 0.20;
+        }
+        $dimAvg = ($fluency + $pronunciation + $grammar + $lexical + $coherence + $confidence) / 6.0 / 100.0;
+        $durScore = $duration > 0 ? min(1.0, $duration / self::TARGET_DURATION_SECONDS) : 0.0;
+        // Weight: 60% dimension quality, 40% duration/length coverage.
+        $score = ($dimAvg * 0.6) + ($durScore * 0.4);
+        return round(max(0.0, min(1.0, $score)), 2);
+    }
+
+    private static function confidenceLevelFromScore(float $score): string
+    {
+        $low = (float) (getenv('LOW_CONFIDENCE_THRESHOLD') ?: '0.60');
+        $med = (float) (getenv('MEDIUM_CONFIDENCE_THRESHOLD') ?: '0.80');
+        if ($score >= $med) {
+            return 'high';
+        }
+        if ($score >= $low) {
+            return 'medium';
+        }
+        return 'low';
+    }
+
+    private static function stampNoHumanTaskColumns(int $taskId, string $providerUsed, bool $fallbackUsed, float $confidenceScore): void
+    {
+        try {
+            Database::update('exam_ai_agent_tasks', [
+                'provider_used'     => $providerUsed,
+                'fallback_used'     => $fallbackUsed ? 1 : 0,
+                'confidence_score'  => number_format($confidenceScore, 2, '.', ''),
+                'auto_completed'    => 1,
+                'requires_human'    => 0,
+                'updated_at'        => date('Y-m-d H:i:s'),
+            ], 'id = :id', ['id' => $taskId]);
+        } catch (\Throwable $e) {
+            @error_log('[speaking_eval] stamp no-human cols failed: ' . $e->getMessage());
+        }
     }
 
     // ---------- Heuristics (0–100 scale per dimension) ----------
@@ -385,51 +562,59 @@ final class SpeakingEvaluationService
 
     /**
      * @return array{
-     *   session_id:int, duration_seconds:int, word_count:int,
-     *   fluency:int, pronunciation:int, grammar:int, lexical:int,
-     *   coherence:int, confidence:int, estimated_band:float,
-     *   tips:array<int,string>, disclaimer:string
+     *   session_id:int, attempt_id:int, duration_seconds:int, word_count:int,
+     *   fluency:int, pronunciation:int, pronunciation_estimate:int,
+     *   grammar:int, lexical:int, lexical_resource:int,
+     *   coherence:int, confidence:int, answer_completeness:int,
+     *   estimated_band:float, tips:array<int,string>, improvement_tips:array<int,string>,
+     *   is_estimated:bool, confidence_level:string, confidence_score:float,
+     *   provider_used:string, fallback_used:bool,
+     *   disclaimer:string, disclaimer_full:string
      * }
      */
     private static function emptyResult(int $sessionId): array
     {
         return [
-            'session_id'      => $sessionId,
-            'attempt_id'      => 0,
-            'duration_seconds'=> 0,
-            'word_count'      => 0,
-            'fluency'         => 0,
-            'pronunciation'   => 0,
-            'grammar'         => 0,
-            'lexical'         => 0,
-            'coherence'       => 0,
-            'confidence'      => 0,
-            'estimated_band'  => 0.0,
-            'tips'            => ['Session not found. Please retry.'],
-            'is_estimated'    => true,
-            'disclaimer'      => SmartScoreReportService::getDisclaimer(),
+            'session_id'             => $sessionId,
+            'attempt_id'             => 0,
+            'duration_seconds'       => 0,
+            'word_count'             => 0,
+            'fluency'                => 0,
+            'pronunciation'          => 0,
+            'pronunciation_estimate' => 0,
+            'grammar'                => 0,
+            'lexical'                => 0,
+            'lexical_resource'       => 0,
+            'coherence'              => 0,
+            'confidence'             => 0,
+            'answer_completeness'    => 0,
+            'estimated_band'         => 0.0,
+            'tips'                   => ['Session not found. Please retry.'],
+            'improvement_tips'       => ['Session not found. Please retry.'],
+            'is_estimated'           => true,
+            'confidence_level'       => 'low',
+            'confidence_score'       => 0.20,
+            'provider_used'          => 'local_rule_engine',
+            'fallback_used'          => false,
+            'disclaimer'             => self::PRACTICE_DISCLAIMER,
+            'disclaimer_full'        => SmartScoreReportService::getDisclaimer(),
         ];
     }
 
     // ----------------------------------------------------------------------
     // EXTERNAL AI HOOK (optional, disabled by default)
     // ----------------------------------------------------------------------
-    // When AI_ENABLED=true AND an API key is configured in config/exams.php
-    // (config key: 'ai.providers.openrouter|gemini|groq|huggingface'),
-    // an optional enhancement can be plugged in to refine the speaking
-    // estimate via an external LLM call over the audio transcript. The
-    // signature would be:
+    // When EVALUATION_PROVIDER=local_llm_optional|external_ai_optional AND
+    // an API key is configured in env, an optional enhancement can be
+    // plugged in to refine the speaking estimate via an external LLM call
+    // over the audio transcript. The signature would be:
     //
     //   private static function enhanceWithExternalAi(string $transcript, array $ruleBased): array
     //
-    // It should:
-    //   - send the speaking_evaluation_v1 prompt + transcript text
-    //   - parse the LLM JSON response
-    //   - FALL BACK to the rule-based estimate on any error or timeout
-    //   - NEVER claim to be a real examiner or to produce an official score
-    //   - ALWAYS append the practice-only disclaimer
-    //
-    // Until that hook is implemented and AI_ENABLED=true, the rule-based
-    // estimate returned above is the only source of truth.
+    // It should fall back to the rule-based estimate on any error or
+    // timeout, never claim to be a real examiner, and always append the
+    // practice-only disclaimer. Until that hook is implemented, evaluate()
+    // detects the optional provider, falls back to local_rule_engine, and
+    // sets fallback_used=true.
     // ----------------------------------------------------------------------
 }
