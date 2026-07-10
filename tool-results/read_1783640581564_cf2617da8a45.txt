@@ -1,0 +1,520 @@
+     1→// ALO English Test Platform — Universal CBT Exam Catalog
+     2→// All exam names are referenced in "-style practice" form per compliance rules.
+     3→// No official exam content reproduced. All practice questions are original.
+     4→
+     5→import type { ExamType } from "./question-bank";
+     6→
+     7→export type ExamCategory = "english" | "study-abroad" | "university" | "visa" | "alo-internal";
+     8→
+     9→export type ExamModule = {
+    10→  id: string;
+    11→  name: string;
+    12→  slug: string;
+    13→  category: ExamCategory;
+    14→  examType: ExamType | null; // null = no question bank yet (e.g., interview-only / internal)
+    15→  styleLabel: string; // e.g., "IELTS-style practice test"
+    16→  badge: string;
+    17→  accent: "blue" | "orange" | "royal" | "green" | "purple";
+    18→  tagline: string;
+    19→  description: string;
+    20→  duration: string;
+    21→  scale: string;
+    22→  sections: { name: string; detail: string }[];
+    23→  highlights: string[];
+    24→  popular?: boolean;
+    25→};
+    26→
+    27→export const EXAM_CATEGORIES: { id: ExamCategory; name: string; description: string; icon: string }[] = [
+    28→  { id: "english", name: "English Proficiency", description: "IELTS, PTE, TOEFL, Duolingo, OIETC, OET, LanguageCert, Linguaskill & more", icon: "language" },
+    29→  { id: "study-abroad", name: "Study Abroad Entrance", description: "Digital SAT, ACT, GRE, GMAT, LSAT, MCAT", icon: "plane" },
+    30→  { id: "university", name: "University Internal Tests", description: "Placement, foundation, pre-master & scholarship assessments", icon: "building" },
+    31→  { id: "visa", name: "Visa & Interview Practice", description: "UK credibility, CAS, visa, scholarship & admission interviews", icon: "shield" },
+    32→  { id: "alo-internal", name: "ALO Internal Exams", description: "Counselor, readiness, diagnostic & document checks", icon: "graduation" },
+    33→];
+    34→
+    35→export const EXAM_MODULES: ExamModule[] = [
+    36→  // ===== ENGLISH PROFICIENCY =====
+    37→  {
+    38→    id: "ielts-academic", name: "IELTS Academic", slug: "ielts", category: "english", examType: "IELTS",
+    39→    styleLabel: "IELTS-style practice test", badge: "Most Popular", accent: "blue", popular: true,
+    40→    tagline: "Academic reading, Task 1 report & Task 2 essay",
+    41→    description: "Original IELTS-style academic practice covering all four skills with authentic question formats and band-score estimation.",
+    42→    duration: "2h 44m", scale: "Band 0–9",
+    43→    sections: [
+    44→      { name: "Listening", detail: "4 sections · 40 questions · 30 min" },
+    45→      { name: "Reading", detail: "3 passages · 40 questions · 60 min" },
+    46→      { name: "Writing Task 1", detail: "Report · 20 min" },
+    47→      { name: "Writing Task 2", detail: "Essay · 40 min" },
+    48→      { name: "Speaking Part 1", detail: "Introduction & interview" },
+    49→      { name: "Speaking Part 2", detail: "Cue card · 2 min" },
+    50→      { name: "Speaking Part 3", detail: "Discussion" },
+    51→    ],
+    52→    highlights: ["Authentic IELTS-style question formats", "Band estimate per skill + overall", "Writing Task 1 & 2 evaluation", "Full 3-part speaking interview simulation"],
+    53→  },
+    54→  {
+    55→    id: "ielts-general", name: "IELTS General Training", slug: "ielts-general", category: "english", examType: "IELTS",
+    56→    styleLabel: "IELTS-style practice test", badge: "General", accent: "blue",
+    57→    tagline: "General reading, letter writing & essay",
+    58→    description: "IELTS-style General Training practice with everyday reading passages, letter writing Task 1 and essay Task 2.",
+    59→    duration: "2h 44m", scale: "Band 0–9",
+    60→    sections: [
+    61→      { name: "Listening", detail: "4 sections · 40 questions" },
+    62→      { name: "Reading", detail: "3 sections · 40 questions · 60 min" },
+    63→      { name: "Writing Task 1", detail: "Letter · 20 min" },
+    64→      { name: "Writing Task 2", detail: "Essay · 40 min" },
+    65→      { name: "Speaking", detail: "3 parts · 11–14 min" },
+    66→    ],
+    67→    highlights: ["General reading passages", "Letter writing Task 1", "Essay Task 2", "Band estimate"],
+    68→  },
+    69→  {
+    70→    id: "ielts-ukvi", name: "IELTS UKVI", slug: "ielts-ukvi", category: "english", examType: "IELTS",
+    71→    styleLabel: "IELTS-style practice test", badge: "UK Visa", accent: "royal",
+    72→    tagline: "UKVI secure test guidance + practice disclaimer",
+    73→    description: "UKVI-specific IELTS-style practice with secure test guidance and clear practice-only disclaimers.",
+    74→    duration: "2h 44m", scale: "Band 0–9",
+    75→    sections: [
+    76→      { name: "Listening", detail: "4 sections · 40 questions" },
+    77→      { name: "Reading", detail: "3 passages · 40 questions" },
+    78→      { name: "Writing", detail: "Task 1 + Task 2" },
+    79→      { name: "Speaking", detail: "3 parts" },
+    80→      { name: "UKVI Guidance", detail: "Secure test rules" },
+    81→    ],
+    82→    highlights: ["UKVI secure test guidance", "Practice-only disclaimer", "Band estimate for visa readiness"],
+    83→  },
+    84→  {
+    85→    id: "pte", name: "PTE Academic", slug: "pte", category: "english", examType: "PTE",
+    86→    styleLabel: "PTE-style practice test", badge: "Fast Results", accent: "orange", popular: true,
+    87→    tagline: "20 integrated question types, Smart Score Engine",
+    88→    description: "PTE-style integrated computer-based practice across Speaking & Writing, Reading, and Listening.",
+    89→    duration: "2h 00m", scale: "10–90",
+    90→    sections: [
+    91→      { name: "Read Aloud", detail: "Speaking" },
+    92→      { name: "Repeat Sentence", detail: "Speaking" },
+    93→      { name: "Describe Image", detail: "Speaking" },
+    94→      { name: "Retell Lecture", detail: "Speaking" },
+    95→      { name: "Answer Short Question", detail: "Speaking" },
+    96→      { name: "Summarize Written Text", detail: "Writing" },
+    97→      { name: "Essay", detail: "Writing" },
+    98→      { name: "Reading Fill in Blanks", detail: "Reading" },
+    99→      { name: "Reorder Paragraphs", detail: "Reading" },
+   100→      { name: "Listening Fill in Blanks", detail: "Listening" },
+   101→      { name: "Highlight Correct Summary", detail: "Listening" },
+   102→      { name: "Select Missing Word", detail: "Listening" },
+   103→      { name: "Write from Dictation", detail: "Listening" },
+   104→    ],
+   105→    highlights: ["20 PTE-style question types", "Smart Score sub-skill breakdown", "Read aloud & repeat sentence", "Summarize + essay"],
+   106→  },
+   107→  {
+   108→    id: "toefl", name: "TOEFL iBT", slug: "toefl", category: "english", examType: "TOEFL",
+   109→    styleLabel: "TOEFL-style practice test", badge: "USA Focused", accent: "blue",
+   110→    tagline: "Integrated tasks & academic discussion",
+   111→    description: "TOEFL iBT-style practice with integrated tasks across reading, listening, speaking and writing.",
+   112→    duration: "2h 00m", scale: "0–120",
+   113→    sections: [
+   114→      { name: "Reading", detail: "2 passages · 10 Qs each" },
+   115→      { name: "Listening", detail: "3 lectures + 2 conversations" },
+   116→      { name: "Speaking", detail: "1 independent + 3 integrated" },
+   117→      { name: "Writing", detail: "Integrated + academic discussion" },
+   118→    ],
+   119→    highlights: ["Integrated speaking & writing", "Academic discussion practice", "Campus lecture drills", "Score out of 120"],
+   120→  },
+   121→  {
+   122→    id: "duolingo", name: "Duolingo English Test", slug: "duolingo", category: "english", examType: "Duolingo",
+   123→    styleLabel: "Duolingo-style practice test", badge: "Adaptive", accent: "orange", popular: true,
+   124→    tagline: "Adaptive practice, 4 subscores",
+   125→    description: "Duolingo-style adaptive question practice across literacy, comprehension, conversation and production.",
+   126→    duration: "1h 00m", scale: "10–160",
+   127→    sections: [
+   128→      { name: "Read and Select", detail: "Vocabulary" },
+   129→      { name: "Fill in the Blanks", detail: "Cloze" },
+   130→      { name: "Read Aloud", detail: "Pronunciation" },
+   131→      { name: "Listen and Type", detail: "Dictation" },
+   132→      { name: "Interactive Reading", detail: "Comprehension" },
+   133→      { name: "Writing Sample", detail: "Production" },
+   134→      { name: "Speaking Sample", detail: "Production" },
+   135→      { name: "Video Interview Practice", detail: "Speaking" },
+   136→    ],
+   137→    highlights: ["Adaptive question-style practice", "4 subscore breakdown", "Speaking & writing samples", "Interactive reading"],
+   138→  },
+   139→  {
+   140→    id: "oietc", name: "OIETC / Oxford ELLT", slug: "oietc", category: "english", examType: "OIETC",
+   141→    styleLabel: "OIETC-style practice test", badge: "University Entry", accent: "royal",
+   142→    tagline: "Interview simulation + CEFR estimate",
+   143→    description: "OIETC and Oxford ELLT-style practice with reading, listening, writing and a speaking interview simulation.",
+   144→    duration: "1h 30m", scale: "CEFR A2–C1",
+   145→    sections: [
+   146→      { name: "Listening", detail: "Audio-based questions" },
+   147→      { name: "Reading", detail: "Passages + comprehension" },
+   148→      { name: "Writing", detail: "Academic essay" },
+   149→      { name: "Speaking", detail: "Interview simulation" },
+   150→    ],
+   151→    highlights: ["CEFR level estimate", "Interview simulation", "Academic essay evaluation", "Reading & listening drills"],
+   152→  },
+   153→  {
+   154→    id: "oet", name: "OET (Healthcare)", slug: "oet", category: "english", examType: null,
+   155→    styleLabel: "OET-style practice test", badge: "Healthcare", accent: "blue",
+   156→    tagline: "Healthcare scenarios & clinical role-play",
+   157→    description: "OET-style practice with healthcare-specific scenarios across all four skills for nurses, doctors and allied health.",
+   158→    duration: "2h 50m", scale: "A–E grades",
+   159→    sections: [
+   160→      { name: "Listening", detail: "Consultations + presentations" },
+   161→      { name: "Reading", detail: "Healthcare texts + MCQ" },
+   162→      { name: "Profession-specific Writing", detail: "Referral / discharge letter" },
+   163→      { name: "Speaking Role Play", detail: "Clinical role-play" },
+   164→    ],
+   165→    highlights: ["Healthcare scenario practice", "Profession-specific writing", "Clinical role-play speaking", "Grade A–E estimate"],
+   166→  },
+   167→  {
+   168→    id: "languagecert", name: "LanguageCert", slug: "languagecert", category: "english", examType: "LanguageCert",
+   169→    styleLabel: "LanguageCert-style practice test", badge: "ESOL", accent: "green",
+   170→    tagline: "General & academic English ESOL practice",
+   171→    description: "LanguageCert-style ESOL practice covering all four skills with CEFR-aligned difficulty.",
+   172→    duration: "2h 30m", scale: "CEFR A1–C2",
+   173→    sections: [
+   174→      { name: "Listening", detail: "Audio comprehension" },
+   175→      { name: "Reading", detail: "Passages + MCQ" },
+   176→      { name: "Writing", detail: "Task 1 + Task 2" },
+   177→      { name: "Speaking", detail: "Interview" },
+   178→    ],
+   179→    highlights: ["CEFR-aligned difficulty", "All four skills", "Academic & general tracks", "Score estimate"],
+   180→  },
+   181→  {
+   182→    id: "linguaskill", name: "Cambridge Linguaskill", slug: "linguaskill", category: "english", examType: "Linguaskill",
+   183→    styleLabel: "Linguaskill-style practice test", badge: "Cambridge", accent: "purple",
+   184→    tagline: "Adaptive multi-level English assessment",
+   185→    description: "Linguaskill-style adaptive practice across Reading & Listening, Writing, and Speaking with CEFR placement.",
+   186→    duration: "1h 30m", scale: "CEFR A1–C2",
+   187→    sections: [
+   188→      { name: "Reading and Listening", detail: "Adaptive" },
+   189→      { name: "Writing", detail: "Email + essay" },
+   190→      { name: "Speaking", detail: "Recorded responses" },
+   191→    ],
+   192→    highlights: ["Adaptive multi-level", "CEFR placement", "Business & general variants", "Fast estimate"],
+   193→  },
+   194→  {
+   195→    id: "alo-placement", name: "ALO English Placement Test", slug: "alo-placement-test", category: "english", examType: "Placement",
+   196→    styleLabel: "ALO Placement practice test", badge: "Internal", accent: "orange",
+   197→    tagline: "Study readiness score + counselor report",
+   198→    description: "ALO Education's internal English placement covering grammar, vocabulary, reading, listening, writing and speaking with a study readiness score.",
+   199→    duration: "1h 15m", scale: "Level A1–C2 + readiness 0–100",
+   200→    sections: [
+   201→      { name: "Grammar", detail: "Structure & usage" },
+   202→      { name: "Vocabulary", detail: "Academic word knowledge" },
+   203→      { name: "Reading", detail: "Comprehension" },
+   204→      { name: "Listening", detail: "Audio comprehension" },
+   205→      { name: "Writing", detail: "Short response" },
+   206→      { name: "Speaking", detail: "Diagnostic sample" },
+   207→    ],
+   208→    highlights: ["Study readiness score", "CEFR level placement", "Personalised preparation plan", "Counselor-ready report"],
+   209→  },
+   210→
+   211→  // ===== STUDY ABROAD ENTRANCE =====
+   212→  {
+   213→    id: "digital-sat", name: "Digital SAT", slug: "digital-sat", category: "study-abroad", examType: "SAT",
+   214→    styleLabel: "SAT-style practice test", badge: "Digital", accent: "blue", popular: true,
+   215→    tagline: "Adaptive Reading/Writing + Math modules",
+   216→    description: "Digital SAT-style adaptive practice with Reading & Writing and two adaptive Math modules.",
+   217→    duration: "2h 14m", scale: "400–1600",
+   218→    sections: [
+   219→      { name: "Reading and Writing", detail: "Adaptive · 64 min" },
+   220→      { name: "Math Module 1", detail: "35 min" },
+   221→      { name: "Math Module 2", detail: "Adaptive · 35 min" },
+   222→    ],
+   223→    highlights: ["Adaptive module structure", "Reading + Writing combined", "Math with calculator", "Score 400–1600 estimate"],
+   224→  },
+   225→  {
+   226→    id: "act", name: "ACT", slug: "act", category: "study-abroad", examType: "ACT",
+   227→    styleLabel: "ACT-style practice test", badge: "USA", accent: "royal",
+   228→    tagline: "English, Math, Reading, Science + optional Writing",
+   229→    description: "ACT-style practice across English, Math, Reading and Science with an optional Writing essay.",
+   230→    duration: "2h 55m", scale: "1–36",
+   231→    sections: [
+   232→      { name: "English", detail: "75 questions · 45 min" },
+   233→      { name: "Math", detail: "60 questions · 60 min" },
+   234→      { name: "Reading", detail: "40 questions · 35 min" },
+   235→      { name: "Science", detail: "40 questions · 35 min" },
+   236→      { name: "Optional Writing", detail: "Essay · 40 min" },
+   237→    ],
+   238→    highlights: ["Four core subjects", "Science reasoning", "Optional essay", "Composite score 1–36"],
+   239→  },
+   240→  {
+   241→    id: "gre", name: "GRE General Test", slug: "gre", category: "study-abroad", examType: "GRE",
+   242→    styleLabel: "GRE-style practice test", badge: "Graduate", accent: "orange", popular: true,
+   243→    tagline: "Verbal, Quantitative & Analytical Writing",
+   244→    description: "GRE-style practice with Verbal Reasoning, Quantitative Reasoning and Analytical Writing.",
+   245→    duration: "1h 58m", scale: "260–340",
+   246→    sections: [
+   247→      { name: "Verbal Reasoning", detail: "Text completion + sentence equivalence + RC" },
+   248→      { name: "Quantitative Reasoning", detail: "QC + problem solving + data interpretation" },
+   249→      { name: "Analytical Writing", detail: "Issue task · 30 min" },
+   250→    ],
+   251→    highlights: ["Text completion & sentence equivalence", "Quantitative comparison", "Data interpretation", "Verbal 130–170 + Quant 130–170"],
+   252→  },
+   253→  {
+   254→    id: "gmat", name: "GMAT Focus", slug: "gmat", category: "study-abroad", examType: "GMAT",
+   255→    styleLabel: "GMAT-style practice test", badge: "Business", accent: "blue",
+   256→    tagline: "Quant, Verbal & Data Insights",
+   257→    description: "GMAT Focus-style practice with Quantitative Reasoning, Verbal Reasoning and Data Insights.",
+   258→    duration: "2h 15m", scale: "205–805",
+   259→    sections: [
+   260→      { name: "Quantitative Reasoning", detail: "Problem solving" },
+   261→      { name: "Verbal Reasoning", detail: "CR + SC" },
+   262→      { name: "Data Insights", detail: "Data sufficiency + multi-source" },
+   263→      { name: "Analytical Writing", detail: "If required" },
+   264→    ],
+   265→    highlights: ["Data Insights section", "Critical reasoning", "Sentence correction", "Score 205–805 estimate"],
+   266→  },
+   267→  {
+   268→    id: "lsat", name: "LSAT", slug: "lsat", category: "study-abroad", examType: "LSAT",
+   269→    styleLabel: "LSAT-style practice test", badge: "Law", accent: "purple",
+   270→    tagline: "Logical, analytical & reading comprehension",
+   271→    description: "LSAT-style practice with Logical Reasoning, Analytical Reasoning (logic games) and Reading Comprehension.",
+   272→    duration: "2h 20m", scale: "120–180",
+   273→    sections: [
+   274→      { name: "Logical Reasoning", detail: "Arguments · assumption + weaken" },
+   275→      { name: "Analytical Reasoning", detail: "Logic games" },
+   276→      { name: "Reading Comprehension", detail: "Passages + inference" },
+   277→      { name: "Writing Sample", detail: "Unscored · argument" },
+   278→    ],
+   279→    highlights: ["Logic games practice", "Assumption & weaken", "Reading comprehension", "Score 120–180 estimate"],
+   280→  },
+   281→  {
+   282→    id: "mcat", name: "MCAT", slug: "mcat", category: "study-abroad", examType: "MCAT",
+   283→    styleLabel: "MCAT-style practice test", badge: "Medical", accent: "royal",
+   284→    tagline: "Sciences + CARS for medical school",
+   285→    description: "MCAT-style practice across Chemical/Physical, CARS, Biological/Biochemical and Psychological/Social foundations.",
+   286→    duration: "7h 30m", scale: "472–528",
+   287→    sections: [
+   288→      { name: "Chemical and Physical Foundations", detail: "Chem + physics" },
+   289→      { name: "CARS", detail: "Critical analysis & reasoning" },
+   290→      { name: "Biological and Biochemical Foundations", detail: "Bio + biochem" },
+   291→      { name: "Psychological, Social and Biological Foundations", detail: "Behavioral sciences" },
+   292→    ],
+   293→    highlights: ["CARS practice", "Biochemistry scenarios", "Chemistry calculations", "Score 472–528 estimate"],
+   294→  },
+   295→
+   296→  // ===== UNIVERSITY INTERNAL =====
+   297→  {
+   298→    id: "uni-english-placement", name: "University English Placement Test", slug: "university-placement-test", category: "university", examType: "Placement",
+   299→    styleLabel: "University Placement practice test", badge: "University", accent: "green",
+   300→    tagline: "Place into the right English level",
+   301→    description: "University-style English placement test to determine the right course level for incoming students.",
+   302→    duration: "1h 30m", scale: "CEFR A1–C2",
+   303→    sections: [
+   304→      { name: "Grammar", detail: "Structure" },
+   305→      { name: "Vocabulary", detail: "Academic" },
+   306→      { name: "Reading", detail: "Comprehension" },
+   307→      { name: "Writing", detail: "Diagnostic" },
+   308→    ],
+   309→    highlights: ["CEFR placement", "Diagnostic writing", "Grammar & vocabulary", "Level recommendation"],
+   310→  },
+   311→  {
+   312→    id: "uni-math-placement", name: "University Math Placement Test", slug: "university-math-placement", category: "university", examType: "SAT",
+   313→    styleLabel: "University Math Placement practice test", badge: "University", accent: "blue",
+   314→    tagline: "Algebra, calculus & statistics readiness",
+   315→    description: "University-style math placement covering algebra, pre-calculus and introductory statistics.",
+   316→    duration: "1h 00m", scale: "0–100",
+   317→    sections: [
+   318→      { name: "Algebra", detail: "Equations + inequalities" },
+   319→      { name: "Functions", detail: "Graphs + domains" },
+   320→      { name: "Statistics", detail: "Descriptive + probability" },
+   321→    ],
+   322→    highlights: ["Algebra fundamentals", "Functions & graphs", "Basic probability", "Course placement"],
+   323→  },
+   324→  {
+   325→    id: "foundation-entry", name: "Foundation Entry Test", slug: "foundation-entry-test", category: "university", examType: "Placement",
+   326→    styleLabel: "Foundation Entry practice test", badge: "Foundation", accent: "orange",
+   327→    tagline: "Entry for foundation pathway programs",
+   328→    description: "Foundation program entry test covering academic English, numeracy and study skills.",
+   329→    duration: "1h 30m", scale: "Pass / Refer",
+   330→    sections: [
+   331→      { name: "Academic English", detail: "Reading + writing" },
+   332→      { name: "Numeracy", detail: "Foundation math" },
+   333→      { name: "Study Skills", detail: "Note-taking + analysis" },
+   334→    ],
+   335→    highlights: ["Foundation readiness", "Academic English", "Study skills check", "Pathway recommendation"],
+   336→  },
+   337→  {
+   338→    id: "pre-master-entry", name: "Pre-Master Entry Test", slug: "pre-master-entry-test", category: "university", examType: "Placement",
+   339→    styleLabel: "Pre-Master Entry practice test", badge: "Pre-Master", accent: "royal",
+   340→    tagline: "Entry for pre-master's pathway",
+   341→    description: "Pre-master's entry assessment covering academic writing, critical reading and quantitative reasoning.",
+   342→    duration: "2h 00m", scale: "Pass / Refer",
+   343→    sections: [
+   344→      { name: "Academic Writing", detail: "Essay" },
+   345→      { name: "Critical Reading", detail: "Analysis" },
+   346→      { name: "Quantitative Reasoning", detail: "Interpretation" },
+   347→    ],
+   348→    highlights: ["Academic writing", "Critical reading", "Quantitative reasoning", "Master's readiness"],
+   349→  },
+   350→  {
+   351→    id: "scholarship-assessment", name: "Scholarship Assessment Test", slug: "scholarship-assessment-test", category: "university", examType: "Placement",
+   352→    styleLabel: "Scholarship Assessment practice test", badge: "Scholarship", accent: "purple",
+   353→    tagline: "Merit assessment for scholarship awards",
+   354→    description: "Scholarship assessment combining academic reasoning, written analysis and an interview prompt.",
+   355→    duration: "2h 00m", scale: "0–100",
+   356→    sections: [
+   357→      { name: "Academic Reasoning", detail: "MCQ" },
+   358→      { name: "Written Analysis", detail: "Essay" },
+   359→      { name: "Interview Prompt", detail: "Speaking" },
+   360→    ],
+   361→    highlights: ["Merit evaluation", "Written analysis", "Interview practice", "Scholarship recommendation"],
+   362→  },
+   363→
+   364→  // ===== VISA & INTERVIEW =====
+   365→  {
+   366→    id: "uk-credibility", name: "UK Credibility Interview", slug: "credibility-interview", category: "visa", examType: "VisaInterview",
+   367→    styleLabel: "Credibility Interview practice", badge: "UK Visa", accent: "royal", popular: true,
+   368→    tagline: "Practice the UK student credibility interview",
+   369→    description: "Practice the UK student visa credibility interview with realistic question prompts and recording practice.",
+   370→    duration: "15–20 min", scale: "Confidence score",
+   371→    sections: [
+   372→      { name: "Course & University", detail: "Why this course?" },
+   373→      { name: "Finances", detail: "Funding proof" },
+   374→      { name: "Post-study plans", detail: "Return intention" },
+   375→    ],
+   376→    highlights: ["Realistic credibility prompts", "Recording practice", "Confidence scoring", "Feedback tips"],
+   377→  },
+   378→  {
+   379→    id: "cas-interview", name: "CAS Interview Practice", slug: "cas-interview", category: "visa", examType: "VisaInterview",
+   380→    styleLabel: "CAS Interview practice", badge: "CAS", accent: "blue",
+   381→    tagline: "Confirmation of Acceptance for Studies interview",
+   382→    description: "Practice the university CAS interview used to confirm your acceptance for studies in the UK.",
+   383→    duration: "10–15 min", scale: "Confidence score",
+   384→    sections: [
+   385→      { name: "Course Knowledge", detail: "Module understanding" },
+   386→      { name: "English Ability", detail: "Live speaking check" },
+   387→      { name: "Logistics", detail: "Accommodation + fees" },
+   388→    ],
+   389→    highlights: ["CAS-style prompts", "Speaking assessment", "Confidence scoring", "Improvement tips"],
+   390→  },
+   391→  {
+   392→    id: "visa-interview", name: "Visa Interview Practice", slug: "visa-interview", category: "visa", examType: "VisaInterview",
+   393→    styleLabel: "Visa Interview practice", badge: "Visa", accent: "orange",
+   394→    tagline: "General visa interview simulation",
+   395→    description: "Practice general student visa interview questions for any destination country.",
+   396→    duration: "15 min", scale: "Confidence score",
+   397→    sections: [
+   398→      { name: "Background", detail: "Education + work" },
+   399→      { name: "Intent", detail: "Study purpose" },
+   400→      { name: "Ties", detail: "Home country ties" },
+   401→    ],
+   402→    highlights: ["Multi-country prompts", "Recording practice", "Confidence scoring", "Feedback"],
+   403→  },
+   404→  {
+   405→    id: "scholarship-interview", name: "Scholarship Interview Practice", slug: "scholarship-interview", category: "visa", examType: "VisaInterview",
+   406→    styleLabel: "Scholarship Interview practice", badge: "Scholarship", accent: "purple",
+   407→    tagline: "Panel interview for scholarship awards",
+   408→    description: "Practice scholarship panel interview questions on leadership, goals and contribution.",
+   409→    duration: "20 min", scale: "Confidence score",
+   410→    sections: [
+   411→      { name: "Leadership", detail: "Examples" },
+   412→      { name: "Goals", detail: "Career + study" },
+   413→      { name: "Contribution", detail: "Community" },
+   414→    ],
+   415→    highlights: ["Panel-style prompts", "Leadership questions", "Recording practice", "Confidence scoring"],
+   416→  },
+   417→  {
+   418→    id: "admission-interview", name: "University Admission Interview", slug: "admission-interview", category: "visa", examType: "VisaInterview",
+   419→    styleLabel: "Admission Interview practice", badge: "Admission", accent: "green",
+   420→    tagline: "University admission interview simulation",
+   421→    description: "Practice university admission interview questions covering motivation, fit and academic background.",
+   422→    duration: "20 min", scale: "Confidence score",
+   423→    sections: [
+   424→      { name: "Motivation", detail: "Why this university?" },
+   425→      { name: "Fit", detail: "Course alignment" },
+   426→      { name: "Background", detail: "Academic + extracurricular" },
+   427→    ],
+   428→    highlights: ["Admission-style prompts", "Motivation questions", "Recording practice", "Confidence scoring"],
+   429→  },
+   430→
+   431→  // ===== ALO INTERNAL =====
+   432→  {
+   433→    id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examType: null,
+   434→    styleLabel: "ALO Internal practice test", badge: "Internal", accent: "blue",
+   435→    tagline: "Assess counselor knowledge & process",
+   436→    description: "Internal ALO test to assess counselor knowledge of countries, universities, visas and ALO process.",
+   437→    duration: "1h 00m", scale: "0–100",
+   438→    sections: [
+   439→      { name: "Countries & Visas", detail: "Knowledge" },
+   440→      { name: "Universities", detail: "Programs + entry" },
+   441→      { name: "ALO Process", detail: "Workflow" },
+   442→    ],
+   443→    highlights: ["Counselor onboarding", "Process knowledge", "Score + certification", "Internal only"],
+   444→  },
+   445→  {
+   446→    id: "student-readiness", name: "Student Readiness Test", slug: "student-readiness-test", category: "alo-internal", examType: "Placement",
+   447→    styleLabel: "ALO Internal practice test", badge: "Internal", accent: "orange",
+   448→    tagline: "Are you ready to apply abroad?",
+   449→    description: "Internal ALO test measuring a student's readiness to begin applications abroad.",
+   450→    duration: "45 min", scale: "Readiness 0–100",
+   451→    sections: [
+   452→      { name: "English", detail: "Quick diagnostic" },
+   453→      { name: "Documents", detail: "Readiness check" },
+   454→      { name: "Finance", detail: "Awareness" },
+   455→    ],
+   456→    highlights: ["Readiness score", "Gap analysis", "Counselor handoff", "Action plan"],
+   457→  },
+   458→  {
+   459→    id: "english-diagnostic", name: "English Level Diagnostic", slug: "english-level-diagnostic", category: "alo-internal", examType: "Placement",
+   460→    styleLabel: "ALO Internal practice test", badge: "Diagnostic", accent: "royal",
+   461→    tagline: "Quick CEFR level check",
+   462→    description: "A quick adaptive diagnostic to place students at the right CEFR level for prep planning.",
+   463→    duration: "30 min", scale: "CEFR A1–C2",
+   464→    sections: [
+   465→      { name: "Grammar", detail: "Adaptive" },
+   466→      { name: "Vocabulary", detail: "Adaptive" },
+   467→      { name: "Reading", detail: "Short passage" },
+   468→    ],
+   469→    highlights: ["Adaptive", "CEFR placement", "5-minute option", "Prep plan input"],
+   470→  },
+   471→  {
+   472→    id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examType: null,
+   473→    styleLabel: "ALO Internal practice test", badge: "Checklist", accent: "green",
+   474→    tagline: "Checklist for application documents",
+   475→    description: "An interactive checklist test verifying that a student's documents are application-ready.",
+   476→    duration: "20 min", scale: "Checklist %",
+   477→    sections: [
+   478→      { name: "Academic", detail: "Transcripts + certificates" },
+   479→      { name: "Identity", detail: "Passport + photo" },
+   480→      { name: "Financial", detail: "Bank statement + sponsorship" },
+   481→    ],
+   482→    highlights: ["Document checklist", "Missing-item alerts", "Counselor handoff", "Application-ready flag"],
+   483→  },
+   484→  {
+   485→    id: "visa-readiness", name: "Visa Readiness Test", slug: "visa-readiness-test", category: "alo-internal", examType: "VisaInterview",
+   486→    styleLabel: "ALO Internal practice test", badge: "Visa", accent: "purple",
+   487→    tagline: "Ready for your visa interview?",
+   488→    description: "An internal ALO test to verify a student is ready for their visa interview — documents, finances and interview prep.",
+   489→    duration: "30 min", scale: "Readiness 0–100",
+   490→    sections: [
+   491→      { name: "Document Check", detail: "Visa file" },
+   492→      { name: "Finance Check", detail: "Funds proof" },
+   493→      { name: "Interview Practice", detail: "Recording" },
+   494→    ],
+   495→    highlights: ["Visa file check", "Finance verification", "Interview recording", "Readiness certificate"],
+   496→  },
+   497→];
+   498→
+   499→export const PRACTICE_DISCLAIMER = "This is original exam-aligned practice for preparation only. Scores are practice estimates. Not official exam content. No guarantee of real-exam repetition.";
+   500→
+   501→export const CBT_ENGINE_FEATURES = [
+   502→  { icon: "timer", title: "Section & full exam timer", desc: "Sticky countdown with auto-submit" },
+   503→  { icon: "palette", title: "Question palette", desc: "Answered / unanswered / flagged status" },
+   504→  { icon: "save", title: "Auto-save & refresh recovery", desc: "Never lose progress" },
+   505→  { icon: "submit", title: "Submit confirmation", desc: "Anti-refresh protection" },
+   506→  { icon: "pause", title: "Pause / resume", desc: "If the exam allows" },
+   507→  { icon: "report", title: "Smart Score Report", desc: "Band / score / percentile + skill breakdown" },
+   508→  { icon: "review", title: "Answer review + explanations", desc: "Learn from every question" },
+   509→  { icon: "download", title: "Downloadable report", desc: "PDF with strengths & plan" },
+   510→];
+   511→
+   512→export const CBT_QUESTION_TYPES = [
+   513→  "Single choice MCQ", "Multiple choice MCQ", "True / False / Not Given", "Yes / No / Not Given",
+   514→  "Fill in the blank", "Dropdown blank", "Short answer", "Essay writing", "Graph / chart writing",
+   515→  "Listening audio question", "Speaking recording", "Read aloud", "Repeat sentence",
+   516→  "Describe image", "Retell lecture", "Summarize written text", "Summarize spoken text",
+   517→  "Drag & drop matching", "Matching headings", "Matching sentence endings", "Reorder paragraphs",
+   518→  "Numeric answer", "Code / text input", "Case study", "Scenario-based", "File upload", "Image-based",
+   519→];
+   520→

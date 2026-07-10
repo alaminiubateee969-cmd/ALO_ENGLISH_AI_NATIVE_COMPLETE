@@ -1,0 +1,180 @@
+# =====================================================================
+# ALO English Test Platform — Apache / cPanel .htaccess
+# ---------------------------------------------------------------------
+# Enforces HTTPS, clean-URL routing, hardening, sensitive-file blocking,
+# security headers, static-asset caching, and PHP-execution suppression
+# inside upload/storage directories.
+# PHP 8.2+ / MySQL 8 cPanel production.
+# =====================================================================
+
+# ---------- 0. Basic hardening ----------
+Options -Indexes -MultiViews
+ServerSignature Off
+AddDefaultCharset UTF-8
+
+# Disable directory listing safety net (works even if Options overridden)
+<IfModule mod_autoindex.c>
+    IndexIgnore *
+</IfModule>
+
+# ---------- 1. Force HTTPS + HSTS ----------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Ensure SSL is on; redirect any http:// host to https:// (non-www optional)
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+    # Send HSTS header on HTTPS responses (1 year, include subdomains, preload)
+    <IfModule mod_headers.c>
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+    </IfModule>
+</IfModule>
+
+# ---------- 2. Security headers ----------
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(self), camera=(self), payment=(), usb=()"
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+    # Content-Security-Policy: tighten as needed; allow inline styles for now.
+    Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data:; media-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self'; upgrade-insecure-requests"
+    # Remove server/PHP version exposure
+    Header always unset X-Powered-By
+    Header always unset Server
+</IfModule>
+
+# ---------- 3. Block sensitive files ----------
+# Block env files anywhere they appear (defense in depth)
+<FilesMatch "(^\.env$|^\.env\..*|composer\.(json|lock)|composer\.phar|artisan|.*\.sql|.*\.bak|.*\.swp|.*~|\.gitignore|\.gitattributes|\.htpasswd|README.*|CHANGELOG.*|LICENSE.*|CONTRIBUTING.*)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Block dotfiles (.git, .svn, .hg, .DS_Store, etc.)
+<FilesMatch "^\.(git|svn|hg|DS_Store)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ---------- 4. Block sensitive directories ----------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:storage|storage/private|private|logs|database|app|config|cron|scripts|vendor|tests|reports|node_modules)/?.*$ - [F,L]
+</IfModule>
+
+<IfModule mod_alias.c>
+    # Direct alias blocking where mod_rewrite isn't enough
+    RedirectMatch 403 (?i)/(storage|storage/private|private|logs|database|app|config|cron|scripts|vendor|tests|reports|node_modules)(/|$)
+</IfModule>
+
+# ---------- 5. Disable PHP execution inside uploads/storage ----------
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Force "application/octet-stream" for any PHP-like files under storage/uploads
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^storage/.*\.(phtml?|phps|phar|cgi|pl|py|sh|asp|aspx|jsp)$ - [F,L]
+    RewriteRule ^public/uploads/.*\.(phtml?|phps|phar|cgi|pl|py|sh|asp|aspx|jsp)$ - [F,L]
+</IfModule>
+
+# Per-directory hardening: storage/private MUST be 100% blocked
+<DirectoryMatch "^.*/(storage/private|private|logs)/?$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</DirectoryMatch>
+
+# ---------- 6. Clean URL routing ----------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If the request is for an existing real file/dir (static assets), serve it.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Otherwise route everything to the front controller (this index.php).
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# ---------- 7. Static-asset caching ----------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                 "access plus 7 days"
+    ExpiresByType text/javascript          "access plus 7 days"
+    ExpiresByType application/javascript   "access plus 7 days"
+    ExpiresByType application/json         "access plus 0 seconds"
+    ExpiresByType image/png                "access plus 30 days"
+    ExpiresByType image/jpeg               "access plus 30 days"
+    ExpiresByType image/webp               "access plus 30 days"
+    ExpiresByType image/svg+xml            "access plus 30 days"
+    ExpiresByType image/x-icon             "access plus 30 days"
+    ExpiresByType font/woff                "access plus 1 year"
+    ExpiresByType font/woff2               "access plus 1 year"
+    ExpiresByType application/pdf          "access plus 1 hour"
+    ExpiresByType video/mp4                "access plus 7 days"
+    ExpiresByType audio/mpeg               "access plus 7 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|png|jpe?g|webp|svg|ico|woff2?|ttf|eot|mp4|mp3)$">
+        Header set Cache-Control "public, max-age=604800, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(html|json)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ---------- 8. Compression ----------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml font/ttf font/otf
+</IfModule>
+
+# ---------- 9. Default charset + MIME safety ----------
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddType application/octet-stream .env
+    AddType application/octet-stream .sql
+    AddType application/octet-stream .bak
+</IfModule>
+
+# ---------- 10. Misc hardening ----------
+# Limit HTTP methods to the set we actually use
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|DELETE|CONNECT|PUT|PATCH) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# Reduce Clickjacking via X-Frame (already set above; belt-and-braces)
+<IfModule mod_headers.c>
+    Header always append X-Frame-Options SAMEORIGIN
+</IfModule>
