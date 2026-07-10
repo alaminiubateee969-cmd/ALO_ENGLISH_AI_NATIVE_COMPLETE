@@ -1,0 +1,171 @@
+/* ALO English Test Platform — minimal brand stylesheet.
+   Brand: white background, blue #0057B8, orange #E8501A, navy #0B1F3A. */
+:root {
+    --alo-blue:#0057B8; --alo-orange:#E8501A; --alo-navy:#0B1F3A;
+    --alo-bg-soft:#F4F8FF; --alo-border:#D9E8FF; --alo-text:#1a2438; --alo-text-soft:#5a6b85;
+    --alo-radius:10px; --alo-radius-sm:6px;
+    --alo-shadow:0 2px 8px rgba(11,31,58,.06); --alo-shadow-lg:0 6px 24px rgba(11,31,58,.10);
+    --alo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*,*::before,*::after { box-sizing:border-box; }
+body { margin:0; font-family:var(--alo-font); color:var(--alo-text); background:#fff; line-height:1.55; font-size:16px; }
+a { color:var(--alo-blue); text-decoration:none; }
+a:hover { text-decoration:underline; }
+h1,h2,h3,h4 { color:var(--alo-navy); line-height:1.25; margin:0 0 .5em; }
+h1 { font-size:2rem; } h2 { font-size:1.5rem; } h3 { font-size:1.15rem; }
+p { margin:0 0 1em; } img { max-width:100%; height:auto; }
+.container { max-width:1280px; margin:0 auto; padding:0 1.25rem; width:100%; }
+
+/* Header / nav */
+.alo-header { background:#fff; border-bottom:1px solid var(--alo-border); position:sticky; top:0; z-index:50; }
+.alo-header__inner { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.75rem 1.25rem; max-width:1280px; margin:0 auto; }
+.alo-logo { display:inline-flex; align-items:baseline; gap:.4rem; font-weight:800; font-size:1.25rem; color:var(--alo-navy); }
+.alo-logo:hover { text-decoration:none; }
+.alo-logo__mark { background:var(--alo-blue); color:#fff; padding:.15rem .55rem; border-radius:var(--alo-radius-sm); }
+.alo-logo__word { color:var(--alo-orange); }
+.alo-nav { display:flex; gap:1.25rem; align-items:center; }
+.alo-nav a { color:var(--alo-navy); font-weight:500; padding:.35rem .25rem; }
+.alo-nav a:hover { color:var(--alo-blue); text-decoration:none; }
+.alo-nav__login { background:var(--alo-blue); color:#fff !important; padding:.5rem 1rem !important; border-radius:var(--alo-radius-sm); }
+.alo-nav__login:hover { background:var(--alo-navy); }
+.alo-nav-toggle { display:none; flex-direction:column; gap:4px; background:none; border:0; cursor:pointer; padding:.4rem; }
+.alo-nav-toggle span { width:22px; height:2px; background:var(--alo-navy); display:block; }
+
+
+/* Buttons */
+.btn { display:inline-block; padding:.65rem 1.25rem; border-radius:var(--alo-radius-sm); border:1px solid transparent; font-weight:600; font-size:.95rem; cursor:pointer; text-decoration:none; transition:background .15s, border-color .15s; }
+.btn:hover { text-decoration:none; }
+.btn-primary { background:var(--alo-orange); color:#fff; } .btn-primary:hover { background:#c8431a; }
+.btn-secondary { background:var(--alo-blue); color:#fff; } .btn-secondary:hover { background:var(--alo-navy); }
+.btn-link { background:none; color:var(--alo-blue); padding:0; } .btn-link:hover { color:var(--alo-orange); }
+.btn-sm { padding:.35rem .8rem; font-size:.85rem; }
+
+/* Cards & sections */
+.alo-main { min-height:60vh; }
+.alo-section { padding:2rem 0; }
+.alo-section--narrow { max-width:760px; }
+.alo-section__head { margin-bottom:1.5rem; }
+.alo-section__head p { color:var(--alo-text-soft); }
+.card { background:#fff; border:1px solid var(--alo-border); border-radius:var(--alo-radius); padding:1.5rem; box-shadow:var(--alo-shadow); }
+.alo-card__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+.alo-card__head h2 { margin:0; }
+
+/* Grid */
+.alo-grid { display:grid; gap:1.25rem; }
+.alo-grid--2 { grid-template-columns:repeat(2,1fr); }
+.alo-grid--3 { grid-template-columns:repeat(3,1fr); }
+.alo-grid--4 { grid-template-columns:repeat(4,1fr); }
+
+/* Hero */
+.alo-hero { background:linear-gradient(135deg,var(--alo-blue) 0%,var(--alo-navy) 100%); color:#fff; padding:3.5rem 0; }
+.alo-hero--compact { padding:2.25rem 0; }
+.alo-hero__inner { max-width:1280px; margin:0 auto; padding:0 1.25rem; }
+.alo-hero__eyebrow { text-transform:uppercase; letter-spacing:.08em; font-size:.8rem; color:#b9d4ff; margin:0 0 .5rem; }
+.alo-hero__title { color:#fff; font-size:2.4rem; margin:0 0 .75rem; }
+.alo-hero__lede { font-size:1.1rem; color:#e6efff; max-width:60ch; margin:0 0 1.25rem; }
+.alo-hero__cta { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+.alo-hero__cta .btn-secondary { background:#fff; color:var(--alo-blue); }
+.alo-hero__note { font-size:.85rem; color:#b9d4ff; }
+
+/* Banners */
+.alo-disclaimer-banner { background:#FFF6F0; border:1px solid var(--alo-orange); color:var(--alo-navy); border-radius:var(--alo-radius); padding:1rem 1.25rem; margin:1.5rem 0; }
+.alo-disclaimer-banner--large { padding:1.5rem; }
+.alo-disclaimer-banner h2 { color:var(--alo-orange); margin-top:0; }
+.alo-disclaimer-soft { color:var(--alo-text-soft); font-size:.9rem; margin-top:1rem; }
+.alo-quota-banner { display:flex; align-items:center; justify-content:center; gap:2rem; background:var(--alo-bg-soft); border:1px solid var(--alo-border); border-radius:var(--alo-radius); padding:1.5rem; text-align:center; }
+.alo-quota-banner__col { display:flex; flex-direction:column; align-items:center; }
+.alo-quota-banner__num { font-size:2.5rem; font-weight:800; color:var(--alo-blue); }
+.alo-quota-banner__label { color:var(--alo-text-soft); font-size:.9rem; }
+.alo-quota-banner__divider { width:1px; height:60px; background:var(--alo-border); }
+.alo-cta-band { display:flex; align-items:center; justify-content:space-between; gap:1.5rem; background:var(--alo-navy); color:#fff; padding:2rem; border-radius:var(--alo-radius); flex-wrap:wrap; }
+.alo-cta-band h2 { color:#fff; margin:0 0 .25rem; } .alo-cta-band p { color:#c9d6e8; margin:0; }
+.alo-cta-band__buttons { display:flex; gap:.75rem; flex-wrap:wrap; }
+
+
+/* Forms */
+.alo-form__row { margin-bottom:1rem; }
+.alo-form__row--inline { display:flex; align-items:center; gap:1rem; }
+.alo-form__row--check { display:flex; }
+.alo-form__label { display:block; font-weight:600; margin-bottom:.35rem; color:var(--alo-navy); }
+.alo-required { color:var(--alo-orange); }
+.alo-form__input,.alo-form__textarea { width:100%; padding:.65rem .8rem; border:1px solid var(--alo-border); border-radius:var(--alo-radius-sm); font:inherit; background:#fff; }
+.alo-form__input:focus,.alo-form__textarea:focus { outline:2px solid var(--alo-blue); outline-offset:1px; border-color:var(--alo-blue); }
+.alo-form__textarea { resize:vertical; }
+.alo-form__hint { color:var(--alo-text-soft); font-size:.85rem; display:block; margin-top:.25rem; }
+.alo-form__check { display:flex; gap:.5rem; align-items:flex-start; font-size:.9rem; }
+.alo-form__check input { margin-top:.25rem; }
+.alo-form__link { font-size:.9rem; }
+.alo-divider { border:0; border-top:1px solid var(--alo-border); margin:1.5rem 0; }
+
+/* Auth card */
+.alo-auth-card { max-width:560px; margin:0 auto; }
+.alo-auth-card__title { margin-top:0; }
+.alo-auth-card__lede { color:var(--alo-text-soft); margin-bottom:1.5rem; }
+.alo-auth-card__alt { text-align:center; color:var(--alo-text-soft); }
+
+/* Tables */
+.alo-table-wrap { overflow-x:auto; }
+.alo-table { width:100%; border-collapse:collapse; font-size:.95rem; }
+.alo-table th,.alo-table td { text-align:left; padding:.75rem .85rem; border-bottom:1px solid var(--alo-border); vertical-align:top; }
+.alo-table th { background:var(--alo-bg-soft); color:var(--alo-navy); font-weight:600; }
+.alo-table--compact th,.alo-table--compact td { padding:.5rem .65rem; }
+.alo-cell-title { font-weight:600; color:var(--alo-navy); } .alo-cell-sub { color:var(--alo-text-soft); font-size:.85rem; }
+.alo-mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em; }
+.alo-num { text-align:right; font-variant-numeric:tabular-nums; }
+.alo-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Badges */
+.alo-badge { display:inline-block; padding:.2rem .6rem; border-radius:999px; font-size:.8rem; font-weight:600; background:var(--alo-bg-soft); color:var(--alo-navy); }
+.alo-badge--easy { background:#E6F4EA; color:#1B5E20; } .alo-badge--medium { background:#FFF4E0; color:#8a4b00; } .alo-badge--hard { background:#FDE7E7; color:#8a1b1b; } .alo-badge--info { background:#E7F0FF; color:var(--alo-blue); } .alo-badge--success { background:#E6F4EA; color:#1B5E20; } .alo-badge--warn { background:#FFF4E0; color:#8a4b00; }
+
+/* Misc UI */
+.alo-empty { text-align:center; padding:2rem; color:var(--alo-text-soft); border:1px dashed var(--alo-border); border-radius:var(--alo-radius); }
+.alo-exam-card__title { margin:0 0 .25rem; } .alo-exam-card__style { color:var(--alo-text-soft); font-size:.9rem; margin:0 0 .75rem; }
+.alo-demo-tag { display:inline-block; padding:.15rem .55rem; border-radius:999px; background:#FFF4E0; color:#8a4b00; font-size:.75rem; font-weight:600; }
+.alo-kpi__card { display:flex; flex-direction:column; gap:.25rem; } .alo-kpi__label { color:var(--alo-text-soft); font-size:.9rem; } .alo-kpi__value { font-size:1.75rem; font-weight:800; color:var(--alo-navy); }
+.alo-dashboard-cols { align-items:start; }
+.alo-progress { background:var(--alo-bg-soft); border-radius:999px; height:12px; overflow:hidden; margin:.5rem 0; } .alo-progress__bar { background:var(--alo-blue); height:100%; } .alo-progress__num { color:var(--alo-text-soft); font-size:.85rem; }
+.alo-ai-tip { background:var(--alo-bg-soft); border-left:3px solid var(--alo-orange); padding:.75rem 1rem; border-radius:0 var(--alo-radius-sm) var(--alo-radius-sm) 0; }
+.alo-list { list-style:none; padding:0; margin:0 0 1rem; } .alo-list li { padding:.4rem 0; border-bottom:1px solid var(--alo-border); } .alo-list--big li { display:flex; justify-content:space-between; } .alo-list--cards li { background:var(--alo-bg-soft); border-radius:var(--alo-radius-sm); padding:.75rem 1rem; margin-bottom:.5rem; } .alo-list__meta { display:block; color:var(--alo-text-soft); font-size:.85rem; }
+.alo-linklist { list-style:none; padding:0; margin:0; } .alo-linklist li { padding:.35rem 0; border-bottom:1px solid var(--alo-border); } .alo-linklist li:last-child { border-bottom:0; }
+.alo-stat-card { display:flex; flex-direction:column; gap:.25rem; } .alo-stat-card__label { color:var(--alo-text-soft); font-size:.9rem; } .alo-stat-card__value { font-size:1.5rem; font-weight:700; color:var(--alo-navy); }
+.alo-bullets li { margin-bottom:.35rem; } .alo-cat-title { margin-top:1.5rem; color:var(--alo-blue); } .alo-cat-count { color:var(--alo-text-soft); font-weight:400; font-size:.9rem; }
+.alo-steps { list-style:none; padding:0; display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+.alo-steps li { background:var(--alo-bg-soft); border-radius:var(--alo-radius); padding:1rem; }
+.alo-steps__num { display:inline-flex; width:28px; height:28px; border-radius:50%; background:var(--alo-orange); color:#fff; align-items:center; justify-content:center; font-weight:700; margin-bottom:.5rem; }
+.alo-plan { display:flex; flex-direction:column; gap:1rem; } .alo-plan--featured { border-color:var(--alo-orange); box-shadow:var(--alo-shadow-lg); }
+.alo-plan__badge { display:inline-block; background:var(--alo-orange); color:#fff; padding:.15rem .6rem; border-radius:999px; font-size:.75rem; font-weight:700; margin:0 0 .5rem; } .alo-plan__name { margin:0; } .alo-plan__price { font-size:2rem; font-weight:800; color:var(--alo-navy); margin:0; } .alo-plan__sub { color:var(--alo-text-soft); margin:0; }
+.alo-plan__features { list-style:none; padding:0; margin:0; flex:1; } .alo-plan__features li { padding:.35rem 0; border-bottom:1px solid var(--alo-border); } .alo-plan__features li:last-child { border-bottom:0; } .alo-plan__features li::before { content:"✓ "; color:var(--alo-blue); font-weight:700; }
+.alo-alert { border-radius:var(--alo-radius); padding:1rem 1.25rem; margin-bottom:1.5rem; } .alo-alert--success { background:#E6F4EA; border:1px solid #1B5E20; color:#1B5E20; }
+.alo-legal h2 { margin-top:1.5rem; } .alo-legal__updated { color:var(--alo-text-soft); font-size:.9rem; } .alo-copybox { display:flex; gap:.5rem; }
+.alo-chart--bars { display:grid; grid-template-columns:repeat(7,1fr); gap:.5rem; height:180px; align-items:end; padding-top:1rem; }
+.alo-chart__col { display:flex; flex-direction:column; align-items:center; gap:.25rem; height:100%; justify-content:flex-end; } .alo-chart__bar { width:60%; background:var(--alo-blue); border-radius:var(--alo-radius-sm) var(--alo-radius-sm) 0 0; min-height:4px; } .alo-chart__label { font-size:.75rem; color:var(--alo-text-soft); } .alo-chart__num { font-size:.75rem; color:var(--alo-navy); font-weight:600; }
+
+/* Footer */
+.alo-footer { background:var(--alo-navy); color:#c9d6e8; padding:2.5rem 0 0; margin-top:2rem; }
+.alo-footer__grid { display:grid; grid-template-columns:repeat(3,1fr) 1.6fr; gap:2rem; padding-bottom:2rem; } .alo-footer__heading { color:#fff; font-size:1rem; margin:0 0 .75rem; } .alo-footer__col ul { list-style:none; padding:0; margin:0; } .alo-footer__col li { padding:.25rem 0; } .alo-footer__col a { color:#c9d6e8; } .alo-footer__col a:hover { color:#fff; } .alo-footer__brand .alo-logo__mark { background:var(--alo-orange); } .alo-footer__disclaimer { font-size:.85rem; color:#9eb0cc; margin-top:.75rem; } .alo-footer__crm { font-size:.85rem; color:#c9d6e8; margin-top:.5rem; } .alo-status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#2ecc71; margin-right:.35rem; }
+.alo-footer__bar { border-top:1px solid #1c3358; padding:.85rem 0; font-size:.8rem; } .alo-footer__bar-inner { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; color:#9eb0cc; }
+
+/* Responsive */
+@media (max-width:960px) {
+    .alo-grid--4 { grid-template-columns:repeat(2,1fr); }
+    .alo-footer__grid { grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:760px) {
+    .alo-nav-toggle { display:flex; }
+    .alo-nav { display:none; position:absolute; top:100%; left:0; right:0; background:#fff; flex-direction:column; padding:1rem 1.25rem; border-bottom:1px solid var(--alo-border); box-shadow:var(--alo-shadow); }
+    .alo-nav.is-open { display:flex; }
+    .alo-grid--2,.alo-grid--3,.alo-grid--4 { grid-template-columns:1fr; }
+    .alo-steps { grid-template-columns:1fr 1fr; }
+    .alo-hero__title { font-size:1.8rem; }
+    .alo-cta-band { flex-direction:column; align-items:flex-start; }
+    .alo-footer__grid { grid-template-columns:1fr; }
+    .alo-quota-banner { flex-direction:column; gap:1rem; }
+    .alo-quota-banner__divider { width:60px; height:1px; }
+    .alo-form__row--inline { flex-direction:column; align-items:stretch; }
+}
+@media (max-width:480px) {
+    .alo-steps { grid-template-columns:1fr; }
+    .alo-hero { padding:2.5rem 0; }
+    .alo-hero__title { font-size:1.6rem; }
+}
