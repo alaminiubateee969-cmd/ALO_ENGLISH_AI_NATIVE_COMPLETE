@@ -1,0 +1,423 @@
+     1→-- =============================================================================
+     2→-- ALO English Test Platform - AI Agent Employee Addon (ai_agents_addon.sql)
+     3→-- =============================================================================
+     4→-- Project   : ALO English Test Platform (cPanel production package)
+     5→-- Engine    : InnoDB / utf8mb4_unicode_ci
+     6→-- Scope     : 10 tables for the AI Agent Employee workforce + seed data.
+     7→--             20 AI Agent Employees covering intake, eligibility, setup,
+     8→--             proctoring, exam operations, evaluation, scoring, feedback,
+     9→--             reports, CRM sync, voucher/payment, content authoring,
+    10→--             compliance, audit, and student support.
+    11→-- Usage     : (a) Import standalone into a database already running install.sql,
+    12→--             OR (b) the same content is appended to the end of install.sql
+    13→--             so that a single install.sql import creates everything.
+    14→-- Compliance: Original content only. No official exam items reproduced.
+    15→--             All public-facing labels use ONLY approved wording:
+    16→--               "ALO Evaluation System", "Digital Practice Session",
+    17→--               "ALO Practice Examiner", "Practice Interview Coach",
+    18→--               "Automated Practice Feedback", "Smart Score Report",
+    19→--               "ALO Estimated Score Engine".
+    20→--             No claim of "AI teacher", "bot", "robot", "fake human",
+    21→--             "real examiner", "official examiner", or "official score"
+    22→--             anywhere in the public-facing labels.
+    23→--             internal_label uses "Agent" terminology for admin-only display.
+    24→-- Disclosure: "Some practice tests, scoring, feedback, and interview
+    25→--             simulations may be supported by automated digital evaluation
+    26→--             tools. This is a practice platform only, not an official
+    27→--             exam result."
+    28→-- =============================================================================
+    29→
+    30→SET NAMES utf8mb4;
+    31→SET time_zone = '+00:00';
+    32→SET sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY';
+    33→SET foreign_key_checks = 0;
+    34→
+    35→-- -----------------------------------------------------------------------------
+    36→-- Drop existing agent tables (idempotent reinstall, reverse dependency order)
+    37→-- -----------------------------------------------------------------------------
+    38→DROP TABLE IF EXISTS exam_ai_agent_audit;
+    39→DROP TABLE IF EXISTS exam_ai_agent_performance;
+    40→DROP TABLE IF EXISTS exam_ai_agent_prompts;
+    41→DROP TABLE IF EXISTS exam_ai_agent_approvals;
+    42→DROP TABLE IF EXISTS exam_ai_agent_failures;
+    43→DROP TABLE IF EXISTS exam_ai_agent_settings;
+    44→DROP TABLE IF EXISTS exam_ai_agent_reviews;
+    45→DROP TABLE IF EXISTS exam_ai_agent_logs;
+    46→DROP TABLE IF EXISTS exam_ai_agent_tasks;
+    47→DROP TABLE IF EXISTS exam_ai_agents;
+    48→
+    49→-- -----------------------------------------------------------------------------
+    50→-- 1. exam_ai_agents  (AI Agent Employee master register)
+    51→-- -----------------------------------------------------------------------------
+    52→CREATE TABLE exam_ai_agents (
+    53→    id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    54→    agent_code              VARCHAR(48)  NOT NULL,
+    55→    agent_name              VARCHAR(150) NOT NULL,
+    56→    department              VARCHAR(80)  NOT NULL,
+    57→    responsibility          VARCHAR(500) NOT NULL,
+    58→    exam_scope              JSON         NOT NULL,
+    59→    is_active               TINYINT(1)   NOT NULL DEFAULT 1,
+    60→    public_label            VARCHAR(120) NOT NULL,
+    61→    internal_label          VARCHAR(120) NOT NULL,
+    62→    can_auto_execute        TINYINT(1)   NOT NULL DEFAULT 0,
+    63→    requires_admin_approval TINYINT(1)   NOT NULL DEFAULT 1,
+    64→    created_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    65→    updated_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    66→    PRIMARY KEY (id),
+    67→    UNIQUE KEY uq_ai_agents_code (agent_code),
+    68→    KEY idx_ai_agents_code (agent_code),
+    69→    KEY idx_ai_agents_active (is_active),
+    70→    KEY idx_ai_agents_department (department)
+    71→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI Agent Employee master register (admin-only "Agent" terminology)';
+    72→
+    73→-- -----------------------------------------------------------------------------
+    74→-- 2. exam_ai_agent_tasks  (queued / running / completed agent jobs)
+    75→-- -----------------------------------------------------------------------------
+    76→CREATE TABLE exam_ai_agent_tasks (
+    77→    id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    78→    task_code      VARCHAR(48)  NOT NULL,
+    79→    agent_id       BIGINT UNSIGNED NOT NULL,
+    80→    attempt_id     BIGINT UNSIGNED NULL,
+    81→    task_type      VARCHAR(80)  NOT NULL,
+    82→    payload        JSON         NULL,
+    83→    status         ENUM('pending','running','completed','failed','cancelled') NOT NULL DEFAULT 'pending',
+    84→    result         JSON         NULL,
+    85→    started_at     DATETIME     NULL,
+    86→    completed_at   DATETIME     NULL,
+    87→    error_message  TEXT         NULL,
+    88→    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    89→    updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    90→    PRIMARY KEY (id),
+    91→    UNIQUE KEY uq_ai_tasks_code (task_code),
+    92→    KEY idx_ai_tasks_agent (agent_id),
+    93→    KEY idx_ai_tasks_status (status),
+    94→    KEY idx_ai_tasks_attempt (attempt_id),
+    95→    CONSTRAINT fk_ai_tasks_agent   FOREIGN KEY (agent_id)   REFERENCES exam_ai_agents(id)        ON DELETE CASCADE,
+    96→    CONSTRAINT fk_ai_tasks_attempt FOREIGN KEY (attempt_id) REFERENCES exam_mock_attempts(id)    ON DELETE SET NULL
+    97→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Agent task queue (one row per dispatched agent job)';
+    98→
+    99→-- -----------------------------------------------------------------------------
+   100→-- 3. exam_ai_agent_logs  (operational log per agent action, append-only)
+   101→-- -----------------------------------------------------------------------------
+   102→CREATE TABLE exam_ai_agent_logs (
+   103→    id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   104→    agent_id     BIGINT UNSIGNED NOT NULL,
+   105→    attempt_id   BIGINT UNSIGNED NULL,
+   106→    action       VARCHAR(120) NOT NULL,
+   107→    entity_type  VARCHAR(80)  NOT NULL,
+   108→    entity_id    BIGINT UNSIGNED NULL,
+   109→    details      JSON         NULL,
+   110→    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   111→    PRIMARY KEY (id),
+   112→    KEY idx_ai_logs_agent (agent_id),
+   113→    KEY idx_ai_logs_attempt (attempt_id),
+   114→    KEY idx_ai_logs_created (created_at),
+   115→    CONSTRAINT fk_ai_logs_agent   FOREIGN KEY (agent_id)   REFERENCES exam_ai_agents(id)     ON DELETE CASCADE,
+   116→    CONSTRAINT fk_ai_logs_attempt FOREIGN KEY (attempt_id) REFERENCES exam_mock_attempts(id) ON DELETE SET NULL
+   117→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Agent operational log (append-only)';
+   118→
+   119→-- -----------------------------------------------------------------------------
+   120→-- 4. exam_ai_agent_reviews  (question quality / scoring review queue)
+   121→-- -----------------------------------------------------------------------------
+   122→CREATE TABLE exam_ai_agent_reviews (
+   123→    id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   124→    agent_id         BIGINT UNSIGNED NOT NULL,
+   125→    question_id      BIGINT UNSIGNED NULL,
+   126→    review_type      VARCHAR(80)  NOT NULL,
+   127→    status           ENUM('pending','approved','rejected','flagged') NOT NULL DEFAULT 'pending',
+   128→    reviewer_user_id BIGINT UNSIGNED NULL,
+   129→    notes            TEXT         NULL,
+   130→    created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   131→    reviewed_at      DATETIME     NULL,
+   132→    PRIMARY KEY (id),
+   133→    KEY idx_ai_reviews_agent (agent_id),
+   134→    KEY idx_ai_reviews_status (status),
+   135→    KEY idx_ai_reviews_question (question_id),
+   136→    CONSTRAINT fk_ai_reviews_agent    FOREIGN KEY (agent_id)    REFERENCES exam_ai_agents(id)  ON DELETE CASCADE,
+   137→    CONSTRAINT fk_ai_reviews_question FOREIGN KEY (question_id) REFERENCES exam_questions(id) ON DELETE SET NULL
+   138→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Agent-generated review items (content quality / scoring reviews)';
+   139→
+   140→-- -----------------------------------------------------------------------------
+   141→-- 5. exam_ai_agent_settings  (per-agent runtime configuration)
+   142→-- -----------------------------------------------------------------------------
+   143→CREATE TABLE exam_ai_agent_settings (
+   144→    id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   145→    agent_code    VARCHAR(48)  NOT NULL,
+   146→    setting_key   VARCHAR(120) NOT NULL,
+   147→    setting_value TEXT         NULL,
+   148→    is_secret     TINYINT(1)   NOT NULL DEFAULT 0,
+   149→    updated_by    BIGINT UNSIGNED NULL,
+   150→    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   151→    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+   152→    PRIMARY KEY (id),
+   153→    UNIQUE KEY uq_ai_settings_agent_key (agent_code, setting_key),
+   154→    KEY idx_ai_settings_agent_code (agent_code),
+   155→    CONSTRAINT fk_ai_settings_updated_by FOREIGN KEY (updated_by) REFERENCES exam_users(id) ON DELETE SET NULL
+   156→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Per-agent runtime configuration (secrets are flagged, not decrypted on read)';
+   157→
+   158→-- -----------------------------------------------------------------------------
+   159→-- 6. exam_ai_agent_failures  (agent error tracking + resolution status)
+   160→-- -----------------------------------------------------------------------------
+   161→CREATE TABLE exam_ai_agent_failures (
+   162→    id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   163→    agent_id      BIGINT UNSIGNED NOT NULL,
+   164→    task_id       BIGINT UNSIGNED NULL,
+   165→    error_type    VARCHAR(80)  NOT NULL,
+   166→    error_message TEXT         NOT NULL,
+   167→    stack_trace   MEDIUMTEXT   NULL,
+   168→    resolved      TINYINT(1)   NOT NULL DEFAULT 0,
+   169→    resolved_at   DATETIME     NULL,
+   170→    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   171→    PRIMARY KEY (id),
+   172→    KEY idx_ai_failures_agent (agent_id),
+   173→    KEY idx_ai_failures_resolved (resolved),
+   174→    KEY idx_ai_failures_task (task_id),
+   175→    CONSTRAINT fk_ai_failures_agent FOREIGN KEY (agent_id) REFERENCES exam_ai_agents(id)      ON DELETE CASCADE,
+   176→    CONSTRAINT fk_ai_failures_task  FOREIGN KEY (task_id)  REFERENCES exam_ai_agent_tasks(id) ON DELETE SET NULL
+   177→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Agent error tracking and resolution log';
+   178→
+   179→-- -----------------------------------------------------------------------------
+   180→-- 7. exam_ai_agent_approvals  (admin approval queue for sensitive agent tasks)
+   181→-- -----------------------------------------------------------------------------
+   182→CREATE TABLE exam_ai_agent_approvals (
+   183→    id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   184→    agent_id       BIGINT UNSIGNED NOT NULL,
+   185→    task_id        BIGINT UNSIGNED NULL,
+   186→    requested_by   BIGINT UNSIGNED NOT NULL,
+   187→    approval_type  VARCHAR(80)  NOT NULL,
+   188→    payload        JSON         NULL,
+   189→    status         ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+   190→    approved_by    BIGINT UNSIGNED NULL,
+   191→    approved_at    DATETIME     NULL,
+   192→    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   193→    PRIMARY KEY (id),
+   194→    KEY idx_ai_approvals_status (status),
+   195→    KEY idx_ai_approvals_agent (agent_id),
+   196→    KEY idx_ai_approvals_task (task_id),
+   197→    CONSTRAINT fk_ai_approvals_agent      FOREIGN KEY (agent_id)     REFERENCES exam_ai_agents(id)      ON DELETE CASCADE,
+   198→    CONSTRAINT fk_ai_approvals_task       FOREIGN KEY (task_id)      REFERENCES exam_ai_agent_tasks(id) ON DELETE SET NULL,
+   199→    CONSTRAINT fk_ai_approvals_requested  FOREIGN KEY (requested_by) REFERENCES exam_users(id)         ON DELETE RESTRICT,
+   200→    CONSTRAINT fk_ai_approvals_approved   FOREIGN KEY (approved_by)  REFERENCES exam_users(id)         ON DELETE SET NULL
+   201→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Admin approval queue for tasks requiring human sign-off';
+   202→
+   203→-- -----------------------------------------------------------------------------
+   204→-- 8. exam_ai_agent_prompts  (versioned prompt library per agent)
+   205→-- -----------------------------------------------------------------------------
+   206→CREATE TABLE exam_ai_agent_prompts (
+   207→    id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   208→    agent_code   VARCHAR(48)  NOT NULL,
+   209→    prompt_key   VARCHAR(120) NOT NULL,
+   210→    prompt_text  MEDIUMTEXT   NOT NULL,
+   211→    is_active    TINYINT(1)   NOT NULL DEFAULT 1,
+   212→    version      INT          NOT NULL DEFAULT 1,
+   213→    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   214→    updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+   215→    PRIMARY KEY (id),
+   216→    KEY idx_ai_prompts_agent (agent_code),
+   217→    KEY idx_ai_prompts_active (is_active)
+   218→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Versioned prompt library per agent (writing / speaking / interview prompts)';
+   219→
+   220→-- -----------------------------------------------------------------------------
+   221→-- 9. exam_ai_agent_performance  (daily performance rollup per agent)
+   222→-- -----------------------------------------------------------------------------
+   223→CREATE TABLE exam_ai_agent_performance (
+   224→    id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   225→    agent_id             BIGINT UNSIGNED NOT NULL,
+   226→    date                 DATE         NOT NULL,
+   227→    tasks_total          INT          NOT NULL DEFAULT 0,
+   228→    tasks_completed      INT          NOT NULL DEFAULT 0,
+   229→    tasks_failed         INT          NOT NULL DEFAULT 0,
+   230→    avg_duration_seconds INT          NOT NULL DEFAULT 0,
+   231→    success_rate         DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+   232→    created_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   233→    PRIMARY KEY (id),
+   234→    UNIQUE KEY uq_ai_perf_agent_date (agent_id, date),
+   235→    KEY idx_ai_perf_agent (agent_id),
+   236→    KEY idx_ai_perf_date (date),
+   237→    CONSTRAINT fk_ai_perf_agent FOREIGN KEY (agent_id) REFERENCES exam_ai_agents(id) ON DELETE CASCADE
+   238→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Daily agent performance rollup';
+   239→
+   240→-- -----------------------------------------------------------------------------
+   241→-- 10. exam_ai_agent_audit  (immutable audit trail of agent activity)
+   242→-- -----------------------------------------------------------------------------
+   243→CREATE TABLE exam_ai_agent_audit (
+   244→    id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+   245→    agent_id        BIGINT UNSIGNED NOT NULL,
+   246→    actor_user_id   BIGINT UNSIGNED NULL,
+   247→    action          VARCHAR(120) NOT NULL,
+   248→    entity_type     VARCHAR(80)  NOT NULL,
+   249→    entity_id       BIGINT UNSIGNED NULL,
+   250→    ip_address      VARCHAR(45)  NULL,
+   251→    details         JSON         NULL,
+   252→    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   253→    PRIMARY KEY (id),
+   254→    KEY idx_ai_audit_agent (agent_id),
+   255→    KEY idx_ai_audit_created (created_at),
+   256→    KEY idx_ai_audit_actor (actor_user_id),
+   257→    CONSTRAINT fk_ai_audit_agent FOREIGN KEY (agent_id)      REFERENCES exam_ai_agents(id) ON DELETE CASCADE,
+   258→    CONSTRAINT fk_ai_audit_actor FOREIGN KEY (actor_user_id) REFERENCES exam_users(id)     ON DELETE SET NULL
+   259→) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Immutable audit trail for all sensitive agent activity';
+   260→
+   261→-- =============================================================================
+   262→-- Seed: 20 AI Agent Employees
+   263→-- =============================================================================
+   264→-- public_label values are restricted to the approved compliance wording set.
+   265→-- internal_label uses "Agent" terminology for admin-only display surfaces.
+   266→-- Auto-increment agent IDs (referenced by later seeds) are sequential 1..20
+   267→-- in the order below.
+   268→-- =============================================================================
+   269→INSERT INTO exam_ai_agents
+   270→    (agent_code, agent_name, department, responsibility, exam_scope, is_active, public_label, internal_label, can_auto_execute, requires_admin_approval)
+   271→VALUES
+   272→('AGENT-INTAKE-01',     'Exam Intake Agent',         'Intake',          'Registers student, checks exam goal, target country, target score, ALO student status, free quota', '["ALL"]', 1, 'ALO Evaluation System',       'Exam Intake Agent',         1, 0),
+   273→('AGENT-ELIGIBILITY-01','Exam Eligibility Agent',    'Intake',          'Verifies 3 free mocks (ALO) or 1 free mock (public), checks CRM match, validates ALO Student ID, prevents quota bypass', '["ALL"]', 1, 'ALO Evaluation System',       'Exam Eligibility Agent',    1, 0),
+   274→('AGENT-SETUP-01',      'Exam Setup Agent',          'Operations',      'Selects exam type, practice set, assigns sections, prepares timer, prepares instructions', '["ALL"]', 1, 'ALO Evaluation System',       'Exam Setup Agent',          1, 0),
+   275→('AGENT-PROCTOR-01',    'Digital Proctor Agent',     'Operations',      'Monitors timer, logs tab switch, pause/resume, suspicious refresh, attempt integrity', '["ALL"]', 1, 'Digital Practice Session',    'Digital Proctor Agent',     1, 0),
+   276→('AGENT-LISTENING-01',  'Listening Test Agent',      'Exam Operations', 'Manages audio playback, listening section timing, prevents replay when rules disallow', '["ALL"]', 1, 'ALO Evaluation System',       'Listening Test Agent',      1, 0),
+   277→('AGENT-READING-01',    'Reading Test Agent',        'Exam Operations', 'Manages passages, tracks reading answers, checks completion', '["ALL"]', 1, 'ALO Evaluation System',       'Reading Test Agent',        1, 0),
+   278→('AGENT-WRITING-01',    'Writing Evaluation Agent',  'Evaluation',      'Reviews essays/writing, estimates score, gives task achievement/coherence/vocabulary/grammar feedback, improvement plan', '["ALL"]', 1, 'Automated Practice Feedback', 'Writing Evaluation Agent',  0, 1),
+   279→('AGENT-SPEAKING-01',   'Speaking Interview Agent',  'Evaluation',      'Conducts speaking practice, professional examiner-style card, exam-style prompts, records answer, fluency/pronunciation/grammar/lexical/coherence/confidence feedback', '["ALL"]', 1, 'ALO Practice Examiner',       'Speaking Interview Agent',  0, 1),
+   280→('AGENT-INTERVIEW-01',  'Interview Practice Agent',  'Evaluation',      'UK credibility, CAS, visa, scholarship, admission interviews, follow-up questions, risk-level scoring', '["VisaInterview"]', 1, 'Practice Interview Coach',    'Interview Practice Agent',  0, 1),
+   281→('AGENT-SCORING-01',    'Scoring Agent',             'Evaluation',      'Calculates estimated score, maps by exam (IELTS 0-9, PTE 10-90, TOEFL 0-120, etc.), marks as estimated practice score only', '["ALL"]', 1, 'ALO Estimated Score Engine',  'Scoring Agent',             1, 0),
+   282→('AGENT-FEEDBACK-01',   'Feedback Agent',            'Evaluation',      'Creates strengths, weaknesses, next study plan, recommends next practice set, recommends counseling if needed', '["ALL"]', 1, 'Automated Practice Feedback', 'Feedback Agent',            1, 0),
+   283→('AGENT-REPORT-01',     'Report Agent',              'Operations',      'Generates Smart Score Report, adds disclaimer, creates PDF, saves report, syncs to CRM if connected', '["ALL"]', 1, 'Smart Score Report',          'Report Agent',              1, 0),
+   284→('AGENT-CRM-01',        'CRM Sync Agent',            'Integration',     'Sends registration, exam attempt, score, weak area, counseling task to CRM; logs pending if CRM unavailable', '["ALL"]', 1, 'ALO Evaluation System',       'CRM Sync Agent',            1, 0),
+   285→('AGENT-VOUCHER-01',    'Voucher & Payment Agent',   'Operations',      'Checks voucher, checks paid access, blocks over-quota free attempt, shows payment/contact CTA', '["ALL"]', 1, 'ALO Evaluation System',       'Voucher & Payment Agent',   1, 0),
+   286→('AGENT-QUESTION-01',   'Question Bank Agent',       'Content',         'Drafts new original questions, never copies official exam content, tags difficulty, creates explanations, sends to review queue', '["ALL"]', 1, 'ALO Evaluation System',       'Question Bank Agent',       0, 1),
+   287→('AGENT-WEEKLY-01',     'Weekly Update Agent',       'Content',         'Every week drafts new original questions, checks duplicates/grammar/answer keys/readability, sends to admin approval, does not auto-publish', '["ALL"]', 1, 'ALO Evaluation System',       'Weekly Update Agent',       0, 1),
+   288→('AGENT-QUALITY-01',    'Quality Review Agent',      'Content',         'Reviews question quality, flags weak/duplicate questions, flags official-content risk, flags unclear answer keys', '["ALL"]', 1, 'ALO Evaluation System',       'Quality Review Agent',      0, 1),
+   289→('AGENT-COMPLIANCE-01', 'Compliance Agent',          'Compliance',      'Checks no fake official wording, disclaimer exists, no real-examiner claim, no official partnership claim, no guaranteed real exam question', '["ALL"]', 1, 'ALO Evaluation System',       'Compliance Agent',          1, 0),
+   290→('AGENT-AUDIT-01',      'Audit Agent',               'Compliance',      'Logs every attempt, scoring, quota use, report generation, admin action, weekly update', '["ALL"]', 1, 'ALO Evaluation System',       'Audit Agent',               1, 0),
+   291→('AGENT-SUPPORT-01',    'Support Agent',             'Support',         'Answers student help questions, explains how to start exam, quota, score report, escalates to ALO advisor if needed', '["ALL"]', 1, 'ALO Evaluation System',       'Support Agent',             1, 0);
+   292→
+   293→-- =============================================================================
+   294→-- Seed: 8 sample agent tasks (one per active agent type, varied statuses)
+   295→-- =============================================================================
+   296→-- attempt_id is left NULL because attempt rows are not part of the base install
+   297→-- seed; with foreign_key_checks = 0 the FK is recorded but inactive until the
+   298→-- parent row exists. Agents are referenced by auto-increment id (1..20).
+   299→-- =============================================================================
+   300→INSERT INTO exam_ai_agent_tasks
+   301→    (task_code, agent_id, attempt_id, task_type, payload, status, result, started_at, completed_at, error_message, created_at)
+   302→VALUES
+   303→('TASK-INTAKE-20250101-001',   1,  NULL, 'student_intake',
+   304→    '{"student_id":1001,"exam_goal":"IELTS","target_country":"UK","target_score":"7.0","alo_student_id":"ALO-12345"}',
+   305→    'completed',
+   306→    '{"registered":true,"student_id":1001,"alo_quota_remaining":3}',
+   307→    '2025-01-19 08:00:00', '2025-01-19 08:00:12', NULL, '2025-01-19 08:00:00'),
+   308→
+   309→('TASK-ELIG-20250101-001',     2,  NULL, 'eligibility_check',
+   310→    '{"student_id":1001,"alo_student_id":"ALO-12345","exam_type":"IELTS","quota_remaining":3}',
+   311→    'completed',
+   312→    '{"eligible":true,"quota_remaining":3,"reason":"ALO student, 3 free mocks available"}',
+   313→    '2025-01-19 08:00:13', '2025-01-19 08:00:18', NULL, '2025-01-19 08:00:13'),
+   314→
+   315→('TASK-SETUP-20250101-001',    3,  NULL, 'exam_setup',
+   316→    '{"exam_type":"IELTS","practice_set_id":5,"sections":["listening","reading","writing","speaking"],"timer_minutes":175}',
+   317→    'completed',
+   318→    '{"attempt_id":1,"configured":true,"sections_assigned":4}',
+   319→    '2025-01-19 08:00:19', '2025-01-19 08:00:25', NULL, '2025-01-19 08:00:19'),
+   320→
+   321→('TASK-PROCTOR-20250101-001',  4,  NULL, 'proctor_monitoring',
+   322→    '{"attempt_id":1,"monitoring":["tab_switch","refresh","pause","resume"],"integrity_checks":true}',
+   323→    'running',
+   324→    NULL,
+   325→    '2025-01-19 08:00:26', NULL, NULL, '2025-01-19 08:00:26'),
+   326→
+   327→('TASK-SCORING-20250101-001', 10,  NULL, 'scoring_calculation',
+   328→    '{"attempt_id":1,"exam_type":"IELTS","sections":["listening","reading","writing","speaking"]}',
+   329→    'completed',
+   330→    '{"overall_band":"6.5","listening":7.0,"reading":6.5,"writing":6.0,"speaking":6.5,"is_estimated":true,"disclaimer":"Estimated practice score only, not an official exam result"}',
+   331→    '2025-01-19 10:30:00', '2025-01-19 10:30:11', NULL, '2025-01-19 10:30:00'),
+   332→
+   333→('TASK-FEEDBACK-20250101-001',11,  NULL, 'feedback_generation',
+   334→    '{"attempt_id":1,"overall_band":"6.5","focus_areas":["writing","speaking"]}',
+   335→    'completed',
+   336→    '{"strengths":["good lexical resource","clear paragraphing"],"weaknesses":["task response in writing","pronunciation of consonant clusters"],"next_practice_set_id":6,"recommend_counseling":false}',
+   337→    '2025-01-19 10:30:12', '2025-01-19 10:30:24', NULL, '2025-01-19 10:30:12'),
+   338→
+   339→('TASK-REPORT-20250101-001',  12,  NULL, 'report_generation',
+   340→    '{"attempt_id":1,"report_format":"pdf","include_disclaimer":true,"sync_to_crm":true}',
+   341→    'pending',
+   342→    NULL,
+   343→    NULL, NULL, NULL, '2025-01-19 10:30:25'),
+   344→
+   345→('TASK-CRM-20250101-001',     13,  NULL, 'crm_sync',
+   346→    '{"entity_type":"attempt","entity_id":1,"crm_endpoint":"/api/v1/attempts","payload_size_bytes":4280}',
+   347→    'failed',
+   348→    NULL,
+   349→    '2025-01-19 10:31:00', '2025-01-19 10:31:05',
+   350→    'CRM endpoint timeout after 5000ms; request queued for retry on next cron tick',
+   351→    '2025-01-19 10:31:00');
+   352→
+   353→-- =============================================================================
+   354→-- Seed: 5 sample agent operational logs
+   355→-- =============================================================================
+   356→INSERT INTO exam_ai_agent_logs
+   357→    (agent_id, attempt_id, action, entity_type, entity_id, details, created_at)
+   358→VALUES
+   359→(1,  NULL, 'registered_student',         'student',    1001, '{"exam_goal":"IELTS","target_country":"UK"}',                                '2025-01-19 08:00:12'),
+   360→(4,  NULL, 'flagged_tab_switch',         'attempt',       1, '{"switch_count":1,"section":"reading","severity":"low"}',                    '2025-01-19 09:14:33'),
+   361→(10, NULL, 'scored_attempt',             'attempt',       1, '{"overall_band":"6.5","is_estimated":true}',                                 '2025-01-19 10:30:11'),
+   362→(12, NULL, 'queued_report_generation',   'report',     NULL, '{"attempt_id":1,"format":"pdf","include_disclaimer":true}',                  '2025-01-19 10:30:25'),
+   363→(13, NULL, 'crm_sync_failed',            'integration',NULL, '{"endpoint":"/api/v1/attempts","http_status":null,"reason":"timeout"}',      '2025-01-19 10:31:05');
+   364→
+   365→-- =============================================================================
+   366→-- Seed: 3 sample agent performance rollups (scoring, writing, speaking)
+   367→-- =============================================================================
+   368→INSERT INTO exam_ai_agent_performance
+   369→    (agent_id, date, tasks_total, tasks_completed, tasks_failed, avg_duration_seconds, success_rate, created_at)
+   370→VALUES
+   371→(10, '2025-01-19', 42, 40, 2,  12, 95.24, '2025-01-20 00:05:00'),  -- AGENT-SCORING-01
+   372→( 7, '2025-01-19', 18, 18, 0,  85, 100.00,'2025-01-20 00:05:00'),  -- AGENT-WRITING-01
+   373→( 8, '2025-01-19', 15, 14, 1,  72,  93.33,'2025-01-20 00:05:00');  -- AGENT-SPEAKING-01
+   374→
+   375→-- =============================================================================
+   376→-- Seed: 2 sample admin approvals (one pending, one approved)
+   377→-- =============================================================================
+   378→-- requested_by / approved_by reference exam_users.id (1 = platform admin).
+   379→-- With foreign_key_checks = 0 the FK is recorded but inactive until the user
+   380→-- row exists (seed.sql seeds exam_users).
+   381→-- =============================================================================
+   382→INSERT INTO exam_ai_agent_approvals
+   383→    (agent_id, task_id, requested_by, approval_type, payload, status, approved_by, approved_at, created_at)
+   384→VALUES
+   385→(16, NULL, 1, 'question_publication',
+   386→    '{"batch_id":"WU-2025-W03","question_count":12,"source":"weekly_update","auto_publish":false}',
+   387→    'pending', NULL, NULL, '2025-01-19 23:50:00'),                 -- AGENT-WEEKLY-01 pending
+   388→(12, NULL, 1, 'report_distribution',
+   389→    '{"attempt_id":1,"report_format":"pdf","include_disclaimer":true,"sync_to_crm":true}',
+   390→    'approved', 1, '2025-01-19 10:31:30', '2025-01-19 10:30:26');  -- AGENT-REPORT-01 approved
+   391→
+   392→-- =============================================================================
+   393→-- Seed: 3 sample prompts (writing eval, speaking eval, interview sim)
+   394→-- -----------------------------------------------------------------------------
+   395→-- Every prompt embeds the platform compliance disclaimer:
+   396→--   "Some practice tests, scoring, feedback, and interview simulations may be
+   397→--    supported by automated digital evaluation tools. This is a practice
+   398→--    platform only, not an official exam result."
+   399→-- No claim of "AI teacher", "bot", "robot", "real examiner", "official
+   400→-- examiner", or "official score" appears anywhere in the prompt text.
+   401→-- =============================================================================
+   402→INSERT INTO exam_ai_agent_prompts
+   403→    (agent_code, prompt_key, prompt_text, is_active, version, created_at, updated_at)
+   404→VALUES
+   405→('AGENT-WRITING-01',
+   406→ 'writing_evaluation_v1',
+   407→ 'You are an automated writing evaluation tool for the ALO English Test Platform. Your task is to review a student practice essay and provide structured feedback across task achievement, coherence and cohesion, lexical resource, and grammatical range and accuracy. You will also estimate a practice score band using the rubric provided.\n\nCompliance rules:\n- This is a practice platform only, not an official exam result.\n- Do not claim to be a real examiner, an official examiner, or an official scoring service.\n- Do not reproduce any official exam prompt or content.\n- All feedback must be original, neutral, and practice-focused.\n- Disclosure: Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result.\n\nOutput format: JSON with keys task_achievement, coherence_and_cohesion, lexical_resource, grammatical_range_and_accuracy, estimated_band, strengths, weaknesses, improvement_plan.',
+   408→ 1, 1, '2025-01-01 00:00:00', '2025-01-01 00:00:00'),
+   409→
+   410→('AGENT-SPEAKING-01',
+   411→ 'speaking_evaluation_v1',
+   412→ 'You are an automated speaking practice evaluator for the ALO English Test Platform. Your task is to review a recorded student speaking response and provide structured feedback across fluency and coherence, lexical resource, grammatical range and accuracy, and pronunciation. You will also produce a practice score band estimate.\n\nCompliance rules:\n- This is a practice platform only, not an official exam result.\n- Do not claim to be a real examiner, an official examiner, or an official scoring service.\n- Do not reproduce any official exam prompt or content.\n- All feedback must be original, neutral, and practice-focused.\n- Disclosure: Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result.\n\nOutput format: JSON with keys fluency_and_coherence, lexical_resource, grammatical_range_and_accuracy, pronunciation, estimated_band, strengths, weaknesses, improvement_plan.',
+   413→ 1, 1, '2025-01-01 00:00:00', '2025-01-01 00:00:00'),
+   414→
+   415→('AGENT-INTERVIEW-01',
+   416→ 'interview_simulation_v1',
+   417→ 'You are an automated interview practice coach for the ALO English Test Platform. Your task is to conduct a practice interview (UK credibility, CAS, visa, scholarship, or admission style) by presenting one question at a time, then evaluating the student response with follow-up questions and a risk-level score.\n\nCompliance rules:\n- This is a practice platform only, not an official exam result.\n- Do not claim to be a real examiner, an official examiner, or an official interviewer.\n- Do not reproduce any official exam prompt or content.\n- All output must be original, neutral, and practice-focused.\n- Disclosure: Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result.\n\nOutput format: JSON with keys interview_type, current_question, question_number, follow_up_questions, risk_level, feedback, next_action.',
+   418→ 1, 1, '2025-01-01 00:00:00', '2025-01-01 00:00:00');
+   419→
+   420→-- =============================================================================
+   421→-- End of ai_agents_addon.sql
+   422→-- =============================================================================
+   423→
