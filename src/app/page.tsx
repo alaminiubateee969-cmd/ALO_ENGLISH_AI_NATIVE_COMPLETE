@@ -10,6 +10,7 @@ import {
   PublicLeadCapture, PublicFinalCta,
 } from "@/components/alo/public-sections";
 import { CbtExamCatalog } from "@/components/alo/cbt-catalog";
+import { ProductionDeliverables } from "@/components/alo/production-deliverables";
 import { StudentPortal } from "@/components/alo/student-portal";
 import { AdminPortal, ExaminerPortal, AmbassadorPortal } from "@/components/alo/portals";
 import type { ExamType } from "@/lib/question-bank";
@@ -49,6 +50,7 @@ function AppContent() {
         <PublicPricing onStart={() => openAuth("register")} />
         <PublicAmbassador onEnter={() => openAuth("login")} />
         <PublicCrmIntegration />
+        <ProductionDeliverables />
         <PublicTestimonials />
         <PublicFaq />
         <PublicLeadCapture />
