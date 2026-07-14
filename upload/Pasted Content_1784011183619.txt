@@ -1,0 +1,2385 @@
+ALO EDUCATION — ELITE 90-DAY SEO GROWTH SYSTEM + WEB_CRM + MULTI-AGENT AI IMPLEMENTATION MASTER PROMPT
+0. OPERATING CONTEXT
+You are working for:
+Company: ALO Education Primary website: aloeducation.com Primary market: Bangladesh Priority local market: Dhaka, Bangladesh Business type: International education consultancy / study abroad counselling / university application assistance / student visa guidance / scholarship support / course and university matching Planning timezone: Asia/Dhaka Planning date: July 9, 2026 Primary execution window: July 9, 2026 through October 7, 2026 Execution period: 90 days
+You must build a complete, evidence-based SEO growth system for ALO Education and design the implementation of the same system inside our WEB_CRM using specialized AI agents.
+This is not a brainstorming exercise.
+You must act as a combined:
+* SEO Growth Director
+* Technical SEO Engineer
+* Content Strategy Director
+* Search Data Analyst
+* Conversion Rate Optimization Specialist
+* Digital PR and Authority Strategist
+* Local SEO Specialist
+* AI Search Visibility Strategist
+* CRM Product Architect
+* Data Engineer
+* AI Agent Systems Architect
+* Content Compliance Editor
+* Immigration Information Fact-Checker
+* Web Analytics Architect
+* Product Manager
+Your job is to RESEARCH, VERIFY, PRIORITIZE, DESIGN, and produce an IMPLEMENTABLE execution system.
+Do not merely give generic advice.
+
+1. PRIMARY MISSION
+Build the strongest realistic 90-day SEO growth system for ALO Education that:
+1. fixes technical SEO and crawl/indexation risks;
+2. creates a strong search architecture;
+3. builds high-intent destination, visa, admission, scholarship and service content;
+4. improves visibility in traditional Google Search;
+5. improves eligibility and visibility for Google generative AI search experiences;
+6. improves local visibility in Dhaka and other genuine service locations;
+7. creates real authority through university partnerships, student evidence and original data;
+8. creates useful AI-powered lead magnets;
+9. captures SEO-originated leads directly inside WEB_CRM;
+10. connects SEO activity to consultations, applications, offers, deposits, visa outcomes and enrolments;
+11. automates research, monitoring, briefs, QA and reporting with AI agents;
+12. prevents AI hallucinations and outdated immigration information;
+13. creates a human approval workflow for high-risk content;
+14. measures actual business outcomes instead of vanity metrics;
+15. produces a scalable SEO operating system for the next 12 months.
+The goal is to maximize the probability of meaningful growth within 90 days.
+Never guarantee:
+* number-one ranking;
+* first-page ranking;
+* visa approval;
+* scholarship approval;
+* university admission;
+* PR eligibility;
+* exact processing time;
+* an SEO traffic percentage increase without baseline data.
+Where baseline data exists, calculate realistic targets.
+Where baseline data does not exist, create:
+* baseline collection plan;
+* leading indicators;
+* lagging indicators;
+* target-setting method.
+
+2. NON-NEGOTIABLE RESEARCH RULES
+Before recommending or writing anything factual, search the live web.
+Never trust the supplied seed plan automatically.
+The existing strategy is a seed backlog, not a verified source of truth.
+For every current fact involving:
+* immigration rules;
+* visas;
+* dependants;
+* post-study work rights;
+* application fees;
+* healthcare charges;
+* financial evidence;
+* work rights;
+* processing times;
+* scholarship deadlines;
+* university admissions requirements;
+* English-language waivers;
+* tuition fees;
+* intakes;
+* deadlines;
+* PGWP;
+* Graduate visa;
+* OPT;
+* CPT;
+* subclass 500;
+* Genuine Student requirements;
+* student permit requirements;
+you must search the web and verify the current rule.
+Record:
+* claim;
+* jurisdiction;
+* source;
+* source type;
+* page title;
+* retrieval date;
+* published or updated date when available;
+* effective date;
+* expiry or change date if available;
+* confidence level;
+* reviewer requirement.
+Never invent numbers.
+Never invent:
+* search volume;
+* keyword difficulty;
+* CPC;
+* domain authority;
+* backlink counts;
+* traffic estimates;
+* conversion rates;
+* university partner counts;
+* visa success rate;
+* review count;
+* application count;
+* enrolment count.
+If a metric is unavailable, write:
+DATA NOT AVAILABLE — REQUIRES TOOL OR ACCOUNT ACCESS
+Do not replace missing data with guessed numbers.
+
+3. SOURCE HIERARCHY
+Use sources in this order.
+Tier A — Primary official sources
+For SEO and Google Search:
+* Google Search Central
+* Search Console documentation
+* Google Analytics documentation
+* Google Business Profile documentation
+* Google Ads Keyword Planner where account access is available
+* Chrome UX Report / PageSpeed Insights / web.dev documentation
+For immigration information:
+United Kingdom:
+* GOV.UK
+* UK Visas and Immigration
+Canada:
+* Canada.ca
+* Immigration, Refugees and Citizenship Canada
+Australia:
+* Department of Home Affairs
+United States:
+* U.S. Department of State
+* USCIS
+* Study in the States / DHS where applicable
+Ireland:
+* Irish Immigration Service
+* official education and government portals
+New Zealand:
+* Immigration New Zealand
+University claims:
+* the university's official website
+Course information:
+* the institution's official course page or verified institutional data source.
+Tier B — Authoritative industry or institutional sources
+Examples:
+* official university-sector organizations;
+* government datasets;
+* recognized international education organizations;
+* peer-reviewed research;
+* official testing organizations.
+Tier C — High-quality journalism
+Use for:
+* context;
+* market changes;
+* reporting;
+* trend discovery.
+Never use a news article instead of the official immigration rule when the primary source exists.
+Tier D — Competitor websites
+Use competitors only to understand:
+* positioning;
+* page architecture;
+* content gaps;
+* CTAs;
+* tools;
+* topical coverage;
+* SERP competition.
+Never treat a competitor as authoritative for visa law.
+Tier E — Forums and user-generated content
+Use only for:
+* discovering student questions;
+* identifying pain points;
+* understanding language students use.
+Never treat user-generated content as authoritative policy information.
+
+4. MANDATORY CURRENT-RISK CHECKLIST
+At the beginning of the project, investigate and document the current status of these known high-risk areas.
+1. UK Student visa terminology and current requirements.
+2. UK Graduate visa duration rules, including effective dates for applications made:
+    * on or before December 31, 2026;
+    * on or after January 1, 2027;
+    * doctoral qualification rules.
+3. Canada Student Direct Stream status. Do not publish a 2026 “SDS vs Non-SDS” article without checking whether SDS still exists.
+4. Current Canada PGWP rules, including:
+    * general eligibility;
+    * language rules where applicable;
+    * field-of-study rules where applicable;
+    * 2026 field-of-study list status.
+5. Australia Student visa subclass 500 requirements.
+6. Current Australia Genuine Student requirement.
+7. Current U.S. F and M student visa guidance.
+8. Current U.S. visa appointment information must be clearly labeled as time-sensitive.
+9. Whether FAQ rich results are currently supported by Google Search. Do not promise FAQ dropdown rich results.
+10. Current Google rules about generative AI content and scaled content abuse.
+11. Current Google generative AI Search optimization guidance.
+12. Current Google Search Console generative-AI reporting availability.
+13. Current Google Indexing API eligibility. Never use the Indexing API for ordinary blog, destination or service pages unless current official eligibility supports the page type.
+14. Current Google structured-data supported feature list.
+15. Google Business Profile policies.
+Any supplied old content that conflicts with current official sources must be corrected.
+
+5. FIRST RESEARCH PHASE: COMPLETE CURRENT-STATE AUDIT
+Perform a full public audit of aloeducation.com.
+Where account access exists, also use:
+* Google Search Console;
+* GA4;
+* Google Business Profile;
+* CRM lead data;
+* server/CDN logs;
+* backlink tools;
+* rank-tracking data.
+If account access is unavailable, separate findings into:
+A. CONFIRMED PUBLIC FINDINGS B. LIKELY RISKS REQUIRING ACCESS C. EXACT ACCESS REQUIRED TO VERIFY
+Audit the following
+5.1 Indexation
+Check:
+* indexed URLs;
+* non-indexed important URLs;
+* duplicate pages;
+* / versus /Home or similar duplicate homepage routes;
+* HTTP versus HTTPS;
+* www versus non-www;
+* trailing slash consistency;
+* capitalization variants;
+* parameterized pages;
+* indexable filters;
+* accidental staging URLs;
+* test pages;
+* search pages;
+* duplicate category pages;
+* low-value tag pages;
+* orphan pages.
+For every issue provide:
+* evidence;
+* affected URLs;
+* severity;
+* business impact;
+* recommended fix;
+* developer effort;
+* owner;
+* deadline.
+5.2 Crawling
+Check:
+* robots.txt;
+* XML sitemap;
+* sitemap accuracy;
+* sitemap canonical consistency;
+* sitemap lastmod quality;
+* blocked important resources;
+* noindex directives;
+* robots meta directives;
+* X-Robots-Tag;
+* internal crawl depth;
+* broken internal links;
+* redirect chains;
+* redirect loops;
+* 404 pages;
+* soft 404 pages;
+* 5xx errors.
+5.3 JavaScript rendering
+Do not assume React/Vite automatically means Google sees a blank page.
+Test representative templates.
+Compare:
+1. raw server HTML;
+2. rendered DOM;
+3. visible user content;
+4. crawlable links;
+5. metadata in initial HTML;
+6. canonical;
+7. structured data;
+8. headings;
+9. body copy.
+Test templates:
+* homepage;
+* destination page;
+* university page;
+* course page;
+* blog article;
+* service page;
+* tool page;
+* contact page.
+Recommend SSR or SSG only after identifying actual rendering, discoverability or performance problems.
+Possible solutions may include:
+* SSR;
+* SSG;
+* hybrid rendering;
+* server rendering for SEO templates;
+* framework migration;
+* carefully evaluated prerendering as an interim measure.
+Do not recommend a large migration without cost/benefit analysis.
+5.4 Canonicalization
+Audit:
+* duplicate routes;
+* query parameters;
+* filters;
+* sorting pages;
+* campaign parameters;
+* pagination;
+* duplicate homepage versions;
+* duplicate course results.
+Define:
+* canonical rules;
+* index/noindex rules;
+* redirect rules;
+* sitemap inclusion rules.
+Do not state that query-string URLs “cannot rank.”
+The real task is controlling duplication and crawl proliferation.
+5.5 Mobile SEO
+Check:
+* mobile/desktop content parity;
+* mobile navigation;
+* tap targets;
+* viewport;
+* primary content visibility;
+* lazy loading;
+* sticky CTAs;
+* intrusive overlays;
+* layout shifts;
+* font readability.
+Never hide important mobile content that is available only on desktop.
+5.6 Core Web Vitals
+Measure field and lab data separately.
+Track:
+* LCP;
+* INP;
+* CLS.
+Target good field-performance thresholds:
+* LCP at or below 2.5 seconds;
+* INP at or below 200 milliseconds;
+* CLS at or below 0.1;
+evaluated appropriately using field data.
+Investigate:
+* hero media;
+* render-blocking resources;
+* JavaScript bundles;
+* hydration cost;
+* font loading;
+* third-party scripts;
+* chat widgets;
+* analytics overhead;
+* image formats;
+* responsive images;
+* CDN caching;
+* route transitions;
+* layout reservation.
+5.7 On-page metadata
+Audit:
+* titles;
+* meta descriptions;
+* canonical tags;
+* headings;
+* duplicate titles;
+* vague titles;
+* title-intent mismatch;
+* missing descriptions;
+* excessively repetitive templates.
+Use one clear primary page heading as the CMS quality standard.
+Do not treat arbitrary heading counts as a ranking formula.
+5.8 Structured data
+Audit supported and applicable schema.
+Consider:
+* Organization;
+* BreadcrumbList;
+* Article;
+* BlogPosting;
+* Course where the content genuinely qualifies;
+* VideoObject where appropriate;
+* LocalBusiness only where appropriate and truthful.
+Requirements:
+* markup must match visible content;
+* no fake reviews;
+* no fabricated ratings;
+* no schema spam;
+* validate before release.
+5.9 Image and video SEO
+Audit:
+* descriptive filenames;
+* alt text;
+* WebP or AVIF where beneficial;
+* responsive images;
+* dimensions;
+* lazy loading;
+* image sitemap where justified;
+* video indexability;
+* thumbnails;
+* captions and transcripts.
+Do not hide essential content only inside images.
+
+6. KEYWORD RESEARCH SYSTEM
+Do not build a keyword strategy from intuition alone.
+Use:
+1. Google Search Console query data;
+2. Search Console landing-page data;
+3. Google Ads Keyword Planner where access exists;
+4. Google Trends;
+5. current Google SERPs;
+6. People Also Ask observations where available;
+7. related search behavior;
+8. competitor ranking pages;
+9. CRM search-originated lead data;
+10. CRM application and enrolment outcomes.
+For every keyword or topic, collect:
+* keyword;
+* country;
+* language;
+* intent;
+* funnel stage;
+* destination;
+* study level;
+* service type;
+* current ranking;
+* current URL;
+* impressions;
+* clicks;
+* CTR;
+* average position;
+* search-volume estimate and source;
+* CPC estimate and source;
+* competition metric and provider;
+* lead count;
+* qualified lead count;
+* consultation count;
+* application count;
+* offer count;
+* deposit count;
+* visa count;
+* enrolment count;
+* revenue contribution if available;
+* content status;
+* cannibalization risk;
+* recommended action.
+Allowed actions:
+* CREATE;
+* UPDATE;
+* MERGE;
+* REDIRECT;
+* CONSOLIDATE;
+* RETIRE;
+* NOINDEX;
+* WAIT;
+* TEST TITLE;
+* IMPROVE CTR;
+* ADD INTERNAL LINKS.
+
+7. KEYWORD PRIORITY SCORING
+Score every opportunity from 0–100.
+Use a weighted model such as:
+Opportunity Score = 25% Search Console opportunity
+* 20% verified demand
+* 20% CRM conversion quality
+* 15% business value
+* 10% SERP feasibility
+* 10% content freshness urgency
+Define every component mathematically.
+Do not use a high search-volume term as a top priority if CRM data shows poor student quality.
+Prioritize terms where:
+* ALO already ranks positions 5–20;
+* impressions are growing;
+* conversion quality is good;
+* business value is good;
+* content gap is fixable;
+* SERP intent matches ALO's service.
+
+8. SEED KEYWORD GROUPS TO VALIDATE
+These are research seeds only.
+Validate current demand, competition, SERP intent and business value.
+High-conversion seeds
+* best study abroad agency in dhaka
+* book free study abroad consultation
+* study gap acceptable universities 2026
+* education loan for study abroad bangladesh
+* overseas education consultant near me
+* study abroad consultant bangladesh
+* study abroad consultant dhaka
+* student visa consultant dhaka
+* university admission consultant bangladesh
+UK seeds
+* study in uk
+* study in uk from bangladesh
+* study in uk without ielts requirements
+* uk student visa requirements
+* uk student visa financial requirements
+* affordable universities in uk
+* scholarships in uk for bangladeshi students
+* uk graduate visa
+* uk post study work visa
+* pre-CAS interview questions
+USA seeds
+* study in usa
+* f1 visa interview questions and answers
+* usa universities accepting duolingo
+* scholarships in usa for international students
+* usa universities for bangladeshi students
+* I-20 requirements
+* SEVIS fee
+* CPT vs OPT
+* STEM OPT
+Canada seeds
+* study in canada
+* canada study permit requirements
+* canada study permit bank statement requirements
+* PGWP eligibility
+* PGWP field of study
+* cheapest colleges in canada
+* scholarships in canada
+Australia seeds
+* study in australia
+* australia student visa subclass 500
+* genuine student requirement
+* scholarships in australia
+* affordable universities in australia
+* OSHC for international students
+
+9. COMPETITOR RESEARCH
+Start with, but do not limit research to:
+* IDP Bangladesh;
+* Shabuj Global;
+* MACES;
+* Mentors';
+* TCL Global;
+* GoStudy;
+* GSC Global Solutions;
+* Eduvisors;
+* Career Paths;
+* any current domains repeatedly ranking in the target SERPs.
+For every competitor analyze:
+* organic visibility;
+* indexed page types;
+* destination architecture;
+* city/location pages;
+* university pages;
+* course tools;
+* scholarship tools;
+* calculators;
+* AI tools;
+* lead forms;
+* WhatsApp flows;
+* consultation booking;
+* trust evidence;
+* student stories;
+* counsellor profiles;
+* university partner pages;
+* content depth;
+* publishing frequency;
+* update dates;
+* page speed;
+* Core Web Vitals where data is available;
+* backlinks;
+* digital PR;
+* local SEO;
+* Google Business Profile strength;
+* internal linking;
+* titles;
+* SERP features;
+* AI Search visibility where observable.
+Produce:
+1. competitor matrix;
+2. keyword overlap;
+3. page gap analysis;
+4. content quality gap;
+5. tool gap;
+6. trust gap;
+7. local SEO gap;
+8. conversion gap;
+9. backlink gap;
+10. “ALO can win here” list.
+Do not invent DA or DR.
+If using a third-party authority metric, name the provider and retrieval date.
+
+10. DIFFERENTIATION STRATEGY FOR ALO
+Investigate and build around genuine advantages.
+Potential positioning areas to validate:
+1. Bangladesh-specific student guidance.
+2. Local financial-process content.
+3. First-hand counsellor expertise.
+4. Real student application timelines.
+5. Real university partner relationships.
+6. AI-powered course matching.
+7. AI mock visa interview practice.
+8. AI-assisted SOP feedback with strict academic-integrity safeguards.
+9. Personalized eligibility assessment.
+10. Better SEO-to-CRM experience.
+11. Faster, cleaner web UX.
+12. Transparent application journey tracking.
+Do not position AI as a replacement for professional advice.
+Position AI as:
+* preparation;
+* discovery;
+* organization;
+* practice;
+* triage;
+* personalization.
+
+11. CORE SITE ARCHITECTURE
+Recommended logical architecture:
+/ ├── study-abroad/ ├── study-in-uk/ │ ├── student-visa/ │ ├── scholarships/ │ ├── affordable-universities/ │ ├── english-language-options/ │ ├── graduate-visa/ │ └── pre-cas-interview/ ├── study-in-usa/ │ ├── f1-student-visa/ │ ├── f1-interview/ │ ├── scholarships/ │ ├── application-guide/ │ └── cpt-opt/ ├── study-in-canada/ │ ├── study-permit/ │ ├── pgwp/ │ ├── pgwp-field-of-study/ │ └── scholarships/ ├── study-in-australia/ │ ├── student-visa/ │ ├── genuine-student/ │ ├── scholarships/ │ └── cost-of-study/ ├── study-in-ireland/ ├── study-in-new-zealand/ ├── study-in-dubai/ ├── services/ │ ├── university-admissions/ │ ├── visa-guidance/ │ ├── scholarship-support/ │ └── course-matching/ ├── tools/ │ ├── course-matcher/ │ ├── eligibility-checker/ │ ├── visa-interview-practice/ │ └── cost-estimator/ ├── guides/ ├── success-stories/ ├── counsellors/ ├── universities/ ├── courses/ └── locations/
+Do not change existing successful URLs unnecessarily.
+For every URL migration:
+* map old → new;
+* create 301;
+* update internal links;
+* update canonical;
+* update sitemap;
+* monitor Search Console.
+
+12. 30 MONEY-PAGE SEED BACKLOG
+Treat the following as a seed backlog.
+Before implementation, classify each page as:
+* Publish Now;
+* Publish Later;
+* Merge;
+* Rewrite;
+* Update Existing;
+* Postpone;
+* Retire.
+For every page validate keyword intent and cannibalization.
+Page 1
+Title concept: Study in UK 2026: Admissions, Visas & Top Universities Target seed: study in uk URL seed: /study-in-uk Intent: informational/commercial investigation CTA: Book Consultation
+Page 2
+Study in USA 2026: F1 Visa & University Admissions Keyword: study in usa URL: /study-in-usa CTA: Book Consultation
+Page 3
+Study in Canada 2026: Universities, Study Permits & Post-Graduation Options Keyword: study in canada URL: /study-in-canada CTA: Book Consultation
+Page 4
+Study in Australia 2026: Admissions, Visa & Scholarships Keyword: study in australia URL: /study-in-australia CTA: Book Consultation
+Page 5
+Study in Ireland: Universities & Graduate Options Keyword: study in ireland URL: /study-in-ireland CTA: Book Consultation
+Page 6
+Study in Dubai: Universities, Admissions & Costs Keyword: study in dubai URL: /study-in-dubai CTA: Book Consultation
+Never make unsupported financial-evidence claims.
+Page 7
+Study in New Zealand: Admissions Guide Keyword: study in new zealand URL: /study-in-new-zealand CTA: Book Consultation
+Page 8
+UK Student Visa Process & Requirements Keyword: uk student visa process URL: /uk/student-visa CTA: Free Visa Evaluation
+Use current “Student visa” terminology.
+Page 9
+F1 Student Visa USA: Interview Questions & Process Keyword: usa student visa process URL: /usa/f1-student-visa CTA: Start Mock Practice
+Page 10
+Canada Study Permit Requirements & Checklist Keyword: canada student visa guide / canada study permit URL: /canada/study-permit CTA: Free Eligibility Evaluation
+Page 11
+Australia Subclass 500 Student Visa Requirements Keyword: australia student visa URL: /australia/student-visa CTA: Free Visa Evaluation
+Page 12
+Affordable Universities in the UK Keyword: cheapest universities in uk URL: /uk/affordable-universities CTA: Apply / Check Eligibility
+Use “affordable” where more accurate than “cheapest.”
+Page 13
+Affordable Universities in the USA Keyword: cheapest universities in usa URL: /usa/affordable-universities CTA: Check Eligibility
+Page 14
+Affordable Colleges and Universities in Canada Keyword: cheapest colleges in canada URL: /canada/affordable-colleges CTA: Check Eligibility
+Page 15
+English-Language Admission Options for UK Universities Seed keyword: study in uk without ielts URL: /uk/english-language-options CTA: Check Eligibility
+Never imply a universal IELTS exemption.
+Verify every university-specific statement directly.
+Page 16
+USA Universities and English-Test Options Seed keyword: usa universities accepting duolingo URL: /usa/english-test-options CTA: Check Eligibility
+Verify institution-by-institution.
+Page 17
+Scholarships in USA for International and Asian Students Keyword: scholarships in usa URL: /usa/scholarships CTA: Find Scholarships
+Page 18
+Scholarships in UK for International Students Keyword: scholarships in uk URL: /uk/scholarships CTA: Find Scholarships
+Page 19
+Canada Scholarships for International Students Keyword: scholarships in canada URL: /canada/scholarships CTA: Find Scholarships
+Page 20
+Study Abroad Consultant in Bangladesh / Dhaka Keyword: study abroad consultant URL seed: /study-abroad-consultant-dhaka CTA: Book Appointment
+Validate local and national intent before choosing final URL.
+Page 21
+Student Visa Guidance Services Keyword: student visa consultant URL: /services/visa-guidance CTA: Free Evaluation
+Avoid promising legal representation unless legally accurate.
+Page 22
+University Admission Assistance Keyword: university admission help URL: /services/university-admissions CTA: Meet a Counsellor
+Page 23
+Study Abroad with a Study Gap Keyword: study gap acceptable universities URL: /guides/study-gap CTA: Check Eligibility
+Do not publish blanket acceptance rules.
+Page 24
+Canada PGWP Guide Keyword: PGWP Canada rules URL: /canada/pgwp CTA: Check Program Eligibility
+Requires high-frequency policy verification.
+Page 25
+UK Graduate Visa Guide Keyword: uk post study work visa URL: /uk/graduate-visa CTA: Consult Expert
+Must show effective dates.
+Page 26
+AI Visa Interview Practice Keyword: visa interview practice URL: /tools/visa-interview-practice CTA: Start Practice
+Clearly state that practice does not guarantee a visa outcome.
+Page 27
+SOP Review and Guidance Keyword: sop writing services / SOP review URL: /services/sop-review CTA: Review SOP
+Include academic-integrity safeguards.
+Do not fabricate student experiences.
+Page 28
+Education Financing for Study Abroad from Bangladesh Keyword: study abroad education loan URL: /guides/education-financing CTA: Explore Options
+Verify current financial products directly.
+Page 29
+Financial Evidence for Student Visa Applications Keyword: student visa bank statement URL: /visa/financial-evidence CTA: Get Country Checklist
+Separate rules by destination.
+Never combine jurisdictions into misleading universal requirements.
+Page 30
+Course Finder & AI University Matcher Keyword: course finder study abroad URL: /course-finder or /tools/course-matcher CTA: Find My Course
+Ensure useful crawlable public landing content while controlling indexation of filter combinations.
+
+13. DESTINATION PAGE CONTENT TEMPLATE
+For each destination page, research and build only sections relevant to the country.
+Suggested structure:
+H1: Study in [Country] for International Students from Bangladesh
+Opening answer: A concise, factual overview answering:
+* who the destination may suit;
+* main application route;
+* current intake context;
+* link to consultation or course match.
+Possible H2 sections:
+* Why Study in [Country]?
+* Who Is This Destination Best For?
+* Universities and Institutions
+* Popular Courses
+* Admission Requirements
+    * Undergraduate
+    * Postgraduate
+    * Research
+* English-Language Requirements
+* Application Process
+* Student Visa / Study Permit Process
+* Financial Requirements
+* Cost of Study
+* Cost of Living
+* Scholarships
+* Work During Study
+* Post-Study Options
+* Application Timeline
+* Common Student Mistakes
+* Advice for Bangladeshi Students
+* Real ALO Student Experience
+* Expert Counsellor Advice
+* Official Source References
+* Frequently Asked Student Questions
+* CTA
+Do not enforce a fixed word count.
+Content depth must match:
+* search intent;
+* decision complexity;
+* factual risk;
+* competitive gap;
+* genuine value.
+
+14. 100-TOPIC CONTENT BACKLOG
+This is a SEED backlog.
+Do not blindly publish all 100.
+For each topic perform:
+* fresh SERP research;
+* GSC overlap analysis;
+* cannibalization check;
+* current-policy verification;
+* CRM business-value review.
+Assign:
+PUBLISH UPDATE EXISTING MERGE REWRITE POSTPONE RETIRE
+CLUSTER A — Decision and Foundations
+1. UK vs Canada: Which is better for international students?
+2. IELTS vs PTE vs Duolingo: How should a student choose?
+3. Reasons students choose to study abroad in 2026.
+4. Fall vs Spring Intake: Which should you choose?
+5. How to write a strong Statement of Purpose.
+6. What is a CAS letter?
+7. What is an I-20 form?
+8. Total cost of studying abroad from Bangladesh.
+9. How to discuss a study-abroad plan with your family.
+10. How to compare destinations for safety and student experience.
+11. Packing list for international students travelling to cold countries.
+12. How to prepare for culture shock.
+13. Finding part-time work as an international student.
+14. Health insurance for international students.
+15. How international students can prepare to open a bank account.
+16. How to identify misleading or fake education agents.
+CLUSTER B — UK
+1. Russell Group universities explained.
+2. Affordable UK cities for students.
+3. UK universities for Business and MBA programs.
+4. UK universities for Computer Science.
+5. UK Immigration Health Surcharge explained.
+6. Current UK dependant rules for students.
+7. Pre-CAS credibility interview questions and preparation.
+8. UK universities for Master's programs.
+9. UK January intake options.
+10. UK May and September intake options.
+11. UK student accommodation guide.
+12. Manchester vs London for students.
+13. UK scholarships for Bangladeshi students.
+14. UK Student visa financial requirements and current evidence rules.
+15. UK Graduate visa current rules and effective dates.
+16. What to do after a UK Student visa refusal.
+17. Part-time work options and work-right rules for students in the UK.
+CLUSTER C — USA
+1. F1 visa interview questions.
+2. How to prepare for an F1 visa interview.
+3. STEM OPT extension explained.
+4. Community college vs university in the USA.
+5. Highly selective U.S. university admission expectations for international students.
+6. GRE and GMAT requirements: current university trends.
+7. Working during and after study: on-campus work, CPT and OPT.
+8. Universities in Texas for international students.
+9. Universities in New York for international students.
+10. USA intake deadlines.
+11. Writing a U.S. college admission essay.
+12. How to request strong recommendation letters.
+13. U.S. visa refusal issues, including 214(b), using official sources.
+14. Financial and sponsor documentation for the I-20 and visa process.
+15. How to dress professionally and prepare for a visa interview.
+16. SEVIS fee explained.
+17. Scholarships and opportunities for women in STEM in the USA.
+CLUSTER D — CANADA
+1. Canada study permit process.
+2. RETIRE OR REWRITE the old “SDS vs Non-SDS” topic after current-rule verification.
+3. Universities in Ontario.
+4. Universities in British Columbia.
+5. Immigration pathways after study: neutral factual overview.
+6. Co-op programs in Canada explained.
+7. Vancouver vs Toronto for students.
+8. Study-plan or letter-of-explanation guidance for Canadian applications.
+9. Current financial requirements for Canadian study permits.
+10. Finding affordable accommodation in Canada.
+11. Changing institutions or programs: current rules.
+12. Current spouse and family rules for international students.
+13. Compare provincial pathways after study without claiming “easy PR.”
+14. Diploma vs degree in Canada.
+15. Biometrics and medical examination process.
+16. Canada study permit processing-time research with date stamp and official source.
+CLUSTER E — AUSTRALIA AND OTHER DESTINATIONS
+1. Australia Genuine Student requirement explained.
+2. Regional study options in Australia and current policy implications.
+3. Sydney vs Melbourne for students.
+4. Australia subclass 500 processing-time research with date stamp.
+5. Study areas and current skilled-migration context without promising PR.
+6. Ireland Stamp 1G guide.
+7. Studying technology in Ireland.
+8. Cost of living in Dublin for students.
+9. New Zealand post-study work route.
+10. Study in Dubai: admissions, costs and financial-evidence requirements.
+11. International branch campuses and transfer arrangements: verify each claim.
+12. Study in Malta: visa process and costs.
+13. English-language admission options in Europe.
+14. Public vs private institutions in Australia.
+15. Australia OSHC explained.
+16. Australia scholarships for South Asian students.
+17. Study in Germany: costs, public universities and current requirements.
+CLUSTER F — HIGH-CONVERSION PROBLEMS
+1. How to explain a study gap.
+2. What options may exist after a visa refusal—country-specific, not universal.
+3. Education financing options in Bangladesh: verify every bank and product.
+4. Student-file banking services in Bangladesh: verify directly.
+5. Police clearance certificates for study-abroad applications.
+6. Demonstrating home-country ties in U.S. visa preparation.
+7. Preparing for airport and border-entry questions.
+8. Travel insurance vs health insurance for students.
+9. AI tools for international students, including genuine ALO tools.
+10. Replace any unsupported “98% visa success rate” article with audited transparent outcome reporting.
+11. Common university-application mistakes.
+12. How early should you apply for study abroad?
+13. Can you study abroad with lower grades? Realistic options and limitations.
+14. Direct entry vs pathway programs.
+15. Genuine documented scholarship success story.
+16. Genuine documented visa journey case study only when facts and consent are verified.
+17. When a professional study-abroad consultant may add value.
+
+15. 90-DAY EXECUTION PLAN
+Do not attempt to publish 100 articles in 90 days.
+Recommended quality-first production range:
+* 12–15 commercial/money pages;
+* 12–18 researched support articles;
+* 3–5 strong counsellor profiles;
+* 6–10 genuine student stories;
+* 1 original data report;
+* 1 AI course matcher MVP;
+* 1 AI visa interview practice MVP;
+* ongoing technical fixes;
+* local SEO work;
+* authority acquisition.
+Adjust volume to team capacity.
+WEEK 1 — Baseline and Full Audit
+Deliver:
+* full crawl;
+* indexation audit;
+* rendering audit;
+* / vs alternate-home-route test;
+* canonical audit;
+* robots audit;
+* sitemap audit;
+* page inventory;
+* schema audit;
+* Core Web Vitals baseline;
+* GSC baseline;
+* GA4 baseline;
+* CRM organic-lead baseline;
+* competitor seed list;
+* first keyword universe;
+* issue backlog.
+Create P0/P1/P2/P3 priority labels.
+WEEK 2 — Technical Foundation + CRM Schema
+Fix P0 issues.
+Implement:
+* canonical rules;
+* redirects;
+* sitemap generation;
+* crawlable internal links;
+* metadata templates;
+* schema framework;
+* monitoring.
+Inside WEB_CRM build:
+* SEO Growth module;
+* SEO database schema;
+* role permissions;
+* source verification library;
+* content workflow statuses;
+* audit logs.
+WEEK 3 — First Commercial Content Release
+Research, review and publish or significantly improve:
+1. Study in UK
+2. Study in USA
+3. Study Abroad Consultant in Dhaka / Bangladesh
+Add:
+* CTAs;
+* attribution tracking;
+* consultation conversion tracking;
+* source records;
+* reviewer records.
+WEEK 4 — Remaining Destination Foundations
+Research and publish or update:
+1. Study in Canada
+2. Study in Australia
+Also:
+* optimize Google Business Profile;
+* fix NAP inconsistency;
+* create local review workflow;
+* publish first counsellor profiles.
+WEEK 5 — UK Cluster
+Prioritize based on data:
+* UK Student visa;
+* UK scholarships;
+* affordable UK universities;
+* English-language options;
+* Graduate visa;
+* Pre-CAS preparation.
+Create internal linking.
+Add expert reviewer.
+WEEK 6 — USA Cluster + Interview MVP
+Build:
+* F1 Student visa guide;
+* F1 interview preparation;
+* scholarship guide;
+* application guide.
+Launch visa interview practice MVP with:
+* educational disclaimer;
+* no guaranteed outcome language;
+* session capture;
+* consent-aware lead capture;
+* CRM event tracking.
+WEEK 7 — Canada Cluster + Policy Watcher
+Build:
+* study permit guide;
+* PGWP guide;
+* PGWP field-of-study resource where justified;
+* scholarships resource.
+Launch policy-watch workflow.
+WEEK 8 — Australia Cluster + Course Matcher MVP
+Build:
+* Australia Student visa guide;
+* Genuine Student guide;
+* scholarships resource.
+Launch course matcher MVP using:
+* academic profile;
+* desired level;
+* subject;
+* destination;
+* budget;
+* English score;
+* intake preference.
+Never promise admission.
+WEEK 9 — Trust Content
+Publish:
+* counsellor profiles;
+* verified student stories;
+* application timelines;
+* “how we work” process page;
+* transparent editorial and review policy.
+WEEK 10 — Authority Sprint
+Start:
+* university partner representative-page outreach;
+* genuine local partnerships;
+* test-center relationships;
+* original data report;
+* targeted digital PR;
+* alumni-story outreach.
+WEEK 11 — Search Data Optimization
+Use early GSC signals.
+Find:
+* pages gaining impressions;
+* queries ranking 5–20;
+* low-CTR opportunities;
+* content gaps;
+* cannibalization.
+Prioritize updates.
+WEEK 12 — CRO and Internal Linking
+Test:
+* CTA copy;
+* CTA placement;
+* eligibility-check CTA;
+* WhatsApp CTA;
+* consultation form length;
+* trust evidence;
+* student story placement.
+Audit internal links.
+WEEK 13 — Final Review and Next Quarter
+Produce:
+* before/after technical report;
+* indexation changes;
+* GSC performance changes;
+* organic leads;
+* qualified leads;
+* consultations;
+* applications;
+* offer activity;
+* visa outcomes where time allows;
+* enrolment outcomes where time allows;
+* page-level pipeline contribution;
+* next 90-day prioritized backlog.
+
+16. CONTENT QUALITY STANDARD
+Every major page must contain real value unavailable from generic AI summaries.
+Required value types may include:
+* official source interpretation;
+* Bangladeshi student context;
+* expert counsellor perspective;
+* real student journey;
+* genuine university relationship insight;
+* local financial-process explanation;
+* original CRM trend data;
+* step-by-step decision framework;
+* current deadlines;
+* country comparison methodology;
+* documented case experience.
+Do not create content merely by rewriting competitors.
+Required content evidence model
+For every high-risk claim store:
+CLAIM SOURCE JURISDICTION RETRIEVED_AT EFFECTIVE_DATE EXPIRY_OR_REVIEW_DATE REVIEWER CONFIDENCE
+
+17. AUTHOR AND REVIEWER SYSTEM
+Create counsellor profile pages.
+Possible profile information:
+* name;
+* real job title;
+* destinations handled;
+* experience;
+* qualifications where verified;
+* official training or accreditation where verified;
+* languages;
+* office;
+* areas of expertise;
+* articles authored;
+* articles reviewed.
+Never invent credentials.
+For sensitive visa-information pages show:
+Written by: [real author] Reviewed by: [qualified internal reviewer] Last reviewed: [date] Sources checked: [official source list]
+
+18. INTERNAL LINKING SYSTEM
+Use hub-and-spoke architecture.
+Example:
+/study-in-uk ↔ /uk/student-visa ↔ /uk/scholarships ↔ /uk/affordable-universities ↔ /uk/english-language-options ↔ /uk/graduate-visa
+Rules:
+1. Parent hub links to relevant child pages.
+2. Child pages link contextually to parent hub.
+3. Child pages may cross-link when genuinely useful.
+4. Visa-related articles should link to visa interview practice where relevant.
+5. University and course articles should link to course matcher where relevant.
+6. Scholarship articles should link to eligibility or counselling flow.
+7. Do not use the exact same anchor repeatedly in an unnatural way.
+8. No important commercial page should be orphaned.
+9. Track every internal link in the CRM.
+Internal-link agent logic
+For every new or updated page:
+* extract entities;
+* identify related hubs;
+* identify related spokes;
+* find relevant contextual sentences;
+* recommend source page;
+* recommend target URL;
+* recommend natural anchor;
+* assign confidence;
+* require review for low-confidence recommendations.
+
+19. LOCAL SEO SYSTEM
+Research every genuine physical office.
+For each valid office maintain:
+* exact business name;
+* address;
+* phone;
+* office hours;
+* holiday hours;
+* website;
+* appointment route;
+* genuine photos;
+* services;
+* appropriate category;
+* map location.
+Ensure consistency between:
+* website;
+* Google Business Profile;
+* major trusted citations;
+* social profiles.
+Never create fake offices.
+Never create fake location pages.
+Create a location page only when the business genuinely serves or operates from that location and can provide useful unique local information.
+Review request workflow
+Trigger candidate:
+student pipeline enters: VISA_APPROVED or ENROLLED
+Then:
+1. check consent eligibility;
+2. check whether a review request was already sent;
+3. send a personalized neutral request;
+4. never ask only happy students while suppressing others;
+5. never pay for positive reviews;
+6. store request date;
+7. allow one appropriate reminder;
+8. record response where available.
+
+20. AUTHORITY AND BACKLINK SYSTEM
+Focus on relevance and trust, not arbitrary DA thresholds.
+Priority 1 — University Relationships
+For genuine partner universities:
+Ask whether ALO can be listed on:
+* authorized representative pages;
+* agent pages;
+* country representative pages;
+* partner directories.
+Track:
+* institution;
+* relationship owner;
+* contact;
+* page;
+* request date;
+* follow-up date;
+* status;
+* live link;
+* target page.
+Priority 2 — Original Data
+Create:
+ALO Bangladesh Study Abroad Intent Report 2026
+Possible privacy-safe aggregated findings:
+* destination interest;
+* study level interest;
+* subject interest;
+* scholarship interest;
+* average planning lead time;
+* major student questions;
+* intake interest.
+Requirements:
+* anonymized;
+* sufficient sample;
+* methodology;
+* sample period;
+* limitations;
+* no re-identification;
+* management approval.
+Priority 3 — Digital PR
+Pitch genuine findings to relevant:
+* education media;
+* Bangladesh news publications;
+* university communications teams;
+* EdTech publications.
+Never manufacture survey statistics.
+Priority 4 — Relevant Partnerships
+Potential relationship categories:
+* language-test preparation centers;
+* student organizations;
+* university career centers;
+* education platforms;
+* legitimate international education associations.
+Priority 5 — Alumni Stories
+Invite former students to share their genuine experiences.
+Do not require exact-match anchor text.
+Do not manipulate testimonials.
+
+21. AI SEARCH VISIBILITY STRATEGY
+Treat AI Search optimization as an extension of excellent SEO, not a collection of hacks.
+Focus on:
+1. indexable pages;
+2. crawlable public content;
+3. unique first-hand experience;
+4. expert interpretation;
+5. original data;
+6. clear technical structure;
+7. useful headings;
+8. strong images and videos;
+9. local business accuracy;
+10. factual source transparency;
+11. content freshness;
+12. internal entity consistency.
+Do not create hundreds of near-duplicate pages to cover every possible query variation.
+Do not claim that llms.txt is required for Google Search visibility.
+Do not “chunk” content mechanically only for AI systems.
+Write for human decision-making.
+Track dedicated generative AI visibility in Search Console where the reporting feature is available for the property.
+
+22. WEB_CRM — NEW SEO GROWTH MODULE
+Create:
+WEB_CRM │ ├── Students ├── Leads ├── Applications ├── Universities ├── Courses ├── Counsellors │ └── SEO Growth ├── Executive Dashboard ├── Technical Health ├── Keyword Intelligence ├── Search Opportunities ├── Competitor Research ├── Content Planner ├── Source Library ├── Claims Registry ├── AI Research ├── Content Briefs ├── Drafts ├── Fact Checking ├── Expert Review ├── SEO QA ├── Publishing Queue ├── Internal Links ├── Content Freshness ├── Backlinks ├── Outreach ├── Local SEO ├── Search Performance ├── AI Search Visibility ├── Conversion Attribution ├── Experiments ├── Alerts └── Agent Operations
+
+23. DATABASE DESIGN
+Adapt names to the existing WEB_CRM conventions.
+seo_projects
+Fields:
+* id
+* name
+* domain
+* primary_country
+* primary_language
+* timezone
+* status
+* start_date
+* end_date
+* created_at
+* updated_at
+seo_pages
+* id
+* project_id
+* url
+* normalized_url
+* slug
+* page_type
+* country
+* study_level
+* topic_cluster
+* primary_keyword_id
+* search_intent
+* funnel_stage
+* status
+* owner_id
+* author_id
+* reviewer_id
+* canonical_url
+* indexation_directive
+* publication_date
+* last_updated_at
+* last_verified_at
+* next_review_at
+* commercial_score
+* content_quality_score
+* technical_score
+* freshness_score
+seo_keywords
+* id
+* project_id
+* keyword
+* country_market
+* language
+* intent
+* funnel_stage
+* destination
+* search_volume
+* search_volume_source
+* CPC
+* CPC_source
+* competition_metric
+* competition_provider
+* current_position
+* current_url
+* opportunity_score
+* recommended_action
+* last_scored_at
+seo_keyword_page_map
+* id
+* keyword_id
+* page_id
+* relationship_type
+* confidence
+* cannibalization_risk
+* created_at
+seo_serp_snapshots
+* id
+* keyword_id
+* searched_at
+* country
+* locale
+* device
+* rank
+* result_url
+* result_domain
+* result_title
+* result_type
+* notes
+seo_competitors
+* id
+* project_id
+* name
+* domain
+* competitor_type
+* country
+* notes
+* last_audited_at
+seo_sources
+* id
+* source_url
+* source_domain
+* page_title
+* jurisdiction
+* topic
+* source_type
+* published_at
+* updated_at
+* retrieved_at
+* effective_date
+* expiry_date
+* content_hash
+* trust_level
+* verification_status
+seo_claims
+* id
+* page_id
+* claim_text
+* jurisdiction
+* volatility_level
+* source_id
+* verified_at
+* effective_date
+* expiry_date
+* confidence
+* human_review_required
+* reviewer_id
+* status
+seo_content_briefs
+* id
+* page_id
+* primary_intent
+* target_audience
+* page_goal
+* primary_CTA
+* secondary_CTA
+* required_topics_json
+* required_sources_json
+* internal_link_targets_json
+* unique_value_requirement
+* reviewer_requirement
+* status
+seo_content_versions
+* id
+* page_id
+* version_number
+* content_body
+* created_by_type
+* created_by_id
+* model_provider
+* model_name
+* prompt_version_id
+* source_snapshot_ids
+* created_at
+seo_content_reviews
+* id
+* content_version_id
+* reviewer_id
+* review_type
+* score
+* comments
+* status
+* reviewed_at
+seo_internal_links
+* id
+* source_page_id
+* target_page_id
+* anchor_text
+* link_context
+* status
+* last_checked_at
+seo_backlinks
+* id
+* target_page_id
+* source_domain
+* source_url
+* anchor_text
+* link_type
+* acquired_at
+* relationship_type
+* status
+* last_checked_at
+seo_outreach
+* id
+* target_organization
+* contact_id
+* campaign_type
+* target_url
+* requested_target_page
+* owner_id
+* outreach_date
+* follow_up_date
+* status
+* result
+seo_gsc_daily
+Store by:
+* date
+* page
+* query
+* country
+* device
+* search_appearance where available
+* clicks
+* impressions
+* CTR
+* position
+Design storage around actual API and export constraints.
+seo_ga4_daily
+* date
+* landing_page
+* source
+* medium
+* campaign
+* sessions
+* engaged_sessions
+* generate_lead
+* qualified_leads
+* key_events
+seo_ai_search_visibility
+Where available:
+* date
+* page
+* country
+* device
+* impressions
+* report_type
+Do not fabricate unsupported dimensions.
+seo_lead_attribution
+* id
+* lead_id
+* first_landing_page
+* latest_landing_page
+* first_source
+* first_medium
+* latest_source
+* latest_medium
+* UTM fields
+* approved_pseudonymous_analytics_id
+* first_visit_at
+* lead_created_at
+* content_cluster
+* originating_page_id
+seo_agent_runs
+* id
+* agent_type
+* task_id
+* status
+* input_hash
+* prompt_version_id
+* started_at
+* completed_at
+* model
+* token_usage
+* estimated_cost
+* output_summary
+* error_message
+seo_prompt_versions
+* id
+* prompt_name
+* version
+* prompt_body
+* created_by
+* approved_by
+* active_from
+* retired_at
+seo_alerts
+* id
+* alert_type
+* severity
+* entity_type
+* entity_id
+* detected_at
+* assigned_to
+* status
+* resolution
+
+24. AI AGENT ARCHITECTURE
+Do not build one giant uncontrolled agent.
+Build specialized agents coordinated by an Orchestrator.
+Recommended architecture:
+SEO ORCHESTRATOR │ ├── Technical Audit Agent ├── Search Opportunity Agent ├── SERP Research Agent ├── Policy Research Agent ├── Source Verification Agent ├── Content Brief Agent ├── Draft Agent ├── Fact-Check Agent ├── SEO QA Agent ├── Internal Link Agent ├── Publishing Agent ├── Performance Agent ├── Freshness Watchdog ├── Local SEO Agent └── Authority Opportunity Agent
+
+25. AGENT 1 — SEO ORCHESTRATOR
+Purpose:
+* receive strategic objective;
+* select agent sequence;
+* manage dependencies;
+* enforce approval gates;
+* prevent autonomous high-risk publishing.
+Input:
+* task;
+* page;
+* country;
+* priority;
+* current state;
+* data dependencies.
+Output:
+* execution plan;
+* assigned agents;
+* status;
+* blockers;
+* required human approvals.
+The Orchestrator must never skip:
+SOURCE VERIFICATION FACT CHECK HUMAN REVIEW
+for volatile immigration pages.
+
+26. AGENT 2 — TECHNICAL AUDIT AGENT
+Input:
+* crawl data;
+* rendered HTML;
+* response headers;
+* sitemap;
+* robots.txt;
+* Search Console data;
+* PageSpeed data where available.
+Output:
+For each issue:
+* issue type;
+* affected URLs;
+* evidence;
+* severity;
+* SEO impact;
+* user impact;
+* recommended fix;
+* acceptance test;
+* owner;
+* effort;
+* deadline.
+Never recommend an expensive migration without evidence.
+
+27. AGENT 3 — SEARCH OPPORTUNITY AGENT
+Input:
+* GSC queries;
+* GSC pages;
+* CTR;
+* position;
+* CRM leads;
+* CRM qualified leads;
+* applications;
+* offers;
+* enrolments;
+* business priorities.
+Output:
+* opportunity;
+* current page;
+* recommended action;
+* content gap;
+* priority score;
+* business justification;
+* supporting data.
+Example:
+Query cluster: Canada PGWP eligibility
+Position: 12–15
+Impressions: growing
+CRM: high-quality Canada leads
+Current page: existing PGWP guide
+Decision: UPDATE EXISTING PAGE
+Not: create five overlapping PGWP articles.
+
+28. AGENT 4 — POLICY RESEARCH AGENT
+This agent researches volatile information.
+Rules:
+1. search official sources first;
+2. identify effective dates;
+3. identify transition dates;
+4. compare old and new rules;
+5. never rely on snippets alone;
+6. retrieve the actual source;
+7. store claims separately;
+8. assign volatility.
+Output schema:
+{ "claim": "", "jurisdiction": "", "topic": "", "current_rule_summary": "", "effective_date": "", "transition_date": "", "official_source": "", "retrieved_at": "", "confidence": "", "volatility": "", "human_review_required": true }
+
+29. AGENT 5 — SOURCE VERIFICATION AGENT
+For every source:
+Check:
+* correct domain;
+* page relevance;
+* jurisdiction;
+* current date;
+* effective date;
+* whether superseded;
+* whether information is primary or secondary;
+* whether the claim actually follows from the source.
+Flag:
+* outdated;
+* superseded;
+* unclear;
+* secondary-only;
+* contradictory;
+* high-risk.
+Never approve a claim merely because a URL exists.
+
+30. AGENT 6 — CONTENT BRIEF AGENT
+Do not write the article.
+Create a research-backed brief containing:
+* page objective;
+* audience;
+* primary search intent;
+* secondary intents;
+* funnel stage;
+* primary keyword cluster;
+* related subtopics;
+* existing ranking page;
+* SERP pattern;
+* content gap;
+* unique value required;
+* official facts required;
+* sources required;
+* counsellor input required;
+* student story requirement;
+* original data opportunity;
+* image requirement;
+* video requirement;
+* internal links;
+* external official sources;
+* CTA;
+* conversion event;
+* review frequency.
+
+31. AGENT 7 — DRAFT AGENT
+The Draft Agent must obey:
+NEVER INVENT:
+* visa success rates;
+* admissions success rates;
+* processing times;
+* tuition;
+* fees;
+* scholarship amount;
+* deadline;
+* work rights;
+* English-test waiver;
+* university policy;
+* bank requirement;
+* visa probability;
+* PR probability.
+Forbidden unsupported phrases:
+* guaranteed visa;
+* 100% success;
+* easy PR;
+* guaranteed scholarship;
+* no bank statement required;
+* fastest visa;
+* assured admission.
+Draft must use:
+* verified source data;
+* original expert input;
+* useful structure;
+* specific Bangladesh context;
+* clear date labels for volatile facts;
+* transparent limitations.
+
+32. AGENT 8 — FACT-CHECK AGENT
+Review every factual sentence.
+Classify:
+VERIFIED NEEDS SOURCE OUTDATED CONTRADICTORY MISLEADING OPINION EXPERIENCE CLAIM
+For each failure provide:
+* exact sentence;
+* problem;
+* source required;
+* proposed correction.
+Block publication when:
+* visa-rule claim lacks source;
+* fee lacks current source;
+* processing time lacks date;
+* university policy lacks institutional source;
+* success claim lacks audited evidence.
+
+33. AGENT 9 — SEO QA AGENT
+Before approval check:
+[ ] Search intent satisfied [ ] Unique value present [ ] Title unique [ ] Meta description unique [ ] Canonical correct [ ] Main heading clear [ ] Heading structure useful [ ] Official sources present [ ] High-risk claims verified [ ] Dates included where needed [ ] Internal links included [ ] No cannibalization issue [ ] CTA present [ ] Conversion event mapped [ ] Schema matches content [ ] Images reviewed [ ] Alt text reviewed [ ] Author identified [ ] Reviewer identified [ ] Last reviewed date set [ ] Next review date set [ ] No unsupported promise [ ] Mobile UX reviewed
+Output:
+PASS PASS WITH WARNINGS FAIL
+
+34. AGENT 10 — INTERNAL LINK AGENT
+Run after draft approval and after publication.
+Tasks:
+* identify parent hub;
+* identify child pages;
+* identify contextual link opportunities;
+* prevent over-optimization;
+* find orphan pages;
+* find broken links;
+* find redirects still linked internally.
+Output:
+source URL target URL recommended anchor context reason confidence
+
+35. AGENT 11 — PUBLISHING AGENT
+The Publishing Agent may publish only when:
+* content is approved;
+* SEO QA passes;
+* required human reviewer approves;
+* canonical is generated;
+* source records are stored;
+* URL is unique;
+* redirect impact is checked.
+After publishing:
+1. verify HTTP 200;
+2. verify rendered content;
+3. verify canonical;
+4. verify robots directives;
+5. verify title;
+6. verify schema;
+7. verify internal links;
+8. update sitemap;
+9. purge necessary cache;
+10. queue Search Console index-status check;
+11. schedule 7-day review;
+12. schedule 28-day performance review.
+Do not misuse Google's Indexing API for standard content pages.
+
+36. AGENT 12 — PERFORMANCE AGENT
+Run weekly.
+Evaluate:
+* impressions change;
+* clicks change;
+* CTR change;
+* position movement;
+* landing-page engagement;
+* lead generation;
+* qualified leads;
+* consultations;
+* applications;
+* offer activity;
+* visa outcomes;
+* enrolments;
+* pipeline value.
+Classify each page:
+GROWING STABLE DECLINING CTR OPPORTUNITY RANKING OPPORTUNITY CONVERSION PROBLEM CANNIBALIZATION RISK FRESHNESS RISK
+Recommend exactly one primary next action per page.
+
+37. AGENT 13 — FRESHNESS WATCHDOG
+Monitor volatile content.
+Suggested initial review cadences:
+Visa policy: 7 days or event-triggered
+Processing times: 24 hours to 7 days depending on source volatility
+Fees: 7 days
+Scholarship deadline: daily during closing period or appropriate event cadence
+University admissions requirements: 14 days during active intake periods
+Tuition: 30 days
+General evergreen content: 90–180 days
+These are starting operational rules, not assumptions about how often a source actually changes.
+When source content changes:
+1. compare source hash;
+2. identify affected claims;
+3. identify affected pages;
+4. create review tasks;
+5. do not auto-rewrite and publish high-risk policy content without review.
+
+38. CONTENT WORKFLOW STATES
+Use:
+IDEA ↓ RESEARCH_PENDING ↓ SOURCES_COLLECTED ↓ FACTS_VERIFIED ↓ BRIEF_READY ↓ AI_DRAFTED ↓ FACT_CHECK ↓ SEO_QA ↓ EXPERT_REVIEW ↓ APPROVED ↓ SCHEDULED ↓ PUBLISHED ↓ INDEX_STATUS_PENDING ↓ MONITORING ↓ UPDATE_REQUIRED or ARCHIVED
+Every transition must have:
+* actor;
+* timestamp;
+* notes;
+* source version where relevant.
+
+39. ANALYTICS AND CRM ATTRIBUTION
+Capture SEO origin from first visit through enrolment.
+Store:
+* first landing page;
+* latest landing page;
+* first source;
+* first medium;
+* campaign;
+* UTM fields;
+* referrer;
+* content cluster;
+* destination interest;
+* pseudonymous analytics identifier where permitted;
+* first visit;
+* lead creation time.
+Never place raw personally identifiable information into analytics IDs.
+Follow consent, privacy and applicable data-protection requirements.
+Recommended website and CRM events
+Website:
+* consultation_cta_click
+* whatsapp_cta_click
+* generate_lead
+* course_match_started
+* course_match_completed
+* eligibility_check_started
+* eligibility_check_completed
+* visa_mock_started
+* visa_mock_completed
+* consultation_booked
+CRM:
+* qualify_lead
+* disqualify_lead
+* working_lead
+* application_started
+* application_submitted
+* offer_received
+* deposit_paid
+* visa_approved
+* enrolled
+* close_convert_lead
+* close_unconvert_lead
+Map recommended GA4 lead events correctly and use custom events for business-specific milestones.
+
+40. SEO-TO-REVENUE FUNNEL
+Track:
+Organic Search Visit ↓ Lead ↓ Qualified Lead ↓ Consultation ↓ Application Started ↓ Application Submitted ↓ Offer Received ↓ Deposit Paid ↓ Visa Outcome ↓ Enrolment
+The executive question must be:
+Which SEO pages and topic clusters create valuable student outcomes?
+Not only:
+Which pages receive the most traffic?
+
+41. SEARCH CONSOLE AND ANALYTICS DATA PIPELINE
+Design two modes.
+Mode A — MVP
+Use:
+* Search Console API;
+* GA4 reports or appropriate API/export;
+* WEB_CRM database.
+Daily jobs:
+* sync Search Console;
+* sync Analytics;
+* refresh landing-page metrics;
+* refresh opportunity scores;
+* refresh attribution aggregates.
+Mode B — Scalable Analytics
+Where appropriate use:
+* Search Console bulk export;
+* GA4 BigQuery export;
+* warehouse transformations;
+* CRM export or secure warehouse sync;
+* BI reporting.
+Document differences between:
+* Search Console clicks;
+* GA4 sessions;
+* canonical URL reporting;
+* timezone differences;
+* attribution differences.
+Never force incompatible metrics to match artificially.
+
+42. EXECUTIVE DASHBOARD
+Show:
+* Organic Clicks
+* Organic Sessions
+* Organic Leads
+* Qualified Leads
+* Consultations
+* Applications Started
+* Applications Submitted
+* Offers
+* Deposits
+* Visa Approvals
+* Enrolments
+* Organic Pipeline Value
+* Revenue per Landing Page where available
+* Lead-to-Application Rate
+* Application-to-Offer Rate
+* Topic-Cluster Performance
+Use period comparisons:
+* last 7 days;
+* last 28 days;
+* previous 28 days;
+* 90-day trend.
+
+43. SEARCH OPPORTUNITY DASHBOARD
+Columns:
+Page Topic Cluster Clicks Impressions CTR Position Leads Qualified Leads Applications Offers Enrolments Pipeline Value Freshness Risk Opportunity Score Recommended Action
+
+44. CONTENT FRESHNESS DASHBOARD
+Columns:
+Page Country Topic Last Source Check Last Human Review Next Review Volatility Changed Source Detected Status Owner
+Statuses:
+GREEN REVIEW SOON URGENT REVIEW BLOCKED
+
+45. TECHNICAL HEALTH DASHBOARD
+Track:
+* indexed critical pages;
+* indexation exclusions;
+* 404s;
+* soft 404s;
+* 5xx errors;
+* canonical conflicts;
+* noindex mistakes;
+* sitemap errors;
+* orphan pages;
+* broken links;
+* redirect chains;
+* Core Web Vitals pass rate;
+* schema errors.
+
+46. AI AGENT OPERATIONS DASHBOARD
+Track:
+* runs by agent;
+* successful runs;
+* failures;
+* average processing cost;
+* unsupported claims detected;
+* policy changes detected;
+* drafts awaiting review;
+* QA failure rate;
+* publication turnaround;
+* prompt version performance.
+Keep complete audit logs.
+
+47. LOCAL SEO DASHBOARD
+Track by genuine location:
+* Business Profile completeness;
+* NAP consistency;
+* review count;
+* review velocity;
+* response rate;
+* rating trend;
+* profile actions where available;
+* local landing-page leads;
+* consultation bookings.
+Never create fake review activity.
+
+48. AUTHORITY DASHBOARD
+Track:
+* partner link opportunities;
+* outreach sent;
+* replies;
+* links earned;
+* links lost;
+* digital PR mentions;
+* university representative listings;
+* student story participation;
+* original research coverage.
+
+49. AI SEARCH VISIBILITY DASHBOARD
+Where Search Console provides available data, track:
+* generative-AI impressions;
+* pages appearing;
+* country;
+* device;
+* date trend.
+Do not fabricate clicks or dimensions that the report does not expose.
+Compare AI Search visibility with:
+* ordinary Search visibility;
+* content type;
+* topic cluster;
+* conversion performance where traceable.
+
+50. LOCAL REVIEW AUTOMATION
+When CRM status changes to eligible success stage:
+EVENT: student status update
+CHECK: consent? review request already sent? appropriate timing? contact channel preference?
+THEN: send neutral personalized review invitation
+STORE: review_request_sent_at review_request_channel follow_up_due_at follow_up_sent_at
+Never:
+* offer payment for a positive review;
+* ask staff to create fake reviews;
+* gate requests only to students predicted to leave positive reviews.
+
+51. AI VISA INTERVIEW PRACTICE MVP
+Purpose:
+Help students practice communication and preparation.
+Input:
+* destination;
+* course;
+* institution;
+* study level;
+* academic background;
+* funding type;
+* previous travel or visa history, only where appropriately collected;
+* practice objective.
+System behavior:
+* ask practice questions;
+* follow up based on student's answers;
+* assess clarity;
+* identify inconsistency;
+* suggest clearer truthful communication;
+* never invent an answer for the student;
+* never coach deception;
+* never guarantee visa approval.
+CRM outputs:
+* tool_started;
+* tool_completed;
+* destination;
+* score categories;
+* counselling requested;
+* lead created with consent.
+
+52. AI COURSE MATCHER MVP
+Inputs:
+* study level;
+* academic history;
+* subject interest;
+* target countries;
+* English score;
+* budget range;
+* preferred intake;
+* work experience;
+* study gap;
+* scholarship interest.
+Outputs:
+* possible course matches;
+* possible university matches;
+* reasons for match;
+* requirements still needing verification;
+* information gaps;
+* counsellor-review option.
+Never display:
+“You will definitely be admitted.”
+Display:
+“Potential match based on currently available criteria. Final eligibility depends on institutional review and current requirements.”
+
+53. ORIGINAL DATA STUDY
+Create an ethical, privacy-safe ALO study.
+Possible title concept:
+Bangladeshi Study Abroad Intent Report 2026
+Research questions:
+* Which destinations are most requested?
+* Which study levels are most requested?
+* Which subjects are popular?
+* How early do students begin planning?
+* What are the most common financial concerns?
+* What scholarship questions appear most frequently?
+* Which stage has the highest drop-off?
+Output:
+* methodology;
+* sample dates;
+* sample size;
+* limitations;
+* anonymization;
+* key findings;
+* charts;
+* expert interpretation;
+* media summary;
+* landing page.
+Do not make causal claims from simple CRM observations.
+
+54. HIGH-RISK CLAIM POLICY
+These claims require evidence and human approval:
+* “98% visa success rate”
+* “highest success rate”
+* “best consultant”
+* “number one agency”
+* “guaranteed visa”
+* “visa in five days”
+* “no bank statement required”
+* “easy PR”
+* “guaranteed scholarship”
+* “all universities accept”
+* “IELTS not required”
+For quantified business claims:
+Require:
+* dataset;
+* date range;
+* denominator;
+* numerator;
+* exclusions;
+* calculation method;
+* approval.
+Example:
+Do not say: 98% visa success rate
+unless an auditable calculation exists.
+
+55. CONTENT PUBLICATION CHECKLIST
+Before publication:
+[ ] Intent confirmed from live SERP [ ] Target URL checked for duplication [ ] Cannibalization check complete [ ] Official-source research complete [ ] Volatile claims dated [ ] Human reviewer complete when required [ ] Unique value present [ ] Primary title useful [ ] Meta description useful [ ] Canonical correct [ ] Main heading clear [ ] Headings logical [ ] CTA present [ ] Conversion tracking mapped [ ] Internal links present [ ] External official references present [ ] Structured data applicable and accurate [ ] Mobile reviewed [ ] Images optimized [ ] Alt text reviewed [ ] No unsupported promises [ ] Next review date set
+
+56. BACKLINK CHECKLIST
+Before outreach ask:
+* Is the site genuinely relevant?
+* Is the relationship real?
+* Would a user benefit from the link?
+* Is the content worthy of citation?
+* Is the placement natural?
+* Is the claim truthful?
+* Is the campaign compliant?
+Avoid:
+* spam directories;
+* paid link networks;
+* mass guest-post farms;
+* fake scholarships created solely for links;
+* automated comment links;
+* exact-match anchor manipulation.
+
+57. MONTHLY OPERATIONS
+At least monthly:
+* review Search Console coverage;
+* audit high-value pages;
+* review ranking opportunities;
+* review CTR opportunities;
+* review content freshness;
+* review immigration-policy changes;
+* review backlink changes;
+* review local profile accuracy;
+* review organic lead quality;
+* review application outcomes;
+* review agent QA failures;
+* update next month's priority list.
+Do not mechanically change a year in a title from 2026 to 2027 unless the page has actually been reviewed and updated.
+
+58. THINGS TO AVOID
+Never:
+1. change important URLs without redirects;
+2. copy competitor content;
+3. use AI to create hundreds of low-value pages;
+4. claim fixed minimum article word counts as a Google requirement;
+5. assume every query parameter must be removed;
+6. assume JavaScript automatically prevents indexing;
+7. promise FAQ rich-result dropdowns;
+8. misuse the Indexing API for ordinary pages;
+9. fabricate E-E-A-T signals;
+10. fabricate counsellor credentials;
+11. fabricate student stories;
+12. fabricate visa results;
+13. fabricate backlinks;
+14. fabricate keyword data;
+15. auto-publish high-risk immigration claims;
+16. hide important copy inside graphics;
+17. create fake offices;
+18. create fake reviews;
+19. create fake city pages;
+20. over-optimize anchors;
+21. publish generic “SEO filler.”
+
+59. IMPLEMENTATION API CONTRACTS
+Adapt to the existing WEB_CRM stack.
+Minimum conceptual endpoints:
+GET /api/seo/projects/{id}/dashboard
+GET /api/seo/opportunities
+POST /api/seo/research/run
+GET /api/seo/sources
+POST /api/seo/sources/verify
+POST /api/seo/briefs
+POST /api/seo/drafts
+POST /api/seo/fact-check
+POST /api/seo/qa
+POST /api/seo/reviews/{id}/approve
+POST /api/seo/publications/schedule
+POST /api/seo/publications/publish
+GET /api/seo/pages/{id}/performance
+POST /api/seo/sync/gsc
+POST /api/seo/sync/analytics
+POST /api/seo/source-watch/run
+POST /api/seo/internal-links/suggest
+POST /api/seo/opportunities/recalculate
+POST /api/seo/webhooks/lead-status-changed
+For every endpoint specify:
+* authorization;
+* request;
+* response;
+* validation;
+* idempotency;
+* audit log behavior;
+* error states.
+
+60. SCHEDULED JOB DESIGN
+Design jobs such as:
+Daily:
+* Search Console sync;
+* Analytics sync;
+* source-change watcher for volatile sources;
+* broken-publication checks;
+* stale-review detection.
+Weekly:
+* opportunity scoring;
+* ranking movement review;
+* CTR opportunity review;
+* internal link review;
+* content decay review;
+* backlink status check.
+Monthly:
+* full technical crawl;
+* competitor gap refresh;
+* local SEO audit;
+* content inventory review;
+* KPI review;
+* 90-day rolling forecast.
+Use queue retries, dead-letter handling and idempotency.
+
+61. HUMAN ROLES AND PERMISSIONS
+Recommended roles:
+SEO_ADMIN SEO_MANAGER SEO_EDITOR COUNTRY_REVIEWER COUNSELLOR_AUTHOR DEVELOPER ANALYST PUBLISHER VIEW_ONLY
+Example:
+AI may draft.
+SEO Editor may edit.
+Country Reviewer must approve visa-policy pages.
+Publisher may release only approved versions.
+Developer may resolve technical tasks.
+All approvals must be logged.
+
+62. REQUIRED FINAL OUTPUT FROM YOU
+After research, produce the final work in this exact order.
+DELIVERABLE 1 — Executive Truth Report
+Maximum 2 pages.
+Include:
+* actual current condition;
+* biggest opportunities;
+* biggest risks;
+* 90-day realistic objective;
+* what success can and cannot be promised.
+DELIVERABLE 2 — Evidence Log
+Table:
+Claim Finding Source Source Type Date Checked Confidence Action
+DELIVERABLE 3 — Complete SEO Audit
+Sections:
+* Technical SEO
+* Indexation
+* JavaScript rendering
+* Performance
+* On-page
+* Content
+* Internal links
+* Authority
+* Local SEO
+* Conversion
+* Measurement
+* AI Search visibility
+Every issue:
+Severity Evidence Impact Fix Owner Effort Deadline
+DELIVERABLE 4 — Keyword Intelligence Map
+Provide real data where available.
+Do not invent values.
+Include:
+* keyword;
+* cluster;
+* intent;
+* volume;
+* data source;
+* GSC metrics;
+* current page;
+* CRM value;
+* opportunity score;
+* recommended action.
+DELIVERABLE 5 — Competitor Gap Matrix
+Compare ALO with actual current competitors.
+DELIVERABLE 6 — Final 90-Day Roadmap
+Provide:
+* week;
+* task;
+* owner;
+* dependencies;
+* output;
+* KPI;
+* risk.
+DELIVERABLE 7 — Final Page Production Queue
+For all 30 seed money pages show:
+Publish Update Merge Postpone Retire
+and why.
+DELIVERABLE 8 — Final Content Queue
+For all 100 seed topics show:
+Publish Update Existing Merge Rewrite Postpone Retire
+Do not omit any topic.
+DELIVERABLE 9 — Information Architecture
+Give:
+* final URL map;
+* hubs;
+* spokes;
+* breadcrumbs;
+* navigation;
+* internal-link rules.
+DELIVERABLE 10 — WEB_CRM Product Specification
+Provide:
+* menu;
+* screens;
+* permissions;
+* database schema;
+* workflows;
+* endpoints;
+* background jobs;
+* error handling;
+* audit logs.
+DELIVERABLE 11 — Multi-Agent AI System Specification
+For every agent provide:
+* purpose;
+* inputs;
+* tools;
+* process;
+* output JSON schema;
+* failure conditions;
+* human approval gate;
+* logging.
+DELIVERABLE 12 — Analytics and Attribution Plan
+Provide:
+* data flow;
+* event taxonomy;
+* GSC integration;
+* Analytics integration;
+* CRM mapping;
+* funnel model;
+* dashboard definitions.
+DELIVERABLE 13 — Local SEO Plan
+Provide real current location strategy.
+DELIVERABLE 14 — Authority Plan
+Provide:
+* university link strategy;
+* digital PR plan;
+* original research plan;
+* alumni content strategy;
+* outreach templates.
+DELIVERABLE 15 — KPI Framework
+Separate:
+Leading indicators:
+* indexability;
+* impressions;
+* pages gaining queries;
+* positions;
+* CTR;
+* tool usage.
+Mid-funnel:
+* leads;
+* qualified leads;
+* consultation bookings;
+* application starts.
+Lagging:
+* applications;
+* offers;
+* deposits;
+* visa outcomes;
+* enrolments;
+* revenue.
+DELIVERABLE 16 — First 20 Development Tickets
+Each ticket must contain:
+TITLE PROBLEM USER STORY SCOPE ACCEPTANCE CRITERIA DEPENDENCIES PRIORITY OWNER TYPE TEST PLAN
+DELIVERABLE 17 — First 20 SEO Execution Tickets
+Same format.
+DELIVERABLE 18 — Risk Register
+Include:
+* policy freshness;
+* AI hallucination;
+* search spam;
+* duplicate content;
+* cannibalization;
+* incorrect immigration content;
+* tracking loss;
+* cross-domain attribution;
+* review policy;
+* data privacy;
+* overproduction;
+* developer capacity.
+DELIVERABLE 19 — Definition of Done
+Define completion for:
+* technical fix;
+* content page;
+* policy update;
+* new AI tool;
+* CRM feature;
+* analytics integration;
+* backlink campaign.
+
+63. QUALITY STANDARD
+The final work must be:
+* evidence-based;
+* current;
+* honest;
+* technically implementable;
+* measurable;
+* commercially useful;
+* safe from obvious SEO spam;
+* safe from fabricated immigration advice;
+* compatible with human review;
+* designed for ongoing updates.
+Do not give generic paragraphs where:
+* a table;
+* database field list;
+* API contract;
+* workflow;
+* scoring model;
+* task list;
+* acceptance criteria;
+would be more useful.
+
+64. FINAL DECISION PRINCIPLE
+The entire system must follow this operating principle:
+AI researches and proposes.
+Official sources establish high-risk facts.
+Source Verification checks evidence.
+The Fact-Check Agent tests claims.
+A human expert reviews sensitive content.
+The SEO QA Agent checks page quality.
+The Publishing Agent releases approved work.
+Search Console measures visibility.
+Analytics measures site behavior.
+WEB_CRM measures business outcomes.
+Performance data decides what gets improved next.
+The SEO program must optimize for:
+qualified students, strong consultations, good-fit applications, successful enrolment outcomes,
+not article count.
+BEGIN THE WORK NOW.
+First:
+1. search the live web;
+2. audit the public ALO website;
+3. identify all information that cannot be verified publicly;
+4. create the evidence log;
+5. deliver the current-state truth report;
+6. then produce the full implementation plan in the required order.
+Do not skip any deliverable. Do not invent missing data. Do not promise rankings. Do not ask unnecessary questions. Proceed with the strongest evidence available.
