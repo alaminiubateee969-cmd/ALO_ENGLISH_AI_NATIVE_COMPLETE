@@ -1,0 +1,53 @@
+[Unit]
+Description=English ALOEducation Web CRM
+Documentation=https://english.aloeducation.com
+After=network.target mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aloedu
+Group=aloedu
+WorkingDirectory=/var/www/english-aloeducation
+
+# Bun is used as the runtime in production. The Next.js standalone
+# server is built at `server.js` by `next build`.
+ExecStart=/home/aloedu/.bun/bin/bun run server.js
+
+Restart=on-failure
+RestartSec=5
+
+# Graceful shutdown — give Bun up to 30s to finish in-flight requests.
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Environment (override/extend in /etc/systemd/system/...override.conf
+# or via the deploy script). The .env file is loaded by Next.js itself.
+Environment=NODE_ENV=production
+Environment=PORT=3002
+Environment=HOSTNAME=127.0.0.1
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/english-aloeducation
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+MemoryDenyWriteExecute=false
+LockPersonality=true
+
+# Resource limits
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=english-aloeducation
+
+[Install]
+WantedBy=multi-user.target

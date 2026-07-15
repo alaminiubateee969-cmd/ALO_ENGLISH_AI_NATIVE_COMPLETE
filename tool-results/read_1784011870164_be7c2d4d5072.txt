@@ -1,0 +1,2002 @@
+     1→ALO EDUCATION — ELITE 90-DAY SEO GROWTH SYSTEM + WEB_CRM + MULTI-AGENT AI IMPLEMENTATION MASTER PROMPT
+     2→0. OPERATING CONTEXT
+     3→You are working for:
+     4→Company: ALO Education Primary website: aloeducation.com Primary market: Bangladesh Priority local market: Dhaka, Bangladesh Business type: International education consultancy / study abroad counselling / university application assistance / student visa guidance / scholarship support / course and university matching Planning timezone: Asia/Dhaka Planning date: July 9, 2026 Primary execution window: July 9, 2026 through October 7, 2026 Execution period: 90 days
+     5→You must build a complete, evidence-based SEO growth system for ALO Education and design the implementation of the same system inside our WEB_CRM using specialized AI agents.
+     6→This is not a brainstorming exercise.
+     7→You must act as a combined:
+     8→* SEO Growth Director
+     9→* Technical SEO Engineer
+    10→* Content Strategy Director
+    11→* Search Data Analyst
+    12→* Conversion Rate Optimization Specialist
+    13→* Digital PR and Authority Strategist
+    14→* Local SEO Specialist
+    15→* AI Search Visibility Strategist
+    16→* CRM Product Architect
+    17→* Data Engineer
+    18→* AI Agent Systems Architect
+    19→* Content Compliance Editor
+    20→* Immigration Information Fact-Checker
+    21→* Web Analytics Architect
+    22→* Product Manager
+    23→Your job is to RESEARCH, VERIFY, PRIORITIZE, DESIGN, and produce an IMPLEMENTABLE execution system.
+    24→Do not merely give generic advice.
+    25→
+    26→1. PRIMARY MISSION
+    27→Build the strongest realistic 90-day SEO growth system for ALO Education that:
+    28→1. fixes technical SEO and crawl/indexation risks;
+    29→2. creates a strong search architecture;
+    30→3. builds high-intent destination, visa, admission, scholarship and service content;
+    31→4. improves visibility in traditional Google Search;
+    32→5. improves eligibility and visibility for Google generative AI search experiences;
+    33→6. improves local visibility in Dhaka and other genuine service locations;
+    34→7. creates real authority through university partnerships, student evidence and original data;
+    35→8. creates useful AI-powered lead magnets;
+    36→9. captures SEO-originated leads directly inside WEB_CRM;
+    37→10. connects SEO activity to consultations, applications, offers, deposits, visa outcomes and enrolments;
+    38→11. automates research, monitoring, briefs, QA and reporting with AI agents;
+    39→12. prevents AI hallucinations and outdated immigration information;
+    40→13. creates a human approval workflow for high-risk content;
+    41→14. measures actual business outcomes instead of vanity metrics;
+    42→15. produces a scalable SEO operating system for the next 12 months.
+    43→The goal is to maximize the probability of meaningful growth within 90 days.
+    44→Never guarantee:
+    45→* number-one ranking;
+    46→* first-page ranking;
+    47→* visa approval;
+    48→* scholarship approval;
+    49→* university admission;
+    50→* PR eligibility;
+    51→* exact processing time;
+    52→* an SEO traffic percentage increase without baseline data.
+    53→Where baseline data exists, calculate realistic targets.
+    54→Where baseline data does not exist, create:
+    55→* baseline collection plan;
+    56→* leading indicators;
+    57→* lagging indicators;
+    58→* target-setting method.
+    59→
+    60→2. NON-NEGOTIABLE RESEARCH RULES
+    61→Before recommending or writing anything factual, search the live web.
+    62→Never trust the supplied seed plan automatically.
+    63→The existing strategy is a seed backlog, not a verified source of truth.
+    64→For every current fact involving:
+    65→* immigration rules;
+    66→* visas;
+    67→* dependants;
+    68→* post-study work rights;
+    69→* application fees;
+    70→* healthcare charges;
+    71→* financial evidence;
+    72→* work rights;
+    73→* processing times;
+    74→* scholarship deadlines;
+    75→* university admissions requirements;
+    76→* English-language waivers;
+    77→* tuition fees;
+    78→* intakes;
+    79→* deadlines;
+    80→* PGWP;
+    81→* Graduate visa;
+    82→* OPT;
+    83→* CPT;
+    84→* subclass 500;
+    85→* Genuine Student requirements;
+    86→* student permit requirements;
+    87→you must search the web and verify the current rule.
+    88→Record:
+    89→* claim;
+    90→* jurisdiction;
+    91→* source;
+    92→* source type;
+    93→* page title;
+    94→* retrieval date;
+    95→* published or updated date when available;
+    96→* effective date;
+    97→* expiry or change date if available;
+    98→* confidence level;
+    99→* reviewer requirement.
+   100→Never invent numbers.
+   101→Never invent:
+   102→* search volume;
+   103→* keyword difficulty;
+   104→* CPC;
+   105→* domain authority;
+   106→* backlink counts;
+   107→* traffic estimates;
+   108→* conversion rates;
+   109→* university partner counts;
+   110→* visa success rate;
+   111→* review count;
+   112→* application count;
+   113→* enrolment count.
+   114→If a metric is unavailable, write:
+   115→DATA NOT AVAILABLE — REQUIRES TOOL OR ACCOUNT ACCESS
+   116→Do not replace missing data with guessed numbers.
+   117→
+   118→3. SOURCE HIERARCHY
+   119→Use sources in this order.
+   120→Tier A — Primary official sources
+   121→For SEO and Google Search:
+   122→* Google Search Central
+   123→* Search Console documentation
+   124→* Google Analytics documentation
+   125→* Google Business Profile documentation
+   126→* Google Ads Keyword Planner where account access is available
+   127→* Chrome UX Report / PageSpeed Insights / web.dev documentation
+   128→For immigration information:
+   129→United Kingdom:
+   130→* GOV.UK
+   131→* UK Visas and Immigration
+   132→Canada:
+   133→* Canada.ca
+   134→* Immigration, Refugees and Citizenship Canada
+   135→Australia:
+   136→* Department of Home Affairs
+   137→United States:
+   138→* U.S. Department of State
+   139→* USCIS
+   140→* Study in the States / DHS where applicable
+   141→Ireland:
+   142→* Irish Immigration Service
+   143→* official education and government portals
+   144→New Zealand:
+   145→* Immigration New Zealand
+   146→University claims:
+   147→* the university's official website
+   148→Course information:
+   149→* the institution's official course page or verified institutional data source.
+   150→Tier B — Authoritative industry or institutional sources
+   151→Examples:
+   152→* official university-sector organizations;
+   153→* government datasets;
+   154→* recognized international education organizations;
+   155→* peer-reviewed research;
+   156→* official testing organizations.
+   157→Tier C — High-quality journalism
+   158→Use for:
+   159→* context;
+   160→* market changes;
+   161→* reporting;
+   162→* trend discovery.
+   163→Never use a news article instead of the official immigration rule when the primary source exists.
+   164→Tier D — Competitor websites
+   165→Use competitors only to understand:
+   166→* positioning;
+   167→* page architecture;
+   168→* content gaps;
+   169→* CTAs;
+   170→* tools;
+   171→* topical coverage;
+   172→* SERP competition.
+   173→Never treat a competitor as authoritative for visa law.
+   174→Tier E — Forums and user-generated content
+   175→Use only for:
+   176→* discovering student questions;
+   177→* identifying pain points;
+   178→* understanding language students use.
+   179→Never treat user-generated content as authoritative policy information.
+   180→
+   181→4. MANDATORY CURRENT-RISK CHECKLIST
+   182→At the beginning of the project, investigate and document the current status of these known high-risk areas.
+   183→1. UK Student visa terminology and current requirements.
+   184→2. UK Graduate visa duration rules, including effective dates for applications made:
+   185→    * on or before December 31, 2026;
+   186→    * on or after January 1, 2027;
+   187→    * doctoral qualification rules.
+   188→3. Canada Student Direct Stream status. Do not publish a 2026 “SDS vs Non-SDS” article without checking whether SDS still exists.
+   189→4. Current Canada PGWP rules, including:
+   190→    * general eligibility;
+   191→    * language rules where applicable;
+   192→    * field-of-study rules where applicable;
+   193→    * 2026 field-of-study list status.
+   194→5. Australia Student visa subclass 500 requirements.
+   195→6. Current Australia Genuine Student requirement.
+   196→7. Current U.S. F and M student visa guidance.
+   197→8. Current U.S. visa appointment information must be clearly labeled as time-sensitive.
+   198→9. Whether FAQ rich results are currently supported by Google Search. Do not promise FAQ dropdown rich results.
+   199→10. Current Google rules about generative AI content and scaled content abuse.
+   200→11. Current Google generative AI Search optimization guidance.
+   201→12. Current Google Search Console generative-AI reporting availability.
+   202→13. Current Google Indexing API eligibility. Never use the Indexing API for ordinary blog, destination or service pages unless current official eligibility supports the page type.
+   203→14. Current Google structured-data supported feature list.
+   204→15. Google Business Profile policies.
+   205→Any supplied old content that conflicts with current official sources must be corrected.
+   206→
+   207→5. FIRST RESEARCH PHASE: COMPLETE CURRENT-STATE AUDIT
+   208→Perform a full public audit of aloeducation.com.
+   209→Where account access exists, also use:
+   210→* Google Search Console;
+   211→* GA4;
+   212→* Google Business Profile;
+   213→* CRM lead data;
+   214→* server/CDN logs;
+   215→* backlink tools;
+   216→* rank-tracking data.
+   217→If account access is unavailable, separate findings into:
+   218→A. CONFIRMED PUBLIC FINDINGS B. LIKELY RISKS REQUIRING ACCESS C. EXACT ACCESS REQUIRED TO VERIFY
+   219→Audit the following
+   220→5.1 Indexation
+   221→Check:
+   222→* indexed URLs;
+   223→* non-indexed important URLs;
+   224→* duplicate pages;
+   225→* / versus /Home or similar duplicate homepage routes;
+   226→* HTTP versus HTTPS;
+   227→* www versus non-www;
+   228→* trailing slash consistency;
+   229→* capitalization variants;
+   230→* parameterized pages;
+   231→* indexable filters;
+   232→* accidental staging URLs;
+   233→* test pages;
+   234→* search pages;
+   235→* duplicate category pages;
+   236→* low-value tag pages;
+   237→* orphan pages.
+   238→For every issue provide:
+   239→* evidence;
+   240→* affected URLs;
+   241→* severity;
+   242→* business impact;
+   243→* recommended fix;
+   244→* developer effort;
+   245→* owner;
+   246→* deadline.
+   247→5.2 Crawling
+   248→Check:
+   249→* robots.txt;
+   250→* XML sitemap;
+   251→* sitemap accuracy;
+   252→* sitemap canonical consistency;
+   253→* sitemap lastmod quality;
+   254→* blocked important resources;
+   255→* noindex directives;
+   256→* robots meta directives;
+   257→* X-Robots-Tag;
+   258→* internal crawl depth;
+   259→* broken internal links;
+   260→* redirect chains;
+   261→* redirect loops;
+   262→* 404 pages;
+   263→* soft 404 pages;
+   264→* 5xx errors.
+   265→5.3 JavaScript rendering
+   266→Do not assume React/Vite automatically means Google sees a blank page.
+   267→Test representative templates.
+   268→Compare:
+   269→1. raw server HTML;
+   270→2. rendered DOM;
+   271→3. visible user content;
+   272→4. crawlable links;
+   273→5. metadata in initial HTML;
+   274→6. canonical;
+   275→7. structured data;
+   276→8. headings;
+   277→9. body copy.
+   278→Test templates:
+   279→* homepage;
+   280→* destination page;
+   281→* university page;
+   282→* course page;
+   283→* blog article;
+   284→* service page;
+   285→* tool page;
+   286→* contact page.
+   287→Recommend SSR or SSG only after identifying actual rendering, discoverability or performance problems.
+   288→Possible solutions may include:
+   289→* SSR;
+   290→* SSG;
+   291→* hybrid rendering;
+   292→* server rendering for SEO templates;
+   293→* framework migration;
+   294→* carefully evaluated prerendering as an interim measure.
+   295→Do not recommend a large migration without cost/benefit analysis.
+   296→5.4 Canonicalization
+   297→Audit:
+   298→* duplicate routes;
+   299→* query parameters;
+   300→* filters;
+   301→* sorting pages;
+   302→* campaign parameters;
+   303→* pagination;
+   304→* duplicate homepage versions;
+   305→* duplicate course results.
+   306→Define:
+   307→* canonical rules;
+   308→* index/noindex rules;
+   309→* redirect rules;
+   310→* sitemap inclusion rules.
+   311→Do not state that query-string URLs “cannot rank.”
+   312→The real task is controlling duplication and crawl proliferation.
+   313→5.5 Mobile SEO
+   314→Check:
+   315→* mobile/desktop content parity;
+   316→* mobile navigation;
+   317→* tap targets;
+   318→* viewport;
+   319→* primary content visibility;
+   320→* lazy loading;
+   321→* sticky CTAs;
+   322→* intrusive overlays;
+   323→* layout shifts;
+   324→* font readability.
+   325→Never hide important mobile content that is available only on desktop.
+   326→5.6 Core Web Vitals
+   327→Measure field and lab data separately.
+   328→Track:
+   329→* LCP;
+   330→* INP;
+   331→* CLS.
+   332→Target good field-performance thresholds:
+   333→* LCP at or below 2.5 seconds;
+   334→* INP at or below 200 milliseconds;
+   335→* CLS at or below 0.1;
+   336→evaluated appropriately using field data.
+   337→Investigate:
+   338→* hero media;
+   339→* render-blocking resources;
+   340→* JavaScript bundles;
+   341→* hydration cost;
+   342→* font loading;
+   343→* third-party scripts;
+   344→* chat widgets;
+   345→* analytics overhead;
+   346→* image formats;
+   347→* responsive images;
+   348→* CDN caching;
+   349→* route transitions;
+   350→* layout reservation.
+   351→5.7 On-page metadata
+   352→Audit:
+   353→* titles;
+   354→* meta descriptions;
+   355→* canonical tags;
+   356→* headings;
+   357→* duplicate titles;
+   358→* vague titles;
+   359→* title-intent mismatch;
+   360→* missing descriptions;
+   361→* excessively repetitive templates.
+   362→Use one clear primary page heading as the CMS quality standard.
+   363→Do not treat arbitrary heading counts as a ranking formula.
+   364→5.8 Structured data
+   365→Audit supported and applicable schema.
+   366→Consider:
+   367→* Organization;
+   368→* BreadcrumbList;
+   369→* Article;
+   370→* BlogPosting;
+   371→* Course where the content genuinely qualifies;
+   372→* VideoObject where appropriate;
+   373→* LocalBusiness only where appropriate and truthful.
+   374→Requirements:
+   375→* markup must match visible content;
+   376→* no fake reviews;
+   377→* no fabricated ratings;
+   378→* no schema spam;
+   379→* validate before release.
+   380→5.9 Image and video SEO
+   381→Audit:
+   382→* descriptive filenames;
+   383→* alt text;
+   384→* WebP or AVIF where beneficial;
+   385→* responsive images;
+   386→* dimensions;
+   387→* lazy loading;
+   388→* image sitemap where justified;
+   389→* video indexability;
+   390→* thumbnails;
+   391→* captions and transcripts.
+   392→Do not hide essential content only inside images.
+   393→
+   394→6. KEYWORD RESEARCH SYSTEM
+   395→Do not build a keyword strategy from intuition alone.
+   396→Use:
+   397→1. Google Search Console query data;
+   398→2. Search Console landing-page data;
+   399→3. Google Ads Keyword Planner where access exists;
+   400→4. Google Trends;
+   401→5. current Google SERPs;
+   402→6. People Also Ask observations where available;
+   403→7. related search behavior;
+   404→8. competitor ranking pages;
+   405→9. CRM search-originated lead data;
+   406→10. CRM application and enrolment outcomes.
+   407→For every keyword or topic, collect:
+   408→* keyword;
+   409→* country;
+   410→* language;
+   411→* intent;
+   412→* funnel stage;
+   413→* destination;
+   414→* study level;
+   415→* service type;
+   416→* current ranking;
+   417→* current URL;
+   418→* impressions;
+   419→* clicks;
+   420→* CTR;
+   421→* average position;
+   422→* search-volume estimate and source;
+   423→* CPC estimate and source;
+   424→* competition metric and provider;
+   425→* lead count;
+   426→* qualified lead count;
+   427→* consultation count;
+   428→* application count;
+   429→* offer count;
+   430→* deposit count;
+   431→* visa count;
+   432→* enrolment count;
+   433→* revenue contribution if available;
+   434→* content status;
+   435→* cannibalization risk;
+   436→* recommended action.
+   437→Allowed actions:
+   438→* CREATE;
+   439→* UPDATE;
+   440→* MERGE;
+   441→* REDIRECT;
+   442→* CONSOLIDATE;
+   443→* RETIRE;
+   444→* NOINDEX;
+   445→* WAIT;
+   446→* TEST TITLE;
+   447→* IMPROVE CTR;
+   448→* ADD INTERNAL LINKS.
+   449→
+   450→7. KEYWORD PRIORITY SCORING
+   451→Score every opportunity from 0–100.
+   452→Use a weighted model such as:
+   453→Opportunity Score = 25% Search Console opportunity
+   454→* 20% verified demand
+   455→* 20% CRM conversion quality
+   456→* 15% business value
+   457→* 10% SERP feasibility
+   458→* 10% content freshness urgency
+   459→Define every component mathematically.
+   460→Do not use a high search-volume term as a top priority if CRM data shows poor student quality.
+   461→Prioritize terms where:
+   462→* ALO already ranks positions 5–20;
+   463→* impressions are growing;
+   464→* conversion quality is good;
+   465→* business value is good;
+   466→* content gap is fixable;
+   467→* SERP intent matches ALO's service.
+   468→
+   469→8. SEED KEYWORD GROUPS TO VALIDATE
+   470→These are research seeds only.
+   471→Validate current demand, competition, SERP intent and business value.
+   472→High-conversion seeds
+   473→* best study abroad agency in dhaka
+   474→* book free study abroad consultation
+   475→* study gap acceptable universities 2026
+   476→* education loan for study abroad bangladesh
+   477→* overseas education consultant near me
+   478→* study abroad consultant bangladesh
+   479→* study abroad consultant dhaka
+   480→* student visa consultant dhaka
+   481→* university admission consultant bangladesh
+   482→UK seeds
+   483→* study in uk
+   484→* study in uk from bangladesh
+   485→* study in uk without ielts requirements
+   486→* uk student visa requirements
+   487→* uk student visa financial requirements
+   488→* affordable universities in uk
+   489→* scholarships in uk for bangladeshi students
+   490→* uk graduate visa
+   491→* uk post study work visa
+   492→* pre-CAS interview questions
+   493→USA seeds
+   494→* study in usa
+   495→* f1 visa interview questions and answers
+   496→* usa universities accepting duolingo
+   497→* scholarships in usa for international students
+   498→* usa universities for bangladeshi students
+   499→* I-20 requirements
+   500→* SEVIS fee
+   501→* CPT vs OPT
+   502→* STEM OPT
+   503→Canada seeds
+   504→* study in canada
+   505→* canada study permit requirements
+   506→* canada study permit bank statement requirements
+   507→* PGWP eligibility
+   508→* PGWP field of study
+   509→* cheapest colleges in canada
+   510→* scholarships in canada
+   511→Australia seeds
+   512→* study in australia
+   513→* australia student visa subclass 500
+   514→* genuine student requirement
+   515→* scholarships in australia
+   516→* affordable universities in australia
+   517→* OSHC for international students
+   518→
+   519→9. COMPETITOR RESEARCH
+   520→Start with, but do not limit research to:
+   521→* IDP Bangladesh;
+   522→* Shabuj Global;
+   523→* MACES;
+   524→* Mentors';
+   525→* TCL Global;
+   526→* GoStudy;
+   527→* GSC Global Solutions;
+   528→* Eduvisors;
+   529→* Career Paths;
+   530→* any current domains repeatedly ranking in the target SERPs.
+   531→For every competitor analyze:
+   532→* organic visibility;
+   533→* indexed page types;
+   534→* destination architecture;
+   535→* city/location pages;
+   536→* university pages;
+   537→* course tools;
+   538→* scholarship tools;
+   539→* calculators;
+   540→* AI tools;
+   541→* lead forms;
+   542→* WhatsApp flows;
+   543→* consultation booking;
+   544→* trust evidence;
+   545→* student stories;
+   546→* counsellor profiles;
+   547→* university partner pages;
+   548→* content depth;
+   549→* publishing frequency;
+   550→* update dates;
+   551→* page speed;
+   552→* Core Web Vitals where data is available;
+   553→* backlinks;
+   554→* digital PR;
+   555→* local SEO;
+   556→* Google Business Profile strength;
+   557→* internal linking;
+   558→* titles;
+   559→* SERP features;
+   560→* AI Search visibility where observable.
+   561→Produce:
+   562→1. competitor matrix;
+   563→2. keyword overlap;
+   564→3. page gap analysis;
+   565→4. content quality gap;
+   566→5. tool gap;
+   567→6. trust gap;
+   568→7. local SEO gap;
+   569→8. conversion gap;
+   570→9. backlink gap;
+   571→10. “ALO can win here” list.
+   572→Do not invent DA or DR.
+   573→If using a third-party authority metric, name the provider and retrieval date.
+   574→
+   575→10. DIFFERENTIATION STRATEGY FOR ALO
+   576→Investigate and build around genuine advantages.
+   577→Potential positioning areas to validate:
+   578→1. Bangladesh-specific student guidance.
+   579→2. Local financial-process content.
+   580→3. First-hand counsellor expertise.
+   581→4. Real student application timelines.
+   582→5. Real university partner relationships.
+   583→6. AI-powered course matching.
+   584→7. AI mock visa interview practice.
+   585→8. AI-assisted SOP feedback with strict academic-integrity safeguards.
+   586→9. Personalized eligibility assessment.
+   587→10. Better SEO-to-CRM experience.
+   588→11. Faster, cleaner web UX.
+   589→12. Transparent application journey tracking.
+   590→Do not position AI as a replacement for professional advice.
+   591→Position AI as:
+   592→* preparation;
+   593→* discovery;
+   594→* organization;
+   595→* practice;
+   596→* triage;
+   597→* personalization.
+   598→
+   599→11. CORE SITE ARCHITECTURE
+   600→Recommended logical architecture:
+   601→/ ├── study-abroad/ ├── study-in-uk/ │ ├── student-visa/ │ ├── scholarships/ │ ├── affordable-universities/ │ ├── english-language-options/ │ ├── graduate-visa/ │ └── pre-cas-interview/ ├── study-in-usa/ │ ├── f1-student-visa/ │ ├── f1-interview/ │ ├── scholarships/ │ ├── application-guide/ │ └── cpt-opt/ ├── study-in-canada/ │ ├── study-permit/ │ ├── pgwp/ │ ├── pgwp-field-of-study/ │ └── scholarships/ ├── study-in-australia/ │ ├── student-visa/ │ ├── genuine-student/ │ ├── scholarships/ │ └── cost-of-study/ ├── study-in-ireland/ ├── study-in-new-zealand/ ├── study-in-dubai/ ├── services/ │ ├── university-admissions/ │ ├── visa-guidance/ │ ├── scholarship-support/ │ └── course-matching/ ├── tools/ │ ├── course-matcher/ │ ├── eligibility-checker/ │ ├── visa-interview-practice/ │ └── cost-estimator/ ├── guides/ ├── success-stories/ ├── counsellors/ ├── universities/ ├── courses/ └── locations/
+   602→Do not change existing successful URLs unnecessarily.
+   603→For every URL migration:
+   604→* map old → new;
+   605→* create 301;
+   606→* update internal links;
+   607→* update canonical;
+   608→* update sitemap;
+   609→* monitor Search Console.
+   610→
+   611→12. 30 MONEY-PAGE SEED BACKLOG
+   612→Treat the following as a seed backlog.
+   613→Before implementation, classify each page as:
+   614→* Publish Now;
+   615→* Publish Later;
+   616→* Merge;
+   617→* Rewrite;
+   618→* Update Existing;
+   619→* Postpone;
+   620→* Retire.
+   621→For every page validate keyword intent and cannibalization.
+   622→Page 1
+   623→Title concept: Study in UK 2026: Admissions, Visas & Top Universities Target seed: study in uk URL seed: /study-in-uk Intent: informational/commercial investigation CTA: Book Consultation
+   624→Page 2
+   625→Study in USA 2026: F1 Visa & University Admissions Keyword: study in usa URL: /study-in-usa CTA: Book Consultation
+   626→Page 3
+   627→Study in Canada 2026: Universities, Study Permits & Post-Graduation Options Keyword: study in canada URL: /study-in-canada CTA: Book Consultation
+   628→Page 4
+   629→Study in Australia 2026: Admissions, Visa & Scholarships Keyword: study in australia URL: /study-in-australia CTA: Book Consultation
+   630→Page 5
+   631→Study in Ireland: Universities & Graduate Options Keyword: study in ireland URL: /study-in-ireland CTA: Book Consultation
+   632→Page 6
+   633→Study in Dubai: Universities, Admissions & Costs Keyword: study in dubai URL: /study-in-dubai CTA: Book Consultation
+   634→Never make unsupported financial-evidence claims.
+   635→Page 7
+   636→Study in New Zealand: Admissions Guide Keyword: study in new zealand URL: /study-in-new-zealand CTA: Book Consultation
+   637→Page 8
+   638→UK Student Visa Process & Requirements Keyword: uk student visa process URL: /uk/student-visa CTA: Free Visa Evaluation
+   639→Use current “Student visa” terminology.
+   640→Page 9
+   641→F1 Student Visa USA: Interview Questions & Process Keyword: usa student visa process URL: /usa/f1-student-visa CTA: Start Mock Practice
+   642→Page 10
+   643→Canada Study Permit Requirements & Checklist Keyword: canada student visa guide / canada study permit URL: /canada/study-permit CTA: Free Eligibility Evaluation
+   644→Page 11
+   645→Australia Subclass 500 Student Visa Requirements Keyword: australia student visa URL: /australia/student-visa CTA: Free Visa Evaluation
+   646→Page 12
+   647→Affordable Universities in the UK Keyword: cheapest universities in uk URL: /uk/affordable-universities CTA: Apply / Check Eligibility
+   648→Use “affordable” where more accurate than “cheapest.”
+   649→Page 13
+   650→Affordable Universities in the USA Keyword: cheapest universities in usa URL: /usa/affordable-universities CTA: Check Eligibility
+   651→Page 14
+   652→Affordable Colleges and Universities in Canada Keyword: cheapest colleges in canada URL: /canada/affordable-colleges CTA: Check Eligibility
+   653→Page 15
+   654→English-Language Admission Options for UK Universities Seed keyword: study in uk without ielts URL: /uk/english-language-options CTA: Check Eligibility
+   655→Never imply a universal IELTS exemption.
+   656→Verify every university-specific statement directly.
+   657→Page 16
+   658→USA Universities and English-Test Options Seed keyword: usa universities accepting duolingo URL: /usa/english-test-options CTA: Check Eligibility
+   659→Verify institution-by-institution.
+   660→Page 17
+   661→Scholarships in USA for International and Asian Students Keyword: scholarships in usa URL: /usa/scholarships CTA: Find Scholarships
+   662→Page 18
+   663→Scholarships in UK for International Students Keyword: scholarships in uk URL: /uk/scholarships CTA: Find Scholarships
+   664→Page 19
+   665→Canada Scholarships for International Students Keyword: scholarships in canada URL: /canada/scholarships CTA: Find Scholarships
+   666→Page 20
+   667→Study Abroad Consultant in Bangladesh / Dhaka Keyword: study abroad consultant URL seed: /study-abroad-consultant-dhaka CTA: Book Appointment
+   668→Validate local and national intent before choosing final URL.
+   669→Page 21
+   670→Student Visa Guidance Services Keyword: student visa consultant URL: /services/visa-guidance CTA: Free Evaluation
+   671→Avoid promising legal representation unless legally accurate.
+   672→Page 22
+   673→University Admission Assistance Keyword: university admission help URL: /services/university-admissions CTA: Meet a Counsellor
+   674→Page 23
+   675→Study Abroad with a Study Gap Keyword: study gap acceptable universities URL: /guides/study-gap CTA: Check Eligibility
+   676→Do not publish blanket acceptance rules.
+   677→Page 24
+   678→Canada PGWP Guide Keyword: PGWP Canada rules URL: /canada/pgwp CTA: Check Program Eligibility
+   679→Requires high-frequency policy verification.
+   680→Page 25
+   681→UK Graduate Visa Guide Keyword: uk post study work visa URL: /uk/graduate-visa CTA: Consult Expert
+   682→Must show effective dates.
+   683→Page 26
+   684→AI Visa Interview Practice Keyword: visa interview practice URL: /tools/visa-interview-practice CTA: Start Practice
+   685→Clearly state that practice does not guarantee a visa outcome.
+   686→Page 27
+   687→SOP Review and Guidance Keyword: sop writing services / SOP review URL: /services/sop-review CTA: Review SOP
+   688→Include academic-integrity safeguards.
+   689→Do not fabricate student experiences.
+   690→Page 28
+   691→Education Financing for Study Abroad from Bangladesh Keyword: study abroad education loan URL: /guides/education-financing CTA: Explore Options
+   692→Verify current financial products directly.
+   693→Page 29
+   694→Financial Evidence for Student Visa Applications Keyword: student visa bank statement URL: /visa/financial-evidence CTA: Get Country Checklist
+   695→Separate rules by destination.
+   696→Never combine jurisdictions into misleading universal requirements.
+   697→Page 30
+   698→Course Finder & AI University Matcher Keyword: course finder study abroad URL: /course-finder or /tools/course-matcher CTA: Find My Course
+   699→Ensure useful crawlable public landing content while controlling indexation of filter combinations.
+   700→
+   701→13. DESTINATION PAGE CONTENT TEMPLATE
+   702→For each destination page, research and build only sections relevant to the country.
+   703→Suggested structure:
+   704→H1: Study in [Country] for International Students from Bangladesh
+   705→Opening answer: A concise, factual overview answering:
+   706→* who the destination may suit;
+   707→* main application route;
+   708→* current intake context;
+   709→* link to consultation or course match.
+   710→Possible H2 sections:
+   711→* Why Study in [Country]?
+   712→* Who Is This Destination Best For?
+   713→* Universities and Institutions
+   714→* Popular Courses
+   715→* Admission Requirements
+   716→    * Undergraduate
+   717→    * Postgraduate
+   718→    * Research
+   719→* English-Language Requirements
+   720→* Application Process
+   721→* Student Visa / Study Permit Process
+   722→* Financial Requirements
+   723→* Cost of Study
+   724→* Cost of Living
+   725→* Scholarships
+   726→* Work During Study
+   727→* Post-Study Options
+   728→* Application Timeline
+   729→* Common Student Mistakes
+   730→* Advice for Bangladeshi Students
+   731→* Real ALO Student Experience
+   732→* Expert Counsellor Advice
+   733→* Official Source References
+   734→* Frequently Asked Student Questions
+   735→* CTA
+   736→Do not enforce a fixed word count.
+   737→Content depth must match:
+   738→* search intent;
+   739→* decision complexity;
+   740→* factual risk;
+   741→* competitive gap;
+   742→* genuine value.
+   743→
+   744→14. 100-TOPIC CONTENT BACKLOG
+   745→This is a SEED backlog.
+   746→Do not blindly publish all 100.
+   747→For each topic perform:
+   748→* fresh SERP research;
+   749→* GSC overlap analysis;
+   750→* cannibalization check;
+   751→* current-policy verification;
+   752→* CRM business-value review.
+   753→Assign:
+   754→PUBLISH UPDATE EXISTING MERGE REWRITE POSTPONE RETIRE
+   755→CLUSTER A — Decision and Foundations
+   756→1. UK vs Canada: Which is better for international students?
+   757→2. IELTS vs PTE vs Duolingo: How should a student choose?
+   758→3. Reasons students choose to study abroad in 2026.
+   759→4. Fall vs Spring Intake: Which should you choose?
+   760→5. How to write a strong Statement of Purpose.
+   761→6. What is a CAS letter?
+   762→7. What is an I-20 form?
+   763→8. Total cost of studying abroad from Bangladesh.
+   764→9. How to discuss a study-abroad plan with your family.
+   765→10. How to compare destinations for safety and student experience.
+   766→11. Packing list for international students travelling to cold countries.
+   767→12. How to prepare for culture shock.
+   768→13. Finding part-time work as an international student.
+   769→14. Health insurance for international students.
+   770→15. How international students can prepare to open a bank account.
+   771→16. How to identify misleading or fake education agents.
+   772→CLUSTER B — UK
+   773→1. Russell Group universities explained.
+   774→2. Affordable UK cities for students.
+   775→3. UK universities for Business and MBA programs.
+   776→4. UK universities for Computer Science.
+   777→5. UK Immigration Health Surcharge explained.
+   778→6. Current UK dependant rules for students.
+   779→7. Pre-CAS credibility interview questions and preparation.
+   780→8. UK universities for Master's programs.
+   781→9. UK January intake options.
+   782→10. UK May and September intake options.
+   783→11. UK student accommodation guide.
+   784→12. Manchester vs London for students.
+   785→13. UK scholarships for Bangladeshi students.
+   786→14. UK Student visa financial requirements and current evidence rules.
+   787→15. UK Graduate visa current rules and effective dates.
+   788→16. What to do after a UK Student visa refusal.
+   789→17. Part-time work options and work-right rules for students in the UK.
+   790→CLUSTER C — USA
+   791→1. F1 visa interview questions.
+   792→2. How to prepare for an F1 visa interview.
+   793→3. STEM OPT extension explained.
+   794→4. Community college vs university in the USA.
+   795→5. Highly selective U.S. university admission expectations for international students.
+   796→6. GRE and GMAT requirements: current university trends.
+   797→7. Working during and after study: on-campus work, CPT and OPT.
+   798→8. Universities in Texas for international students.
+   799→9. Universities in New York for international students.
+   800→10. USA intake deadlines.
+   801→11. Writing a U.S. college admission essay.
+   802→12. How to request strong recommendation letters.
+   803→13. U.S. visa refusal issues, including 214(b), using official sources.
+   804→14. Financial and sponsor documentation for the I-20 and visa process.
+   805→15. How to dress professionally and prepare for a visa interview.
+   806→16. SEVIS fee explained.
+   807→17. Scholarships and opportunities for women in STEM in the USA.
+   808→CLUSTER D — CANADA
+   809→1. Canada study permit process.
+   810→2. RETIRE OR REWRITE the old “SDS vs Non-SDS” topic after current-rule verification.
+   811→3. Universities in Ontario.
+   812→4. Universities in British Columbia.
+   813→5. Immigration pathways after study: neutral factual overview.
+   814→6. Co-op programs in Canada explained.
+   815→7. Vancouver vs Toronto for students.
+   816→8. Study-plan or letter-of-explanation guidance for Canadian applications.
+   817→9. Current financial requirements for Canadian study permits.
+   818→10. Finding affordable accommodation in Canada.
+   819→11. Changing institutions or programs: current rules.
+   820→12. Current spouse and family rules for international students.
+   821→13. Compare provincial pathways after study without claiming “easy PR.”
+   822→14. Diploma vs degree in Canada.
+   823→15. Biometrics and medical examination process.
+   824→16. Canada study permit processing-time research with date stamp and official source.
+   825→CLUSTER E — AUSTRALIA AND OTHER DESTINATIONS
+   826→1. Australia Genuine Student requirement explained.
+   827→2. Regional study options in Australia and current policy implications.
+   828→3. Sydney vs Melbourne for students.
+   829→4. Australia subclass 500 processing-time research with date stamp.
+   830→5. Study areas and current skilled-migration context without promising PR.
+   831→6. Ireland Stamp 1G guide.
+   832→7. Studying technology in Ireland.
+   833→8. Cost of living in Dublin for students.
+   834→9. New Zealand post-study work route.
+   835→10. Study in Dubai: admissions, costs and financial-evidence requirements.
+   836→11. International branch campuses and transfer arrangements: verify each claim.
+   837→12. Study in Malta: visa process and costs.
+   838→13. English-language admission options in Europe.
+   839→14. Public vs private institutions in Australia.
+   840→15. Australia OSHC explained.
+   841→16. Australia scholarships for South Asian students.
+   842→17. Study in Germany: costs, public universities and current requirements.
+   843→CLUSTER F — HIGH-CONVERSION PROBLEMS
+   844→1. How to explain a study gap.
+   845→2. What options may exist after a visa refusal—country-specific, not universal.
+   846→3. Education financing options in Bangladesh: verify every bank and product.
+   847→4. Student-file banking services in Bangladesh: verify directly.
+   848→5. Police clearance certificates for study-abroad applications.
+   849→6. Demonstrating home-country ties in U.S. visa preparation.
+   850→7. Preparing for airport and border-entry questions.
+   851→8. Travel insurance vs health insurance for students.
+   852→9. AI tools for international students, including genuine ALO tools.
+   853→10. Replace any unsupported “98% visa success rate” article with audited transparent outcome reporting.
+   854→11. Common university-application mistakes.
+   855→12. How early should you apply for study abroad?
+   856→13. Can you study abroad with lower grades? Realistic options and limitations.
+   857→14. Direct entry vs pathway programs.
+   858→15. Genuine documented scholarship success story.
+   859→16. Genuine documented visa journey case study only when facts and consent are verified.
+   860→17. When a professional study-abroad consultant may add value.
+   861→
+   862→15. 90-DAY EXECUTION PLAN
+   863→Do not attempt to publish 100 articles in 90 days.
+   864→Recommended quality-first production range:
+   865→* 12–15 commercial/money pages;
+   866→* 12–18 researched support articles;
+   867→* 3–5 strong counsellor profiles;
+   868→* 6–10 genuine student stories;
+   869→* 1 original data report;
+   870→* 1 AI course matcher MVP;
+   871→* 1 AI visa interview practice MVP;
+   872→* ongoing technical fixes;
+   873→* local SEO work;
+   874→* authority acquisition.
+   875→Adjust volume to team capacity.
+   876→WEEK 1 — Baseline and Full Audit
+   877→Deliver:
+   878→* full crawl;
+   879→* indexation audit;
+   880→* rendering audit;
+   881→* / vs alternate-home-route test;
+   882→* canonical audit;
+   883→* robots audit;
+   884→* sitemap audit;
+   885→* page inventory;
+   886→* schema audit;
+   887→* Core Web Vitals baseline;
+   888→* GSC baseline;
+   889→* GA4 baseline;
+   890→* CRM organic-lead baseline;
+   891→* competitor seed list;
+   892→* first keyword universe;
+   893→* issue backlog.
+   894→Create P0/P1/P2/P3 priority labels.
+   895→WEEK 2 — Technical Foundation + CRM Schema
+   896→Fix P0 issues.
+   897→Implement:
+   898→* canonical rules;
+   899→* redirects;
+   900→* sitemap generation;
+   901→* crawlable internal links;
+   902→* metadata templates;
+   903→* schema framework;
+   904→* monitoring.
+   905→Inside WEB_CRM build:
+   906→* SEO Growth module;
+   907→* SEO database schema;
+   908→* role permissions;
+   909→* source verification library;
+   910→* content workflow statuses;
+   911→* audit logs.
+   912→WEEK 3 — First Commercial Content Release
+   913→Research, review and publish or significantly improve:
+   914→1. Study in UK
+   915→2. Study in USA
+   916→3. Study Abroad Consultant in Dhaka / Bangladesh
+   917→Add:
+   918→* CTAs;
+   919→* attribution tracking;
+   920→* consultation conversion tracking;
+   921→* source records;
+   922→* reviewer records.
+   923→WEEK 4 — Remaining Destination Foundations
+   924→Research and publish or update:
+   925→1. Study in Canada
+   926→2. Study in Australia
+   927→Also:
+   928→* optimize Google Business Profile;
+   929→* fix NAP inconsistency;
+   930→* create local review workflow;
+   931→* publish first counsellor profiles.
+   932→WEEK 5 — UK Cluster
+   933→Prioritize based on data:
+   934→* UK Student visa;
+   935→* UK scholarships;
+   936→* affordable UK universities;
+   937→* English-language options;
+   938→* Graduate visa;
+   939→* Pre-CAS preparation.
+   940→Create internal linking.
+   941→Add expert reviewer.
+   942→WEEK 6 — USA Cluster + Interview MVP
+   943→Build:
+   944→* F1 Student visa guide;
+   945→* F1 interview preparation;
+   946→* scholarship guide;
+   947→* application guide.
+   948→Launch visa interview practice MVP with:
+   949→* educational disclaimer;
+   950→* no guaranteed outcome language;
+   951→* session capture;
+   952→* consent-aware lead capture;
+   953→* CRM event tracking.
+   954→WEEK 7 — Canada Cluster + Policy Watcher
+   955→Build:
+   956→* study permit guide;
+   957→* PGWP guide;
+   958→* PGWP field-of-study resource where justified;
+   959→* scholarships resource.
+   960→Launch policy-watch workflow.
+   961→WEEK 8 — Australia Cluster + Course Matcher MVP
+   962→Build:
+   963→* Australia Student visa guide;
+   964→* Genuine Student guide;
+   965→* scholarships resource.
+   966→Launch course matcher MVP using:
+   967→* academic profile;
+   968→* desired level;
+   969→* subject;
+   970→* destination;
+   971→* budget;
+   972→* English score;
+   973→* intake preference.
+   974→Never promise admission.
+   975→WEEK 9 — Trust Content
+   976→Publish:
+   977→* counsellor profiles;
+   978→* verified student stories;
+   979→* application timelines;
+   980→* “how we work” process page;
+   981→* transparent editorial and review policy.
+   982→WEEK 10 — Authority Sprint
+   983→Start:
+   984→* university partner representative-page outreach;
+   985→* genuine local partnerships;
+   986→* test-center relationships;
+   987→* original data report;
+   988→* targeted digital PR;
+   989→* alumni-story outreach.
+   990→WEEK 11 — Search Data Optimization
+   991→Use early GSC signals.
+   992→Find:
+   993→* pages gaining impressions;
+   994→* queries ranking 5–20;
+   995→* low-CTR opportunities;
+   996→* content gaps;
+   997→* cannibalization.
+   998→Prioritize updates.
+   999→WEEK 12 — CRO and Internal Linking
+  1000→Test:
+  1001→* CTA copy;
+  1002→* CTA placement;
+  1003→* eligibility-check CTA;
+  1004→* WhatsApp CTA;
+  1005→* consultation form length;
+  1006→* trust evidence;
+  1007→* student story placement.
+  1008→Audit internal links.
+  1009→WEEK 13 — Final Review and Next Quarter
+  1010→Produce:
+  1011→* before/after technical report;
+  1012→* indexation changes;
+  1013→* GSC performance changes;
+  1014→* organic leads;
+  1015→* qualified leads;
+  1016→* consultations;
+  1017→* applications;
+  1018→* offer activity;
+  1019→* visa outcomes where time allows;
+  1020→* enrolment outcomes where time allows;
+  1021→* page-level pipeline contribution;
+  1022→* next 90-day prioritized backlog.
+  1023→
+  1024→16. CONTENT QUALITY STANDARD
+  1025→Every major page must contain real value unavailable from generic AI summaries.
+  1026→Required value types may include:
+  1027→* official source interpretation;
+  1028→* Bangladeshi student context;
+  1029→* expert counsellor perspective;
+  1030→* real student journey;
+  1031→* genuine university relationship insight;
+  1032→* local financial-process explanation;
+  1033→* original CRM trend data;
+  1034→* step-by-step decision framework;
+  1035→* current deadlines;
+  1036→* country comparison methodology;
+  1037→* documented case experience.
+  1038→Do not create content merely by rewriting competitors.
+  1039→Required content evidence model
+  1040→For every high-risk claim store:
+  1041→CLAIM SOURCE JURISDICTION RETRIEVED_AT EFFECTIVE_DATE EXPIRY_OR_REVIEW_DATE REVIEWER CONFIDENCE
+  1042→
+  1043→17. AUTHOR AND REVIEWER SYSTEM
+  1044→Create counsellor profile pages.
+  1045→Possible profile information:
+  1046→* name;
+  1047→* real job title;
+  1048→* destinations handled;
+  1049→* experience;
+  1050→* qualifications where verified;
+  1051→* official training or accreditation where verified;
+  1052→* languages;
+  1053→* office;
+  1054→* areas of expertise;
+  1055→* articles authored;
+  1056→* articles reviewed.
+  1057→Never invent credentials.
+  1058→For sensitive visa-information pages show:
+  1059→Written by: [real author] Reviewed by: [qualified internal reviewer] Last reviewed: [date] Sources checked: [official source list]
+  1060→
+  1061→18. INTERNAL LINKING SYSTEM
+  1062→Use hub-and-spoke architecture.
+  1063→Example:
+  1064→/study-in-uk ↔ /uk/student-visa ↔ /uk/scholarships ↔ /uk/affordable-universities ↔ /uk/english-language-options ↔ /uk/graduate-visa
+  1065→Rules:
+  1066→1. Parent hub links to relevant child pages.
+  1067→2. Child pages link contextually to parent hub.
+  1068→3. Child pages may cross-link when genuinely useful.
+  1069→4. Visa-related articles should link to visa interview practice where relevant.
+  1070→5. University and course articles should link to course matcher where relevant.
+  1071→6. Scholarship articles should link to eligibility or counselling flow.
+  1072→7. Do not use the exact same anchor repeatedly in an unnatural way.
+  1073→8. No important commercial page should be orphaned.
+  1074→9. Track every internal link in the CRM.
+  1075→Internal-link agent logic
+  1076→For every new or updated page:
+  1077→* extract entities;
+  1078→* identify related hubs;
+  1079→* identify related spokes;
+  1080→* find relevant contextual sentences;
+  1081→* recommend source page;
+  1082→* recommend target URL;
+  1083→* recommend natural anchor;
+  1084→* assign confidence;
+  1085→* require review for low-confidence recommendations.
+  1086→
+  1087→19. LOCAL SEO SYSTEM
+  1088→Research every genuine physical office.
+  1089→For each valid office maintain:
+  1090→* exact business name;
+  1091→* address;
+  1092→* phone;
+  1093→* office hours;
+  1094→* holiday hours;
+  1095→* website;
+  1096→* appointment route;
+  1097→* genuine photos;
+  1098→* services;
+  1099→* appropriate category;
+  1100→* map location.
+  1101→Ensure consistency between:
+  1102→* website;
+  1103→* Google Business Profile;
+  1104→* major trusted citations;
+  1105→* social profiles.
+  1106→Never create fake offices.
+  1107→Never create fake location pages.
+  1108→Create a location page only when the business genuinely serves or operates from that location and can provide useful unique local information.
+  1109→Review request workflow
+  1110→Trigger candidate:
+  1111→student pipeline enters: VISA_APPROVED or ENROLLED
+  1112→Then:
+  1113→1. check consent eligibility;
+  1114→2. check whether a review request was already sent;
+  1115→3. send a personalized neutral request;
+  1116→4. never ask only happy students while suppressing others;
+  1117→5. never pay for positive reviews;
+  1118→6. store request date;
+  1119→7. allow one appropriate reminder;
+  1120→8. record response where available.
+  1121→
+  1122→20. AUTHORITY AND BACKLINK SYSTEM
+  1123→Focus on relevance and trust, not arbitrary DA thresholds.
+  1124→Priority 1 — University Relationships
+  1125→For genuine partner universities:
+  1126→Ask whether ALO can be listed on:
+  1127→* authorized representative pages;
+  1128→* agent pages;
+  1129→* country representative pages;
+  1130→* partner directories.
+  1131→Track:
+  1132→* institution;
+  1133→* relationship owner;
+  1134→* contact;
+  1135→* page;
+  1136→* request date;
+  1137→* follow-up date;
+  1138→* status;
+  1139→* live link;
+  1140→* target page.
+  1141→Priority 2 — Original Data
+  1142→Create:
+  1143→ALO Bangladesh Study Abroad Intent Report 2026
+  1144→Possible privacy-safe aggregated findings:
+  1145→* destination interest;
+  1146→* study level interest;
+  1147→* subject interest;
+  1148→* scholarship interest;
+  1149→* average planning lead time;
+  1150→* major student questions;
+  1151→* intake interest.
+  1152→Requirements:
+  1153→* anonymized;
+  1154→* sufficient sample;
+  1155→* methodology;
+  1156→* sample period;
+  1157→* limitations;
+  1158→* no re-identification;
+  1159→* management approval.
+  1160→Priority 3 — Digital PR
+  1161→Pitch genuine findings to relevant:
+  1162→* education media;
+  1163→* Bangladesh news publications;
+  1164→* university communications teams;
+  1165→* EdTech publications.
+  1166→Never manufacture survey statistics.
+  1167→Priority 4 — Relevant Partnerships
+  1168→Potential relationship categories:
+  1169→* language-test preparation centers;
+  1170→* student organizations;
+  1171→* university career centers;
+  1172→* education platforms;
+  1173→* legitimate international education associations.
+  1174→Priority 5 — Alumni Stories
+  1175→Invite former students to share their genuine experiences.
+  1176→Do not require exact-match anchor text.
+  1177→Do not manipulate testimonials.
+  1178→
+  1179→21. AI SEARCH VISIBILITY STRATEGY
+  1180→Treat AI Search optimization as an extension of excellent SEO, not a collection of hacks.
+  1181→Focus on:
+  1182→1. indexable pages;
+  1183→2. crawlable public content;
+  1184→3. unique first-hand experience;
+  1185→4. expert interpretation;
+  1186→5. original data;
+  1187→6. clear technical structure;
+  1188→7. useful headings;
+  1189→8. strong images and videos;
+  1190→9. local business accuracy;
+  1191→10. factual source transparency;
+  1192→11. content freshness;
+  1193→12. internal entity consistency.
+  1194→Do not create hundreds of near-duplicate pages to cover every possible query variation.
+  1195→Do not claim that llms.txt is required for Google Search visibility.
+  1196→Do not “chunk” content mechanically only for AI systems.
+  1197→Write for human decision-making.
+  1198→Track dedicated generative AI visibility in Search Console where the reporting feature is available for the property.
+  1199→
+  1200→22. WEB_CRM — NEW SEO GROWTH MODULE
+  1201→Create:
+  1202→WEB_CRM │ ├── Students ├── Leads ├── Applications ├── Universities ├── Courses ├── Counsellors │ └── SEO Growth ├── Executive Dashboard ├── Technical Health ├── Keyword Intelligence ├── Search Opportunities ├── Competitor Research ├── Content Planner ├── Source Library ├── Claims Registry ├── AI Research ├── Content Briefs ├── Drafts ├── Fact Checking ├── Expert Review ├── SEO QA ├── Publishing Queue ├── Internal Links ├── Content Freshness ├── Backlinks ├── Outreach ├── Local SEO ├── Search Performance ├── AI Search Visibility ├── Conversion Attribution ├── Experiments ├── Alerts └── Agent Operations
+  1203→
+  1204→23. DATABASE DESIGN
+  1205→Adapt names to the existing WEB_CRM conventions.
+  1206→seo_projects
+  1207→Fields:
+  1208→* id
+  1209→* name
+  1210→* domain
+  1211→* primary_country
+  1212→* primary_language
+  1213→* timezone
+  1214→* status
+  1215→* start_date
+  1216→* end_date
+  1217→* created_at
+  1218→* updated_at
+  1219→seo_pages
+  1220→* id
+  1221→* project_id
+  1222→* url
+  1223→* normalized_url
+  1224→* slug
+  1225→* page_type
+  1226→* country
+  1227→* study_level
+  1228→* topic_cluster
+  1229→* primary_keyword_id
+  1230→* search_intent
+  1231→* funnel_stage
+  1232→* status
+  1233→* owner_id
+  1234→* author_id
+  1235→* reviewer_id
+  1236→* canonical_url
+  1237→* indexation_directive
+  1238→* publication_date
+  1239→* last_updated_at
+  1240→* last_verified_at
+  1241→* next_review_at
+  1242→* commercial_score
+  1243→* content_quality_score
+  1244→* technical_score
+  1245→* freshness_score
+  1246→seo_keywords
+  1247→* id
+  1248→* project_id
+  1249→* keyword
+  1250→* country_market
+  1251→* language
+  1252→* intent
+  1253→* funnel_stage
+  1254→* destination
+  1255→* search_volume
+  1256→* search_volume_source
+  1257→* CPC
+  1258→* CPC_source
+  1259→* competition_metric
+  1260→* competition_provider
+  1261→* current_position
+  1262→* current_url
+  1263→* opportunity_score
+  1264→* recommended_action
+  1265→* last_scored_at
+  1266→seo_keyword_page_map
+  1267→* id
+  1268→* keyword_id
+  1269→* page_id
+  1270→* relationship_type
+  1271→* confidence
+  1272→* cannibalization_risk
+  1273→* created_at
+  1274→seo_serp_snapshots
+  1275→* id
+  1276→* keyword_id
+  1277→* searched_at
+  1278→* country
+  1279→* locale
+  1280→* device
+  1281→* rank
+  1282→* result_url
+  1283→* result_domain
+  1284→* result_title
+  1285→* result_type
+  1286→* notes
+  1287→seo_competitors
+  1288→* id
+  1289→* project_id
+  1290→* name
+  1291→* domain
+  1292→* competitor_type
+  1293→* country
+  1294→* notes
+  1295→* last_audited_at
+  1296→seo_sources
+  1297→* id
+  1298→* source_url
+  1299→* source_domain
+  1300→* page_title
+  1301→* jurisdiction
+  1302→* topic
+  1303→* source_type
+  1304→* published_at
+  1305→* updated_at
+  1306→* retrieved_at
+  1307→* effective_date
+  1308→* expiry_date
+  1309→* content_hash
+  1310→* trust_level
+  1311→* verification_status
+  1312→seo_claims
+  1313→* id
+  1314→* page_id
+  1315→* claim_text
+  1316→* jurisdiction
+  1317→* volatility_level
+  1318→* source_id
+  1319→* verified_at
+  1320→* effective_date
+  1321→* expiry_date
+  1322→* confidence
+  1323→* human_review_required
+  1324→* reviewer_id
+  1325→* status
+  1326→seo_content_briefs
+  1327→* id
+  1328→* page_id
+  1329→* primary_intent
+  1330→* target_audience
+  1331→* page_goal
+  1332→* primary_CTA
+  1333→* secondary_CTA
+  1334→* required_topics_json
+  1335→* required_sources_json
+  1336→* internal_link_targets_json
+  1337→* unique_value_requirement
+  1338→* reviewer_requirement
+  1339→* status
+  1340→seo_content_versions
+  1341→* id
+  1342→* page_id
+  1343→* version_number
+  1344→* content_body
+  1345→* created_by_type
+  1346→* created_by_id
+  1347→* model_provider
+  1348→* model_name
+  1349→* prompt_version_id
+  1350→* source_snapshot_ids
+  1351→* created_at
+  1352→seo_content_reviews
+  1353→* id
+  1354→* content_version_id
+  1355→* reviewer_id
+  1356→* review_type
+  1357→* score
+  1358→* comments
+  1359→* status
+  1360→* reviewed_at
+  1361→seo_internal_links
+  1362→* id
+  1363→* source_page_id
+  1364→* target_page_id
+  1365→* anchor_text
+  1366→* link_context
+  1367→* status
+  1368→* last_checked_at
+  1369→seo_backlinks
+  1370→* id
+  1371→* target_page_id
+  1372→* source_domain
+  1373→* source_url
+  1374→* anchor_text
+  1375→* link_type
+  1376→* acquired_at
+  1377→* relationship_type
+  1378→* status
+  1379→* last_checked_at
+  1380→seo_outreach
+  1381→* id
+  1382→* target_organization
+  1383→* contact_id
+  1384→* campaign_type
+  1385→* target_url
+  1386→* requested_target_page
+  1387→* owner_id
+  1388→* outreach_date
+  1389→* follow_up_date
+  1390→* status
+  1391→* result
+  1392→seo_gsc_daily
+  1393→Store by:
+  1394→* date
+  1395→* page
+  1396→* query
+  1397→* country
+  1398→* device
+  1399→* search_appearance where available
+  1400→* clicks
+  1401→* impressions
+  1402→* CTR
+  1403→* position
+  1404→Design storage around actual API and export constraints.
+  1405→seo_ga4_daily
+  1406→* date
+  1407→* landing_page
+  1408→* source
+  1409→* medium
+  1410→* campaign
+  1411→* sessions
+  1412→* engaged_sessions
+  1413→* generate_lead
+  1414→* qualified_leads
+  1415→* key_events
+  1416→seo_ai_search_visibility
+  1417→Where available:
+  1418→* date
+  1419→* page
+  1420→* country
+  1421→* device
+  1422→* impressions
+  1423→* report_type
+  1424→Do not fabricate unsupported dimensions.
+  1425→seo_lead_attribution
+  1426→* id
+  1427→* lead_id
+  1428→* first_landing_page
+  1429→* latest_landing_page
+  1430→* first_source
+  1431→* first_medium
+  1432→* latest_source
+  1433→* latest_medium
+  1434→* UTM fields
+  1435→* approved_pseudonymous_analytics_id
+  1436→* first_visit_at
+  1437→* lead_created_at
+  1438→* content_cluster
+  1439→* originating_page_id
+  1440→seo_agent_runs
+  1441→* id
+  1442→* agent_type
+  1443→* task_id
+  1444→* status
+  1445→* input_hash
+  1446→* prompt_version_id
+  1447→* started_at
+  1448→* completed_at
+  1449→* model
+  1450→* token_usage
+  1451→* estimated_cost
+  1452→* output_summary
+  1453→* error_message
+  1454→seo_prompt_versions
+  1455→* id
+  1456→* prompt_name
+  1457→* version
+  1458→* prompt_body
+  1459→* created_by
+  1460→* approved_by
+  1461→* active_from
+  1462→* retired_at
+  1463→seo_alerts
+  1464→* id
+  1465→* alert_type
+  1466→* severity
+  1467→* entity_type
+  1468→* entity_id
+  1469→* detected_at
+  1470→* assigned_to
+  1471→* status
+  1472→* resolution
+  1473→
+  1474→24. AI AGENT ARCHITECTURE
+  1475→Do not build one giant uncontrolled agent.
+  1476→Build specialized agents coordinated by an Orchestrator.
+  1477→Recommended architecture:
+  1478→SEO ORCHESTRATOR │ ├── Technical Audit Agent ├── Search Opportunity Agent ├── SERP Research Agent ├── Policy Research Agent ├── Source Verification Agent ├── Content Brief Agent ├── Draft Agent ├── Fact-Check Agent ├── SEO QA Agent ├── Internal Link Agent ├── Publishing Agent ├── Performance Agent ├── Freshness Watchdog ├── Local SEO Agent └── Authority Opportunity Agent
+  1479→
+  1480→25. AGENT 1 — SEO ORCHESTRATOR
+  1481→Purpose:
+  1482→* receive strategic objective;
+  1483→* select agent sequence;
+  1484→* manage dependencies;
+  1485→* enforce approval gates;
+  1486→* prevent autonomous high-risk publishing.
+  1487→Input:
+  1488→* task;
+  1489→* page;
+  1490→* country;
+  1491→* priority;
+  1492→* current state;
+  1493→* data dependencies.
+  1494→Output:
+  1495→* execution plan;
+  1496→* assigned agents;
+  1497→* status;
+  1498→* blockers;
+  1499→* required human approvals.
+  1500→The Orchestrator must never skip:
+  1501→SOURCE VERIFICATION FACT CHECK HUMAN REVIEW
+  1502→for volatile immigration pages.
+  1503→
+  1504→26. AGENT 2 — TECHNICAL AUDIT AGENT
+  1505→Input:
+  1506→* crawl data;
+  1507→* rendered HTML;
+  1508→* response headers;
+  1509→* sitemap;
+  1510→* robots.txt;
+  1511→* Search Console data;
+  1512→* PageSpeed data where available.
+  1513→Output:
+  1514→For each issue:
+  1515→* issue type;
+  1516→* affected URLs;
+  1517→* evidence;
+  1518→* severity;
+  1519→* SEO impact;
+  1520→* user impact;
+  1521→* recommended fix;
+  1522→* acceptance test;
+  1523→* owner;
+  1524→* effort;
+  1525→* deadline.
+  1526→Never recommend an expensive migration without evidence.
+  1527→
+  1528→27. AGENT 3 — SEARCH OPPORTUNITY AGENT
+  1529→Input:
+  1530→* GSC queries;
+  1531→* GSC pages;
+  1532→* CTR;
+  1533→* position;
+  1534→* CRM leads;
+  1535→* CRM qualified leads;
+  1536→* applications;
+  1537→* offers;
+  1538→* enrolments;
+  1539→* business priorities.
+  1540→Output:
+  1541→* opportunity;
+  1542→* current page;
+  1543→* recommended action;
+  1544→* content gap;
+  1545→* priority score;
+  1546→* business justification;
+  1547→* supporting data.
+  1548→Example:
+  1549→Query cluster: Canada PGWP eligibility
+  1550→Position: 12–15
+  1551→Impressions: growing
+  1552→CRM: high-quality Canada leads
+  1553→Current page: existing PGWP guide
+  1554→Decision: UPDATE EXISTING PAGE
+  1555→Not: create five overlapping PGWP articles.
+  1556→
+  1557→28. AGENT 4 — POLICY RESEARCH AGENT
+  1558→This agent researches volatile information.
+  1559→Rules:
+  1560→1. search official sources first;
+  1561→2. identify effective dates;
+  1562→3. identify transition dates;
+  1563→4. compare old and new rules;
+  1564→5. never rely on snippets alone;
+  1565→6. retrieve the actual source;
+  1566→7. store claims separately;
+  1567→8. assign volatility.
+  1568→Output schema:
+  1569→{ "claim": "", "jurisdiction": "", "topic": "", "current_rule_summary": "", "effective_date": "", "transition_date": "", "official_source": "", "retrieved_at": "", "confidence": "", "volatility": "", "human_review_required": true }
+  1570→
+  1571→29. AGENT 5 — SOURCE VERIFICATION AGENT
+  1572→For every source:
+  1573→Check:
+  1574→* correct domain;
+  1575→* page relevance;
+  1576→* jurisdiction;
+  1577→* current date;
+  1578→* effective date;
+  1579→* whether superseded;
+  1580→* whether information is primary or secondary;
+  1581→* whether the claim actually follows from the source.
+  1582→Flag:
+  1583→* outdated;
+  1584→* superseded;
+  1585→* unclear;
+  1586→* secondary-only;
+  1587→* contradictory;
+  1588→* high-risk.
+  1589→Never approve a claim merely because a URL exists.
+  1590→
+  1591→30. AGENT 6 — CONTENT BRIEF AGENT
+  1592→Do not write the article.
+  1593→Create a research-backed brief containing:
+  1594→* page objective;
+  1595→* audience;
+  1596→* primary search intent;
+  1597→* secondary intents;
+  1598→* funnel stage;
+  1599→* primary keyword cluster;
+  1600→* related subtopics;
+  1601→* existing ranking page;
+  1602→* SERP pattern;
+  1603→* content gap;
+  1604→* unique value required;
+  1605→* official facts required;
+  1606→* sources required;
+  1607→* counsellor input required;
+  1608→* student story requirement;
+  1609→* original data opportunity;
+  1610→* image requirement;
+  1611→* video requirement;
+  1612→* internal links;
+  1613→* external official sources;
+  1614→* CTA;
+  1615→* conversion event;
+  1616→* review frequency.
+  1617→
+  1618→31. AGENT 7 — DRAFT AGENT
+  1619→The Draft Agent must obey:
+  1620→NEVER INVENT:
+  1621→* visa success rates;
+  1622→* admissions success rates;
+  1623→* processing times;
+  1624→* tuition;
+  1625→* fees;
+  1626→* scholarship amount;
+  1627→* deadline;
+  1628→* work rights;
+  1629→* English-test waiver;
+  1630→* university policy;
+  1631→* bank requirement;
+  1632→* visa probability;
+  1633→* PR probability.
+  1634→Forbidden unsupported phrases:
+  1635→* guaranteed visa;
+  1636→* 100% success;
+  1637→* easy PR;
+  1638→* guaranteed scholarship;
+  1639→* no bank statement required;
+  1640→* fastest visa;
+  1641→* assured admission.
+  1642→Draft must use:
+  1643→* verified source data;
+  1644→* original expert input;
+  1645→* useful structure;
+  1646→* specific Bangladesh context;
+  1647→* clear date labels for volatile facts;
+  1648→* transparent limitations.
+  1649→
+  1650→32. AGENT 8 — FACT-CHECK AGENT
+  1651→Review every factual sentence.
+  1652→Classify:
+  1653→VERIFIED NEEDS SOURCE OUTDATED CONTRADICTORY MISLEADING OPINION EXPERIENCE CLAIM
+  1654→For each failure provide:
+  1655→* exact sentence;
+  1656→* problem;
+  1657→* source required;
+  1658→* proposed correction.
+  1659→Block publication when:
+  1660→* visa-rule claim lacks source;
+  1661→* fee lacks current source;
+  1662→* processing time lacks date;
+  1663→* university policy lacks institutional source;
+  1664→* success claim lacks audited evidence.
+  1665→
+  1666→33. AGENT 9 — SEO QA AGENT
+  1667→Before approval check:
+  1668→[ ] Search intent satisfied [ ] Unique value present [ ] Title unique [ ] Meta description unique [ ] Canonical correct [ ] Main heading clear [ ] Heading structure useful [ ] Official sources present [ ] High-risk claims verified [ ] Dates included where needed [ ] Internal links included [ ] No cannibalization issue [ ] CTA present [ ] Conversion event mapped [ ] Schema matches content [ ] Images reviewed [ ] Alt text reviewed [ ] Author identified [ ] Reviewer identified [ ] Last reviewed date set [ ] Next review date set [ ] No unsupported promise [ ] Mobile UX reviewed
+  1669→Output:
+  1670→PASS PASS WITH WARNINGS FAIL
+  1671→
+  1672→34. AGENT 10 — INTERNAL LINK AGENT
+  1673→Run after draft approval and after publication.
+  1674→Tasks:
+  1675→* identify parent hub;
+  1676→* identify child pages;
+  1677→* identify contextual link opportunities;
+  1678→* prevent over-optimization;
+  1679→* find orphan pages;
+  1680→* find broken links;
+  1681→* find redirects still linked internally.
+  1682→Output:
+  1683→source URL target URL recommended anchor context reason confidence
+  1684→
+  1685→35. AGENT 11 — PUBLISHING AGENT
+  1686→The Publishing Agent may publish only when:
+  1687→* content is approved;
+  1688→* SEO QA passes;
+  1689→* required human reviewer approves;
+  1690→* canonical is generated;
+  1691→* source records are stored;
+  1692→* URL is unique;
+  1693→* redirect impact is checked.
+  1694→After publishing:
+  1695→1. verify HTTP 200;
+  1696→2. verify rendered content;
+  1697→3. verify canonical;
+  1698→4. verify robots directives;
+  1699→5. verify title;
+  1700→6. verify schema;
+  1701→7. verify internal links;
+  1702→8. update sitemap;
+  1703→9. purge necessary cache;
+  1704→10. queue Search Console index-status check;
+  1705→11. schedule 7-day review;
+  1706→12. schedule 28-day performance review.
+  1707→Do not misuse Google's Indexing API for standard content pages.
+  1708→
+  1709→36. AGENT 12 — PERFORMANCE AGENT
+  1710→Run weekly.
+  1711→Evaluate:
+  1712→* impressions change;
+  1713→* clicks change;
+  1714→* CTR change;
+  1715→* position movement;
+  1716→* landing-page engagement;
+  1717→* lead generation;
+  1718→* qualified leads;
+  1719→* consultations;
+  1720→* applications;
+  1721→* offer activity;
+  1722→* visa outcomes;
+  1723→* enrolments;
+  1724→* pipeline value.
+  1725→Classify each page:
+  1726→GROWING STABLE DECLINING CTR OPPORTUNITY RANKING OPPORTUNITY CONVERSION PROBLEM CANNIBALIZATION RISK FRESHNESS RISK
+  1727→Recommend exactly one primary next action per page.
+  1728→
+  1729→37. AGENT 13 — FRESHNESS WATCHDOG
+  1730→Monitor volatile content.
+  1731→Suggested initial review cadences:
+  1732→Visa policy: 7 days or event-triggered
+  1733→Processing times: 24 hours to 7 days depending on source volatility
+  1734→Fees: 7 days
+  1735→Scholarship deadline: daily during closing period or appropriate event cadence
+  1736→University admissions requirements: 14 days during active intake periods
+  1737→Tuition: 30 days
+  1738→General evergreen content: 90–180 days
+  1739→These are starting operational rules, not assumptions about how often a source actually changes.
+  1740→When source content changes:
+  1741→1. compare source hash;
+  1742→2. identify affected claims;
+  1743→3. identify affected pages;
+  1744→4. create review tasks;
+  1745→5. do not auto-rewrite and publish high-risk policy content without review.
+  1746→
+  1747→38. CONTENT WORKFLOW STATES
+  1748→Use:
+  1749→IDEA ↓ RESEARCH_PENDING ↓ SOURCES_COLLECTED ↓ FACTS_VERIFIED ↓ BRIEF_READY ↓ AI_DRAFTED ↓ FACT_CHECK ↓ SEO_QA ↓ EXPERT_REVIEW ↓ APPROVED ↓ SCHEDULED ↓ PUBLISHED ↓ INDEX_STATUS_PENDING ↓ MONITORING ↓ UPDATE_REQUIRED or ARCHIVED
+  1750→Every transition must have:
+  1751→* actor;
+  1752→* timestamp;
+  1753→* notes;
+  1754→* source version where relevant.
+  1755→
+  1756→39. ANALYTICS AND CRM ATTRIBUTION
+  1757→Capture SEO origin from first visit through enrolment.
+  1758→Store:
+  1759→* first landing page;
+  1760→* latest landing page;
+  1761→* first source;
+  1762→* first medium;
+  1763→* campaign;
+  1764→* UTM fields;
+  1765→* referrer;
+  1766→* content cluster;
+  1767→* destination interest;
+  1768→* pseudonymous analytics identifier where permitted;
+  1769→* first visit;
+  1770→* lead creation time.
+  1771→Never place raw personally identifiable information into analytics IDs.
+  1772→Follow consent, privacy and applicable data-protection requirements.
+  1773→Recommended website and CRM events
+  1774→Website:
+  1775→* consultation_cta_click
+  1776→* whatsapp_cta_click
+  1777→* generate_lead
+  1778→* course_match_started
+  1779→* course_match_completed
+  1780→* eligibility_check_started
+  1781→* eligibility_check_completed
+  1782→* visa_mock_started
+  1783→* visa_mock_completed
+  1784→* consultation_booked
+  1785→CRM:
+  1786→* qualify_lead
+  1787→* disqualify_lead
+  1788→* working_lead
+  1789→* application_started
+  1790→* application_submitted
+  1791→* offer_received
+  1792→* deposit_paid
+  1793→* visa_approved
+  1794→* enrolled
+  1795→* close_convert_lead
+  1796→* close_unconvert_lead
+  1797→Map recommended GA4 lead events correctly and use custom events for business-specific milestones.
+  1798→
+  1799→40. SEO-TO-REVENUE FUNNEL
+  1800→Track:
+  1801→Organic Search Visit ↓ Lead ↓ Qualified Lead ↓ Consultation ↓ Application Started ↓ Application Submitted ↓ Offer Received ↓ Deposit Paid ↓ Visa Outcome ↓ Enrolment
+  1802→The executive question must be:
+  1803→Which SEO pages and topic clusters create valuable student outcomes?
+  1804→Not only:
+  1805→Which pages receive the most traffic?
+  1806→
+  1807→41. SEARCH CONSOLE AND ANALYTICS DATA PIPELINE
+  1808→Design two modes.
+  1809→Mode A — MVP
+  1810→Use:
+  1811→* Search Console API;
+  1812→* GA4 reports or appropriate API/export;
+  1813→* WEB_CRM database.
+  1814→Daily jobs:
+  1815→* sync Search Console;
+  1816→* sync Analytics;
+  1817→* refresh landing-page metrics;
+  1818→* refresh opportunity scores;
+  1819→* refresh attribution aggregates.
+  1820→Mode B — Scalable Analytics
+  1821→Where appropriate use:
+  1822→* Search Console bulk export;
+  1823→* GA4 BigQuery export;
+  1824→* warehouse transformations;
+  1825→* CRM export or secure warehouse sync;
+  1826→* BI reporting.
+  1827→Document differences between:
+  1828→* Search Console clicks;
+  1829→* GA4 sessions;
+  1830→* canonical URL reporting;
+  1831→* timezone differences;
+  1832→* attribution differences.
+  1833→Never force incompatible metrics to match artificially.
+  1834→
+  1835→42. EXECUTIVE DASHBOARD
+  1836→Show:
+  1837→* Organic Clicks
+  1838→* Organic Sessions
+  1839→* Organic Leads
+  1840→* Qualified Leads
+  1841→* Consultations
+  1842→* Applications Started
+  1843→* Applications Submitted
+  1844→* Offers
+  1845→* Deposits
+  1846→* Visa Approvals
+  1847→* Enrolments
+  1848→* Organic Pipeline Value
+  1849→* Revenue per Landing Page where available
+  1850→* Lead-to-Application Rate
+  1851→* Application-to-Offer Rate
+  1852→* Topic-Cluster Performance
+  1853→Use period comparisons:
+  1854→* last 7 days;
+  1855→* last 28 days;
+  1856→* previous 28 days;
+  1857→* 90-day trend.
+  1858→
+  1859→43. SEARCH OPPORTUNITY DASHBOARD
+  1860→Columns:
+  1861→Page Topic Cluster Clicks Impressions CTR Position Leads Qualified Leads Applications Offers Enrolments Pipeline Value Freshness Risk Opportunity Score Recommended Action
+  1862→
+  1863→44. CONTENT FRESHNESS DASHBOARD
+  1864→Columns:
+  1865→Page Country Topic Last Source Check Last Human Review Next Review Volatility Changed Source Detected Status Owner
+  1866→Statuses:
+  1867→GREEN REVIEW SOON URGENT REVIEW BLOCKED
+  1868→
+  1869→45. TECHNICAL HEALTH DASHBOARD
+  1870→Track:
+  1871→* indexed critical pages;
+  1872→* indexation exclusions;
+  1873→* 404s;
+  1874→* soft 404s;
+  1875→* 5xx errors;
+  1876→* canonical conflicts;
+  1877→* noindex mistakes;
+  1878→* sitemap errors;
+  1879→* orphan pages;
+  1880→* broken links;
+  1881→* redirect chains;
+  1882→* Core Web Vitals pass rate;
+  1883→* schema errors.
+  1884→
+  1885→46. AI AGENT OPERATIONS DASHBOARD
+  1886→Track:
+  1887→* runs by agent;
+  1888→* successful runs;
+  1889→* failures;
+  1890→* average processing cost;
+  1891→* unsupported claims detected;
+  1892→* policy changes detected;
+  1893→* drafts awaiting review;
+  1894→* QA failure rate;
+  1895→* publication turnaround;
+  1896→* prompt version performance.
+  1897→Keep complete audit logs.
+  1898→
+  1899→47. LOCAL SEO DASHBOARD
+  1900→Track by genuine location:
+  1901→* Business Profile completeness;
+  1902→* NAP consistency;
+  1903→* review count;
+  1904→* review velocity;
+  1905→* response rate;
+  1906→* rating trend;
+  1907→* profile actions where available;
+  1908→* local landing-page leads;
+  1909→* consultation bookings.
+  1910→Never create fake review activity.
+  1911→
+  1912→48. AUTHORITY DASHBOARD
+  1913→Track:
+  1914→* partner link opportunities;
+  1915→* outreach sent;
+  1916→* replies;
+  1917→* links earned;
+  1918→* links lost;
+  1919→* digital PR mentions;
+  1920→* university representative listings;
+  1921→* student story participation;
+  1922→* original research coverage.
+  1923→
+  1924→49. AI SEARCH VISIBILITY DASHBOARD
+  1925→Where Search Console provides available data, track:
+  1926→* generative-AI impressions;
+  1927→* pages appearing;
+  1928→* country;
+  1929→* device;
+  1930→* date trend.
+  1931→Do not fabricate clicks or dimensions that the report does not expose.
+  1932→Compare AI Search visibility with:
+  1933→* ordinary Search visibility;
+  1934→* content type;
+  1935→* topic cluster;
+  1936→* conversion performance where traceable.
+  1937→
+  1938→50. LOCAL REVIEW AUTOMATION
+  1939→When CRM status changes to eligible success stage:
+  1940→EVENT: student status update
+  1941→CHECK: consent? review request already sent? appropriate timing? contact channel preference?
+  1942→THEN: send neutral personalized review invitation
+  1943→STORE: review_request_sent_at review_request_channel follow_up_due_at follow_up_sent_at
+  1944→Never:
+  1945→* offer payment for a positive review;
+  1946→* ask staff to create fake reviews;
+  1947→* gate requests only to students predicted to leave positive reviews.
+  1948→
+  1949→51. AI VISA INTERVIEW PRACTICE MVP
+  1950→Purpose:
+  1951→Help students practice communication and preparation.
+  1952→Input:
+  1953→* destination;
+  1954→* course;
+  1955→* institution;
+  1956→* study level;
+  1957→* academic background;
+  1958→* funding type;
+  1959→* previous travel or visa history, only where appropriately collected;
+  1960→* practice objective.
+  1961→System behavior:
+  1962→* ask practice questions;
+  1963→* follow up based on student's answers;
+  1964→* assess clarity;
+  1965→* identify inconsistency;
+  1966→* suggest clearer truthful communication;
+  1967→* never invent an answer for the student;
+  1968→* never coach deception;
+  1969→* never guarantee visa approval.
+  1970→CRM outputs:
+  1971→* tool_started;
+  1972→* tool_completed;
+  1973→* destination;
+  1974→* score categories;
+  1975→* counselling requested;
+  1976→* lead created with consent.
+  1977→
+  1978→52. AI COURSE MATCHER MVP
+  1979→Inputs:
+  1980→* study level;
+  1981→* academic history;
+  1982→* subject interest;
+  1983→* target countries;
+  1984→* English score;
+  1985→* budget range;
+  1986→* preferred intake;
+  1987→* work experience;
+  1988→* study gap;
+  1989→* scholarship interest.
+  1990→Outputs:
+  1991→* possible course matches;
+  1992→* possible university matches;
+  1993→* reasons for match;
+  1994→* requirements still needing verification;
+  1995→* information gaps;
+  1996→* counsellor-review option.
+  1997→Never display:
+  1998→“You will definitely be admitted.”
+  1999→Display:
+  2000→“Potential match based on currently available criteria. Final eligibility depends on institutional review and current requirements.”
+
+[showing lines 1-2000 of 2386; use offset=2001 with limit to continue reading]

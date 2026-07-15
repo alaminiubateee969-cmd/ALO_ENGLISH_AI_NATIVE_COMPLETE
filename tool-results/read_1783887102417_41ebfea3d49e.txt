@@ -1,0 +1,779 @@
+     1→# ALO English Test Platform — Exam Conduct Guide
+     2→
+     3→**Audience:** Students, parents, ambassadors, counselors, and proctoring staff.
+     4→**Scope:** All 32 practice exams across 5 categories (English Proficiency, Study Abroad Entrance, University Internal, Visa/Interview, ALO Internal).
+     5→**Public disclaimer (read first):**
+     6→
+     7→> **Practice exam only. Estimated score only. Not official exam result. No guarantee that questions will appear in real exam.**
+     8→
+     9→---
+    10→
+    11→## 0. How to Read This Guide
+    12→
+    13→This guide has three layers:
+    14→
+    15→1. **Global guidance** (§1–§5) — applies to every exam: equipment, before/during/after workflow, scoring interpretation, disclaimers.
+    16→2. **Per-exam reference** (§6) — one compact entry per exam with: what it is, who should take it, sections, time, question types, scoring style, mock-start steps, speaking/recording notes, writing-evaluation notes, report interpretation, post-score actions, official-exam disclaimer.
+    17→3. **Compliance wording** (§7) — the exact labels and disclaimers used on every public surface.
+    18→
+    19→The platform supports **32 practice exams**. Every exam on ALO is labeled with the wording *"X-style practice test"* (stored in `exam_types.style_label`). No exam is, or claims to be, an official administration of any third-party test.
+    20→
+    21→---
+    22→
+    23→## 1. Equipment Guide
+    24→
+    25→### 1.1 Recommended setup
+    26→
+    27→| Item | Requirement | Notes |
+    28→|---|---|---|
+    29→| Device | Laptop or desktop recommended | Mobile (phone/tablet) supported for **practice only**; the layout is responsive but some reading passages are easier on a larger screen |
+    30→| Operating system | Windows 10+, macOS 11+, ChromeOS, recent Linux | Mobile: iOS 15+, Android 11+ |
+    31→| Browser | Latest Chrome, Edge, Firefox, or Safari | Update within the last 90 days; avoid IE and beta/dev channels |
+    32→| Internet | Stable 5 Mbps+ download / 1 Mbps+ upload | Use wired or strong Wi-Fi; avoid metered hotspot for long exams |
+    33→| Microphone | Required for any speaking practice | Built-in laptop mic works; USB headset mic is better. Browser prompts for mic permission — click "Allow" |
+    34→| Camera | Optional for most exams; recommended for interview-style practice | Used only for the *optional* Practice Interview Coach self-review; never recorded silently |
+    35→| Headphones | Recommended for listening sections | Avoids echo and prevents audio leakage in shared rooms |
+    36→| Room | Quiet, well-lit, free of interruptions | Close chat apps, mute phone notifications |
+    37→| Power | Laptop plugged in | Long exams (MCAT, IELTS) drain battery |
+    38→| Time | Uninterrupted block matching the exam duration + 5-minute buffer | Buffer is added by `exam_settings.attempt_default_buffer_minutes` |
+    39→
+    40→### 1.2 Browser pre-flight (auto-run on attempt start)
+    41→
+    42→The platform runs a quick pre-flight on every attempt start screen:
+    43→
+    44→1. Browser version check (rejects IE; warns on out-of-date browsers).
+    45→2. Microphone permission check (for speaking exams).
+    46→3. Network RTT check (warns if > 300 ms).
+    47→4. Screen size check (warns if < 768×600 px).
+    48→5. Storage quota check (warns if IndexedDB / localStorage are unavailable — autosave needs them).
+    49→
+    50→A failed pre-flight does not block practice, but the student is asked to acknowledge the warning before continuing.
+    51→
+    52→### 1.3 Mobile support
+    53→
+    54→- Mobile is supported for **practice only** and works best for short exams (Duolingo, Linguaskill, OIETC, ALO Diagnostic, visa interviews).
+    55→- For long reading-dense exams (IELTS Reading, SAT R&W, MCAT CARS, LSAT RC) a laptop/desktop is strongly recommended.
+    56→- Speaking recording works on mobile browsers but the timer + passage layout is more comfortable on a larger screen.
+    57→
+    58→---
+    59→
+    60→## 2. Before the Exam
+    61→
+    62→### 2.1 Account setup (first time only)
+    63→
+    64→1. **Register** at `/register` with name, email, phone, password.
+    65→2. **Verify email** — click the link in the verification email. The account stays in `status = 'pending'` until verified.
+    66→3. **Verify phone** — enter the OTP sent by SMS. Required before any attempt.
+    67→4. **ALO students**: enter your ALO Student ID (optional) to unlock the **3 free ALO attempts**. Without it, you get **1 free public attempt**. The check is server-side; the ID is validated against the ALO CRM during the hourly CRM sync.
+    68→5. **Accept terms** — the current Terms of Service (`exam_settings.terms_version`) and Privacy Policy (`privacy_version`). Stored in `exam_terms_acceptance`.
+    69→
+    70→### 2.2 Check your free quota
+    71→
+    72→Visit the Student Dashboard → **Free Quota** card. It shows:
+    73→
+    74→- `used_free_attempts` / `max_free_attempts` (depends on ALO/public/partner/ambassador flags).
+    75→- A note that the quota is **shared across all 32 exams**.
+    76→- A "Buy paid attempt" / "Redeem voucher" button shown only when the free quota is exhausted.
+    77→
+    78→The number you see is a snapshot. The authoritative check happens at attempt start — if another device used a slot in the meantime, the start call may still fail.
+    79→
+    80→### 2.3 Select the exam
+    81→
+    82→From the public exam catalog (`/exams`) or from the Student Dashboard → **Practice Tests**:
+    83→
+    84→1. Filter by category (English / Study Abroad / University / Visa / ALO Internal) or search.
+    85→2. Open the exam landing page to read its sections, duration, scoring scale, and disclaimer.
+    86→3. Click **Start Digital Practice Session**.
+    87→
+    88→### 2.4 Read the instructions and disclaimer
+    89→
+    90→Every attempt start screen shows:
+    91→
+    92→- The exam name and the wording *"X-style practice test"*.
+    93→- The number of sections, total questions, total duration.
+    94→- The free-quota cost of this attempt (1 slot unless already exhausted).
+    95→- The **practice disclaimer** (canonical text from `exam_settings.practice_disclaimer`):
+    96→  > *This is an original practice question created by ALO. It is not an official exam item and is not affiliated with, endorsed by, or reproduced from any official test publisher. Items will not appear in any real exam.*
+    97→- A checkbox: *"I understand this is a practice exam only and the score is an estimate."*
+    98→
+    99→The Start button is disabled until the checkbox is ticked.
+   100→
+   101→### 2.5 Test the microphone (speaking exams only)
+   102→
+   103→- Click **Test microphone** on the start screen.
+   104→- Speak a 5-second sample; the platform plays it back.
+   105→- If no audio is captured, check the browser mic permission and the OS mic level.
+   106→- The mic test writes a `device_check` row to `exam_proctor_logs` for auditability.
+   107→
+   108→### 2.6 Start the timer
+   109→
+   110→Click **Start**. The timer starts on the server (`exam_mock_attempts.started_at = NOW()`) and is also displayed at the top of the screen. The server clock is authoritative — the client timer is decorative.
+   111→
+   112→---
+   113→
+   114→## 3. During the Exam
+   115→
+   116→### 3.1 Timer
+   117→
+   118→- Visible at the top of every screen, formatted `HH:MM:SS`.
+   119→- Counts down from the exam's total duration + `attempt_default_buffer_minutes` (default 5).
+   120→- When 5 minutes remain, the timer turns orange; when 1 minute remains, it turns red.
+   121→- When the timer hits zero, the attempt is auto-submitted by the server (`status = 'submitted'`, `submit_reason = 'timeout'`).
+   122→
+   123→### 3.2 Autosave
+   124→
+   125→- Every answer is autosaved to `exam_answers` within 2 seconds of the student changing it.
+   126→- A "Saved" indicator appears next to each question; if save fails (network drop), the indicator turns red and the student is asked to retry.
+   127→- Speaking recordings are uploaded in chunks; if the connection drops, the upload resumes when reconnected.
+   128→
+   129→### 3.3 Answer all questions; flag the difficult ones
+   130→
+   131→- The question palette on the right shows answered (green), flagged (orange), and unseen (gray) questions.
+   132→- **Flag for review** marks a question for revisit; flagged answers are still graded.
+   133→- Use **Previous / Next** to navigate; the palette is clickable.
+   134→
+   135→### 3.4 Submit before time
+   136→
+   137→- Click **Submit** at any time. A confirmation modal shows the count of unanswered questions and asks for confirmation.
+   138→- On confirm, the attempt moves to `status = 'submitted'` and scoring begins.
+   139→
+   140→### 3.5 Refreshing the page
+   141→
+   142→- Refreshing is allowed; the autosaved answers are restored.
+   143→- The timer continues from server time, not from the page reload — refreshing does not give extra time.
+   144→- If the browser crashes, reopen the same URL within `attempt_expiry_hours` (24h) and resume.
+   145→
+   146→### 3.6 Integrity
+   147→
+   148→- Tab switches are logged in `exam_proctor_logs` if `exam_settings.proctoring_enabled = true`. The student sees a warning at `proctor_tab_switch_threshold` (default 3) tab switches. Practice exams do not auto-fail on tab switches — they are practice.
+   149→- Camera snapshots (only if the student opted into the Practice Interview Coach self-review) are stored locally and never uploaded without explicit per-attempt consent.
+   150→
+   151→---
+   152→
+   153→## 4. After the Exam
+   154→
+   155→### 4.1 View the Smart Score Report
+   156→
+   157→After submission, the platform renders the **Smart Score Report**:
+   158→
+   159→- Overall **estimated score** in the exam's native scale (Band 0-9, 0-120, 400-1600, etc.).
+   160→- A **CEFR estimate** (A1–C2) for English-proficiency exams.
+   161→- **Skill breakdown** bars (Listening / Reading / Writing / Speaking, or Quant / Verbal / etc.).
+   162→- **Question review** — each question, the student's answer, the correct answer, and an explanation.
+   163→- The practice disclaimer is printed on page 1.
+   164→
+   165→The report is generated by `app/Services/PdfReportService.php` and stored in `storage/private/reports/<attempt_code>.pdf`.
+   166→
+   167→### 4.2 Review explanations
+   168→
+   169→Every question has an `explanation` field authored by ALO's content team. Read each one, even for questions you got right — the explanation teaches the underlying skill.
+   170→
+   171→### 4.3 Download the PDF
+   172→
+   173→- Click **Download Smart Score Report (PDF)**.
+   174→- The download is a signed URL (`DownloadController::serve()`) with a 60-second TTL and IP pin.
+   175→- The disclaimer is on page 1.
+   176→
+   177→### 4.4 Book a counseling session
+   178→
+   179→- Click **Book counseling** on the report.
+   180→- Pick a slot from the ALO counselor calendar; the booking writes to `exam_consultation_bookings` and syncs to the ALO CRM via the hourly cron.
+   181→- Counseling sessions are with ALO advisors, not with official examiners.
+   182→
+   183→### 4.5 Follow the study plan
+   184→
+   185→The Student Dashboard → **Study Plan** shows a 7-day plan generated from your weakest skills in the last attempt(s). Each day has 2–3 short tasks (read a passage, practice a question type, watch a 5-min video).
+   186→
+   187→### 4.6 Retake
+   188→
+   189→- If you still have free quota, retake is one click.
+   190→- If free quota is exhausted, redeem a voucher or pay the per-attempt fee (`paid_attempt_price_usd`).
+   191→- Each retake is a new attempt with a new `attempt_code`. The previous report remains available.
+   192→
+   193→---
+   194→
+   195→## 5. How to Interpret the Estimated Score
+   196→
+   197→### 5.1 What it is
+   198→
+   199→The score is an **estimate** produced by `app/Services/ScoringRules.php` using the scoring rule JSON stored on the practice set (`exam_practice_sets.scoring_rule_json`). The rule is one of:
+   200→
+   201→- **band** — IELTS-style 0–9 in 0.5 increments (Listening, Reading, Writing, Speaking, Overall).
+   202→- **scaled** — PTE 10–90, TOEFL 0–120, SAT 400–1600, GRE 130–170, GMAT 205–805, MCAT 472–528, ACT 1–36, OET A–E.
+   203→- **percent** — University placement / scholarship tests (0–100).
+   204→- **rubric** — Visa/interview and ALO internal exams (Pass/Fail with sub-criteria scores).
+   205→- **cefr** — A1–C2 for English-placement and diagnostic exams.
+   206→
+   207→### 5.2 What it is not
+   208→
+   209→- It is **not** an official test result.
+   210→- It is **not** a guarantee of the score you will receive on a real administration.
+   211→- It is **not** comparable across exam families (an IELTS Band 7 is not "the same" as a TOEFL 100 — only the official concordance tables published by the test owners are authoritative).
+   212→- It is **not** a substitute for diagnostic feedback from a qualified teacher.
+   213→
+   214→### 5.3 How to use it
+   215→
+   216→Use the estimate to:
+   217→
+   218→1. Track your own progress over multiple attempts.
+   219→2. Identify the skill (L/R/W/S, or Quant/Verbal/etc.) that is pulling your overall down.
+   220→3. Decide whether to book a counseling session or buy a paid attempt for targeted practice.
+   221→
+   222→Do **not** use the estimate to:
+   223→
+   224→1. Claim proficiency on a visa or university application.
+   225→2. Compare yourself to a friend who took a different exam family.
+   226→3. Substitute for an official test sitting.
+   227→
+   228→---
+   229→
+   230→## 6. Per-Exam Reference (all 32)
+   231→
+   232→> Each entry uses the same 12-field template. "Sections" and "Question types" are sourced from `exam_sections` and `exam_question_types`; durations and counts from `exam_sections.duration_minutes` / `exam_sections.question_count`. The disclaimer text is the same for every exam and is reproduced once at the end of the section.
+   233→
+   234→### 6.1 English Proficiency (11 exams)
+   235→
+   236→#### 6.1.1 IELTS Academic — `IELTS-ACAD`
+   237→- **What it is:** An IELTS-style academic practice test covering the four skills assessed on the real IELTS Academic module.
+   238→- **Who should take it:** Students targeting undergraduate or postgraduate admission at institutions that accept IELTS Academic; students planning UKVI Academic sub-category practice.
+   239→- **Sections:** Listening (30 min, 40 Q), Academic Reading (60 min, 40 Q), Academic Writing Task 1 (20 min) + Task 2 (40 min), Speaking (11–14 min, 3 parts).
+   240→- **Total duration:** ~180 minutes.
+   241→- **Question types:** single_mcq, multi_mcq, true_false_notgiven, yes_no_notgiven, matching_headings, matching_paragraphs, matching_sentence_endings, sentence_completion, summary_completion, fill_blanks, short_answer, writing_task1, writing_task2, speaking_part1, speaking_part2, speaking_part3.
+   242→- **Scoring style:** Band 0–9 (overall + per-skill) computed by the band scorer.
+   243→- **How to start a mock:** Dashboard → Practice Tests → IELTS Academic → Start Digital Practice Session → read disclaimer → tick checkbox → test microphone → Start.
+   244→- **Equipment needed:** Laptop/desktop, microphone, headphones (for listening), stable internet, quiet room.
+   245→- **Speaking recording:** Browser captures audio via `MediaRecorder`, uploads chunks to `public/uploads/audio/`, master copy moves to `storage/private/audio/`. Auto-graded by the Automated Practice Feedback service on 6 dimensions (fluency, pronunciation, lexical resource, grammar, coherence, task response).
+   246→- **Writing evaluation:** Free-text submission; word count enforced (Task 1 ≥150, Task 2 ≥250, max 750). Auto-graded by the ALO Evaluation System rubric; an ALO Practice Examiner may review and add comments in the examiner queue.
+   247→- **Report:** Smart Score Report (PDF) with overall band, per-skill band, CEFR estimate, question review, model answers, disclaimer.
+   248→- **Interpret estimated score:** Band 9 = expert; 7–8 = good user; 5–6 = modest/competent; below 5 = limited. Treat as a directional estimate only.
+   249→- **After score:** Book counseling, follow 7-day study plan, retake after 48–72 hours to measure progress.
+   250→- **Official exam disclaimer:** IELTS Academic is a registered trademark of Cambridge University Press & Assessment, the British Council, and IDP Education. ALO's "IELTS-style academic practice test" is not affiliated with, endorsed by, or reproduced from any official IELTS administration.
+   251→
+   252→#### 6.1.2 IELTS General Training — `IELTS-GEN`
+   253→- **What it is:** An IELTS-style General Training practice test for migration and work contexts.
+   254→- **Who should take it:** Candidates preparing for migration to the UK, Canada, Australia, or New Zealand under General Training requirements.
+   255→- **Sections:** Listening (30 min), General Training Reading (60 min), General Writing Task 1 (letter, 20 min) + Task 2 (essay, 40 min), Speaking (11–14 min).
+   256→- **Total duration:** ~165 minutes.
+   257→- **Question types:** as IELTS Academic but Reading uses everyday sources (notices, ads, workplace documents); Writing Task 1 is a letter (`writing_task1_general`).
+   258→- **Scoring style:** Band 0–9.
+   259→- **How to start a mock:** same flow as 6.1.1, pick "IELTS General Training".
+   260→- **Equipment needed:** same as 6.1.1.
+   261→- **Speaking recording:** same as 6.1.1.
+   262→- **Writing evaluation:** same as 6.1.1 but Task 1 uses the letter rubric (tone, purpose, audience).
+   263→- **Report:** same shape as 6.1.1.
+   264→- **Interpret estimated score:** Band 4 = limited; 5 = modest; 6 = competent; 7+ = good. Migration often requires 6.0–6.5 per skill.
+   265→- **After score:** retake after 1 week; book counseling if speaking or writing is below target.
+   266→- **Official exam disclaimer:** Same as 6.1.1.
+   267→
+   268→#### 6.1.3 IELTS for UKVI — `IELTS-UKVI`
+   269→- **What it is:** An IELTS UKVI-style practice test mirroring the Secure English Language Test (SELT) format used for UK visas.
+   270→- **Who should take it:** Students applying for UK student visas requiring a SELT; candidates who need to practice the in-person SELT format.
+   271→- **Sections:** Same four skills as IELTS Academic; speaking is conducted face-to-face in real SELT administration (ALO practice is recorded, not face-to-face).
+   272→- **Total duration:** ~180 minutes.
+   273→- **Question types:** same as IELTS Academic.
+   274→- **Scoring style:** Band 0–9; CEFR-mapped (B1 / B2 / C1) per Common European Framework.
+   275→- **How to start a mock:** same flow, pick "IELTS for UKVI".
+   276→- **Equipment needed:** same as 6.1.1; camera optional for the Practice Interview Coach self-review of the speaking part.
+   277→- **Speaking recording:** same as 6.1.1; the SELT face-to-face format is approximated by recording + Automated Practice Feedback.
+   278→- **Writing evaluation:** same as 6.1.1.
+   279→- **Report:** Band + CEFR annotation (e.g. "Band 5.5 — CEFR B2").
+   280→- **Interpret estimated score:** UKVI Academic requires B2 (Band 5.5) for degree-level; UKVI A1/B1 levels apply to family/spouse visas.
+   281→- **After score:** If below the visa threshold, book a counselor and follow the 7-day plan focused on the weakest skill.
+   282→- **Official exam disclaimer:** IELTS for UKVI is administered by IELTS SELT Consortium. ALO's "IELTS UKVI-style practice test" is not an official SELT administration and produces no UKVI-recognized score.
+   283→
+   284→#### 6.1.4 PTE Academic — `PTE-ACAD`
+   285→- **What it is:** A PTE-style academic practice test for the computer-based Pearson Test of English.
+   286→- **Who should take it:** Students applying to Australian, UK, NZ, and Canadian institutions that accept PTE Academic.
+   287→- **Sections:** Speaking & Writing (54–67 min), Reading (29–30 min), Listening (30–43 min).
+   288→- **Total duration:** ~120 minutes.
+   289→- **Question types:** read_aloud, repeat_sentence, describe_image, retell_lecture, summarize_spoken_text, summarize_written_text, essay, reading_fill_blanks, reorder_paragraphs, listening_fill_blanks, write_from_dictation, multiple-choice (single_mcq, multi_mcq).
+   290→- **Scoring style:** Scaled 10–90 (overall + communicative skills + enabling skills).
+   291→- **How to start a mock:** Dashboard → Practice Tests → PTE Academic → Start.
+   292→- **Equipment needed:** Microphone required (speaking), headphones recommended (listening).
+   293→- **Speaking recording:** Same pipeline as 6.1.1; the Automated Practice Feedback service scores pronunciation, oral fluency, and content.
+   294→- **Writing evaluation:** Word count enforced; auto-graded on content, form, grammar, vocabulary, spelling.
+   295→- **Report:** Scaled 10–90 + sub-skill bars + question review.
+   296→- **Interpret estimated score:** 65+ is competitive for most universities; 79+ for top-tier.
+   297→- **After score:** Practice the lowest enabling skill (e.g. spelling or pronunciation).
+   298→- **Official exam disclaimer:** PTE Academic is a trademark of Pearson Education. ALO's "PTE-style academic practice test" is not affiliated with or endorsed by Pearson.
+   299→
+   300→#### 6.1.5 TOEFL iBT — `TOEFL-IBT`
+   301→- **What it is:** A TOEFL iBT-style practice test for the internet-based Test of English as a Foreign Language.
+   302→- **Who should take it:** Students applying to US and Canadian universities, and other institutions that accept TOEFL iBT.
+   303→- **Sections:** Reading (54–72 min), Listening (41–57 min), Speaking (17 min), Writing (50 min, integrated + academic discussion).
+   304→- **Total duration:** ~117 minutes.
+   305→- **Question types:** single_mcq, multi_mcq, sentence_completion, inference, central_idea, vocabulary_in_context, summarize_spoken_text, independent_speaking, integrated_writing, academic_discussion.
+   306→- **Scoring style:** Scaled 0–120 (4 sections × 30).
+   307→- **How to start a mock:** Dashboard → Practice Tests → TOEFL iBT → Start.
+   308→- **Equipment needed:** Microphone, headphones, stable internet.
+   309→- **Speaking recording:** Browser records 45–60-second responses; auto-graded on delivery, language use, topic development.
+   310→- **Writing evaluation:** Integrated (read + listen + write) and academic discussion; auto-graded on content, organization, grammar, vocabulary.
+   311→- **Report:** 0–120 + per-section bars + question review.
+   312→- **Interpret estimated score:** 100+ is competitive for top US universities; 79+ for many graduate programs.
+   313→- **After score:** Practice the integrated writing task if score < 24.
+   314→- **Official exam disclaimer:** TOEFL is a trademark of Educational Testing Service (ETS). ALO's "TOEFL iBT-style practice test" is not affiliated with or endorsed by ETS.
+   315→
+   316→#### 6.1.6 Duolingo English Test — `DUOLINGO`
+   317→- **What it is:** A Duolingo-style adaptive practice test for the Duolingo English Test.
+   318→- **Who should take it:** Students applying to institutions that accept DET (many US, UK, and Canadian universities).
+   319→- **Sections:** Literacy, Comprehension, Conversation, Production (single adaptive section, ~60 min).
+   320→- **Total duration:** ~60 minutes.
+   321→- **Question types:** read_and_select, listen_and_type, complete_the_sentence, interactive_reading, describe_image, writing_sample, speaking_sample, fill_blanks.
+   322→- **Scoring style:** Scaled 10–160 (with subscores: Literacy, Comprehension, Conversation, Production).
+   323→- **How to start a mock:** Dashboard → Practice Tests → Duolingo English Test → Start.
+   324→- **Equipment needed:** Microphone, camera (optional, for the speaking sample self-review), stable internet.
+   325→- **Speaking recording:** 30–90 second samples; auto-graded on fluency, content, complexity.
+   326→- **Writing evaluation:** 3–5 minute writing sample; auto-graded on grammar, lexical diversity, task relevance.
+   327→- **Report:** 10–160 + 4 subscores + question review.
+   328→- **Interpret estimated score:** 105+ for many US universities; 120+ for top-tier.
+   329→- **After score:** Practice production (writing/speaking) if subscore is the lowest.
+   330→- **Official exam disclaimer:** Duolingo English Test is a trademark of Duolingo, Inc. ALO's "Duolingo-style practice test" is not affiliated with or endorsed by Duolingo.
+   331→
+   332→#### 6.1.7 OIETC — `OIETC`
+   333→- **What it is:** An OIETC-style practice test for the Online International English Test Certificate.
+   334→- **Who should take it:** Students applying to UK universities that accept OIETC as an alternative to IELTS/TOEFL.
+   335→- **Sections:** Reading, Listening, Writing, Speaking (4 sections, ~90 min total).
+   336→- **Total duration:** ~90 minutes.
+   337→- **Question types:** single_mcq, fill_blanks, short_answer, writing_task2, speaking_part1, vocabulary_in_context.
+   338→- **Scoring style:** CEFR A1–C1.
+   339→- **How to start a mock:** Dashboard → Practice Tests → OIETC → Start.
+   340→- **Equipment needed:** Microphone, headphones.
+   341→- **Speaking recording:** 2–3 minute Part 1 response; auto-graded.
+   342→- **Writing evaluation:** 250+ word essay; auto-graded.
+   343→- **Report:** CEFR level + question review.
+   344→- **Interpret estimated score:** B2 is typical for undergraduate entry; C1 for postgraduate.
+   345→- **After score:** Practice writing if below B2.
+   346→- **Official exam disclaimer:** OIETC is administered by participating UK universities. ALO's "OIETC-style practice test" is not affiliated with any official OIETC administration.
+   347→
+   348→#### 6.1.8 Occupational English Test (OET) — `OET`
+   349→- **What it is:** An OET-style practice test for healthcare professionals (medicine, nursing, dentistry, pharmacy, etc.).
+   350→- **Who should take it:** Healthcare professionals seeking registration in the UK, US, Australia, Ireland, Singapore, etc.
+   351→- **Sections:** Listening (45 min), Reading (60 min), Writing (45 min, profession-specific), Speaking (20 min, role-play).
+   352→- **Total duration:** ~165 minutes.
+   353→- **Question types:** single_mcq, multi_mcq, fill_blanks, short_answer, writing_task1 (profession-specific letter), speaking_part2 (role-play).
+   354→- **Scoring style:** A–E (A = 350–500, B = 320–340, C+ = 300–310, C = 270–290, D = 200–260, E = 100–190).
+   355→- **How to start a mock:** Dashboard → Practice Tests → OET → select profession (Medicine / Nursing / etc.) → Start.
+   356→- **Equipment needed:** Microphone, headphones.
+   357→- **Speaking recording:** Role-play with a pre-recorded interlocutor; auto-graded on intelligibility, fluency, appropriateness, resources of grammar/expression.
+   358→- **Writing evaluation:** Profession-specific letter (referral, discharge, transfer); auto-graded on purpose, content, conciseness/clarity, genre/style, organization, language.
+   359→- **Report:** A–E grade per skill + numeric (0–500) + question review.
+   360→- **Interpret estimated score:** Grade B (350+) is required by most regulators.
+   361→- **After score:** Practice role-plays if speaking below B.
+   362→- **Official exam disclaimer:** OET is a trademark of Cambridge Boxhill Language Assessment. ALO's "OET-style practice test" is not affiliated with or endorsed by the OET Centre.
+   363→
+   364→#### 6.1.9 LanguageCert International ESOL — `LANGCERT`
+   365→- **What it is:** A LanguageCert-style practice test for the International ESOL qualification (A1–C2).
+   366→- **Who should take it:** Students applying for UK visas (LanguageCert SELT) and academic admission.
+   367→- **Sections:** Listening, Reading, Writing, Speaking.
+   368→- **Total duration:** ~165 minutes.
+   369→- **Question types:** single_mcq, fill_blanks, short_answer, writing_task1, writing_task2, speaking_part1, speaking_part2, speaking_part3.
+   370→- **Scoring style:** CEFR A1–C2 with Pass/High Pass/Distinction per level.
+   371→- **How to start a mock:** Dashboard → Practice Tests → LanguageCert → Start.
+   372→- **Equipment needed:** Microphone, headphones.
+   373→- **Speaking recording:** Multi-part spoken assessment; auto-graded.
+   374→- **Writing evaluation:** Two writing tasks (letter + essay); auto-graded.
+   375→- **Report:** CEFR + per-skill performance + question review.
+   376→- **Interpret estimated score:** B2 for degree-level study; C1 for postgraduate.
+   377→- **After score:** Focus on the weakest skill.
+   378→- **Official exam disclaimer:** LanguageCert is a trademark of PeopleCert. ALO's "LanguageCert-style practice test" is not affiliated with or endorsed by PeopleCert.
+   379→
+   380→#### 6.1.10 Linguaskill (Bulats) — `LINGUASKILL`
+   381→- **What it is:** A Linguaskill-style adaptive practice test for the Cambridge Linguaskill (formerly BULATS) assessment.
+   382→- **Who should take it:** Students and professionals needing a fast English placement for academic or workplace contexts; students preparing for the Linguaskill Business or General variants.
+   383→- **Sections:** Reading & Listening (adaptive), Writing, Speaking.
+   384→- **Total duration:** ~90 minutes (adaptive).
+   385→- **Question types:** single_mcq, multi_mcq, fill_blanks, complete_the_sentence, interactive_reading, listening_fill_blanks, write_from_dictation, essay, speaking_sample.
+   386→- **Scoring style:** CEFR A1–C2 + Cambridge English Scale score (82–230).
+   387→- **How to start a mock:** Dashboard → Practice Tests → Linguaskill → Start.
+   388→- **Equipment needed:** Microphone, headphones.
+   389→- **Speaking recording:** Short spoken responses; auto-graded.
+   390→- **Writing evaluation:** Email + essay; auto-graded.
+   391→- **Report:** CEFR + scale score + question review.
+   392→- **Interpret estimated score:** B2 (160–170) for academic; C1 (180+) for professional.
+   393→- **After score:** Practice writing if subscore below target.
+   394→- **Official exam disclaimer:** Linguaskill and BULATS are trademarks of Cambridge University Press & Assessment. ALO's "Linguaskill-style practice test" is not affiliated with or endorsed by Cambridge.
+   395→
+   396→#### 6.1.11 ALO Placement Test — `ALO-PLACE`
+   397→- **What it is:** ALO's internal English placement test, used to recommend the right course level for new ALO students.
+   398→- **Who should take it:** Newly enrolled ALO students; students considering ALO courses who want a diagnostic before enrolling.
+   399→- **Sections:** Reading, Listening, Grammar & Vocabulary, Writing, Speaking.
+   400→- **Total duration:** ~90 minutes.
+   401→- **Question types:** single_mcq, fill_blanks, vocabulary_in_context, sentence_completion, writing_task2, speaking_part1.
+   402→- **Scoring style:** CEFR A1–C2.
+   403→- **How to start a mock:** Dashboard → Practice Tests → ALO Placement → Start. ALO students see this card first.
+   404→- **Equipment needed:** Microphone, headphones.
+   405→- **Speaking recording:** Same pipeline; auto-graded.
+   406→- **Writing evaluation:** 200+ word essay; auto-graded.
+   407→- **Report:** CEFR + recommended ALO course level + question review.
+   408→- **Interpret estimated score:** A2 → Foundation; B1 → Pre-sessional; B2 → Academic English; C1 → Advanced.
+   409→- **After score:** ALO counselor recommends a course; student enrolls via the ALO CRM.
+   410→- **Official exam disclaimer:** ALO Placement Test is an ALO-internal diagnostic. It is not a CEFR certification; it is a placement estimate.
+   411→
+   412→### 6.2 Study Abroad Entrance (6 exams)
+   413→
+   414→#### 6.2.1 Digital SAT — `SAT`
+   415→- **What it is:** An SAT-style adaptive practice test for the College Board's Digital SAT.
+   416→- **Who should take it:** Students applying to US undergraduate programs.
+   417→- **Sections:** Reading & Writing Module 1 + Module 2 (adaptive, 64 min total), Math Module 1 + Module 2 (adaptive, 70 min total).
+   418→- **Total duration:** ~134 minutes.
+   419→- **Question types:** single_mcq, central_idea, inference, vocabulary_in_context, standard_english, grid_in, text_completion.
+   420→- **Scoring style:** Scaled 400–1600 (two section scores 200–800 each).
+   421→- **How to start a mock:** Dashboard → Practice Tests → Digital SAT → Start.
+   422→- **Equipment needed:** Laptop/desktop, calculator (in-browser calculator is provided).
+   423→- **Speaking recording:** N/A.
+   424→- **Writing evaluation:** Standard English conventions items (auto-graded).
+   425→- **Report:** 400–1600 + per-section bars + question review.
+   426→- **Interpret estimated score:** 1400+ for top-tier US universities; 1200+ for many state universities.
+   427→- **After score:** Practice the lowest module (Math or R&W); retake weekly.
+   428→- **Official exam disclaimer:** SAT is a trademark of the College Board. ALO's "SAT-style practice test" is not affiliated with, endorsed by, or reproduced from any official SAT administration.
+   429→
+   430→#### 6.2.2 ACT — `ACT`
+   431→- **What it is:** An ACT-style practice test for the ACT college admissions exam.
+   432→- **Who should take it:** Students applying to US undergraduate programs who prefer the ACT format.
+   433→- **Sections:** English (45 min), Math (60 min), Reading (35 min), Science (35 min).
+   434→- **Total duration:** ~175 minutes (+ optional Writing, not included in this practice).
+   435→- **Question types:** standard_english, problem_solving, central_idea, inference, data_interpretation, single_mcq.
+   436→- **Scoring style:** Scaled 1–36 (composite + per-section).
+   437→- **How to start a mock:** Dashboard → Practice Tests → ACT → Start.
+   438→- **Equipment needed:** Laptop/desktop, calculator (for Math).
+   439→- **Speaking recording:** N/A.
+   440→- **Writing evaluation:** N/A in this practice.
+   441→- **Report:** 1–36 composite + per-section bars + question review.
+   442→- **Interpret estimated score:** 27+ for competitive universities; 33+ for top-tier.
+   443→- **After score:** Practice the weakest section.
+   444→- **Official exam disclaimer:** ACT is a trademark of ACT, Inc. ALO's "ACT-style practice test" is not affiliated with or endorsed by ACT.
+   445→
+   446→#### 6.2.3 GRE General Test — `GRE`
+   447→- **What it is:** A GRE-style practice test for the ETS GRE General Test.
+   448→- **Who should take it:** Applicants to US graduate programs (master's, PhD, business school).
+   449→- **Sections:** Analytical Writing (30 min), Verbal Reasoning Module 1 + 2 (adaptive, 41 min), Quantitative Reasoning Module 1 + 2 (adaptive, 47 min).
+   450→- **Total duration:** ~165 minutes.
+   451→- **Question types:** text_completion, sentence_equivalence, central_idea, inference, quantitative_comparison, problem_solving, data_interpretation, issue_task, argument_task.
+   452→- **Scoring style:** Verbal 130–170, Quant 130–170, Analytical Writing 0–6.
+   453→- **How to start a mock:** Dashboard → Practice Tests → GRE → Start.
+   454→- **Equipment needed:** Laptop/desktop, calculator (in-browser).
+   455→- **Speaking recording:** N/A.
+   456→- **Writing evaluation:** Issue task auto-graded on analytical writing, development, organization, language.
+   457→- **Report:** 130–170 + 0–6 + per-section bars + question review.
+   458→- **Interpret estimated score:** 320+ combined (V+Q) for many programs; 330+ for top-tier.
+   459→- **After score:** Practice the weakest of V/Q.
+   460→- **Official exam disclaimer:** GRE is a trademark of Educational Testing Service (ETS). ALO's "GRE-style practice test" is not affiliated with or endorsed by ETS.
+   461→
+   462→#### 6.2.4 GMAT Focus Edition — `GMAT`
+   463→- **What it is:** A GMAT-style practice test for the GMAC GMAT Focus Edition.
+   464→- **Who should take it:** Applicants to MBA and business master's programs.
+   465→- **Sections:** Quantitative (45 min), Verbal (45 min), Data Insights (45 min).
+   466→- **Total duration:** ~135 minutes.
+   467→- **Question types:** problem_solving, data_sufficiency, critical_reasoning, sentence_correction, data_insights, data_interpretation.
+   468→- **Scoring style:** Scaled 205–805 (total) + per-section.
+   469→- **How to start a mock:** Dashboard → Practice Tests → GMAT Focus → Start.
+   470→- **Equipment needed:** Laptop/desktop, calculator (for Data Insights).
+   471→- **Speaking recording:** N/A.
+   472→- **Writing evaluation:** N/A (AWA removed in Focus Edition).
+   473→- **Report:** 205–805 + per-section + question review.
+   474→- **Interpret estimated score:** 645+ for top-20 MBA; 685+ for top-5.
+   475→- **After score:** Drill weak section with sectional practice.
+   476→- **Official exam disclaimer:** GMAT is a trademark of the Graduate Management Admission Council. ALO's "GMAT-style practice test" is not affiliated with or endorsed by GMAC.
+   477→
+   478→#### 6.2.5 LSAT — `LSAT`
+   479→- **What it is:** An LSAT-style practice test for the Law School Admission Test.
+   480→- **Who should take it:** Applicants to US and Canadian law schools.
+   481→- **Sections:** Logical Reasoning (two sections, 70 min), Reading Comprehension (35 min), Analytical Reasoning / Logic Games (35 min, optional in current administrations; included here for full coverage).
+   482→- **Total duration:** ~175 minutes.
+   483→- **Question types:** logical_reasoning, analytical_reasoning, central_idea, inference, single_mcq.
+   484→- **Scoring style:** Scaled 120–180.
+   485→- **How to start a mock:** Dashboard → Practice Tests → LSAT → Start.
+   486→- **Equipment needed:** Laptop/desktop, scratch paper.
+   487→- **Speaking recording:** N/A.
+   488→- **Writing evaluation:** LSAT Writing (separate, not included in this practice).
+   489→- **Report:** 120–180 + per-section accuracy + question review.
+   490→- **Interpret estimated score:** 160+ for many law schools; 170+ for top-tier.
+   491→- **After score:** Drill logic games if weak.
+   492→- **Official exam disclaimer:** LSAT is a trademark of the Law School Admission Council. ALO's "LSAT-style practice test" is not affiliated with or endorsed by LSAC.
+   493→
+   494→#### 6.2.6 MCAT — `MCAT`
+   495→- **What it is:** An MCAT-style practice test for the AAMC Medical College Admission Test.
+   496→- **Who should take it:** Applicants to US, Canadian, and Australian medical schools.
+   497→- **Sections:** Chemical & Physical Foundations (95 min), Critical Analysis & Reasoning Skills / CARS (90 min), Biological & Biochemical Foundations (95 min), Psychological, Social & Biological Foundations (95 min).
+   498→- **Total duration:** ~375 minutes (with breaks; ALO practice is delivered in one continuous block by default; the student can pause between sections).
+   499→- **Question types:** single_mcq, inference, central_idea, problem_solving, data_interpretation.
+   500→- **Scoring style:** Scaled 472–528 (118–132 per section).
+   501→- **How to start a mock:** Dashboard → Practice Tests → MCAT → Start. The long duration is flagged at the start screen.
+   502→- **Equipment needed:** Laptop/desktop, stable power, snacks, water.
+   503→- **Speaking recording:** N/A.
+   504→- **Writing evaluation:** N/A.
+   505→- **Report:** 472–528 + per-section bars + question review.
+   506→- **Interpret estimated score:** 510+ for many MD programs; 515+ for top-tier.
+   507→- **After score:** Practice CARS (often the bottleneck for STEM majors).
+   508→- **Official exam disclaimer:** MCAT is a trademark of the Association of American Medical Colleges. ALO's "MCAT-style practice test" is not affiliated with or endorsed by the AAMC.
+   509→
+   510→### 6.3 University Internal (5 exams)
+   511→
+   512→#### 6.3.1 English Placement — `ENG-PLACE`
+   513→- **What it is:** A university English placement-style practice test used by partner universities to place incoming students into the right ESL/academic English level.
+   514→- **Who should take it:** Students entering a partner university; students who want a quick English level check before applying.
+   515→- **Sections:** Reading, Listening, Grammar, Writing.
+   516→- **Total duration:** ~60 minutes.
+   517→- **Question types:** single_mcq, fill_blanks, vocabulary_in_context, sentence_completion, writing_task2.
+   518→- **Scoring style:** CEFR A1–C2.
+   519→- **How to start a mock:** Dashboard → Practice Tests → English Placement → Start.
+   520→- **Equipment needed:** Laptop/desktop, headphones.
+   521→- **Speaking recording:** N/A (most partner placements assess speaking separately).
+   522→- **Writing evaluation:** 200-word essay; auto-graded.
+   523→- **Report:** CEFR + recommended course level + question review.
+   524→- **Interpret estimated score:** A2 → pre-sessional; B2 → direct entry; C1 → exempt.
+   525→- **After score:** Discuss with the partner university admissions team.
+   526→- **Official exam disclaimer:** "University English placement-style practice" is not affiliated with any specific university placement program.
+   527→
+   528→#### 6.3.2 Math Placement — `MATH-PLACE`
+   529→- **What it is:** A university math placement-style practice test covering algebra, pre-calculus, and calculus basics.
+   530→- **Who should take it:** Students entering a partner university who need to be placed into the right math course.
+   531→- **Sections:** Algebra, Pre-Calculus, Calculus.
+   532→- **Total duration:** ~90 minutes.
+   533→- **Question types:** single_mcq, numeric_answer, grid_in, problem_solving.
+   534→- **Scoring style:** Percent 0–100.
+   535→- **How to start a mock:** Dashboard → Practice Tests → Math Placement → Start.
+   536→- **Equipment needed:** Laptop/desktop, calculator (in-browser), scratch paper.
+   537→- **Speaking recording:** N/A.
+   538→- **Writing evaluation:** N/A.
+   539→- **Report:** 0–100 + per-topic bars + question review.
+   540→- **Interpret estimated score:** 70%+ for calculus placement; 50–70% for pre-calculus; below 50% for algebra refresher.
+   541→- **After score:** Review the missed topics and retake.
+   542→- **Official exam disclaimer:** "University math placement-style practice" is not affiliated with any specific university math placement program.
+   543→
+   544→#### 6.3.3 Foundation Year Test — `FOUNDATION`
+   545→- **What it is:** A foundation program-style practice test for students entering a foundation year before undergraduate study.
+   546→- **Who should take it:** Students who do not yet meet direct entry requirements and are taking a foundation year.
+   547→- **Sections:** Academic English, Study Skills, Critical Thinking, Quantitative Reasoning.
+   548→- **Total duration:** ~120 minutes.
+   549→- **Question types:** single_mcq, short_answer, writing_task2, problem_solving, vocabulary_in_context.
+   550→- **Scoring style:** CEFR A1–C2 + percent.
+   551→- **How to start a mock:** Dashboard → Practice Tests → Foundation Year → Start.
+   552→- **Equipment needed:** Laptop/desktop, headphones.
+   553→- **Speaking recording:** N/A.
+   554→- **Writing evaluation:** Short essay; auto-graded.
+   555→- **Report:** CEFR + percent + question review.
+   556→- **Interpret estimated score:** B1 with 60%+ to progress to undergraduate.
+   557→- **After score:** Discuss with foundation-year tutor.
+   558→- **Official exam disclaimer:** "Foundation program-style practice test" is not affiliated with any specific foundation program.
+   559→
+   560→#### 6.3.4 Pre-Master Test — `PRE-MASTER`
+   561→- **What it is:** A pre-masters program-style practice test for students entering a pre-master's pathway.
+   562→- **Who should take it:** Students preparing for postgraduate study who need a pre-master's refresher.
+   563→- **Sections:** Academic English, Critical Reading, Quantitative Reasoning, Writing.
+   564→- **Total duration:** ~120 minutes.
+   565→- **Question types:** single_mcq, central_idea, inference, writing_task2, problem_solving, vocabulary_in_context.
+   566→- **Scoring style:** CEFR + percent.
+   567→- **How to start a mock:** Dashboard → Practice Tests → Pre-Master → Start.
+   568→- **Equipment needed:** Laptop/desktop.
+   569→- **Speaking recording:** N/A.
+   570→- **Writing evaluation:** 300-word essay; auto-graded.
+   571→- **Report:** CEFR + percent + question review.
+   572→- **Interpret estimated score:** B2+ with 65%+ to progress to master's.
+   573→- **After score:** Review the missed topics with the pre-master's tutor.
+   574→- **Official exam disclaimer:** "Pre-masters program-style practice test" is not affiliated with any specific pre-master's program.
+   575→
+   576→#### 6.3.5 Scholarship Test — `SCHOLARSHIP`
+   577→- **What it is:** A university scholarship-style practice test used by partner universities as a scholarship qualifier.
+   578→- **Who should take it:** Students applying for partner-university scholarships.
+   579→- **Sections:** Quantitative Aptitude, Verbal Reasoning, Essay Writing.
+   580→- **Total duration:** ~90 minutes.
+   581→- **Question types:** single_mcq, problem_solving, central_idea, vocabulary_in_context, essay.
+   582→- **Scoring style:** Percent 0–100.
+   583→- **How to start a mock:** Dashboard → Practice Tests → Scholarship Test → Start.
+   584→- **Equipment needed:** Laptop/desktop.
+   585→- **Speaking recording:** N/A.
+   586→- **Writing evaluation:** 500-word essay; auto-graded.
+   587→- **Report:** 0–100 + per-section bars + essay feedback + question review.
+   588→- **Interpret estimated score:** 75%+ for competitive scholarships; 85%+ for full scholarships.
+   589→- **After score:** Submit the official scholarship application separately (this practice score does not count toward the application).
+   590→- **Official exam disclaimer:** "University scholarship-style practice test" is not affiliated with any specific scholarship program.
+   591→
+   592→### 6.4 Visa / Interview (5 exams)
+   593→
+   594→#### 6.4.1 UK Credibility Interview — `UK-CRED`
+   595→- **What it is:** A UK credibility interview-style practice for the UK student visa credibility interview.
+   596→- **Who should take it:** International students applying for a UK student visa (Student route) who may be called for a credibility interview.
+   597→- **Sections:** Credibility Interview (5–10 questions on study plan, finances, post-study plans).
+   598→- **Total duration:** ~30 minutes.
+   599→- **Question types:** credibility_interview, speaking_part1.
+   600→- **Scoring style:** Rubric Pass/Fail with sub-criteria (clarity, consistency, credibility, English fluency).
+   601→- **How to start a mock:** Dashboard → Practice Tests → UK Credibility Interview → Start. The Practice Interview Coach guides you.
+   602→- **Equipment needed:** Microphone, camera (optional), quiet room.
+   603→- **Speaking recording:** Browser captures each response; auto-graded by the Practice Interview Coach rubric.
+   604→- **Writing evaluation:** N/A.
+   605→- **Report:** Pass/Fail + per-criterion bars + transcript + model answers.
+   606→- **Interpret estimated score:** Pass with 70%+ on each criterion is the target for a real credibility interview.
+   607→- **After score:** Practice the lowest criterion (often "post-study plans" clarity).
+   608→- **Official exam disclaimer:** "UK credibility interview-style practice" is not affiliated with UK Visas and Immigration (UKVI). ALO does not guarantee any interview outcome.
+   609→
+   610→#### 6.4.2 CAS Interview — `CAS`
+   611→- **What it is:** A CAS interview-style practice for the Confirmation of Acceptance for Studies interview conducted by some UK universities.
+   612→- **Who should take it:** Students who have received a CAS from a UK university that requires an interview.
+   613→- **Sections:** CAS Interview (course details, university choice, career plan).
+   614→- **Total duration:** ~30 minutes.
+   615→- **Question types:** credibility_interview, speaking_part1.
+   616→- **Scoring style:** Rubric Pass/Fail.
+   617→- **How to start a mock:** Dashboard → Practice Tests → CAS Interview → Start.
+   618→- **Equipment needed:** Microphone, camera (optional).
+   619→- **Speaking recording:** Same as 6.4.1.
+   620→- **Writing evaluation:** N/A.
+   621→- **Report:** Pass/Fail + per-criterion bars + transcript.
+   622→- **Interpret estimated score:** Pass with 70%+ on course knowledge and career plan.
+   623→- **After score:** Review your offer letter and CAS details before the real interview.
+   624→- **Official exam disclaimer:** "CAS interview-style practice" is not affiliated with any specific UK university interview process.
+   625→
+   626→#### 6.4.3 Visa Interview — `VISA-INT`
+   627→- **What it is:** A general visa interview-style practice for non-UK student visa interviews (US, Canada, Australia, Ireland, etc.).
+   628→- **Who should take it:** Students preparing for a non-UK student visa interview at an embassy or consulate.
+   629→- **Sections:** Visa Interview (study plan, finances, ties to home country, post-study plans).
+   630→- **Total duration:** ~30 minutes.
+   631→- **Question types:** credibility_interview, speaking_part1.
+   632→- **Scoring style:** Rubric Pass/Fail.
+   633→- **How to start a mock:** Dashboard → Practice Tests → Visa Interview → select country context → Start.
+   634→- **Equipment needed:** Microphone, camera (optional).
+   635→- **Speaking recording:** Same as 6.4.1.
+   636→- **Writing evaluation:** N/A.
+   637→- **Report:** Pass/Fail + per-criterion bars + transcript.
+   638→- **Interpret estimated score:** Pass with 70%+ on each criterion.
+   639→- **After score:** Review your visa application documents and practice the weakest criterion.
+   640→- **Official exam disclaimer:** "Visa interview-style practice" is not affiliated with any embassy, consulate, or immigration authority.
+   641→
+   642→#### 6.4.4 Scholarship Visa Interview — `VISA-SCHOLAR`
+   643→- **What it is:** A scholarship visa interview-style practice for students whose visa is funded by a scholarship (e.g. Chevening, Commonwealth, university-specific).
+   644→- **Who should take it:** Students whose visa application is tied to a scholarship.
+   645→- **Sections:** Scholarship Visa Interview (scholarship terms, study plan, return commitment, finances).
+   646→- **Total duration:** ~30 minutes.
+   647→- **Question types:** credibility_interview, speaking_part1.
+   648→- **Scoring style:** Rubric Pass/Fail.
+   649→- **How to start a mock:** Dashboard → Practice Tests → Scholarship Visa Interview → Start.
+   650→- **Equipment needed:** Microphone.
+   651→- **Speaking recording:** Same as 6.4.1.
+   652→- **Writing evaluation:** N/A.
+   653→- **Report:** Pass/Fail + per-criterion bars + transcript.
+   654→- **Interpret estimated score:** Pass with 75%+ on return commitment.
+   655→- **After score:** Re-read your scholarship award letter.
+   656→- **Official exam disclaimer:** "Scholarship visa interview-style practice" is not affiliated with any scholarship body or immigration authority.
+   657→
+   658→#### 6.4.5 Admission Interview — `ADMISSION`
+   659→- **What it is:** An admission interview-style practice for university admission interviews (undergraduate or postgraduate).
+   660→- **Who should take it:** Students invited to an admission interview by a university.
+   661→- **Sections:** Admission Interview (motivation, fit, strengths, scenario questions).
+   662→- **Total duration:** ~30 minutes.
+   663→- **Question types:** credibility_interview, speaking_part1, speaking_part3.
+   664→- **Scoring style:** Rubric Pass/Fail.
+   665→- **How to start a mock:** Dashboard → Practice Tests → Admission Interview → Start.
+   666→- **Equipment needed:** Microphone, camera (optional).
+   667→- **Speaking recording:** Same as 6.4.1.
+   668→- **Writing evaluation:** N/A.
+   669→- **Report:** Pass/Fail + per-criterion bars + transcript.
+   670→- **Interpret estimated score:** Pass with 75%+ on motivation and fit.
+   671→- **After score:** Research the program before the real interview.
+   672→- **Official exam disclaimer:** "Admission interview-style practice" is not affiliated with any specific university admission process.
+   673→
+   674→### 6.5 ALO Internal (5 exams)
+   675→
+   676→#### 6.5.1 ALO Counselor Check — `ALO-COUNSEL`
+   677→- **What it is:** A counselor-led readiness checkpoint practice used by ALO counselors with their students.
+   678→- **Who should take it:** ALO students preparing for a counselor review meeting.
+   679→- **Sections:** Study Plan Review, Document Readiness, Mock Interview.
+   680→- **Total duration:** ~45 minutes.
+   681→- **Question types:** credibility_interview, speaking_part1, short_answer.
+   682→- **Scoring style:** Rubric Pass/Fail.
+   683→- **How to start a mock:** ALO counselor assigns the check; the student opens it from their dashboard.
+   684→- **Equipment needed:** Microphone, camera (optional).
+   685→- **Speaking recording:** Same as 6.4.1.
+   686→- **Writing evaluation:** N/A.
+   687→- **Report:** Pass/Fail + per-criterion bars + counselor notes.
+   688→- **Interpret estimated score:** Pass with 70%+ to proceed to the next ALO milestone.
+   689→- **After score:** Schedule a meeting with the assigned ALO counselor.
+   690→- **Official exam disclaimer:** ALO Counselor Check is an ALO-internal practice. It is not affiliated with any external examination body.
+   691→
+   692→#### 6.5.2 ALO Student Readiness — `ALO-READINESS`
+   693→- **What it is:** An end-to-end readiness assessment covering academic English, study plan, and interview.
+   694→- **Who should take it:** ALO students nearing their application deadline.
+   695→- **Sections:** Academic English, Study Plan, Mock Interview, Document Review.
+   696→- **Total duration:** ~45 minutes.
+   697→- **Question types:** single_mcq, writing_task2, credibility_interview, speaking_part1.
+   698→- **Scoring style:** Rubric Pass/Fail + CEFR.
+   699→- **How to start a mock:** Dashboard → Practice Tests → ALO Student Readiness → Start.
+   700→- **Equipment needed:** Laptop/desktop, microphone.
+   701→- **Speaking recording:** Same as 6.4.1.
+   702→- **Writing evaluation:** 250-word essay; auto-graded.
+   703→- **Report:** Pass/Fail + CEFR + per-criterion bars + question review.
+   704→- **Interpret estimated score:** Pass with 75%+ across all criteria to be considered "ready".
+   705→- **After score:** ALO counselor follows up within 48 hours.
+   706→- **Official exam disclaimer:** ALO Student Readiness is an ALO-internal practice. It is not affiliated with any external examination body.
+   707→
+   708→#### 6.5.3 ALO English Diagnostic — `ALO-DIAG`
+   709→- **What it is:** A diagnostic English test for new ALO students to baseline their level.
+   710→- **Who should take it:** Newly enrolled ALO students at the start of their program.
+   711→- **Sections:** Reading, Listening, Grammar & Vocabulary, Writing, Speaking.
+   712→- **Total duration:** ~60 minutes.
+   713→- **Question types:** single_mcq, fill_blanks, vocabulary_in_context, writing_task2, speaking_part1.
+   714→- **Scoring style:** CEFR A1–C2.
+   715→- **How to start a mock:** Dashboard → Practice Tests → ALO English Diagnostic → Start.
+   716→- **Equipment needed:** Microphone, headphones.
+   717→- **Speaking recording:** Same as 6.1.1.
+   718→- **Writing evaluation:** 200-word essay; auto-graded.
+   719→- **Report:** CEFR + recommended ALO course level + question review.
+   720→- **Interpret estimated score:** A2 → Foundation; B1 → Pre-sessional; B2 → Academic English; C1 → Advanced.
+   721→- **After score:** ALO counselor enrolls you in the recommended course.
+   722→- **Official exam disclaimer:** ALO English Diagnostic is an ALO-internal diagnostic. It is not a CEFR certification.
+   723→
+   724→#### 6.5.4 ALO Document Readiness — `ALO-DOC`
+   725→- **What it is:** A document completeness and authenticity check practice used by ALO counselors.
+   726→- **Who should take it:** ALO students preparing their application document pack.
+   727→- **Sections:** Passport Check, Academic Documents, Financial Documents, English Proficiency Evidence, Statement of Purpose.
+   728→- **Total duration:** ~30 minutes.
+   729→- **Question types:** short_answer, single_mcq.
+   730→- **Scoring style:** Rubric Pass/Fail.
+   731→- **How to start a mock:** Dashboard → Practice Tests → ALO Document Readiness → Start.
+   732→- **Equipment needed:** Laptop/desktop; document upload (PDF/JPG) enabled.
+   733→- **Speaking recording:** N/A.
+   734→- **Writing evaluation:** N/A (SoP reviewed separately by counselor).
+   735→- **Report:** Pass/Fail per document category + counselor notes.
+   736→- **Interpret estimated score:** All categories must Pass to proceed.
+   737→- **After score:** Submit the document pack to the ALO counselor.
+   738→- **Official exam disclaimer:** ALO Document Readiness is an ALO-internal check. It is not affiliated with any visa or admissions authority.
+   739→
+   740→#### 6.5.5 ALO Visa Readiness — `ALO-VISA-READY`
+   741→- **What it is:** A visa pack readiness review before the student submits their visa application.
+   742→- **Who should take it:** ALO students with a confirmed offer and CAS/I-20/CoE, preparing to file a visa application.
+   743→- **Sections:** Visa Pack Review, Mock Visa Interview, Financial Evidence Check.
+   744→- **Total duration:** ~45 minutes.
+   745→- **Question types:** credibility_interview, speaking_part1, short_answer.
+   746→- **Scoring style:** Rubric Pass/Fail.
+   747→- **How to start a mock:** Dashboard → Practice Tests → ALO Visa Readiness → Start.
+   748→- **Equipment needed:** Microphone, camera (optional).
+   749→- **Speaking recording:** Same as 6.4.1.
+   750→- **Writing evaluation:** N/A.
+   751→- **Report:** Pass/Fail + per-criterion bars + counselor notes.
+   752→- **Interpret estimated score:** Pass with 75%+ on each criterion to file the visa.
+   753→- **After score:** ALO counselor signs off on the visa pack submission.
+   754→- **Official exam disclaimer:** ALO Visa Readiness is an ALO-internal review. It is not affiliated with any immigration authority and does not guarantee a visa outcome.
+   755→
+   756→---
+   757→
+   758→## 7. Compliance Wording (used on every public surface)
+   759→
+   760→- Every exam card, landing page, attempt start screen, score report, and certificate carries the wording *"X-style practice test"* (where X is the exam family: IELTS / PTE / TOEFL / Duolingo / SAT / GRE / GMAT / LSAT / MCAT / ACT / OET / etc.).
+   761→- Every score report includes: *"Practice estimate only. Not an official exam result."*
+   762→- Every certificate includes the `certificates_disclaimer`: *"Certificates issued by ALO English Test Platform acknowledge completion of practice only and are not official language proficiency certifications."*
+   763→- Every practice set includes the `practice_disclaimer`: *"This is an original practice question created by ALO. It is not an official exam item and is not affiliated with, endorsed by, or reproduced from any official test publisher. Items will not appear in any real exam."*
+   764→- Public-facing wording uses: **ALO Practice Examiner**, **Digital Practice Session**, **Smart Score Report**, **ALO Evaluation System**, **Practice Interview Coach**, **Automated Practice Feedback**, **Estimated Score Engine**.
+   765→- Public-facing wording **never** uses: "AI teacher", "fake human teacher", "real examiner", "guaranteed exam question", "real exam common", "official exam prediction".
+   766→- No claim of official partnership with IELTS, PTE, TOEFL, Duolingo, SAT, GRE, GMAT, LSAT, MCAT, ACT, OET, LanguageCert, Linguaskill, OIETC, or any other test publisher is ever made.
+   767→
+   768→---
+   769→
+   770→## 8. Public Disclaimer (canonical, repeated for emphasis)
+   771→
+   772→> **Practice exam only. Estimated score only. Not official exam result. No guarantee that questions will appear in real exam.**
+   773→>
+   774→> The ALO English Test Platform provides original, exam-aligned practice tests for self-assessment and skill development. Scores are estimates produced by the ALO Estimated Score Engine and the Automated Practice Feedback service. They are not official exam results and are not affiliated with, endorsed by, or reproduced from any official test publisher. Practice items will not appear in any real exam administration.
+   775→
+   776→---
+   777→
+   778→End of `docs/EXAM_CONDUCT_GUIDE.md`.
+   779→
