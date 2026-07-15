@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-white text-alo-ink antialiased; font-family: Inter, system-ui, sans-serif; }
+}
+
+@layer utilities {
+  .bg-alo-navy { background-color: #0B1F3A; }
+  .bg-alo-blue { background-color: #0057B8; }
+  .bg-alo-orange { background-color: #E8501A; }
+  .text-alo-navy { color: #0B1F3A; }
+  .text-alo-blue { color: #0057B8; }
+  .text-alo-orange { color: #E8501A; }
+  .text-alo-muted { color: #4B5563; }
+  .border-alo-card { border-color: #D9E8FF; }
+  .shadow-alo { box-shadow: 0 2px 4px rgba(11,31,58,0.04), 0 4px 12px rgba(11,31,58,0.06); }
+  .shadow-alo-lg { box-shadow: 0 8px 16px rgba(11,31,58,0.06), 0 20px 40px rgba(11,31,58,0.14); }
+}
