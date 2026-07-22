@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma schema for the ALO English Test Platform.
+// Database: SQLite (single-server deployment).
+// Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +11,124 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Authentication & RBAC ────────────────────────────────────────────
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  passwordHash String
+  role         String    @default("STUDENT") // STUDENT | EXAMINER | ADMIN | AMBASSADOR
+  status       String    @default("ACTIVE")  // ACTIVE | SUSPENDED | PENDING
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  attempts     Attempt[]
+  scores       Score[]
+  auditLogs    AuditLog[]
+
+  @@index([role])
+  @@index([status])
 }
 
-model Post {
+// ─── Exam Catalog ─────────────────────────────────────────────────────
+
+model ExamType {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  code      String   @unique // IELTS-A, PTE-A, TOEFL-iBT, etc.
+  name      String
+  category  String   // English Proficiency | Academic | Professional
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  practiceSets PracticeSet[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model PracticeSet {
+  id          String   @id @default(cuid())
+  examTypeId  String
+  title       String
+  description String?
+  durationMin Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  examType    ExamType  @relation(fields: [examTypeId], references: [id], onDelete: Cascade)
+  attempts    Attempt[]
+
+  @@index([examTypeId])
+  @@index([isActive])
+}
+
+// ─── Exam Attempts & Scoring ──────────────────────────────────────────
+
+model Attempt {
+  id         String    @id @default(cuid())
+  userId     String
+  practiceSetId String
+  status     String    @default("IN_PROGRESS") // IN_PROGRESS | SUBMITTED | SCORED
+  startedAt  DateTime  @default(now())
+  submittedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  practiceSet PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+  score       Score?
+
+  @@index([userId])
+  @@index([practiceSetId])
+  @@index([status])
+}
+
+model Score {
+  id           String   @id @default(cuid())
+  attemptId    String   @unique
+  userId       String
+  overall      Float
+  listening    Float?
+  reading      Float?
+  writing      Float?
+  speaking     Float?
+  confidence   Float    @default(0.0)
+  providerUsed String   @default("local_rule_engine")
+  fallbackUsed Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  attempt      Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([providerUsed])
+}
+
+// ─── Audit Log (immutable) ────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String?
+  ipAddress String?
+  metadata  String?  // JSON string
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ─── App Settings (key-value) ─────────────────────────────────────────
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
 }

@@ -1,26 +1,49 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
-// Mirrors the /api/health endpoint spec from the ALO English Test Platform brief.
+// Force Node.js runtime (needs Prisma which uses Node APIs).
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/health — Application health check.
+ *
+ * Checks:
+ *   - Application process (always 200 if this runs)
+ *   - Database connectivity (Prisma query)
+ *   - Version/build identifier
+ *
+ * Does NOT expose secrets. Returns a minimal public response.
+ * Detailed infrastructure checks require admin access (future: /api/health/detailed).
+ */
 export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    app: "ALO English Test Platform",
-    version: "20x",
-    environment: "production",
-    env_loaded: true,
-    database_connected: true,
-    storage_writable: true,
-    logs_writable: true,
-    uploads_writable: true,
-    crm_sync_configured: true,
-    ai_configured: true,
-    smtp_configured: true,
-    free_quota: {
-      alo_students: 3,
-      public_students: 1,
-      enforced: "backend",
+  const timestamp = new Date().toISOString();
+  const version = process.env.npm_package_version || "1.0.0";
+
+  let dbStatus: "connected" | "disconnected" = "disconnected";
+  let examCount = 0;
+
+  try {
+    // Lightweight query: count exam types. If this succeeds, DB is connected.
+    examCount = await db.examType.count({ where: { isActive: true } });
+    dbStatus = "connected";
+  } catch {
+    // Don't leak the error message.
+    dbStatus = "disconnected";
+  }
+
+  const healthy = dbStatus === "connected";
+
+  return NextResponse.json(
+    {
+      status: healthy ? "healthy" : "unhealthy",
+      version,
+      timestamp,
+      checks: {
+        database: dbStatus,
+        examTypes: examCount,
+      },
     },
-    exam_types: 8,
-    timestamp: new Date().toISOString(),
-  });
+    { status: healthy ? 200 : 503 }
+  );
 }

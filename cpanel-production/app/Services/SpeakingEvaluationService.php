@@ -124,22 +124,32 @@ final class SpeakingEvaluationService
             $fluency, $pronunciation, $grammar, $lexical, $coherence, $confidence
         );
 
-        // ----- Optional external AI enhancement hook -----
+        // ----- Optional external AI enhancement hook (Groq) -----
         if (self::isOptionalAiProvider($providerUsed)) {
-            if (!self::hasAiApiKey()) {
-                $providerUsed = 'local_rule_engine';
-                $fallbackUsed = true;
+            $enhanced = self::enhanceWithExternalAi($transcript, [
+                'duration'      => $duration,
+                'word_count'    => $wordCount,
+                'fluency'       => $fluency,
+                'pronunciation' => $pronunciation,
+                'grammar'       => $grammar,
+                'lexical'       => $lexical,
+                'coherence'     => $coherence,
+                'confidence'    => $confidence,
+            ]);
+            if ($enhanced !== null) {
+                $fluency       = self::clampBand((float)($enhanced['fluency']       ?? $fluency));
+                $pronunciation = self::clampBand((float)($enhanced['pronunciation'] ?? $pronunciation));
+                $grammar       = self::clampBand((float)($enhanced['grammar']       ?? $grammar));
+                $lexical       = self::clampBand((float)($enhanced['lexical_resource'] ?? $enhanced['lexical'] ?? $lexical));
+                $coherence     = self::clampBand((float)($enhanced['coherence']     ?? $coherence));
+                if (!empty($enhanced['improvement_tips']) && is_string($enhanced['improvement_tips'])) {
+                    array_unshift($tips, $enhanced['improvement_tips']);
+                }
+                $providerUsed = 'groq';
+                $fallbackUsed = false;
             } else {
-                // @codeCoverageIgnoreStart
-                // PLACEHOLDER: actual external AI API call goes here.
-                //   $enhanced = self::enhanceWithExternalAi($transcript, [...]);
-                // On success: merge enhanced fields, keep provider_used as-is.
-                // On any error: fall back as below.
-                // Until the external client is wired, we fall back so the
-                // platform never depends on an external API.
                 $providerUsed = 'local_rule_engine';
                 $fallbackUsed = true;
-                // @codeCoverageIgnoreEnd
             }
         }
 
@@ -602,19 +612,64 @@ final class SpeakingEvaluationService
     }
 
     // ----------------------------------------------------------------------
-    // EXTERNAL AI HOOK (optional, disabled by default)
+    // EXTERNAL AI HOOK (Groq, optional)
     // ----------------------------------------------------------------------
     // When EVALUATION_PROVIDER=local_llm_optional|external_ai_optional AND
-    // an API key is configured in env, an optional enhancement can be
-    // plugged in to refine the speaking estimate via an external LLM call
-    // over the audio transcript. The signature would be:
-    //
-    //   private static function enhanceWithExternalAi(string $transcript, array $ruleBased): array
-    //
-    // It should fall back to the rule-based estimate on any error or
-    // timeout, never claim to be a real examiner, and always append the
-    // practice-only disclaimer. Until that hook is implemented, evaluate()
-    // detects the optional provider, falls back to local_rule_engine, and
-    // sets fallback_used=true.
+    // a Groq API key (GROQ_API_KEY) is configured, this hook refines the
+    // rule-based speaking scores via Groq's Llama 3.3 70B over the transcript.
+    // On ANY error it returns null and evaluate() falls back to
+    // local_rule_engine with fallback_used=true. The platform NEVER blocks
+    // on the external API and NEVER claims to be a real examiner.
     // ----------------------------------------------------------------------
+
+    /**
+     * Call Groq to refine the speaking evaluation. Returns parsed JSON or null.
+     *
+     * @param string $transcript  The student's spoken-response transcript.
+     * @param array  $ruleBased   The rule-based scores computed so far.
+     * @return array<string,mixed>|null
+     */
+    private static function enhanceWithExternalAi(string $transcript, array $ruleBased): ?array
+    {
+        if (!AiClient::isConfigured()) {
+            return null;
+        }
+        if ($transcript === '' || strlen($transcript) < 20) {
+            return null;
+        }
+
+        $dur  = (int) ($ruleBased['duration'] ?? 0);
+        $wc   = (int) ($ruleBased['word_count'] ?? 0);
+
+        $prompt = "Evaluate this original PRACTICE speaking response transcript for an English exam.\n"
+                . "Duration: {$dur}s · Word count: {$wc}\n"
+                . "Rule-based baseline scores (0-9 band, refine these):\n"
+                . "  fluency: {$ruleBased['fluency']}\n"
+                . "  pronunciation: {$ruleBased['pronunciation']}\n"
+                . "  grammar: {$ruleBased['grammar']}\n"
+                . "  lexical: {$ruleBased['lexical']}\n"
+                . "  coherence: {$ruleBased['coherence']}\n\n"
+                . "TRANSCRIPT:\n\"\"\"\n" . mb_substr($transcript, 0, 4000) . "\n\"\"\"\n\n"
+                . "Provide your refined PRACTICE evaluation as JSON. Remember: this is a practice "
+                . "estimate, NOT an official score. Never claim to be an official examiner.";
+
+        $schema = <<<'JSON'
+{
+  "fluency": <number 0-9, one decimal>,
+  "pronunciation": <number 0-9, one decimal>,
+  "grammar": <number 0-9, one decimal>,
+  "lexical_resource": <number 0-9, one decimal>,
+  "coherence": <number 0-9, one decimal>,
+  "improvement_tips": "<one specific, actionable sentence>"
+}
+JSON;
+
+        return AiClient::evaluate($prompt, $schema);
+    }
+
+    /** Clamp a band score to the valid 0.0–9.0 range. */
+    private static function clampBand(float $v): float
+    {
+        return round(max(0.0, min(9.0, $v)), 1);
+    }
 }

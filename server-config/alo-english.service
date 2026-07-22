@@ -1,0 +1,60 @@
+# /etc/systemd/system/alo-english.service
+# ALO English Test Platform — Next.js standalone production server.
+#
+# Install:
+#   sudo cp server-config/alo-english.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable alo-english
+#   sudo systemctl start alo-english
+#
+# Validate before install:
+#   systemd-analyze verify server-config/alo-english.service
+
+[Unit]
+Description=ALO English Test Platform (Next.js standalone)
+Documentation=https://github.com/aloeducation/alo-english-test-platform
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aloenglish
+Group=aloenglish
+WorkingDirectory=/opt/alo-english/current
+EnvironmentFile=/opt/alo-english/shared/.env
+ExecStart=/usr/bin/node /opt/alo-english/current/.next/standalone/server.js
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alo-english
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/opt/alo-english/shared
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RemoveIPC=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
