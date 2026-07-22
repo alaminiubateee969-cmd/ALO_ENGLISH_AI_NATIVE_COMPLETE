@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronRight, Clock, TrendingUp, Users } from "lucide-react";
+import { Check, ChevronRight, Clock, TrendingUp, Users, Headphones, BookOpen, PenTool, Mic, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EXAM_TYPES, type ExamType } from "@/lib/alo-data";
 import { Button } from "@/components/ui/button";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Headphones, BookOpen, PenTool, Mic, Calculator,
+};
 
 const ACCENT_MAP = {
   blue: {
@@ -160,7 +164,7 @@ function ActiveExamPanel({ exam, onStart }: { exam: ExamType; onStart: () => voi
             {exam.sections.map((section) => (
               <div key={section.name} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
                 <div className={cn("grid h-9 w-9 place-items-center rounded-lg", a.soft, a.text)}>
-                  <section.icon className="h-4 w-4" />
+                  {(() => { const Icon = ICON_MAP[section.icon] ?? BookOpen; return <Icon className="h-4 w-4" />; })()}
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-alo-navy">{section.name}</div>

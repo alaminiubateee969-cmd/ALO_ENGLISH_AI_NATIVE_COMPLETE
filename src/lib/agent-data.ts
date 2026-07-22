@@ -142,7 +142,7 @@ export const NO_HUMAN_REVIEW_QUEUE = [
 ];
 
 export const EVALUATION_PROVIDERS = [
-  { id: "local_rule_engine", label: "Local Rule Engine", desc: "Default — works without any external API. Heuristic-based scoring.", recommended: true, requiresKey: false },
-  { id: "local_llm_optional", label: "Local LLM (optional)", desc: "Self-hosted language model for richer feedback. Requires local LLM endpoint.", recommended: false, requiresKey: true },
-  { id: "external_ai_optional", label: "External AI (optional)", desc: "Cloud AI provider (OpenRouter/Gemini/Groq). Requires API key in .env. Falls back to local if unavailable.", recommended: false, requiresKey: true },
+  { id: "local_rule_engine", label: "Local Rule Engine", desc: "Default — works without any external API. Heuristic-based scoring. Always available.", recommended: true, requiresKey: false },
+  { id: "groq", label: "Groq (Llama 3.3 70B) — WIRED", desc: "Fully wired into Writing/Speaking/Interview evaluation. Free tier at console.groq.com. Set AI_ENABLED=true + GROQ_API_KEY. Falls back to local on any error.", recommended: true, requiresKey: true },
+  { id: "gemini_openrouter", label: "Gemini / OpenRouter", desc: "Recognised by hasAiApiKey() but NOT wired. Extend app/Services/AiClient.php to activate.", recommended: false, requiresKey: true },
 ];

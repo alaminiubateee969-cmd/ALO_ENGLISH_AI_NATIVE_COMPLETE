@@ -273,20 +273,29 @@ final class InterviewSimulationService
         $improvementTips = self::buildImprovementTips($weaknesses);
         $followUpSuggestions = self::buildFollowUpSuggestions($state['interview_type'], $weaknesses);
 
-        // ----- Optional external AI enhancement hook -----
+        // ----- Optional external AI enhancement hook (Groq) -----
         if (self::isOptionalAiProvider($providerUsed)) {
-            if (!self::hasAiApiKey()) {
-                $providerUsed = 'local_rule_engine';
-                $fallbackUsed = true;
+            $enhanced = self::enhanceWithExternalAi($state['interview_type'], $responses, [
+                'financial' => $financialQuality,
+                'course'    => $courseQuality,
+                'career'    => $careerConsistency,
+                'confidence'=> $confidence,
+            ]);
+            if ($enhanced !== null) {
+                $financialQuality    = self::clampScore((int)($enhanced['financial_explanation_quality'] ?? $financialQuality));
+                $courseQuality       = self::clampScore((int)($enhanced['course_knowledge_quality']      ?? $courseQuality));
+                $careerConsistency   = self::clampScore((int)($enhanced['career_plan_consistency']       ?? $careerConsistency));
+                if (!empty($enhanced['follow_up_question_suggestions']) && is_array($enhanced['follow_up_question_suggestions'])) {
+                    $followUpSuggestions = array_slice(array_map('strval', $enhanced['follow_up_question_suggestions']), 0, 3);
+                }
+                if (!empty($enhanced['improvement_tips']) && is_string($enhanced['improvement_tips'])) {
+                    array_unshift($improvementTips, $enhanced['improvement_tips']);
+                }
+                $providerUsed = 'groq';
+                $fallbackUsed = false;
             } else {
-                // @codeCoverageIgnoreStart
-                // PLACEHOLDER: actual external AI API call goes here to
-                // refine follow-up suggestions and domain scores. Until
-                // the external client is wired, fall back so the platform
-                // never depends on an external API.
                 $providerUsed = 'local_rule_engine';
                 $fallbackUsed = true;
-                // @codeCoverageIgnoreEnd
             }
         }
 
@@ -869,19 +878,75 @@ final class InterviewSimulationService
     }
 
     // ----------------------------------------------------------------------
-    // EXTERNAL AI HOOK (optional, disabled by default)
+    // EXTERNAL AI HOOK (Groq, optional)
     // ----------------------------------------------------------------------
     // When EVALUATION_PROVIDER=local_llm_optional|external_ai_optional AND
-    // an API key is configured in env, an optional enhancement can be
-    // plugged in to generate more natural follow-up questions and a richer
-    // confidence estimate via an external LLM call. The signature would be:
-    //
-    //   private static function enhanceFollowUpWithExternalAi(string $type, string $lastResponse, array $history): ?array
-    //
-    // It should fall back to the rule-based pickFollowUp() above on any
-    // error or timeout, never claim to be a real examiner, and always
-    // append the practice-only disclaimer. Until that hook is implemented,
-    // scoreInterview() detects the optional provider, falls back to
-    // local_rule_engine, and sets fallback_used=true.
+    // a Groq API key (GROQ_API_KEY) is configured, this hook refines the
+    // interview domain scores and follow-up suggestions via Groq's Llama
+    // 3.3 70B. On ANY error it returns null and scoreInterview() falls back
+    // to local_rule_engine with fallback_used=true. The platform NEVER
+    // blocks on the external API and NEVER claims to be a real examiner.
     // ----------------------------------------------------------------------
+
+    /**
+     * Call Groq to refine the interview evaluation. Returns parsed JSON or null.
+     *
+     * @param string $interviewType  visa | course | career
+     * @param array  $responses      Student's interview Q&A history.
+     * @param array  $ruleBased      Rule-based domain scores so far.
+     * @return array<string,mixed>|null
+     */
+    private static function enhanceWithExternalAi(string $interviewType, array $responses, array $ruleBased): ?array
+    {
+        if (!AiClient::isConfigured()) {
+            return null;
+        }
+        // Build a compact transcript of the Q&A for the model.
+        $transcript = self::compactTranscript($responses);
+        if ($transcript === '' || strlen($transcript) < 30) {
+            return null;
+        }
+
+        $prompt = "Evaluate this original PRACTICE visa/course interview simulation.\n"
+                . "Interview type: {$interviewType}\n"
+                . "Rule-based baseline domain scores (0-100, refine these):\n"
+                . "  financial_explanation_quality: {$ruleBased['financial']}\n"
+                . "  course_knowledge_quality: {$ruleBased['course']}\n"
+                . "  career_plan_consistency: {$ruleBased['career']}\n\n"
+                . "Q&A TRANSCRIPT:\n\"\"\"\n" . mb_substr($transcript, 0, 4000) . "\n\"\"\"\n\n"
+                . "Provide your refined PRACTICE evaluation as JSON. Remember: this is a practice "
+                . "simulation, NOT a real visa interview assessment. Never claim to be an official.";
+
+        $schema = <<<'JSON'
+{
+  "financial_explanation_quality": <integer 0-100>,
+  "course_knowledge_quality": <integer 0-100>,
+  "career_plan_consistency": <integer 0-100>,
+  "follow_up_question_suggestions": ["<question 1>", "<question 2>", "<question 3>"],
+  "improvement_tips": "<one specific, actionable sentence>"
+}
+JSON;
+
+        return AiClient::evaluate($prompt, $schema);
+    }
+
+    /** Build a compact Q&A transcript string for the model. */
+    private static function compactTranscript(array $responses): string
+    {
+        $out = [];
+        foreach ($responses as $r) {
+            $q = (string) ($r['question'] ?? '');
+            $a = (string) ($r['answer'] ?? $r['response'] ?? '');
+            if ($q !== '' && $a !== '') {
+                $out[] = "Q: {$q}\nA: {$a}";
+            }
+        }
+        return implode("\n\n", $out);
+    }
+
+    /** Clamp a domain score to the valid 0–100 range. */
+    private static function clampScore(int $v): int
+    {
+        return max(0, min(100, $v));
+    }
 }

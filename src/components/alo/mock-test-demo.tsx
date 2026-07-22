@@ -235,7 +235,7 @@ export function AloMockTestDemo() {
           <h3 className="mt-5 text-lg font-bold text-alo-navy leading-relaxed">{question.prompt}</h3>
 
           <div className="mt-5 space-y-2.5">
-            {question.options.map((opt, i) => {
+            {(question.options ?? []).map((opt, i) => {
               const selected = answers[question.id] === i;
               return (
                 <button

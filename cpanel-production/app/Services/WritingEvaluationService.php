@@ -124,26 +124,41 @@ final class WritingEvaluationService
             $wordCount, $target, $taskAchievement, $coherence, $lexical, $grammar
         );
 
-        // ----- Optional external AI enhancement hook -----
-        // If an optional AI provider is configured AND an API key exists,
-        // an external enhancement call would happen here. On any failure
-        // (no key, timeout, malformed response), we fall back to the
-        // rule-based estimate above and set fallback_used=true.
+        // ----- Optional external AI enhancement hook (Groq) -----
+        // If an optional AI provider is configured AND a Groq API key exists,
+        // we refine the rule-based scores with an external LLM call. On any
+        // failure (no key, timeout, malformed JSON), we fall back to the
+        // rule-based estimate above and set fallback_used=true. The platform
+        // NEVER blocks on the external API.
         if (self::isOptionalAiProvider($providerUsed)) {
-            if (!self::hasAiApiKey()) {
-                $providerUsed = 'local_rule_engine';
-                $fallbackUsed = true;
+            $enhanced = self::enhanceWithExternalAi($text, [
+                'task_type'         => $taskType,
+                'word_count'        => $wordCount,
+                'target_word_count' => $target,
+                'task_achievement'  => $taskAchievement,
+                'coherence'         => $coherence,
+                'lexical'           => $lexical,
+                'grammar'           => $grammar,
+                'estimated_band'    => $estimatedBand,
+            ]);
+            if ($enhanced !== null) {
+                // Merge AI-refined scores (validated to safe ranges).
+                $taskAchievement = self::clampBand((float)($enhanced['task_achievement']  ?? $taskAchievement));
+                $coherence       = self::clampBand((float)($enhanced['coherence']         ?? $coherence));
+                $lexical         = self::clampBand((float)($enhanced['lexical_resource']  ?? $enhanced['lexical'] ?? $lexical));
+                $grammar         = self::clampBand((float)($enhanced['grammar']           ?? $grammar));
+                $estimatedBand   = self::aggregateBand($taskAchievement, $coherence, $lexical, $grammar);
+                if (!empty($enhanced['suggested_improvement']) && is_string($enhanced['suggested_improvement'])) {
+                    $suggestedImprovement = $enhanced['suggested_improvement'];
+                    array_unshift($improvementPlan, $suggestedImprovement);
+                }
+                $confidenceScore = self::computeConfidenceScore($wordCount, $target, $taskAchievement, $coherence, $lexical, $grammar);
+                $confidenceLevel = self::confidenceLevelFromScore($confidenceScore);
+                $providerUsed    = 'groq';
+                $fallbackUsed    = false;
             } else {
-                // @codeCoverageIgnoreStart
-                // PLACEHOLDER: actual external AI API call goes here.
-                //   $enhanced = self::enhanceWithExternalAi($text, [...]);
-                // On success: merge enhanced fields, keep provider_used as-is.
-                // On any error: fall back as below.
-                // Until the external client is wired, we fall back so the
-                // platform never depends on an external API.
                 $providerUsed = 'local_rule_engine';
                 $fallbackUsed = true;
-                // @codeCoverageIgnoreEnd
             }
         }
 
@@ -571,26 +586,68 @@ final class WritingEvaluationService
     }
 
     // ----------------------------------------------------------------------
-    // EXTERNAL AI HOOK (optional, disabled by default)
+    // EXTERNAL AI HOOK (Groq, optional)
     // ----------------------------------------------------------------------
     // When EVALUATION_PROVIDER=local_llm_optional|external_ai_optional AND
-    // an API key is configured in env (OPENROUTER_API_KEY, GEMINI_API_KEY,
-    // GROQ_API_KEY, HUGGINGFACE_API_KEY), an optional enhancement can be
-    // plugged in to refine the band estimate via an external LLM call.
-    // The signature would be:
-    //
-    //   private static function enhanceWithExternalAi(string $text, array $ruleBased): array
-    //
-    // It should:
-    //   - send the writing_evaluation_v1 prompt (exam_ai_agent_prompts) + text
-    //   - parse the LLM JSON response
-    //   - FALL BACK to the rule-based estimate on any error
-    //   - NEVER claim to be a real examiner or to produce an official score
-    //   - ALWAYS append the practice-only disclaimer
-    //
-    // Until that hook is implemented, evaluate() detects the optional
-    // provider, falls back to local_rule_engine, and sets fallback_used=true.
-    // This guarantees the platform works offline and remains compliant with
-    // the disclosure wording in config/exams.php.
+    // a Groq API key (GROQ_API_KEY) is configured, this hook refines the
+    // rule-based band estimate via Groq's Llama 3.3 70B model. On ANY error
+    // (no key, timeout, malformed JSON, network failure), it returns null
+    // and evaluate() falls back to local_rule_engine with fallback_used=true.
+    // The platform NEVER blocks on the external API and NEVER claims to be
+    // a real examiner or produce an official score.
     // ----------------------------------------------------------------------
+
+    /**
+     * Call Groq to refine the writing evaluation. Returns the parsed AI
+     * response, or null on any failure (caller falls back to rule engine).
+     *
+     * @param string $text       The student's writing submission.
+     * @param array  $ruleBased  The rule-based scores computed so far.
+     * @return array<string,mixed>|null
+     */
+    private static function enhanceWithExternalAi(string $text, array $ruleBased): ?array
+    {
+        if (!AiClient::isConfigured()) {
+            return null;
+        }
+        if ($text === '' || strlen($text) < 20) {
+            return null; // too short for a meaningful AI evaluation
+        }
+
+        $taskType  = (string) ($ruleBased['task_type'] ?? 'essay');
+        $wordCount = (int)    ($ruleBased['word_count'] ?? 0);
+        $target    = (int)    ($ruleBased['target_word_count'] ?? 250);
+
+        $prompt = "Evaluate this original PRACTICE writing submission for an English exam.\n"
+                . "Task type: {$taskType}\n"
+                . "Word count: {$wordCount} (target: {$target})\n"
+                . "Rule-based baseline scores (0-9 band, refine these):\n"
+                . "  task_achievement: {$ruleBased['task_achievement']}\n"
+                . "  coherence: {$ruleBased['coherence']}\n"
+                . "  lexical: {$ruleBased['lexical']}\n"
+                . "  grammar: {$ruleBased['grammar']}\n"
+                . "  estimated_band: {$ruleBased['estimated_band']}\n\n"
+                . "STUDENT SUBMISSION:\n\"\"\"\n" . mb_substr($text, 0, 4000) . "\n\"\"\"\n\n"
+                . "Provide your refined PRACTICE evaluation as JSON. Remember: this is a practice "
+                . "estimate, NOT an official score. Never claim to be an official examiner.";
+
+        $schema = <<<'JSON'
+{
+  "task_achievement": <number 0-9, one decimal>,
+  "coherence": <number 0-9, one decimal>,
+  "lexical_resource": <number 0-9, one decimal>,
+  "grammar": <number 0-9, one decimal>,
+  "estimated_band": <number 0-9, one decimal, overall>,
+  "suggested_improvement": "<one specific, actionable sentence>"
+}
+JSON;
+
+        return AiClient::evaluate($prompt, $schema);
+    }
+
+    /** Clamp a band score to the valid 0.0–9.0 range. */
+    private static function clampBand(float $v): float
+    {
+        return round(max(0.0, min(9.0, $v)), 1);
+    }
 }

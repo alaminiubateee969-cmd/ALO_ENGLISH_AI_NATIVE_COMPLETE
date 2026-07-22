@@ -52,3 +52,37 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Production artifacts
+/dist/
+*.tar.gz
+*.zip
+!cpanel-production/dist/
+
+# Database files
+*.db
+*.db-journal
+/db/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Separate project directories (not part of this deployment)
+/cpanel-production/
+/english-aloeducation/
+/mini-services/
+/examples/
+/tool-results/
+/upload/
+/download/
+/worklog.md
+FINAL-PRODUCTION-PACKAGE.zip
+FINAL-DELIVERY-GUIDE.md
+PRODUCTION-DEPLOYMENT-GUIDE.md
+english-aloeducation-web-crm-production.tar.gz

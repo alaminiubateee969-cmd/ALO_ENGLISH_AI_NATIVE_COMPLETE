@@ -1,0 +1,28 @@
+# /etc/sudoers.d/alo-english — Restricted sudo policy.
+#
+# The application user (aloenglish) may ONLY run the specific root-owned
+# helper commands needed for service management. No unrestricted sudo.
+#
+# Install:
+#   sudo cp server-config/sudo-policy /etc/sudoers.d/alo-english
+#   sudo chmod 0440 /etc/sudoers.d/alo-english
+#   sudo visudo -c -f /etc/sudoers.d/alo-english
+#   sudo visudo -c
+#
+# NEVER use: aloenglish ALL=(ALL) NOPASSWD: ALL
+
+# ─── Service management only ───────────────────────────────────────────
+# The application can restart/reload/status its own service.
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl start alo-english
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl stop alo-english
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl restart alo-english
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl reload alo-english
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl status alo-english
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl is-active alo-english
+
+# ─── Caddy reload (for reverse proxy config updates) ───────────────────
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl reload caddy
+aloenglish ALL=(root) NOPASSWD: /usr/bin/systemctl status caddy
+
+# ─── Journal access (read-only, for log inspection) ────────────────────
+aloenglish ALL=(root) NOPASSWD: /usr/bin/journalctl -u alo-english *

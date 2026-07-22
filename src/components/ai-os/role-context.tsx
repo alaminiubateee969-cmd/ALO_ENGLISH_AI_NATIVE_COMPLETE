@@ -15,6 +15,7 @@ type AppContextType = {
   session: UserSession;
   login: (role: Role, name: string, email: string) => void;
   logout: () => void;
+  setRole: (role: Role) => void;
 };
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -35,8 +36,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSession({ role: "public", name: "", email: "", isAuthenticated: false });
   }, []);
 
+  const setRole = useCallback((role: Role) => {
+    setSession((prev) => ({ ...prev, role, isAuthenticated: true }));
+  }, []);
+
   return (
-    <AppContext.Provider value={{ session, login, logout }}>
+    <AppContext.Provider value={{ session, login, logout, setRole }}>
       {children}
     </AppContext.Provider>
   );

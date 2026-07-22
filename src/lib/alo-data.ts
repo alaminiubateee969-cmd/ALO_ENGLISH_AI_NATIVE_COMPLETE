@@ -410,3 +410,211 @@ export const STUDENT_PORTAL_NAV = [
 export const PARTNER_PORTAL_NAV = [
   { group: "Partner", items: ["Dashboard", "Leads", "Students", "Applications", "Reports", "Course Finder"] },
 ];
+
+// ─── Exam types (for the exam-types showcase component) ───────────────
+export type ExamType = {
+  id: string;
+  name: string;
+  accent: "blue" | "orange" | "royal" | "emerald" | "violet";
+  badge: string;
+  description: string;
+  tagline: string;
+  longDescription: string;
+  duration: string;
+  scale: string;
+  popularity: number;
+  highlights: string[];
+  questionTypes: string[];
+  sections: { name: string; questions: number; duration: string; icon: string; detail: string }[];
+};
+
+export const EXAM_TYPES: ExamType[] = [
+  {
+    id: "ielts",
+    name: "IELTS Academic",
+    accent: "blue",
+    badge: "Most Popular",
+    description: "Academic reading, Task 1 report & Task 2 essay",
+    tagline: "The world's most recognised English test",
+    longDescription: "IELTS Academic measures English language proficiency for higher education and global migration. Practice all four modules with original, exam-aligned material.",
+    duration: "2h 44m",
+    scale: "Band 0-9",
+    popularity: 95,
+    highlights: ["4 modules", "Face-to-face speaking", "Academic reading", "Task 1 + Task 2 writing"],
+    questionTypes: ["Multiple choice", "Matching", "Fill in the blank", "Short answer", "Essay"],
+    sections: [
+      { name: "Listening", questions: 40, duration: "30 min", icon: "Headphones", detail: "4 recordings, 10 questions each" },
+      { name: "Reading", questions: 40, duration: "60 min", icon: "BookOpen", detail: "3 passages, academic texts" },
+      { name: "Writing", questions: 2, duration: "60 min", icon: "PenTool", detail: "Task 1 report + Task 2 essay" },
+      { name: "Speaking", questions: 3, duration: "14 min", icon: "Mic", detail: "3 parts, face-to-face format" },
+    ],
+  },
+  {
+    id: "pte",
+    name: "PTE Academic",
+    accent: "orange",
+    badge: "Fast Results",
+    description: "20 integrated question types, Smart Score Engine",
+    tagline: "Computer-based, results in 48 hours",
+    longDescription: "PTE Academic is a fully computer-based English test with 20 integrated question types. Practice with our Smart Score Engine for instant feedback.",
+    duration: "2h 00m",
+    scale: "10-90",
+    popularity: 80,
+    highlights: ["20 question types", "Fully computer-based", "Fast results", "Integrated tasks"],
+    questionTypes: ["Read aloud", "Repeat sentence", "Describe image", "Re-tell lecture", "Essay"],
+    sections: [
+      { name: "Speaking & Writing", questions: 28, duration: "77 min", icon: "Mic", detail: "Read aloud to essay" },
+      { name: "Reading", questions: 13, duration: "32 min", icon: "BookOpen", detail: "Multiple choice, fill blanks" },
+      { name: "Listening", questions: 11, duration: "43 min", icon: "Headphones", detail: "Summarize, fill blanks" },
+    ],
+  },
+  {
+    id: "toefl",
+    name: "TOEFL iBT",
+    accent: "royal",
+    badge: "USA Focused",
+    description: "Integrated tasks & academic discussion",
+    tagline: "The leading US university English test",
+    longDescription: "TOEFL iBT measures academic English skills with integrated tasks. Practice reading, listening, speaking, and writing in an academic context.",
+    duration: "2h 00m",
+    scale: "0-120",
+    popularity: 85,
+    highlights: ["Integrated tasks", "Academic focus", "US university standard", "4 sections"],
+    questionTypes: ["Multiple choice", "Insert text", "Complete the table", "Integrated writing", "Independent writing"],
+    sections: [
+      { name: "Reading", questions: 20, duration: "35 min", icon: "BookOpen", detail: "3-4 academic passages" },
+      { name: "Listening", questions: 28, duration: "36 min", icon: "Headphones", detail: "Lectures + conversations" },
+      { name: "Speaking", questions: 4, duration: "16 min", icon: "Mic", detail: "Independent + integrated" },
+      { name: "Writing", questions: 2, duration: "29 min", icon: "PenTool", detail: "Integrated + independent" },
+    ],
+  },
+  {
+    id: "duolingo",
+    name: "Duolingo English Test",
+    accent: "emerald",
+    badge: "Adaptive",
+    description: "Adaptive practice, 4 subscores",
+    tagline: "Take from anywhere, results in 2 days",
+    longDescription: "The Duolingo English Test is an adaptive, computer-based English proficiency test. Practice with adaptive difficulty across four subscores.",
+    duration: "1h 00m",
+    scale: "10-160",
+    popularity: 70,
+    highlights: ["Adaptive difficulty", "Take anywhere", "4 subscores", "Fast results"],
+    questionTypes: ["C-test", "Dictation", "Interactive reading", "Interactive listening", "Writing sample"],
+    sections: [
+      { name: "Literacy", questions: 8, duration: "15 min", icon: "BookOpen", detail: "Reading + writing" },
+      { name: "Comprehension", questions: 8, duration: "15 min", icon: "Headphones", detail: "Reading + listening" },
+      { name: "Conversation", questions: 8, duration: "15 min", icon: "Mic", detail: "Speaking + listening" },
+      { name: "Production", questions: 8, duration: "15 min", icon: "PenTool", detail: "Speaking + writing" },
+    ],
+  },
+  {
+    id: "oet",
+    name: "OET (Healthcare)",
+    accent: "violet",
+    badge: "Healthcare",
+    description: "Healthcare scenarios & clinical role-play",
+    tagline: "English for healthcare professionals",
+    longDescription: "OET is an international English language test for healthcare professionals. Practice with healthcare-specific scenarios and clinical role-play.",
+    duration: "2h 50m",
+    scale: "A-E grades",
+    popularity: 60,
+    highlights: ["Healthcare specific", "Clinical role-play", "Professional context", "4 modules"],
+    questionTypes: ["Multiple choice", "Fill in the blank", "Role-play", "Letter writing", "Speaking"],
+    sections: [
+      { name: "Listening", questions: 42, duration: "40 min", icon: "Headphones", detail: "Consultation extracts" },
+      { name: "Reading", questions: 42, duration: "60 min", icon: "BookOpen", detail: "Healthcare texts" },
+      { name: "Writing", questions: 1, duration: "45 min", icon: "PenTool", detail: "Referral/discharge letter" },
+      { name: "Speaking", questions: 2, duration: "20 min", icon: "Mic", detail: "Clinical role-play" },
+    ],
+  },
+  {
+    id: "sat",
+    name: "Digital SAT",
+    accent: "blue",
+    badge: "University Entry",
+    description: "Adaptive Reading/Writing + Math modules",
+    tagline: "The digital university admission test",
+    longDescription: "The Digital SAT is an adaptive, computer-based test for university admission. Practice Reading, Writing, and Math with adaptive modules.",
+    duration: "2h 14m",
+    scale: "400-1600",
+    popularity: 75,
+    highlights: ["Adaptive modules", "Digital format", "Reading + Writing", "Math with calculator"],
+    questionTypes: ["Multiple choice", "Student-produced response", "Text structure", "Quantitative evidence"],
+    sections: [
+      { name: "Reading & Writing", questions: 54, duration: "64 min", icon: "BookOpen", detail: "2 adaptive modules" },
+      { name: "Math", questions: 44, duration: "70 min", icon: "Calculator", detail: "2 adaptive modules" },
+    ],
+  },
+];
+
+// ─── Sample questions (for the mock-test demo) ─────────────────────────
+export const SAMPLE_QUESTIONS: {
+  id: string;
+  type: string;
+  prompt: string;
+  passage?: string;
+  options?: string[];
+  correct: string;
+  explanation: string;
+}[] = [
+  {
+    id: "q1",
+    type: "Multiple Choice",
+    prompt: "The library closes at ____ on weekdays according to the announcement.",
+    correct: "6:30 PM",
+    options: ["5:00 PM", "6:30 PM", "8:00 PM", "9:30 PM"],
+    explanation: "The speaker states 'The library is open until 6:30 PM Monday through Friday.'",
+  },
+  {
+    id: "q2",
+    type: "True / False / Not Given",
+    prompt: "The new policy applies to all students regardless of enrolment year.",
+    correct: "False",
+    options: ["True", "False", "Not Given"],
+    explanation: "The passage specifies the policy applies only to first-year students.",
+  },
+  {
+    id: "q3",
+    type: "Fill in the Blank",
+    prompt: "The professor emphasized the importance of ____ in academic writing.",
+    correct: "originality",
+    explanation: "The lecture highlighted originality as the cornerstone of academic integrity.",
+  },
+  {
+    id: "q4",
+    type: "Multiple Choice",
+    prompt: "Which graph best represents the trend described in the passage?",
+    correct: "B",
+    options: ["A", "B", "C", "D"],
+    explanation: "The passage describes a steady upward trend, which corresponds to graph B.",
+  },
+  {
+    id: "q5",
+    type: "Short Answer",
+    prompt: "What is the main argument of the author in paragraph 3?",
+    correct: "Technology improves learning outcomes",
+    explanation: "The author argues that technology integration enhances student engagement and outcomes.",
+  },
+];
+
+// ─── Interview modes (for the speaking-writing showcase) ───────────────
+export const INTERVIEW_MODES: { name: string; desc: string }[] = [
+  { name: "Visa Interview", desc: "UK credibility interview practice" },
+  { name: "Course Interview", desc: "University admission interview" },
+  { name: "Career Interview", desc: "Job interview English practice" },
+  { name: "General Speaking", desc: "Free-form speaking practice" },
+];
+
+// ─── AI feedback dimensions (for the speaking-writing showcase) ────────
+export const AI_FEEDBACK_DIMENSIONS: { key: string; label: string; desc: string }[] = [
+  { key: "fluency", label: "Fluency", desc: "Speech flow" },
+  { key: "pronunciation", label: "Pronunciation", desc: "Clarity" },
+  { key: "grammar", label: "Grammar", desc: "Accuracy" },
+  { key: "lexical", label: "Lexical", desc: "Vocabulary" },
+  { key: "coherence", label: "Coherence", desc: "Structure" },
+  { key: "confidence", label: "Confidence", desc: "Delivery" },
+];
+
+// ─── Re-export PRICING_PLANS from platform-data ────────────────────────
+export { PRICING_PLANS } from "@/lib/platform-data";
