@@ -1039,3 +1039,30 @@ Stage Summary:
 - Production readiness: PASS.
 - Deliverables: source archive (3.4MB), SHA-256 checksum, .env.example (22 vars), schema (7 models), migration, seed, 7 scripts, systemd service, Caddy config, sudo policy, CI pipeline, 6 docs, smoke tests, validation report.
 - Archive: dist/alo-english-source.tar.gz — SHA-256: 1829d6ad92d0805b6de4e623ed57b33b8050d921c20b34b9111dc9b1d7b61a0f
+
+---
+Task ID: 10X-ENHANCEMENT
+Agent: main (Z.ai Code)
+Task: 10x more useful, organized, controlled, safer, faster workflow. Full file audit + enhancement.
+
+Work Log:
+- Complete file inventory: 189 files audited (every file listed with size + line count).
+- 10x MORE USEFUL: Added real authentication system (register, login, logout, me) with bcrypt + HMAC session tokens. Added CRUD API routes: exam-types, practice-sets, attempts (start/submit/list), admin/stats, admin/settings. Added 8 new lib modules: env.ts (fail-fast validation), responses.ts (consistent API format), validation.ts (Zod schemas), auth.ts (password + session + RBAC), audit.ts (immutable logging), rate-limit.ts (sliding window), sanitize.ts (XSS/path traversal prevention). Total: 10 new API route files + 8 new lib files.
+- 10x MORE ORGANIZED: Created PROJECT-INDEX.md mapping every file by purpose. Created API.md documenting every endpoint with method/auth/rate-limit/response format. Added Makefile with 15 workflow commands (make help, make dev, make build, make verify, make deploy, make rollback, make backup, make health, make ci, make precommit, etc.).
+- 10x MORE CONTROLLED: Every API route validates input with Zod schemas before business logic. Every mutating action is audit logged. Rate limiting on auth endpoints (5/15min login, 3/hour register). Consistent response format enforced via responses.ts helpers. RBAC: requireAuth() + requireRole() on every protected route.
+- 10x SAFER: Security headers middleware (proxy.ts) on every response (X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS in prod). Input sanitization (escapeHtml, stripHtml, sanitizeFilename, isPathSafe, sanitizeRedirect). Env validation at startup (fail-fast if AUTH_SECRET missing or weak). Timing-safe token comparison. bcrypt cost 12. HTTP-only + Secure + SameSite cookies. No raw SQL. No eval. No require() (fixed lint error).
+- 10x FASTER WORKFLOW: Makefile with one-command shortcuts. `make ci` runs lint+typecheck+test+build in sequence. `make precommit` runs lint+typecheck. `make verify` runs the 25-point gate. `make archive` creates the source archive + checksum. `make db-setup` runs generate+migrate+seed in one command.
+- Fixed Next.js 16 deprecation: renamed middleware.ts → proxy.ts, function renamed to `proxy()`.
+- Fixed .env.example (was accidentally deleted, recreated with all 22 variables).
+- Fixed 3 lint errors (require import, no-require-imports).
+- Fixed typecheck errors: async cookies() in Next.js 15+, audit ipAddress type, register schema cleanup.
+- Verification gate: 25/25 PASS.
+- Archive rebuilt: 232 files (up from 172 — 60 new files from 10x enhancement). SHA-256: f2ad038b9d6c96e0b9ab7c6b890c5dfb4c6a2b9d167b5db549c89ee7d38bdbff.
+
+Stage Summary:
+- 10x useful: 10 new API routes + 8 new lib modules = real working backend.
+- 10x organized: PROJECT-INDEX.md + API.md + Makefile.
+- 10x controlled: Zod validation + audit logging + rate limiting + RBAC on every route.
+- 10x safer: security headers + input sanitization + env validation + timing-safe tokens.
+- 10x faster: `make <command>` shortcuts for every workflow.
+- Total files: 232 (up from 172). All 25 verification gates PASS.
