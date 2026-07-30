@@ -1,6 +1,6 @@
-// Prisma schema for the ALO English Test Platform.
+// Prisma schema for the ALO Education Platform.
+// Full CRM + Exam Platform + Communication + Documents.
 // Database: SQLite (single-server deployment).
-// Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -11,41 +11,467 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Authentication & RBAC ────────────────────────────────────────────
+// ═══ Authentication & RBAC ════════════════════════════════════════════
 
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
+  phone        String?
   name         String?
   passwordHash String
-  role         String    @default("STUDENT") // STUDENT | EXAMINER | ADMIN | AMBASSADOR
-  status       String    @default("ACTIVE")  // ACTIVE | SUSPENDED | PENDING
+  role         String    @default("STUDENT") // SUPER_ADMIN|ADMIN|HR_MANAGER|BRANCH_MANAGER|MARKETING_MANAGER|COUNSELOR|APPLICATION_TEAM|VISA_OFFICER|FINANCE|FRONT_DESK|SUPPORT|PARTNER|STUDENT
+  status       String    @default("ACTIVE")  // ACTIVE|SUSPENDED|PENDING|OFFBOARDED
+  branchId     String?
+  departmentId String?
+  supervisorId String?
+  mfaEnabled   Boolean   @default(false)
+  mfaSecret    String?
+  lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  branch       Branch?       @relation(fields: [branchId], references: [id])
+  department   Department?   @relation(fields: [departmentId], references: [id])
+  supervisor   User?         @relation("Supervisor", fields: [supervisorId], references: [id])
+  subordinates User[]        @relation("Supervisor")
+  leads        Lead[]        @relation("LeadCounselor")
+  students     Student[]     @relation("StudentCounselor")
+  studentProfile Student?    @relation("StudentUser")
+  partnerProfile Partner?    @relation("PartnerUser")
+  applications Application[] @relation("AppAssignee")
+  tasks        Task[]        @relation("TaskAssignee")
+  messages     Message[]     @relation("MessageSender")
+  auditLogs    AuditLog[]
+  passwordResets PasswordReset[]
+  notifications Notification[]
+
   attempts     Attempt[]
   scores       Score[]
-  auditLogs    AuditLog[]
 
   @@index([role])
   @@index([status])
+  @@index([branchId])
+  @@index([departmentId])
 }
 
-// ─── Exam Catalog ─────────────────────────────────────────────────────
+model Branch {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  address   String?
+  phone     String?
+  email     String?
+  timezone  String   @default("Asia/Dhaka")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users       User[]
+  departments Department[]
+  leads       Lead[]
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  branchId  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  users    User[]
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ═══ CRM Core: Leads, Students, Partners ══════════════════════════════
+
+model Lead {
+  id            String    @id @default(cuid())
+  name          String
+  email         String?
+  phone         String?
+  source        String    @default("WEBSITE") // WEBSITE|WHATSAPP|FACEBOOK|INSTAGRAM|EMAIL|PHONE|REFERRAL|EVENT
+  status        String    @default("NEW")     // NEW|CONTACTED|QUALIFIED|CONVERTED|LOST
+  country       String?
+  courseInterest String?
+  intake        String?
+  budgetRange   String?
+  englishStatus String?
+  branchId      String?
+  counselorId   String?
+  partnerId     String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  branch     Branch?    @relation(fields: [branchId], references: [id])
+  counselor  User?      @relation("LeadCounselor", fields: [counselorId], references: [id])
+  partner    Partner?   @relation(fields: [partnerId], references: [id])
+  student    Student?
+  tasks      Task[]
+  messages   Message[]
+
+  @@index([status])
+  @@index([counselorId])
+  @@index([branchId])
+  @@index([source])
+}
+
+model Student {
+  id            String    @id @default(cuid())
+  userId        String?   @unique
+  leadId        String?   @unique
+  name          String
+  email         String?
+  phone         String?
+  dateOfBirth   DateTime?
+  nationality   String?
+  passportNumber String?
+  address       String?
+  city          String?
+  country       String?
+  status        String    @default("ACTIVE") // ACTIVE|INACTIVE|GRADUATED|WITHDRAWN
+  branchId      String?
+  counselorId   String?
+  partnerId     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user      User?      @relation("StudentUser", fields: [userId], references: [id])
+  lead      Lead?      @relation(fields: [leadId], references: [id])
+  counselor User?      @relation("StudentCounselor", fields: [counselorId], references: [id])
+  partner   Partner?   @relation(fields: [partnerId], references: [id])
+  applications Application[]
+  documents  Document[]
+  commissions Commission[]
+  tasks      Task[]
+  messages   Message[]
+
+  @@index([counselorId])
+  @@index([status])
+}
+
+model Partner {
+  id            String    @id @default(cuid())
+  userId        String?   @unique
+  organizationName String
+  contactName   String
+  email         String?
+  phone         String?
+  address       String?
+  status        String    @default("ACTIVE")
+  commissionRate Float    @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user      User?      @relation("PartnerUser", fields: [userId], references: [id])
+  leads     Lead[]
+  students  Student[]
+  commissions Commission[]
+
+  @@index([status])
+}
+
+model Commission {
+  id          String   @id @default(cuid())
+  partnerId   String
+  studentId   String?
+  amount      Float
+  status      String   @default("PENDING") // PENDING|PAID|CANCELLED
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  student   Student? @relation(fields: [studentId], references: [id])
+
+  @@index([partnerId])
+  @@index([status])
+}
+
+// ═══ Education Catalog ════════════════════════════════════════════════
+
+model Country {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique
+  flag      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  universities University[]
+}
+
+model University {
+  id          String   @id @default(cuid())
+  name        String
+  countryId   String
+  city        String?
+  website     String?
+  description String?
+  logo        String?
+  isActive    Boolean  @default(true)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  country   Country  @relation(fields: [countryId], references: [id])
+  courses   Course[]
+  scholarships Scholarship[]
+
+  @@index([countryId])
+  @@index([isPublished])
+}
+
+model Course {
+  id            String   @id @default(cuid())
+  universityId  String
+  name          String
+  level         String?  // BACHELOR|MASTER|PHD|DIPLOMA|CERTIFICATE
+  duration      String?
+  tuitionFee    Float?
+  currency      String   @default("USD")
+  entryRequirements String?
+  description   String?
+  isActive      Boolean  @default(true)
+  isPublished   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  university   University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([universityId])
+  @@index([isPublished])
+}
+
+model Scholarship {
+  id            String   @id @default(cuid())
+  universityId  String
+  name          String
+  amount        Float?
+  currency      String   @default("USD")
+  eligibility   String?
+  deadline      DateTime?
+  description   String?
+  isActive      Boolean  @default(true)
+  isPublished   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@index([universityId])
+}
+
+// ═══ Applications ═════════════════════════════════════════════════════
+
+model Application {
+  id          String    @id @default(cuid())
+  studentId   String
+  courseId    String
+  intake      String?
+  status      String    @default("DRAFT") // DRAFT|SUBMITTED|UNDER_REVIEW|OFFERED|ACCEPTED|CAS_ISSUED|VISA_APPLIED|VISA_APPROVED|REJECTED|DEFERRED|COMPLETED
+  assignedTo  String?
+  notes       String?
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course     Course     @relation(fields: [courseId], references: [id])
+  assignee   User?      @relation("AppAssignee", fields: [assignedTo], references: [id])
+  documents  Document[]
+  tasks      Task[]
+
+  @@index([studentId])
+  @@index([status])
+  @@index([assignedTo])
+}
+
+// ═══ Documents & OCR ═══════════════════════════════════════════════════
+
+model Document {
+  id           String   @id @default(cuid())
+  studentId    String
+  applicationId String?
+  type         String   // PASSPORT|NID|BIRTH_CERT|IELTS|PTE|TOEFL|DUOLINGO|TRANSCRIPT|CERTIFICATE|CV|SOP|RECOMMENDATION|BANK_STATEMENT|SPONSOR|PHOTO|OFFER_LETTER|CAS|COE|I20|VISA|TUITION_RECEIPT|APPLICATION_FORM
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  fileHash     String?
+  uploadedBy   String?
+  ocrStatus    String   @default("PENDING") // PENDING|PROCESSING|COMPLETED|FAILED|REVIEW_NEEDED
+  ocrData      String?  // JSON string of extracted fields
+  ocrConfidence Float?
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id])
+
+  @@index([studentId])
+  @@index([type])
+  @@index([ocrStatus])
+}
+
+// ═══ Communications ════════════════════════════════════════════════════
+
+model Message {
+  id           String   @id @default(cuid())
+  channel      String   // WHATSAPP|FACEBOOK|INSTAGRAM|EMAIL|SMS|WEBCHAT|PORTAL|INTERNAL
+  direction    String   // INBOUND|OUTBOUND
+  senderId     String?
+  senderName   String?
+  senderHandle String?  // phone number / email / social handle
+  recipientId  String?
+  recipientName String?
+  recipientHandle String?
+  body         String
+  attachments  String?  // JSON array of file paths
+  status       String   @default("SENT") // PENDING|SENT|DELIVERED|READ|FAILED
+  leadId       String?
+  studentId    String?
+  partnerId    String?
+  applicationId String?
+  internalNote String?
+  aiSummary    String?
+  readAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  sender      User?     @relation("MessageSender", fields: [senderId], references: [id])
+  lead        Lead?     @relation(fields: [leadId], references: [id])
+  student     Student?  @relation(fields: [studentId], references: [id])
+
+  @@index([channel])
+  @@index([leadId])
+  @@index([studentId])
+  @@index([createdAt])
+}
+
+// ═══ Tasks, Appointments, Timeline ════════════════════════════════════
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("PENDING") // PENDING|IN_PROGRESS|COMPLETED|CANCELLED
+  priority    String    @default("MEDIUM")  // LOW|MEDIUM|HIGH|URGENT
+  dueDate     DateTime?
+  assigneeId  String?
+  leadId      String?
+  studentId   String?
+  applicationId String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  assignee    User?         @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  lead        Lead?         @relation(fields: [leadId], references: [id])
+  student     Student?      @relation(fields: [studentId], references: [id])
+  application Application?  @relation(fields: [applicationId], references: [id])
+
+  @@index([assigneeId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Appointment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  studentId   String?
+  leadId      String?
+  assigneeId  String?
+  location    String?
+  status      String   @default("SCHEDULED") // SCHEDULED|COMPLETED|CANCELLED|NO_SHOW
+  createdAt   DateTime @default(now())
+
+  @@index([startTime])
+  @@index([assigneeId])
+}
+
+model TimelineEntry {
+  id          String   @id @default(cuid())
+  entityType  String   // LEAD|STUDENT|APPLICATION
+  entityId    String
+  action      String
+  description String?
+  metadata    String?  // JSON
+  userId      String?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+// ═══ Notifications ═════════════════════════════════════════════════════
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String   @default("INFO") // INFO|SUCCESS|WARNING|ERROR
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([readAt])
+}
+
+// ═══ Audit & Settings ══════════════════════════════════════════════════
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String?
+  ipAddress String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+// ═══ Exam Platform ════════════════════════════════════════════════════
 
 model ExamType {
   id        String   @id @default(cuid())
-  code      String   @unique // IELTS-A, PTE-A, TOEFL-iBT, etc.
+  code      String   @unique
   name      String
-  category  String   // English Proficiency | Academic | Professional
+  category  String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   practiceSets PracticeSet[]
-
-  @@index([category])
-  @@index([isActive])
 }
 
 model PracticeSet {
@@ -62,27 +488,23 @@ model PracticeSet {
   attempts    Attempt[]
 
   @@index([examTypeId])
-  @@index([isActive])
 }
 
-// ─── Exam Attempts & Scoring ──────────────────────────────────────────
-
 model Attempt {
-  id         String    @id @default(cuid())
-  userId     String
+  id          String    @id @default(cuid())
+  userId      String
   practiceSetId String
-  status     String    @default("IN_PROGRESS") // IN_PROGRESS | SUBMITTED | SCORED
-  startedAt  DateTime  @default(now())
+  status      String    @default("IN_PROGRESS")
+  startedAt   DateTime  @default(now())
   submittedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   practiceSet PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
   score       Score?
 
   @@index([userId])
-  @@index([practiceSetId])
   @@index([status])
 }
 
@@ -104,31 +526,4 @@ model Score {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([providerUsed])
-}
-
-// ─── Audit Log (immutable) ────────────────────────────────────────────
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  action    String
-  resource  String?
-  ipAddress String?
-  metadata  String?  // JSON string
-  createdAt DateTime @default(now())
-
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([action])
-  @@index([createdAt])
-}
-
-// ─── App Settings (key-value) ─────────────────────────────────────────
-
-model Setting {
-  id    String @id @default(cuid())
-  key   String @unique
-  value String
 }
