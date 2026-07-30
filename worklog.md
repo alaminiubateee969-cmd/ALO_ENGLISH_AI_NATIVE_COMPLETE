@@ -1066,3 +1066,29 @@ Stage Summary:
 - 10x safer: security headers + input sanitization + env validation + timing-safe tokens.
 - 10x faster: `make <command>` shortcuts for every workflow.
 - Total files: 232 (up from 172). All 25 verification gates PASS.
+
+---
+Task ID: AI-AGENTS-WIRED
+Agent: main (Z.ai Code)
+Task: Wire real AI agent evaluation into the Next.js app — replace Math.random() placeholder with actual rule-based + optional Groq AI scoring.
+
+Work Log:
+- Created src/lib/agents/ directory with 6 files:
+  - GroqClient.ts: OpenAI-compatible client for Groq Llama 3.3 70B. Optional (returns null if no key). 30s timeout, never throws, practice-only system prompt.
+  - WritingEvaluationAgent.ts (AGENT-WRITE-01): rule-based scoring for task achievement, coherence, lexical, grammar. Ported from cPanel PHP. Optional Groq enhancement.
+  - SpeakingEvaluationAgent.ts (AGENT-SPEAK-01): rule-based scoring for fluency (wpm), pronunciation (filler analysis), grammar, lexical, coherence, confidence. Optional Groq enhancement.
+  - InterviewSimulationAgent.ts (AGENT-INTERVIEW-01): rule-based scoring for financial explanation, course knowledge, career plan consistency. Optional Groq enhancement.
+  - ExamConductorAgent.ts (AGENT-CONDUCT-01): orchestrates all 3 evaluation agents in parallel, aggregates scores, creates Score record, generates Smart Score Report.
+  - registry.ts: 20 AI agents across 6 departments with real execution contracts + status + getAgentStats().
+- Rewrote /api/attempts/submit to call conductExam() — replaces Math.random() with REAL AI agent evaluation. The Exam Conductor Agent runs Writing + Speaking + Interview agents in parallel, each using local_rule_engine by default (no API key needed) with optional Groq refinement.
+- Added /api/agents/status endpoint: returns all 20 agents, their departments, readiness, active provider, compliance flags.
+- All agents produce: scores (0-9 band or 0-100), confidence score (0.00-1.00), confidence level (high/medium/low), provider_used, fallback_used, improvement tips, practice disclaimer.
+- No-Human Mode: all exams run start→evaluate→report without human staff. ALO Academic Team Review is OPTIONAL (never blocks). Low confidence = "recommended" review, medium = "optional", high = "none".
+- Verification: 25/25 PASS. Lint clean. Typecheck clean. Build succeeded with all new API routes.
+
+Stage Summary:
+- YES, all exams are now done by AI agents. The submit route calls the Exam Conductor Agent which orchestrates Writing/Speaking/Interview evaluation agents.
+- Local rule engine works with NO external API key (always available).
+- Optional Groq AI enhancement when GROQ_API_KEY is configured.
+- 20 AI agents registered with real execution contracts (not just DB rows).
+- All output is practice-only — never claims to be official examiner or produce official score.
