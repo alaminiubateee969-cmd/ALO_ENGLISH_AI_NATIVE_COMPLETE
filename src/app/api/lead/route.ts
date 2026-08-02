@@ -1,84 +1,72 @@
-import { NextResponse } from "next/server";
+/**
+ * POST /api/lead — Public lead capture form.
+ *
+ * Validates input and persists to the database (Lead table).
+ * Rate limited to prevent abuse.
+ */
 
-type LeadBody = {
-  name?: string;
-  email?: string;
-  phone?: string;
-  exam?: string;
-  country?: string;
-  intake?: string;
-  message?: string;
-  source?: string;
-};
+import { db } from "@/lib/db";
+import { ok, badRequest, rateLimited } from "@/lib/responses";
+import { withErrorHandler } from "@/lib/responses";
+import { audit, getClientIp } from "@/lib/audit";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { z } from "zod";
 
-// In a production PHP/cPanel deployment this would insert into exam_leads
-// and push to ALO Web_CRM via CRM_API_URL + CRM_SHARED_SECRET.
-// Here we validate, persist in-memory (demo), and return ok.
-const LEADS: LeadBody[] = [];
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  let body: LeadBody;
-  try {
-    body = (await req.json()) as LeadBody;
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+const schema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Valid email is required").max(254),
+  phone: z.string().min(1, "Phone is required").max(30),
+  exam: z.string().max(50).optional(),
+  country: z.string().max(100).optional(),
+  intake: z.string().max(50).optional(),
+  message: z.string().max(2000).optional(),
+  source: z.string().max(50).optional(),
+});
 
-  const { name, email, phone } = body;
-  if (!name || !email || !phone) {
-    return NextResponse.json(
-      { ok: false, error: "name, email and phone are required" },
-      { status: 422 }
-    );
-  }
+export async function POST(req: Request): Promise<Response> {
+  return withErrorHandler(async () => {
+    // Rate limit: 5 lead submissions per hour per IP
+    const ip = getClientIp(req) || "unknown";
+    const rl = rateLimit(`lead:${ip}`, 5, 3600);
+    if (!rl.allowed) {
+      return rateLimited("Too many submissions. Please try again later.");
+    }
 
-  // basic email shape
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return NextResponse.json({ ok: false, error: "Invalid email" }, { status: 422 });
-  }
+    const body = await req.json().catch(() => null);
+    if (!body) return badRequest("Invalid JSON body");
 
-  // rate-limit-ish: cap stored leads
-  if (LEADS.length > 500) LEADS.shift();
-  LEADS.push({ ...body, source: body.source ?? "english.aloeducation.com" });
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return badRequest(parsed.error.issues[0]?.message || "Validation failed");
+    }
 
-  // CRM sync would happen here; if unavailable, lead stays local and a cron retries.
-  return NextResponse.json({
-    ok: true,
-    message: "Lead captured and queued for ALO Web_CRM sync",
-    crm_sync: "queued",
-    lead_id: `LEAD-${Date.now().toString(36).toUpperCase()}`,
-  });
-}
+    const { name, email, phone, exam, country, intake, message, source } = parsed.data;
 
-export async function GET() {
-  return NextResponse.json({
-    status: "ok",
-    app: "ALO English Test Platform",
-    version: "20x",
-    environment: "production",
-    database_connected: true,
-    crm_sync_configured: true,
-    ai_configured: true,
-    smtp_configured: true,
-    storage_writable: true,
-    free_quota_rule: {
-      alo_students: 3,
-      public_students: 1,
-      enforced: "backend",
-    },
-    exam_types: [
-      "IELTS Academic",
-      "IELTS UKVI",
-      "PTE Academic",
-      "TOEFL iBT",
-      "Duolingo English Test",
-      "OIETC / Oxford ELLT",
-      "OET",
-      "ALO Placement Test",
-    ],
-    endpoints: {
-      lead: "/api/lead",
-      health: "/api/health",
-    },
+    // Persist to database
+    const lead = await db.lead.create({
+      data: {
+        name,
+        email,
+        phone,
+        source: source || "WEBSITE",
+        status: "NEW",
+        country: country || null,
+        courseInterest: exam || null,
+        intake: intake || null,
+        notes: message || null,
+      },
+      select: { id: true, name: true, email: true, status: true, createdAt: true },
+    });
+
+    await audit("LEAD_CREATE", {
+      resource: "lead:" + lead.id,
+      ipAddress: ip,
+      metadata: { source: source || "WEBSITE", email },
+    });
+
+    return ok({ lead }, "Lead captured successfully");
   });
 }
