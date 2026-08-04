@@ -102,6 +102,19 @@ export function withErrorHandler<T>(
 ): Promise<NextResponse> {
   return handler().catch((err) => {
     console.error('[api-error]', err);
+
+    // Handle AuthError with custom status codes (401, 403).
+    if (err && typeof err === 'object' && 'statusCode' in err) {
+      const statusCode = (err as { statusCode: number }).statusCode;
+      const message = err instanceof Error ? err.message : 'Error';
+      if (statusCode === 401) {
+        return NextResponse.json({ success: false, status: 401, message, error: ERROR_CODES.UNAUTHORIZED }, { status: 401 });
+      }
+      if (statusCode === 403) {
+        return NextResponse.json({ success: false, status: 403, message, error: ERROR_CODES.FORBIDDEN }, { status: 403 });
+      }
+    }
+
     // Never expose the raw error message in production.
     const message = process.env.NODE_ENV === 'production'
       ? 'An internal error occurred'

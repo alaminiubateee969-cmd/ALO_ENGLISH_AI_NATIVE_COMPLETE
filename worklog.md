@@ -1233,3 +1233,40 @@ Remaining external items (cannot be done by developer):
 - Groq AI: optional, requires GROQ_API_KEY
 
 FINAL STATUS: IMPLEMENTATION COMPLETE, EXTERNAL AUTHORIZATION PENDING
+
+---
+Task ID: FINAL-CHECK-AND-FIX
+Agent: main (Z.ai Code)
+Task: Final check, auto-fix all issues, create complete project zip for english.aloeducation.com (103.231.239.79).
+
+Issues Found + Fixed:
+1. CRM API 500 error: withErrorHandler was catching AuthError and returning 500 instead of 401/403. Fixed to properly return the auth error status code. Verified: /api/crm/leads now returns 401 (correct) instead of 500.
+2. CRUD model accessor: db[entityName] was accessing plural names (db.leads) but Prisma models are singular (db.lead). Added getModelAccessor() mapping function for all 18 entities.
+3. Leads create schema: missing required "name" field. Added z.string().min(1, "Name is required").
+4. .env.example: recreated (was missing).
+5. Server-specific deployment guide created: SERVER-DEPLOYMENT-103.231.239.79.md with exact commands for the target server.
+
+Verification Results:
+- Lint: PASS (0 errors)
+- Typecheck: PASS (0 errors)
+- Tests: 34/34 PASS
+- Build: PASS (24 pages compile)
+- Live tests:
+  - Homepage: HTTP 200
+  - /api/health: healthy, DB connected
+  - /login: HTTP 200
+  - /register: HTTP 200
+  - /api/crm/leads: HTTP 401 (correct — requires auth, was 500 before fix)
+- Secret scan: No API keys or passwords in source files
+- Clean-extract test: 24 pages, 53 APIs, 25 models, 27 public assets, 7 scripts, 3 server configs, deploy guide present, .env.example present
+
+Final Packages (all at /home/z/my-project/dist/):
+1. ALO_EDUCATION_COMPLETE_SOURCE.tar.gz (17 MB) — full source + deploy guide
+2. ALO_EDUCATION_PRODUCTION_DEPLOYMENT.tar.gz (3.3 MB) — production files only
+3. ALO_EDUCATION_DATABASE_PACKAGE.tar.gz (8.4 KB) — schema + migrations + seed
+4. ALO_EDUCATION_DOCUMENTATION.tar.gz (105 KB) — all guides
+5. ALO_EDUCATION_VERIFICATION_EVIDENCE.tar.gz (4.5 KB) — test logs + inventories
+
+SHA-256 checksums in dist/SHA256SUMS.txt.
+
+Status: READY TO DEPLOY to 103.231.239.79.

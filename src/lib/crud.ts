@@ -18,6 +18,46 @@ import { audit, getClientIp } from './audit';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 
+/**
+ * Map plural entity names (URL paths) to singular Prisma model accessors.
+ * e.g. "leads" → "lead", "audit-logs" → "auditLog", "universities" → "university"
+ */
+function getModelAccessor(entityName: string): string {
+  const singularMap: Record<string, string> = {
+    'leads': 'lead',
+    'students': 'student',
+    'partners': 'partner',
+    'applications': 'application',
+    'universities': 'university',
+    'courses': 'course',
+    'scholarships': 'scholarship',
+    'countries': 'country',
+    'branches': 'branch',
+    'departments': 'department',
+    'documents': 'document',
+    'messages': 'message',
+    'tasks': 'task',
+    'appointments': 'appointment',
+    'notifications': 'notification',
+    'users': 'user',
+    'commissions': 'commission',
+    'audit-logs': 'auditLog',
+  };
+  return singularMap[entityName] || entityName.replace(/-/g, '').replace(/s$/, '');
+}
+
+/**
+ * Get the Prisma model delegate for a given entity name.
+ */
+function getModel(entityName: string): any {
+  const accessor = getModelAccessor(entityName);
+  const model = (db as any)[accessor];
+  if (!model || typeof model.findMany !== 'function') {
+    throw new Error(`Unknown entity: ${entityName} (accessor: ${accessor})`);
+  }
+  return model;
+}
+
 export type CrudConfig = {
   entityName: string;
   roleName: string; // e.g. 'ADMIN', 'COUNSELOR'
@@ -42,8 +82,7 @@ export function createListHandler<T>(config: CrudConfig) {
       const search = url.searchParams.get('search') || '';
 
       
-      const model = db[config.entityName.replace(/-/g, '') as keyof typeof db] as any;
-      if (!model) return internalError('Entity not found');
+      const model = getModel(config.entityName);
 
       const where: Record<string, unknown> = {};
       if (search && config.searchableFields) {
@@ -85,8 +124,7 @@ export function createCreateHandler<T>(config: CrudConfig) {
       }
 
       
-      const model = db[config.entityName.replace(/-/g, '') as keyof typeof db] as any;
-      if (!model) return internalError('Entity not found');
+      const model = getModel(config.entityName);
 
       const record = await model.create({
         data: parsed.data,
@@ -111,8 +149,7 @@ export function createGetByIdHandler(config: CrudConfig) {
       const { id } = await params;
 
       
-      const model = db[config.entityName.replace(/-/g, '') as keyof typeof db] as any;
-      if (!model) return internalError('Entity not found');
+      const model = getModel(config.entityName);
 
       const record = await model.findUnique({
         where: { id },
@@ -140,8 +177,7 @@ export function createUpdateHandler(config: CrudConfig) {
       }
 
       
-      const model = db[config.entityName.replace(/-/g, '') as keyof typeof db] as any;
-      if (!model) return internalError('Entity not found');
+      const model = getModel(config.entityName);
 
       const existing = await model.findUnique({ where: { id } });
       if (!existing) return notFound(`${config.entityName} not found`);
@@ -170,8 +206,7 @@ export function createDeleteHandler(config: CrudConfig) {
       const { id } = await params;
 
       
-      const model = db[config.entityName.replace(/-/g, '') as keyof typeof db] as any;
-      if (!model) return internalError('Entity not found');
+      const model = getModel(config.entityName);
 
       const existing = await model.findUnique({ where: { id } });
       if (!existing) return notFound(`${config.entityName} not found`);
