@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X, FileText, MessageSquare, Calendar, BookOpen, GraduationCap, Award } from "lucide-react";
 
 type NavItem = { label: string; href: string };
 
@@ -59,9 +59,9 @@ export function DashboardShell({
             </button>
             <h1 className="font-bold text-lg">{title}</h1>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{role}</span>
+            <span className="hidden sm:inline text-sm text-slate-500">{user.email}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-sm text-slate-600">{user.email}</span>
             <button onClick={handleLogout} className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100">
               <LogOut className="h-4 w-4" /> Logout
             </button>
@@ -90,10 +90,13 @@ export function DashboardShell({
   );
 }
 
-export function DashboardCard({ title, value, desc }: { title: string; value: string | number; desc?: string }) {
+export function DashboardCard({ title, value, desc, icon: Icon }: { title: string; value: string | number; desc?: string; icon?: React.ComponentType<{ className?: string }> }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6">
-      <p className="text-sm font-medium text-slate-500">{title}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-slate-500">{title}</p>
+        {Icon && <Icon className="h-5 w-5 text-slate-400" />}
+      </div>
       <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
       {desc && <p className="mt-1 text-xs text-slate-400">{desc}</p>}
     </div>
@@ -127,4 +130,24 @@ export function DashboardTable({ headers, rows }: { headers: string[]; rows: Rea
       </table>
     </div>
   );
+}
+
+/** Hook to fetch data from an API endpoint */
+export function useApi<T>(url: string) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch(url)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setData(d.data);
+        else setError(d.message || "Failed to load");
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [url]);
+
+  return { data, loading, error };
 }
