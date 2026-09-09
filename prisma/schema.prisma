@@ -535,13 +535,16 @@ model Question {
   id            String   @id @default(cuid())
   practiceSetId String
   section       String   // LISTENING|READING|WRITING|SPEAKING
-  type          String   // MULTIPLE_CHOICE|TRUE_FALSE|FILL_BLANK|SHORT_ANSWER|ESSAY|SPEAKING
+  type          String   // MULTIPLE_CHOICE|TRUE_FALSE_NOT_GIVEN|MATCHING|FILL_BLANK|LABELING|SHORT_ANSWER|ESSAY|SPEAKING|SENTENCE_COMPLETION|SUMMARY_COMPLETION|CHART_DESCRIPTION
   prompt        String
   passage       String?  // Reading passage or audio transcript
-  options       String?  // JSON array of options for MC/TF
-  correctAnswer String?  // For objective questions
+  audioUrl      String?  // Audio file for listening (optional)
+  options       String?  // JSON array of options for MC/matching
+  correctAnswer String?  // For fill-blank / short answer
   correctIndex  Int?     // For MC: index of correct option
+  correctIndices String? // JSON array for matching/labeling
   wordLimit     Int?     // For writing tasks
+  imageUrl      String?  // For chart/diagram/map questions
   points        Int      @default(1)
   order         Int      @default(0)
   createdAt     DateTime @default(now())

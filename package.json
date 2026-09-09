@@ -18,6 +18,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "bun run prisma/seed.ts",
+    "db:seed:questions": "bun run prisma/seed-ielts-questions.ts",
     "db:push": "prisma db push",
     "db:reset": "prisma migrate reset --force",
     "verify": "bash scripts/verify.sh",
