@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+"use client";
+
 import { DashboardShell, DashboardCard, DashboardTable, useApi } from "@/components/site/dashboard-shell";
 import { Users, GraduationCap, FileText, TrendingUp, BookOpen, Award, Bot, Activity } from "lucide-react";
 
-export const metadata: Metadata = { title: "Super Admin Dashboard" };
 
 const NAV = [
   { label: "Dashboard", href: "/super-admin/dashboard" },

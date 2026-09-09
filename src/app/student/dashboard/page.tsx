@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
+"use client";
+
 import { DashboardShell, DashboardCard, DashboardTable, useApi } from "@/components/site/dashboard-shell";
 import { FileText, MessageSquare, Calendar, BookOpen, GraduationCap, Award, TrendingUp } from "lucide-react";
 
-export const metadata: Metadata = { title: "Student Dashboard" };
 
 const NAV = [
   { label: "Dashboard", href: "/student/dashboard" },
   { label: "Course Finder", href: "/course-finder" },
   { label: "Scholarships", href: "/scholarships" },
+  { label: "Practice Tests", href: "/practice-test" },
   { label: "Language Prep", href: "/language-prep" },
   { label: "Book Consultation", href: "/book-consultation" },
   { label: "Contact", href: "/contact" },
@@ -46,8 +47,8 @@ function StudentDashboardContent() {
           <a href="/book-consultation" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
             <Calendar className="h-5 w-5 text-blue-600" /> Book Appointment
           </a>
-          <a href="/language-prep" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
-            <GraduationCap className="h-5 w-5 text-blue-600" /> Practice Tests
+          <a href="/practice-test" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
+            <GraduationCap className="h-5 w-5 text-blue-600" /> Take a Practice Test
           </a>
         </div>
       </div>
