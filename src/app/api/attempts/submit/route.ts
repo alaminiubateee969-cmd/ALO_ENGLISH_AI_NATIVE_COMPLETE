@@ -1,26 +1,20 @@
 /**
- * POST /api/attempts/submit — Submit a practice attempt for AI evaluation.
+ * POST /api/attempts/submit - Submit a practice attempt for AI evaluation.
  *
- * Requires authentication (STUDENT role).
- * Validates ownership (user can only submit their own attempt).
- *
- * This route invokes the Exam Conductor Agent (AGENT-CONDUCT-01), which
- * orchestrates the Writing, Speaking, and Interview evaluation agents.
- * The agents use a rule-based engine (local_rule_engine) by default, and
- * optionally refine scores via Groq AI when GROQ_API_KEY is configured.
- *
- * Audit logs the submission + score generation.
+ * Auto-scores objective questions (MC, TF, Fill-blank) against the database.
+ * AI-evaluates subjective answers (writing, speaking) via AI agents.
  */
 
-import { requireAuth } from '@/lib/auth';
-import { ok, badRequest, notFound, forbidden } from '@/lib/responses';
-import { withErrorHandler } from '@/lib/responses';
-import { audit, getClientIp } from '@/lib/audit';
-import { conductExam } from '@/lib/agents/ExamConductorAgent';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
+import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
+import { withErrorHandler } from "@/lib/responses";
+import { audit, getClientIp } from "@/lib/audit";
+import { conductExam } from "@/lib/agents/ExamConductorAgent";
+import { z } from "zod";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const schema = z.object({
   attemptId: z.string().cuid(),
@@ -32,48 +26,78 @@ export async function POST(req: Request): Promise<Response> {
     const user = await requireAuth();
 
     const body = await req.json().catch(() => null);
-    if (!body) return badRequest('Invalid JSON body');
+    if (!body) return badRequest("Invalid JSON body");
 
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      return badRequest(parsed.error.issues[0]?.message || 'Validation failed');
+      return badRequest(parsed.error.issues[0]?.message || "Validation failed");
     }
 
     const { attemptId, answers } = parsed.data;
 
-    // Verify ownership.
-    // (conductExam also checks, but we want to return 403 before any evaluation runs)
-    const { db } = await import('@/lib/db');
-    const attempt = await db.attempt.findUnique({ where: { id: attemptId }, select: { userId: true, status: true } });
-    if (!attempt) return notFound('Attempt not found');
-    if (attempt.userId !== user.id) return forbidden('You can only submit your own attempt');
-    if (attempt.status === 'SUBMITTED' || attempt.status === 'SCORED') {
-      return badRequest('Attempt already submitted');
+    // Verify ownership
+    const attempt = await db.attempt.findUnique({
+      where: { id: attemptId },
+      include: { practiceSet: { include: { questions: true } } },
+    });
+    if (!attempt) return notFound("Attempt not found");
+    if (attempt.userId !== user.id) return forbidden("You can only submit your own attempt");
+    if (attempt.status === "SUBMITTED" || attempt.status === "SCORED") {
+      return badRequest("Attempt already submitted");
     }
 
-    // Run the Exam Conductor Agent — orchestrates all evaluation agents.
-    const result = await conductExam(attemptId, answers || {});
+    // Auto-score objective questions
+    const objectiveQuestions = attempt.practiceSet.questions.filter(
+      (q) => q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE" || q.type === "FILL_BLANK"
+    );
+    let objectiveCorrect = 0;
+    for (const q of objectiveQuestions) {
+      const userAnswer = (answers as Record<string, unknown>)?.objectiveAnswers?.[q.id];
+      if (!userAnswer) continue;
+      if (q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE") {
+        if (parseInt(String(userAnswer)) === q.correctIndex) objectiveCorrect++;
+      } else if (q.type === "FILL_BLANK") {
+        if (String(userAnswer).trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase()) objectiveCorrect++;
+      }
+    }
+    const objectiveTotal = objectiveQuestions.length || 1;
 
-    // Audit log.
+    // Gather writing and speaking answers
+    const writingText = attempt.practiceSet.questions
+      .filter((q) => q.section === "WRITING" && (answers as Record<string, unknown>)?.[q.id])
+      .map((q) => String((answers as Record<string, unknown>)[q.id]))
+      .join("\n\n") || ((answers as Record<string, unknown>)?.writing as string) || "";
+
+    const speakingText = attempt.practiceSet.questions
+      .filter((q) => q.section === "SPEAKING" && (answers as Record<string, unknown>)?.[q.id])
+      .map((q) => String((answers as Record<string, unknown>)[q.id]))
+      .join("\n\n") || ((answers as Record<string, unknown>)?.speaking as string) || "";
+
+    // Run the Exam Conductor Agent
+    const result = await conductExam(attemptId, {
+      writing: writingText,
+      speaking: speakingText,
+      readingCorrect: objectiveCorrect,
+      readingTotal: objectiveTotal,
+      listeningCorrect: objectiveCorrect,
+      listeningTotal: objectiveTotal,
+    });
+
+    // Audit log
     const ip = getClientIp(req);
-    await audit('EXAM_SUBMIT', {
+    await audit("EXAM_SUBMIT", {
       userId: user.id,
-      resource: 'attempt:' + attemptId,
+      resource: "attempt:" + attemptId,
       ipAddress: ip,
       metadata: { overall: result.overall, provider: result.providerUsed, confidence: result.confidence },
     });
 
-    await audit('SCORE_GENERATED', {
+    await audit("SCORE_GENERATED", {
       userId: user.id,
-      resource: 'score:' + attemptId,
-      metadata: {
-        provider: result.providerUsed,
-        fallback: result.fallbackUsed,
-        confidence: result.confidence,
-        reviewRecommendation: result.reviewRecommendation,
-      },
+      resource: "score:" + attemptId,
+      metadata: { provider: result.providerUsed, fallback: result.fallbackUsed, confidence: result.confidence },
     });
 
-    return ok({ attempt: { id: attemptId, status: result.status }, result }, 'Exam evaluated by AI agents');
+    return ok({ attempt: { id: attemptId, status: result.status }, result }, "Exam evaluated by AI agents");
   });
 }

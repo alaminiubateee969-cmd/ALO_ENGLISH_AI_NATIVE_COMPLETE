@@ -486,6 +486,7 @@ model PracticeSet {
 
   examType    ExamType  @relation(fields: [examTypeId], references: [id], onDelete: Cascade)
   attempts    Attempt[]
+  questions   Question[]
 
   @@index([examTypeId])
 }
@@ -526,4 +527,27 @@ model Score {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ═══ Exam Questions ════════════════════════════════════════════════════
+
+model Question {
+  id            String   @id @default(cuid())
+  practiceSetId String
+  section       String   // LISTENING|READING|WRITING|SPEAKING
+  type          String   // MULTIPLE_CHOICE|TRUE_FALSE|FILL_BLANK|SHORT_ANSWER|ESSAY|SPEAKING
+  prompt        String
+  passage       String?  // Reading passage or audio transcript
+  options       String?  // JSON array of options for MC/TF
+  correctAnswer String?  // For objective questions
+  correctIndex  Int?     // For MC: index of correct option
+  wordLimit     Int?     // For writing tasks
+  points        Int      @default(1)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  practiceSet   PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+
+  @@index([practiceSetId])
+  @@index([section])
 }
