@@ -19,6 +19,7 @@
  */
 
 import { GroqClient } from './GroqClient';
+import { AI_EXAMINERS } from './AIExaminers';
 
 export type WritingEvaluation = {
   wordCount: number;
@@ -34,6 +35,9 @@ export type WritingEvaluation = {
   providerUsed: string;
   fallbackUsed: boolean;
   disclaimer: string;
+  examinerName: string;
+  examinerTitle: string;
+  accentAdjusted: boolean;
 };
 
 const TARGET_WORD_COUNT: Record<string, number> = {
@@ -97,11 +101,30 @@ export async function evaluateWriting(
   const confidenceLevel = confidenceLevelFromScore(confidenceScore);
   const improvementPlan = buildImprovementPlan(wordCount, target, taskAchievement, coherence, lexical, grammar);
 
+  // Select Bengali AI examiner for writing (Dr. Farzana Karim — writing specialist)
+  const examiner = AI_EXAMINERS[4];
+
+  // Bengali English writing adjustments: don't penalize article omission
+  // or preposition variations as heavily, since Bengali language has no articles
+  let adjustedGrammar = grammar;
+  const lowerText = text.toLowerCase();
+  const words = lowerText.split(/\s+/);
+  const hasArticles = words.some((w) => ["a", "an", "the"].includes(w));
+  if (!hasArticles && words.length > 50) {
+    // Bengali has no articles — small grammar boost
+    adjustedGrammar = Math.min(9.0, grammar + 0.3);
+  }
+
+  const adjustedBand = aggregateBand(taskAchievement, coherence, lexical, adjustedGrammar);
+
   return {
-    wordCount, targetWordCount: target, estimatedBand,
-    taskAchievement, coherence, lexical, grammar,
+    wordCount, targetWordCount: target, estimatedBand: adjustedBand,
+    taskAchievement, coherence, lexical, grammar: adjustedGrammar,
     improvementPlan, confidenceScore, confidenceLevel,
     providerUsed, fallbackUsed, disclaimer: PRACTICE_DISCLAIMER,
+    examinerName: examiner.name,
+    examinerTitle: examiner.title,
+    accentAdjusted: true,
   };
 }
 
