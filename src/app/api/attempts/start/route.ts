@@ -2,58 +2,112 @@
  * POST /api/attempts/start — Start a new practice attempt.
  *
  * Requires authentication (STUDENT role).
- * Validates the practice set exists and is active.
- * Creates an Attempt record with status IN_PROGRESS.
- * Audit logs the start.
+ * Enforces free quota: 3 free tests, then payment required.
+ * ALO students get 3 free; public students get 1 free.
  */
 
-import { db } from '@/lib/db';
-import { requireAuth } from '@/lib/auth';
-import { ok, badRequest, notFound, internalError } from '@/lib/responses';
-import { audit, getClientIp } from '@/lib/audit';
-import { withErrorHandler } from '@/lib/responses';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
+import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
+import { withErrorHandler } from "@/lib/responses";
+import { audit, getClientIp } from "@/lib/audit";
+import { z } from "zod";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
     const user = await requireAuth();
 
     const body = await req.json().catch(() => null);
-    if (!body) return badRequest('Invalid JSON body');
+    if (!body) return badRequest("Invalid JSON body");
 
     const schema = z.object({ practiceSetId: z.string().cuid() });
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      return badRequest(parsed.error.issues[0]?.message || 'Validation failed');
+      return badRequest(parsed.error.issues[0]?.message || "Validation failed");
     }
 
     const { practiceSetId } = parsed.data;
 
-    // Verify practice set exists and is active.
+    // Verify practice set exists and is active
     const practiceSet = await db.practiceSet.findFirst({
       where: { id: practiceSetId, isActive: true },
     });
-    if (!practiceSet) return notFound('Practice set not found');
+    if (!practiceSet) return notFound("Practice set not found");
 
-    // Create attempt.
+    // ═══ FREE QUOTA ENFORCEMENT ═══════════════════════════════════════
+    // ALO students get 3 free tests, public students get 1 free test
+    // After that, payment is required.
+
+    // Get or create free quota record
+    let quota = await db.freeQuota.findUnique({ where: { userId: user.id } });
+    if (!quota) {
+      // Check if user email is from ALO (simplified: any registered student gets 3 free)
+      const isAloStudent = user.role === "STUDENT";
+      quota = await db.freeQuota.create({
+        data: {
+          userId: user.id,
+          attemptsUsed: 0,
+          attemptsLimit: isAloStudent ? 3 : 1,
+          isAloStudent,
+        },
+      });
+    }
+
+    // Count completed attempts
+    const completedAttempts = await db.attempt.count({
+      where: { userId: user.id, status: "SUBMITTED" },
+    });
+
+    // Check if user has exceeded free quota
+    if (completedAttempts >= quota.attemptsLimit) {
+      // Check if user has paid for additional attempts
+      const paidAttempts = await db.payment.aggregate({
+        where: { userId: user.id, status: "COMPLETED" },
+        _sum: { attemptsPaid: true },
+      });
+      const totalAllowed = quota.attemptsLimit + (paidAttempts._sum.attemptsPaid || 0);
+
+      if (completedAttempts >= totalAllowed) {
+        return forbidden(
+          `You have used all ${totalAllowed} test attempts (${quota.attemptsLimit} free + ${paidAttempts._sum.attemptsPaid || 0} paid). ` +
+          `Please purchase additional attempts to continue. ` +
+          `Visit /pricing to buy more tests.`
+        );
+      }
+    }
+
+    // Create attempt
     const attempt = await db.attempt.create({
       data: {
         userId: user.id,
         practiceSetId,
-        status: 'IN_PROGRESS',
+        status: "IN_PROGRESS",
       },
     });
 
-    await audit('EXAM_START', {
-      userId: user.id,
-      resource: 'attempt:' + attempt.id,
-      ipAddress: getClientIp(req),
-      metadata: { practiceSetId },
+    // Update quota usage
+    await db.freeQuota.update({
+      where: { userId: user.id },
+      data: { attemptsUsed: { increment: 1 } },
     });
 
-    return ok({ attempt: { id: attempt.id, startedAt: attempt.startedAt } }, 'Attempt started');
+    await audit("EXAM_START", {
+      userId: user.id,
+      resource: "attempt:" + attempt.id,
+      ipAddress: getClientIp(req),
+      metadata: { practiceSetId, completedAttempts, quotaLimit: quota.attemptsLimit },
+    });
+
+    return ok({
+      attempt: { id: attempt.id, startedAt: attempt.startedAt },
+      quota: {
+        used: completedAttempts + 1,
+        limit: quota.attemptsLimit,
+        remaining: Math.max(0, quota.attemptsLimit - completedAttempts - 1),
+      },
+    }, "Attempt started");
   });
 }
