@@ -1270,3 +1270,54 @@ Final Packages (all at /home/z/my-project/dist/):
 SHA-256 checksums in dist/SHA256SUMS.txt.
 
 Status: READY TO DEPLOY to 103.231.239.79.
+
+---
+Task ID: REAL-EXAM-SYSTEM
+Agent: main (Z.ai Code)
+Task: Build real exam system with actual questions, not manual input.
+
+Issues Found:
+1. No Question model in Prisma — questions didn't exist in database
+2. /practice-test page asked students to manually enter scores (NOT a real exam)
+3. No questions seeded — practice sets were empty
+4. No /api/questions endpoint to fetch questions
+
+Fixes Applied:
+1. Added Question model to Prisma schema (section, type, prompt, options, correctAnswer, correctIndex, wordLimit, points, order)
+2. Ran prisma db push to create the Question table
+3. Created prisma/seed-questions.ts with 36 real questions:
+   - IELTS: 20 questions (5 listening MC, 5 reading MC, 5 reading T/F, 2 writing essays, 3 speaking prompts)
+   - PTE: 6 questions (reading, listening, writing, speaking)
+   - TOEFL: 5 questions (reading, listening, writing, speaking)
+   - Duolingo: 5 questions (reading fill-blank, reading MC, writing, speaking)
+4. Created /api/questions endpoint — fetches questions for a practice set (without revealing correct answers)
+5. Rebuilt /practice-test page — REAL exam interface:
+   - Fetches real questions from database
+   - Section tabs: LISTENING, READING, WRITING, SPEAKING
+   - Multiple choice: radio buttons with A/B/C/D options
+   - True/False: radio buttons with True/False/Not Given
+   - Fill-blank: text input
+   - Essay: textarea with word count
+   - Speaking: textarea for transcript
+   - Timer: counts down from durationMin, auto-submits on timeout
+   - Question palette: shows answered count per section
+   - Submit: calls /api/attempts/submit
+6. Updated /api/attempts/submit — auto-scores objective questions against database:
+   - Fetches correct answers from Question table
+   - Compares user answers to correctIndex/correctAnswer
+   - Passes objective score + writing/speaking text to ExamConductorAgent
+   - AI agents evaluate writing and speaking
+7. Fixed smart quote encoding issue in submit route
+
+Verification:
+- Lint: PASS
+- Typecheck: PASS
+- Tests: 34/34 PASS
+- Build: PASS (25 pages compile)
+- Questions in DB: 36
+- Pages: 25 (added /practice-test)
+- APIs: 54 (added /api/questions)
+- Models: 26 (added Question)
+
+Final ZIP: dist/ALO_EDUCATION_COMPLETE_SOURCE.tar.gz
+SHA-256: 0c38d909d32356e0df4ad6b02ed0ad1d672b66f86224e55108df5775e5238c6b
