@@ -30,7 +30,14 @@ export default function LanguagePrepPage() {
         ))}
       </div>
       <div className="mt-8 text-center">
-        <Link href="/book-consultation" className="inline-block rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700">Book a Prep Session</Link>
+        <div className="flex flex-col gap-3 sm:flex-row justify-center">
+          <Link href="/practice-test" className="inline-block rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700">
+            Take a Practice Test →
+          </Link>
+          <Link href="/book-consultation" className="inline-block rounded-md border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Book a Prep Session
+          </Link>
+        </div>
       </div>
     </div>
   );
