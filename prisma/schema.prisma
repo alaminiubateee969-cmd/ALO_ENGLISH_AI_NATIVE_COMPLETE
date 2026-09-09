@@ -554,3 +554,45 @@ model Question {
   @@index([practiceSetId])
   @@index([section])
 }
+
+// ═══ Free Quota + Payment ═════════════════════════════════════════════
+
+model FreeQuota {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  attemptsUsed Int      @default(0)
+  attemptsLimit Int     @default(3)
+  isAloStudent Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Payment {
+  id           String   @id @default(cuid())
+  userId       String
+  amount       Float
+  currency     String   @default("USD")
+  status       String   @default("PENDING") // PENDING|COMPLETED|FAILED|REFUNDED
+  method       String   @default("MANUAL")
+  attemptsPaid Int      @default(1)
+  txnId        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model DailyQuestionSet {
+  id            String   @id @default(cuid())
+  examTypeCode  String
+  date          String   // YYYY-MM-DD
+  practiceSetId String
+  isGenerated   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@unique([examTypeCode, date])
+  @@index([examTypeCode, date])
+}
