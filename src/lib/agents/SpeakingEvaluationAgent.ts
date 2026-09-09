@@ -9,6 +9,7 @@
  */
 
 import { GroqClient } from './GroqClient';
+import { getRandomExaminer, adjustPronunciationScoreForBengaliAccent, adjustFluencyScoreForBengaliAccent } from './AIExaminers';
 
 export type SpeakingEvaluation = {
   wordCount: number;
@@ -26,6 +27,9 @@ export type SpeakingEvaluation = {
   providerUsed: string;
   fallbackUsed: boolean;
   disclaimer: string;
+  examinerName: string;
+  examinerTitle: string;
+  accentAdjusted: boolean;
 };
 
 const PRACTICE_DISCLAIMER =
@@ -69,13 +73,33 @@ export async function evaluateSpeaking(
   const confidenceLevel = confidenceLevelFromScore(confidenceScore);
   const improvementTips = buildTips(fluency, pronunciation, grammar, lexical, coherence);
 
+  // ═══ Bengali Accent-Aware Adjustment ═══════════════════════════════
+  // Select a Bengali AI examiner who understands Bengali English patterns
+  const examiner = getRandomExaminer();
+
+  // Adjust pronunciation score — don't penalize Bengali accent patterns
+  const adjustedPronunciation = adjustPronunciationScoreForBengaliAccent(
+    pronunciation, transcript, examiner
+  );
+
+  // Adjust fluency score — Bengali intonation is different from native English
+  const adjustedFluency = adjustFluencyScoreForBengaliAccent(
+    fluency, wordCount, durationSeconds, examiner
+  );
+
+  // Recalculate band with adjusted scores
+  const adjustedBand = aggregateBand(adjustedFluency, adjustedPronunciation, grammar, lexical, coherence);
+
   return {
     wordCount, durationSeconds,
-    fluency, pronunciation, grammar, lexical, coherence, confidence,
-    estimatedBand, improvementTips,
+    fluency: adjustedFluency, pronunciation: adjustedPronunciation, grammar, lexical, coherence, confidence,
+    estimatedBand: adjustedBand, improvementTips,
     confidenceScore, confidenceLevel,
     providerUsed, fallbackUsed,
     disclaimer: PRACTICE_DISCLAIMER,
+    examinerName: examiner.name,
+    examinerTitle: examiner.title,
+    accentAdjusted: true,
   };
 }
 
