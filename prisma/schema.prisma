@@ -596,3 +596,22 @@ model DailyQuestionSet {
   @@unique([examTypeCode, date])
   @@index([examTypeCode, date])
 }
+
+// ═══ Student Learning Memory ═════════════════════════════════════════
+
+model LearningMemory {
+  id           String   @id @default(cuid())
+  userId       String
+  weaknessArea String   // e.g. "articles", "prepositions", "pronunciation"
+  weaknessType String   // GRAMMAR|VOCABULARY|PRONUNCIATION|FLUENCY|COHERENCE
+  occurrences  Int      @default(1)
+  lastSeenAt   DateTime @default(now())
+  resolvedAt   DateTime?
+  metadata     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, weaknessArea])
+  @@index([userId])
+  @@index([weaknessType])
+}
