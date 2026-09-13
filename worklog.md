@@ -1321,3 +1321,42 @@ Verification:
 
 Final ZIP: dist/ALO_EDUCATION_COMPLETE_SOURCE.tar.gz
 SHA-256: 0c38d909d32356e0df4ad6b02ed0ad1d672b66f86224e55108df5775e5238c6b
+
+---
+Task ID: REAL-TIME-VOICE-EXAMINER-COMPLETE
+Agent: main (Z.ai Code)
+Task: Build real-time live voice AI examiner (STT + TTS + LLM + state machine + avatar + WebSocket) and create complete project zip with every single file.
+
+Work Log:
+- Read existing ExaminerEngine.ts — found bugs: TTS used wrong response access (tts.buffer), ASR used wrong param name ({file:} instead of {file_base64:}).
+- Fixed ExaminerEngine.ts:
+  - TTS: now uses await response.arrayBuffer() + Buffer.from(new Uint8Array(arrayBuffer)) per TTS skill docs
+  - ASR: now uses {file_base64: cleanBase64} per ASR skill docs
+  - Added Bengali examiner persona integration (examinerId passed through all API calls)
+  - Added text chunking for TTS 1024-char limit
+  - Added singleton SDK instance for performance
+  - Mapped each examiner to a TTS voice (xiaochen/jam/tongtong)
+- Created ExaminerStateMachine.ts: robust IELTS Part 1/2/3 turn-taking (9 states: introduction → part1_questions → part2_instructions → part2_preparation → part2_long_turn → part2_followup → part3_discussion → closing → completed) with min-turn thresholds, fallback responses, topic tracking, state labels.
+- Created ConversationMemory.ts: session-scoped short-term memory (extracts student name, hometown, occupation, topics covered, keywords; detects 10 topic categories; builds context summary for LLM; privacy: never persisted).
+- Created FollowUpEngine.ts: context-aware follow-up suggestions (Part 1 personal questions, Part 2 long-turn elaboration, Part 3 abstract discussion; avoids repeating questions; keyword-based topic detection).
+- Created ExaminerAvatar.tsx: real-time avatar component with speaking pulse rings, listening rings, thinking spinner, status indicator, waveform animation, state badge.
+- Created /live-exam page (26KB): full real-time voice exam interface — examiner selection (5 Bengali personas with AI-generated avatar images), mic recording (SpeakingRecorder), STT API call, examiner-respond API call (LLM+TTS), audio playback, conversation transcript, state progress tracker, completion handling.
+- Updated examiner-respond + examiner-voice API routes to accept examinerId param.
+- Generated 5 Bengali examiner avatar images via Image-Generation skill (z-ai image CLI) — saved to public/examiners/examiner-01.png through examiner-05.png (864x1152 each).
+- Added avatarUrl field to AIExaminers.ts for all 5 examers.
+- Created WebSocket mini-service (mini-services/examiner-stream/, port 3003): real-time conversation streaming via socket.io — exam:start, audio:chunk, audio:end, examiner:response, state:update events; calls Next.js APIs internally; in-memory session store.
+- Updated student dashboard: added "Live AI Examiner" nav item + prominent banner + quick action card linking to /live-exam.
+- Verification:
+  - Lint: PASS (0 errors)
+  - Typecheck: PASS (0 errors)
+  - Dev server: running on port 3000 (HTTP 200)
+  - Agent Browser: /live-exam renders — heading "Live AI Speaking Examiner", all 5 examiner personas with avatars, "Start Live Speaking Test" button, sticky footer working, no console errors.
+  - Screenshot saved: live-exam-screenshot.png
+- Created complete project zip: alo-education-full-project.zip (5.6MB, 949 files, integrity test PASS).
+
+Stage Summary:
+- Real-time voice AI examiner: COMPLETE (STT + TTS + LLM + state machine + avatar + WebSocket)
+- New files created: ExaminerStateMachine.ts, ConversationMemory.ts, FollowUpEngine.ts, ExaminerAvatar.tsx, /live-exam/page.tsx, mini-services/examiner-stream/index.ts, 5 examiner avatar PNGs
+- Fixed files: ExaminerEngine.ts (TTS/ASR SDK calls), examiner-respond/route.ts (examinerId), examiner-voice/route.ts (examinerId), AIExaminers.ts (avatarUrl), student/dashboard/page.tsx (live-exam link)
+- Total project: 949 files, 28 pages, 66 API routes, 30 Prisma models, 5 Bengali AI examiner personas with real avatar images
+- ZIP: /home/z/my-project/alo-education-full-project.zip (5.6MB, every source file included, 0 missing)

@@ -13,11 +13,14 @@ export async function POST(req: Request) {
     const user = await requireAuth();
     const body = await req.json().catch(() => null);
     if (!body) return badRequest("Invalid JSON");
-    const schema = z.object({ text: z.string().min(1).max(1024) });
+    const schema = z.object({
+      text: z.string().min(1).max(1024),
+      examinerId: z.string().optional(),
+    });
     const parsed = schema.safeParse(body);
     if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid");
-    const { text } = parsed.data;
-    const voice = await generateExaminerVoice(text);
+    const { text, examinerId } = parsed.data;
+    const voice = await generateExaminerVoice(text, examinerId);
     return ok({ audioBase64: voice.audioBase64, mimeType: voice.mimeType }, "Voice generated");
   });
 }

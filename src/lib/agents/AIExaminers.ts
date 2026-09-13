@@ -16,6 +16,7 @@ export type AIExaminer = {
   name: string;
   title: string;
   avatarDescription: string;
+  avatarUrl: string;
   personality: string;
   accentAwareness: string;
   evaluationFocus: string[];
@@ -41,6 +42,7 @@ export const AI_EXAMINERS: AIExaminer[] = [
     name: "Dr. Anika Rahman",
     title: "Senior English Language Examiner",
     avatarDescription: "Bengali woman, early 40s, wearing a professional teal saree, shoulder-length black hair, warm brown skin, glasses, confident expression",
+    avatarUrl: "/examiners/examiner-01.png",
     personality: "Professional, encouraging, thorough. Understands Bengali English speakers' challenges deeply.",
     accentAwareness: "Accounts for v/w and th/t substitutions common in Bangladeshi English. Does not penalize Bengali intonation patterns in fluency scoring.",
     evaluationFocus: ["fluency", "lexical_resource", "coherence"],
@@ -63,6 +65,7 @@ export const AI_EXAMINERS: AIExaminer[] = [
     name: "Professor Rifat Hassan",
     title: "IELTS Speaking Specialist",
     avatarDescription: "Bengali man, late 30s, short black hair, trimmed beard, wearing a navy blazer over white shirt, brown skin, friendly smile",
+    avatarUrl: "/examiners/examiner-02.png",
     personality: "Patient, detailed, gives constructive feedback. Specializes in pronunciation coaching for South Asian speakers.",
     accentAwareness: "Recognizes Bengali English patterns: retroflex T/D sounds, v→w, th→t/d, and article omission. Adjusts pronunciation scoring accordingly.",
     evaluationFocus: ["pronunciation", "grammar", "vocabulary"],
@@ -85,6 +88,7 @@ export const AI_EXAMINERS: AIExaminer[] = [
     name: "Dr. Nusrat Jahan",
     title: "English Proficiency Assessment Expert",
     avatarDescription: "Bengali woman, mid 30s, wearing a maroon kameez with dupatta, long black hair in a braid, brown skin, warm and intelligent expression",
+    avatarUrl: "/examiners/examiner-03.png",
     personality: "Analytical, fair, focused on content quality over accent perfection. Values clarity of thought.",
     accentAwareness: "Prioritizes communication effectiveness over accent accuracy. Accounts for Bengali English preposition patterns and article usage.",
     evaluationFocus: ["coherence", "task_achievement", "lexical_resource"],
@@ -107,6 +111,7 @@ export const AI_EXAMINERS: AIExaminer[] = [
     name: "Mr. Tanvir Ahmed",
     title: "PTE & TOEFL Speaking Coach",
     avatarDescription: "Bengali man, early 30s, clean-shaven, modern haircut, wearing a grey formal shirt, brown skin, approachable look",
+    avatarUrl: "/examiners/examiner-04.png",
     personality: "Modern, tech-savvy, understands online exam delivery. Encourages confidence over perfection.",
     accentAwareness: "Adjusts for Bengali English fluency patterns: sentence stress, rhythm, and common Bengali-English grammar patterns (present continuous overuse, article omission).",
     evaluationFocus: ["fluency", "pronunciation", "confidence"],
@@ -129,6 +134,7 @@ export const AI_EXAMINERS: AIExaminer[] = [
     name: "Dr. Farzana Karim",
     title: "Academic English & Writing Examiner",
     avatarDescription: "Bengali woman, late 40s, wearing an elegant green silk saree, silver hair clips, brown skin, reading glasses, scholarly expression",
+    avatarUrl: "/examiners/examiner-05.png",
     personality: "Rigorous, academic, values logical argumentation and vocabulary range. Evaluates writing with South Asian English conventions in mind.",
     accentAwareness: "Accounts for Bengali English writing patterns: article usage, preposition choices, and Bengali-influenced sentence structures. Values content over minor grammar variations.",
     evaluationFocus: ["task_achievement", "grammar", "vocabulary"],
