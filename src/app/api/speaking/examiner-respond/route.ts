@@ -22,28 +22,31 @@ export async function POST(req: Request) {
         timestamp: z.string(),
       })).optional(),
       currentState: z.string(),
+      examinerId: z.string().optional(),
     });
     const parsed = schema.safeParse(body);
     if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid");
 
-    const { transcript, history = [], currentState } = parsed.data;
+    const { transcript, history = [], currentState, examinerId } = parsed.data;
 
-    // Generate examiner response using LLM
+    // Generate examiner response using LLM (with Bengali accent awareness)
     const response = await generateExaminerResponse(
       transcript,
       history as ConversationTurn[],
-      currentState as ExaminerState
+      currentState as ExaminerState,
+      examinerId
     );
 
-    // Generate examiner voice using TTS
+    // Generate examiner voice using TTS (mapped to persona voice)
     let audioBase64 = "";
     let audioMimeType = "audio/wav";
     try {
-      const voiceResult = await generateExaminerVoice(response.text);
+      const voiceResult = await generateExaminerVoice(response.text, examinerId);
       audioBase64 = voiceResult.audioBase64;
       audioMimeType = voiceResult.mimeType;
     } catch {
       // TTS failed — return text only, frontend can use browser speech synthesis as fallback
+      console.error("[examiner-respond] TTS generation failed");
     }
 
     return ok({
@@ -52,6 +55,7 @@ export async function POST(req: Request) {
       audioMimeType,
       nextState: response.nextState,
       isComplete: response.isComplete,
+      topic: response.topic,
     }, "Examiner response generated");
   });
 }

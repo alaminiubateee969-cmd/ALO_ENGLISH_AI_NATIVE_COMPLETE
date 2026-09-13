@@ -1,71 +1,267 @@
-import ZAI from 'z-ai-web-dev-sdk';
+/**
+ * src/lib/ai/examiner/ExaminerEngine.ts
+ *
+ * Real-time Voice AI Examiner Engine — conducts a live, conversational
+ * IELTS-style speaking test with:
+ *   - Speech-to-Text (z-ai-web-dev-sdk ASR) for the student's spoken answers
+ *   - LLM (z-ai-web-dev-sdk chat completions) for context-aware examiner replies
+ *   - Text-to-Speech (z-ai-web-dev-sdk TTS) for the examiner's voice
+ *   - Bengali-accent-aware examiner personas (from AIExaminers.ts)
+ *
+ * Used by:
+ *   /api/speaking/transcribe   -> transcribeStudentSpeech()
+ *   /api/speaking/examiner-respond -> generateExaminerResponse() + generateExaminerVoice()
+ *   /api/speaking/examiner-voice -> generateExaminerVoice()
+ *
+ * CRITICAL: z-ai-web-dev-sdk MUST run server-side only.
+ */
 
-export type ExaminerState = "introduction" | "part1_questions" | "part2_instructions" | "part2_preparation" | "part2_long_turn" | "part3_discussion" | "closing" | "completed";
+import ZAI from "z-ai-web-dev-sdk";
+import { AI_EXAMINERS, type AIExaminer } from "@/lib/agents/AIExaminers";
+import { ExaminerStateMachine, type ExaminerState } from "./ExaminerStateMachine";
+import { ConversationMemory } from "./ConversationMemory";
+import { FollowUpEngine } from "./FollowUpEngine";
 
-export type ConversationTurn = { role: "examiner" | "student"; text: string; audioUrl?: string; timestamp: string };
+export type { ExaminerState } from "./ExaminerStateMachine";
 
-const SYSTEM_PROMPT = `You are an AI English Speaking Examiner for ALO Education. Conduct an IELTS-style speaking test.
-Rules: Be professional. Ask ONE question. Listen and ask contextual follow-ups. Never claim to be a human/official examiner.
-Return JSON: {"text": "your examiner response"}`;
+export type ConversationTurn = {
+  role: "examiner" | "student";
+  text: string;
+  audioUrl?: string;
+  timestamp: string;
+};
 
-export async function generateExaminerResponse(transcript: string, history: ConversationTurn[], state: ExaminerState): Promise<{ text: string; nextState: ExaminerState; isComplete: boolean }> {
-  const zai = await ZAI.create();
-  const histText = history.map(t => `${t.role}: ${t.text}`).join("\n");
-  const stateInstr: Record<string, string> = {
-    introduction: "Introduce yourself as AI Examiner. Ask student to introduce themselves.",
-    part1_questions: "Ask general questions (hobbies, work, hometown) based on their answers.",
-    part2_instructions: "Explain Part 2: cue card topic 'Describe a memorable journey'. 1 min prep, 2 min speak.",
-    part2_preparation: "Say: 'Take your time to prepare. Start when ready.'",
-    part2_long_turn: "If they finish early, ask them to elaborate.",
-    part3_discussion: "Ask abstract discussion questions about travel/journeys.",
-    closing: "Thank them. Say test is complete. Results coming soon.",
-    completed: "Test complete.",
-  };
+export type ExaminerResponse = {
+  text: string;
+  audioBase64: string;
+  mimeType: string;
+  nextState: ExaminerState;
+  isComplete: boolean;
+  topic?: string;
+};
+
+// ─── Singleton SDK instance (reuse for performance) ────────────────────────
+let zaiInstance: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+
+async function getZAI() {
+  if (!zaiInstance) {
+    zaiInstance = await ZAI.create();
+  }
+  return zaiInstance;
+}
+
+// ─── System Prompt (Bengali-accent-aware) ──────────────────────────────────
+function buildSystemPrompt(examiner: AIExaminer): string {
+  return `You are ${examiner.name}, ${examiner.title} at ALO Education. You are conducting an IELTS-style AI English Speaking Test.
+
+YOUR PERSONALITY: ${examiner.personality}
+
+ACCENT AWARENESS: ${examiner.accentAwareness}
+You understand that Bengali (Bangladeshi) English speakers have natural accent patterns:
+- v/w confusion (very -> wery) — do NOT penalize
+- th/t or th/d (think -> tink, this -> dis) — do NOT penalize
+- Article dropping (Bengali has no articles) — do NOT penalize
+- Present continuous for habitual actions — do NOT penalize
+Focus on COMMUNICATION and CONTENT, not accent perfection.
+
+STRICT RULES:
+1. Ask only ONE question at a time.
+2. Listen carefully to the student's answer.
+3. Ask context-aware follow-up questions based on what they said.
+4. Be warm, professional, and encouraging.
+5. NEVER claim to be a human or official examiner — you are an AI practice examiner.
+6. Keep your responses SHORT (1-3 sentences) so the conversation feels natural and real-time.
+7. If the student's answer is unclear or very short, gently ask them to elaborate.
+
+Return ONLY valid JSON: {"text": "your examiner response"}`;
+}
+
+// ─── Examiner Response Generation (LLM) ───────────────────────────────────
+
+export async function generateExaminerResponse(
+  transcript: string,
+  history: ConversationTurn[],
+  state: ExaminerState,
+  examinerId: string = AI_EXAMINERS[0].id
+): Promise<{ text: string; nextState: ExaminerState; isComplete: boolean; topic?: string }> {
+  const examiner = AI_EXAMINERS.find((e) => e.id === examinerId) || AI_EXAMINERS[0];
+  const zai = await getZAI();
+
+  const stateMachine = new ExaminerStateMachine();
+  const stateInstruction = stateMachine.getInstructionForState(state);
+  const memory = new ConversationMemory(history);
+  const contextSummary = memory.getSummary();
+  const followUpSuggestion = FollowUpEngine.suggestFollowUp(transcript, state, contextSummary);
+
+  const histText = memory.getRecentTurns(6).map((t) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
+
   try {
     const completion = await zai.chat.completions.create({
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `State: ${state}\nInstruction: ${stateInstr[state]}\nHistory:\n${histText}\n\nStudent said: "${transcript}"\n\nGenerate examiner response as JSON: {"text": "..."}` },
+        { role: "system", content: buildSystemPrompt(examiner) },
+        {
+          role: "user",
+          content: `CONVERSATION STATE: ${state}
+STATE INSTRUCTION: ${stateInstruction}
+${followUpSuggestion ? `FOLLOW-UP HINT: ${followUpSuggestion}` : ""}
+
+RECENT CONVERSATION:
+${histText}
+
+STUDENT JUST SAID: "${transcript}"
+
+As ${examiner.name}, generate your next response. Remember: short, warm, ONE question, JSON only.
+{"text": "..."}`,
+        },
       ],
       thinking: { type: "disabled" },
     });
+
     const content = completion.choices[0]?.message?.content || "";
+
+    // Extract text from JSON (handle both clean JSON and markdown-wrapped)
     let text = content;
-    try { text = JSON.parse(content).text || content; } catch { const m = content.match(/"text"\s*:\s*"([^"]+)"/); text = m ? m[1] : content; }
-    let nextState = state; let isComplete = false;
-    const studentCount = history.filter(t => t.role === "student").length;
-    if (state === "introduction" && transcript.length > 20) nextState = "part1_questions";
-    else if (state === "part1_questions" && studentCount >= 3) nextState = "part2_instructions";
-    else if (state === "part2_instructions") nextState = "part2_preparation";
-    else if (state === "part2_preparation") nextState = "part2_long_turn";
-    else if (state === "part2_long_turn" && transcript.length > 50) nextState = "part3_discussion";
-    else if (state === "part3_discussion" && studentCount >= 6) nextState = "closing";
-    else if (state === "closing") { nextState = "completed"; isComplete = true; }
-    return { text, nextState, isComplete };
-  } catch {
-    const fallbacks: Record<string, string> = {
-      introduction: "Hello, I am your AI Examiner. Welcome to the speaking test. Could you introduce yourself?",
-      part1_questions: "That's interesting. Can you tell me more about that?",
-      part2_instructions: "Now in Part 2, your topic is: Describe a memorable journey. You have 1 minute to prepare and 2 minutes to speak.",
-      part2_preparation: "Take your time to prepare. Start when you're ready.",
-      part2_long_turn: "Can you tell me more about that?",
-      part3_discussion: "How has travel changed in recent years?",
-      closing: "Thank you for your participation. The test is complete.",
-      completed: "Test complete.",
-    };
-    return { text: fallbacks[state] || fallbacks.part1_questions, nextState: state, isComplete: state === "closing" };
+    try {
+      const parsed = JSON.parse(content);
+      text = parsed.text || content;
+    } catch {
+      const m = content.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      text = m ? m[1] : content;
+    }
+    text = text.replace(/^["']|["']$/g, "").trim();
+
+    if (!text) {
+      text = stateMachine.getFallback(state);
+    }
+
+    // Compute next state
+    const studentCount = history.filter((t) => t.role === "student").length + 1;
+    const { nextState, isComplete } = stateMachine.advance(state, studentCount, transcript.length);
+    const topic = stateMachine.getTopicForState(state);
+
+    return { text, nextState, isComplete, topic };
+  } catch (err) {
+    // Fallback if LLM fails
+    const fallbackText = stateMachine.getFallback(state);
+    const { nextState, isComplete } = stateMachine.advance(state, history.filter((t) => t.role === "student").length + 1, transcript.length);
+    return { text: fallbackText, nextState, isComplete };
   }
 }
 
-export async function generateExaminerVoice(text: string): Promise<{ audioBase64: string; mimeType: string }> {
-  const zai = await ZAI.create();
-  const tts = await zai.audio.tts.create({ input: text, voice: "tongtong", response_format: "wav" });
-  const buf = tts.buffer || tts.audio || Buffer.from("");
-  return { audioBase64: Buffer.isBuffer(buf) ? buf.toString("base64") : Buffer.from(buf).toString("base64"), mimeType: "audio/wav" };
+// ─── Examiner Voice Generation (TTS) ──────────────────────────────────────
+/**
+ * Convert examiner text to speech using z-ai-web-dev-sdk TTS.
+ * Returns base64-encoded audio.
+ *
+ * Per TTS skill docs:
+ *   - Use await response.arrayBuffer()
+ *   - Convert with Buffer.from(new Uint8Array(arrayBuffer))
+ *   - Max 1024 chars per request (we chunk if needed)
+ *   - voice: tongtong (warm), xiaochen (professional), jam (British gentleman)
+ */
+export async function generateExaminerVoice(
+  text: string,
+  examinerId: string = AI_EXAMINERS[1].id
+): Promise<{ audioBase64: string; mimeType: string }> {
+  const examiner = AI_EXAMINERS.find((e) => e.id === examinerId) || AI_EXAMINERS[1];
+  const zai = await getZAI();
+
+  // Map examiner persona to a TTS voice
+  const voiceMap: Record<string, string> = {
+    "examiner-01": "xiaochen", // Dr. Anika — professional female
+    "examiner-02": "jam", // Prof. Rifat — British gentleman
+    "examiner-03": "xiaochen", // Dr. Nusrat — analytical female
+    "examiner-04": "tongtong", // Mr. Tanvir — warm/approachable
+    "examiner-05": "xiaochen", // Dr. Farzana — scholarly female
+  };
+  const voice = voiceMap[examiner.id] || "tongtong";
+
+  // Chunk text if > 1024 chars (TTS API limit)
+  const chunks = chunkText(text, 1000);
+
+  const audioBuffers: Buffer[] = [];
+  for (const chunk of chunks) {
+    try {
+      const response = await zai.audio.tts.create({
+        input: chunk,
+        voice,
+        speed: 1.0,
+        response_format: "wav",
+        stream: false,
+      });
+
+      // Per TTS skill: SDK returns a standard Response object
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(new Uint8Array(arrayBuffer));
+      if (buffer.length > 0) {
+        audioBuffers.push(buffer);
+      }
+    } catch (err) {
+      console.error("[ExaminerEngine] TTS chunk failed:", err);
+      // Continue with other chunks
+    }
+  }
+
+  if (audioBuffers.length === 0) {
+    return { audioBase64: "", mimeType: "audio/wav" };
+  }
+
+  // Concatenate all audio buffers
+  const combined = audioBuffers.length === 1 ? audioBuffers[0] : Buffer.concat(audioBuffers);
+  return {
+    audioBase64: combined.toString("base64"),
+    mimeType: "audio/wav",
+  };
 }
 
-export async function transcribeStudentSpeech(audioBase64: string): Promise<{ transcript: string; confidence: number }> {
-  const zai = await ZAI.create();
-  const asr = await zai.audio.asr.create({ file: audioBase64 } as any);
-  return { transcript: asr.text || asr.transcript || "", confidence: asr.confidence || 0.8 };
+// ─── Student Speech Transcription (ASR) ───────────────────────────────────
+/**
+ * Transcribe the student's recorded speech using z-ai-web-dev-sdk ASR.
+ *
+ * Per ASR skill docs:
+ *   - Convert audio to base64
+ *   - Call zai.audio.asr.create({ file_base64: base64Audio })
+ *   - Returns { text: "..." }
+ */
+export async function transcribeStudentSpeech(
+  audioBase64: string
+): Promise<{ transcript: string; confidence: number }> {
+  const zai = await getZAI();
+
+  try {
+    // Strip data URL prefix if present (e.g. "data:audio/webm;base64,AAAA...")
+    const cleanBase64 = audioBase64.replace(/^data:audio\/[a-z]+;base64,/, "");
+
+    const response = await zai.audio.asr.create({
+      file_base64: cleanBase64,
+    });
+
+    const transcript = response.text || response.transcript || "";
+    const confidence = typeof response.confidence === "number" ? response.confidence : 0.85;
+
+    return { transcript, confidence };
+  } catch (err) {
+    console.error("[ExaminerEngine] ASR failed:", err);
+    return { transcript: "", confidence: 0 };
+  }
+}
+
+// ─── Text Chunking Helper (for TTS 1024-char limit) ───────────────────────
+function chunkText(text: string, maxLength: number): string[] {
+  if (text.length <= maxLength) return [text];
+
+  const chunks: string[] = [];
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+
+  let current = "";
+  for (const sentence of sentences) {
+    if ((current + sentence).length <= maxLength) {
+      current += sentence;
+    } else {
+      if (current) chunks.push(current.trim());
+      current = sentence;
+    }
+  }
+  if (current) chunks.push(current.trim());
+  return chunks;
 }

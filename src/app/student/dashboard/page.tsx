@@ -1,11 +1,12 @@
 "use client";
 
 import { DashboardShell, DashboardCard, DashboardTable, useApi } from "@/components/site/dashboard-shell";
-import { FileText, MessageSquare, Calendar, BookOpen, GraduationCap, Award, TrendingUp } from "lucide-react";
+import { FileText, MessageSquare, Calendar, BookOpen, GraduationCap, Award, TrendingUp, Mic } from "lucide-react";
 
 
 const NAV = [
   { label: "Dashboard", href: "/student/dashboard" },
+  { label: "Live AI Examiner", href: "/live-exam" },
   { label: "Course Finder", href: "/course-finder" },
   { label: "Scholarships", href: "/scholarships" },
   { label: "Practice Tests", href: "/practice-test" },
@@ -34,21 +35,44 @@ function StudentDashboardContent() {
         <p className="text-slate-600">Manage your applications, documents, and practice tests.</p>
       </div>
 
+      {/* Live AI Examiner Banner */}
+      <div className="mb-6 overflow-hidden rounded-xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-amber-50 p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white">
+              <Mic className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Live AI Speaking Examiner</h3>
+              <p className="text-sm text-slate-600">
+                Real-time conversational AI voice test — speak into your microphone, the AI examiner listens, transcribes, and responds with voice. Bengali-accent-aware evaluation.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/live-exam"
+            className="shrink-0 rounded-lg bg-rose-500 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-md transition hover:bg-rose-600"
+          >
+            Start Live Voice Test →
+          </a>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
         <h3 className="font-semibold mb-3">Quick Actions</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <a href="/live-exam" className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-4 hover:bg-rose-100">
+            <Mic className="h-5 w-5 text-rose-600" /> Live Voice Examiner
+          </a>
           <a href="/course-finder" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
             <BookOpen className="h-5 w-5 text-blue-600" /> Find a Course
           </a>
           <a href="/scholarships" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
             <Award className="h-5 w-5 text-blue-600" /> Search Scholarships
           </a>
-          <a href="/book-consultation" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
-            <Calendar className="h-5 w-5 text-blue-600" /> Book Appointment
-          </a>
           <a href="/practice-test" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
-            <GraduationCap className="h-5 w-5 text-blue-600" /> Take a Practice Test
+            <GraduationCap className="h-5 w-5 text-blue-600" /> Practice Test (Written)
           </a>
         </div>
       </div>
