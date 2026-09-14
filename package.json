@@ -21,6 +21,7 @@
     "db:seed:questions": "bun run prisma/seed-ielts-questions.ts",
     "db:push": "prisma db push",
     "db:reset": "prisma migrate reset --force",
+    "prisma:seed": "bun run prisma/seed.ts && bun run prisma/seed-questions.ts && bun run prisma/seed-all-exams.ts && bun run prisma/seed-gre-gmat-sat-act.ts",
     "verify": "bash scripts/verify.sh",
     "backup": "bash scripts/backup.sh",
     "restore": "bash scripts/restore.sh",

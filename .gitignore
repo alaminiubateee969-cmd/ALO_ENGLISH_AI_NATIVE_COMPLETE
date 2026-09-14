@@ -30,12 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — keep .env.example, ignore real .env
+.env
+.env.local
+.env.*.local
+!.env.example
 
 # vercel
 .vercel
-
 
 # typescript
 *.tsbuildinfo
@@ -50,19 +52,23 @@ test
 prompt
 
 server.log
-# Skills directory
+
+# Skills directory (internal tooling, not part of app)
 /skills/
 
 # Production artifacts
 /dist/
 *.tar.gz
 *.zip
-!cpanel-production/dist/
 
-# Database files
+# Database files (generated at deploy time)
 *.db
 *.db-journal
 /db/
+
+# Uploads (user-generated at runtime)
+/upload/
+/download/
 
 # IDE
 .idea/
@@ -73,16 +79,20 @@ server.log
 # OS
 Thumbs.db
 
+# Logs
+logs/
+*.log
+
 # Separate project directories (not part of this deployment)
 /cpanel-production/
 /english-aloeducation/
-/mini-services/
-/examples/
 /tool-results/
-/upload/
-/download/
 /worklog.md
 FINAL-PRODUCTION-PACKAGE.zip
 FINAL-DELIVERY-GUIDE.md
 PRODUCTION-DEPLOYMENT-GUIDE.md
 english-aloeducation-web-crm-production.tar.gz
+
+# Keep these directories (don't ignore)
+!mini-services/
+!examples/
