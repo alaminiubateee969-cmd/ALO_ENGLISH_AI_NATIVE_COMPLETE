@@ -1,0 +1,77 @@
+# GitHub Actions — Auto-deploy to VPS on push to main
+#
+# Setup:
+#   1. Go to repo Settings → Secrets and variables → Actions
+#   2. Add these secrets:
+#      - VPS_HOST: 115.187.18.239
+#      - VPS_USER: root
+#      - VPS_SSH_KEY: your SSH private key
+#      - VPS_PATH: /var/www/alo-education-english
+#   3. Push to main → auto-deploys to VPS
+
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync files to VPS
+        run: |
+          rsync -avz --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            --exclude 'db/*.db' \
+            --exclude 'db/*.db-journal' \
+            --exclude '.env' \
+            --exclude 'upload' \
+            --exclude 'skills' \
+            -e "ssh -i ~/.ssh/id_rsa" \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/
+
+      - name: Install + Build + Restart on VPS
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ secrets.VPS_PATH }}
+
+            # Install dependencies
+            bun install --frozen-lockfile
+
+            # Copy .env.example to .env if .env doesn't exist
+            if [ ! -f .env ]; then
+              cp .env.example .env
+              echo "WARNING: .env created from .env.example — edit it to set AUTH_SECRET!"
+            fi
+
+            # Generate Prisma client
+            bun run db:push
+
+            # Build for production
+            bun run build
+
+            # Restart PM2
+            pm2 restart alo-english || pm2 start "bun run start" --name alo-english
+            pm2 save
+
+            echo "✅ Deployed successfully to ${{ secrets.VPS_HOST }}"
+          EOF

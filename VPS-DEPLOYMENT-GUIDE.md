@@ -1,0 +1,270 @@
+# VPS Deployment Guide — english.aloeducation.com
+
+**Server:** 115.187.18.239 (server.aloeducation.com)
+**WHM Panel:** http://115.187.18.239:2087
+**Domain:** english.aloeducation.com
+**Nameservers:** ns1.aloeducation.com, ns2.aloeducation.com
+
+---
+
+## Step 1: DNS Setup
+
+In your domain registrar (or WHM → DNS Functions → Add DNS Zone):
+
+```
+A    english.aloeducation.com    →    115.187.18.239
+A    www.english.aloeducation.com →    115.187.18.239
+```
+
+Verify DNS propagation:
+```bash
+dig english.aloeducation.com
+# Should return: 115.187.18.239
+```
+
+---
+
+## Step 2: SSH into VPS
+
+```bash
+ssh root@115.187.18.239
+```
+
+---
+
+## Step 3: Run the Deployment Script
+
+```bash
+# Clone the repo
+cd /var/www
+git clone https://github.com/YOUR_USERNAME/alo-education-english.git
+cd alo-education-english
+
+# Make the deploy script executable
+chmod +x deploy-vps.sh
+
+# Run it (installs Node.js, Bun, PM2, Nginx, SSL)
+./deploy-vps.sh
+```
+
+The script automatically:
+- ✅ Installs Node.js 20, Bun, PM2, Nginx, Certbot
+- ✅ Creates `/var/www/alo-education-english` directory
+- ✅ Generates `.env` with a random AUTH_SECRET
+- ✅ Configures Nginx as reverse proxy
+- ✅ Sets up PM2 to keep the app running
+- ✅ Gets a free SSL certificate from Let's Encrypt
+
+---
+
+## Step 4: Upload Project Files
+
+If you haven't cloned from GitHub yet, upload the zip:
+
+```bash
+# On your local machine:
+scp alo-education-full-project.zip root@115.187.18.239:/var/www/
+
+# On the VPS:
+cd /var/www
+unzip alo-education-full-project.zip -d alo-education-english
+cd alo-education-english
+```
+
+---
+
+## Step 5: Install + Build + Seed
+
+```bash
+cd /var/www/alo-education-english
+
+# Install dependencies
+bun install
+
+# Set up database
+bun run db:push
+bun run prisma:seed
+
+# Build for production
+bun run build
+
+# Start with PM2
+pm2 start ecosystem.config.js --name alo-english
+pm2 save
+pm2 startup
+```
+
+---
+
+## Step 6: Set Environment Variables
+
+Edit the `.env` file:
+```bash
+nano /var/www/alo-education-english/.env
+```
+
+Set these required values:
+```env
+DATABASE_URL="file:/var/www/alo-education-english/db/custom.db"
+AUTH_SECRET="your-generated-secret-here"
+NODE_ENV="production"
+PORT=3000
+```
+
+Optional (for AI-powered evaluation):
+```env
+AI_ENABLED="true"
+GROQ_API_KEY="your-groq-key"
+```
+
+After changing `.env`, restart:
+```bash
+pm2 restart alo-english
+```
+
+---
+
+## Step 7: Start the WebSocket Service (for live examiner)
+
+```bash
+cd /var/www/alo-education-english/mini-services/examiner-stream
+bun install
+pm2 start "bun run dev" --name alo-examiner-stream
+pm2 save
+```
+
+---
+
+## Step 8: Verify Deployment
+
+```bash
+# Check PM2 status
+pm2 status
+
+# Check Nginx
+nginx -t
+systemctl status nginx
+
+# Test the site
+curl -I https://english.aloeducation.com
+# Should return: HTTP/2 200
+
+# Check logs
+pm2 logs alo-english
+```
+
+Visit: **https://english.aloeducation.com**
+
+---
+
+## GitHub Auto-Deploy (Optional)
+
+The included `.github/workflows/deploy.yml` automatically deploys when you push to `main`.
+
+**Setup:**
+
+1. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
+2. Add these secrets:
+
+| Secret | Value |
+|--------|-------|
+| `VPS_HOST` | `115.187.18.239` |
+| `VPS_USER` | `root` |
+| `VPS_SSH_KEY` | Your SSH private key |
+| `VPS_PATH` | `/var/www/alo-education-english` |
+
+3. Generate an SSH key on the VPS:
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/id_ed25519  # Copy this to GitHub secret VPS_SSH_KEY
+```
+
+4. Push to `main` → auto-deploys!
+
+---
+
+## Common Commands
+
+```bash
+# App management
+pm2 status                    # View running apps
+pm2 logs alo-english          # View app logs
+pm2 restart alo-english       # Restart app
+pm2 stop alo-english          # Stop app
+
+# Nginx
+nginx -t                      # Test config
+systemctl reload nginx        # Reload config
+systemctl restart nginx       # Restart Nginx
+
+# SSL renewal (automatic, but you can test)
+certbot renew --dry-run
+
+# Database backup
+cp /var/www/alo-education-english/db/custom.db /backup/db-$(date +%Y%m%d).db
+
+# Update the app
+cd /var/www/alo-education-english
+git pull
+bun install
+bun run db:push
+bun run build
+pm2 restart alo-english
+```
+
+---
+
+## Troubleshooting
+
+### Port 3000 already in use
+```bash
+lsof -i :3000
+kill -9 <PID>
+pm2 restart alo-english
+```
+
+### Nginx 502 Bad Gateway
+- App is not running → `pm2 restart alo-english`
+- Check logs → `pm2 logs alo-english`
+
+### SSL certificate failed
+- DNS not propagated → wait 5-10 minutes after setting DNS
+- Port 80 blocked → `ufw allow 80,443/tcp`
+
+### Database locked
+```bash
+pm2 stop alo-english
+rm /var/www/alo-education-english/db/custom.db-journal
+pm2 start alo-english
+```
+
+---
+
+## File Structure on VPS
+
+```
+/var/www/alo-education-english/
+├── .env                      # Environment variables
+├── .next/                    # Built app (generated by `bun run build`)
+├── db/
+│   └── custom.db             # SQLite database
+├── logs/                     # PM2 logs
+├── public/
+│   └── examiners/            # AI examiner avatar images
+├── src/                      # Source code
+├── prisma/                   # Database schema + seeds
+├── mini-services/
+│   └── examiner-stream/      # WebSocket service (port 3003)
+├── ecosystem.config.js       # PM2 config
+├── package.json
+└── deploy-vps.sh             # Deployment script
+```
+
+---
+
+## Support
+
+- **WHM Panel:** http://115.187.18.239:2087 (user: root)
+- **Docs:** See `README.md` for full feature list
+- **Logs:** `pm2 logs alo-english`
