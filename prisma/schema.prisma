@@ -615,3 +615,81 @@ model LearningMemory {
   @@index([userId])
   @@index([weaknessType])
 }
+
+// ═══ Agent Learning & Self-Development ═════════════════════════════════
+
+model AgentLearning {
+  id            String   @id @default(cuid())
+  agentId       String   // e.g. "examiner-02", "writing-eval-agent"
+  agentType     String   // EXAMINER|EVALUATOR|QUESTION_GENERATOR|ORCHESTRATOR
+  learnDate     DateTime @default(now())
+  examTypeCode  String?  // IELTS|TOEFL|PTE|...
+  observation   String   // What the agent learned (e.g. "Students struggle with Part 2 long turn")
+  insight       String?  // Extracted insight (e.g. "Add more preparation time prompts")
+  metricType    String?  // ACCURACY|FLUENCY|CONFIDENCE|WEAKNESS_PATTERN
+  metricValue   Float?
+  sampleSize    Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  @@index([agentId, learnDate])
+  @@index([agentType])
+  @@index([examTypeCode])
+}
+
+model AgentEvolution {
+  id             String   @id @default(cuid())
+  agentId        String
+  version        Int      @default(1)
+  changeType     String   // PROMPT_UPDATE|RULE_ADD|PARAMETER_TUNING|NEW_SPECIALIST
+  description    String
+  triggerMetric  String?  // What metric triggered this evolution
+  triggerValue   Float?
+  previousConfig String?  // JSON of previous config
+  newConfig      String?  // JSON of new config
+  approvedBy     String?  // "auto" or user id
+  deployedAt     DateTime?
+  isActive       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([agentId, version])
+  @@index([isActive])
+}
+
+model ExamAnalytics {
+  id             String   @id @default(cuid())
+  examTypeCode   String
+  questionId     String?
+  section        String?  // LISTENING|READING|WRITING|SPEAKING
+  totalAttempts  Int      @default(0)
+  correctCount   Int      @default(0)
+  avgScore       Float    @default(0)
+  avgDurationSec Float    @default(0)
+  difficulty     Float    @default(0.5) // 0=easy, 1=hard
+  discrimination Float    @default(0)   // how well it distinguishes strong/weak
+  lastUpdated    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([examTypeCode, questionId])
+  @@index([examTypeCode])
+  @@index([section])
+}
+
+model AgentSpecialist {
+  id             String   @id @default(cuid())
+  name           String
+  specialization String   // e.g. "Bengali-Article-Dropping", "Part2-Long-Turn-Coaching"
+  parentAgentId  String?  // Which agent created this specialist
+  examTypeCode   String?  // Which exam type this specialist handles
+  config         String   // JSON: prompt, voice, focus areas
+  performance    Float    @default(0.5) // 0-1, rolling average
+  totalExams     Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdById    String?  // "auto" or user id
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([specialization])
+  @@index([examTypeCode])
+  @@index([isActive])
+}

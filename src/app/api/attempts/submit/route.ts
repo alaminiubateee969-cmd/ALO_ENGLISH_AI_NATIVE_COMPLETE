@@ -11,6 +11,7 @@ import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
 import { audit, getClientIp } from "@/lib/audit";
 import { conductExam } from "@/lib/agents/ExamConductorAgent";
+import { ExamOrchestrator } from "@/lib/ai/learning/ExamOrchestrator";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -96,6 +97,12 @@ export async function POST(req: Request): Promise<Response> {
       userId: user.id,
       resource: "score:" + attemptId,
       metadata: { provider: result.providerUsed, fallback: result.fallbackUsed, confidence: result.confidence },
+    });
+
+    // Trigger the daily learning loop (non-blocking — don't delay the response)
+    // This is the "প্রতিদিন তারা শিখবে" (every day they learn) feature.
+    ExamOrchestrator.onExamSubmitted(attemptId).catch((err) => {
+      console.error("[submit] Learning loop trigger failed:", err);
     });
 
     return ok({ attempt: { id: attemptId, status: result.status }, result }, "Exam evaluated by AI agents");
