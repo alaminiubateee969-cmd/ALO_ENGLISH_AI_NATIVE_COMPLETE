@@ -693,3 +693,36 @@ model AgentSpecialist {
   @@index([examTypeCode])
   @@index([isActive])
 }
+
+// ═══ RAG Knowledge Base (ExamCite-style) ═══════════════════════════════
+
+model StudyMaterial {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  category      String   // IELTS|TOEFL|PTE|GENERAL|GRAMMAR|VOCABULARY
+  sourceType    String   // TEXT|URL|FILE
+  content       String   // The full text content for RAG
+  chunkCount    Int      @default(0)
+  uploadedById  String?  // User who uploaded (null = system)
+  isPublic      Boolean  @default(true)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublic, isActive])
+}
+
+model ChatSession {
+  id            String   @id @default(cuid())
+  userId        String?
+  sessionId     String   @unique // anonymous session ID (for no-signup use)
+  materialId    String?
+  messages      String   // JSON array of {role, content, timestamp}
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+}
