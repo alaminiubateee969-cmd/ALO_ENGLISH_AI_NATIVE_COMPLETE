@@ -23,6 +23,7 @@
     "db:reset": "prisma migrate reset --force",
     "prisma:seed": "bun run prisma/seed.ts && bun run prisma/seed-questions.ts && bun run prisma/seed-all-exams.ts && bun run prisma/seed-gre-gmat-sat-act.ts",
     "prisma:seed:rbac": "bun run prisma/seed-rbac.ts",
+    "prisma:seed:exams": "bun run prisma/seed-all-missing-exams.ts && bun run prisma/seed-expand-exams.ts",
     "verify": "bash scripts/verify.sh",
     "backup": "bash scripts/backup.sh",
     "restore": "bash scripts/restore.sh",
