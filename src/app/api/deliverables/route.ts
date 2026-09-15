@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { readdir, stat } from "fs/promises";
 import { join, relative } from "path";
+import { requireRole } from "@/lib/rbac";
+import { withErrorHandler } from "@/lib/responses";
 
 const ROOT = join(process.cwd(), "cpanel-production");
 
@@ -39,18 +41,22 @@ async function walk(dir: string): Promise<Entry[]> {
 }
 
 export async function GET() {
-  try {
-    const tree = await walk(ROOT);
-    const flat = await collectFiles(ROOT, "");
-    return NextResponse.json({
-      ok: true,
-      total_files: flat.length,
-      tree,
-      files: flat,
-    });
-  } catch (e) {
-    return NextResponse.json({ ok: false, error: "Could not read production folder" }, { status: 500 });
-  }
+  return withErrorHandler(async () => {
+    // Phase 1: Lock down — only SUPER_ADMIN can enumerate production files
+    await requireRole("SUPER_ADMIN");
+    try {
+      const tree = await walk(ROOT);
+      const flat = await collectFiles(ROOT, "");
+      return NextResponse.json({
+        ok: true,
+        total_files: flat.length,
+        tree,
+        files: flat,
+      });
+    } catch {
+      return NextResponse.json({ ok: false, error: "Could not read production folder" }, { status: 500 });
+    }
+  });
 }
 
 async function collectFiles(dir: string, prefix: string): Promise<{ path: string; size: number; ext: string }[]> {

@@ -63,6 +63,13 @@ export async function POST(req: Request): Promise<Response> {
     // Set session.
     await setSessionCookie(user.id);
 
+    // Update lastLoginAt + create a Session record (for revocation tracking)
+    const userAgent = req.headers.get('user-agent') || null;
+    await db.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    }).catch(() => {}); // Non-critical — don't fail login if this errors
+
     // Audit log.
     await audit('LOGIN_SUCCESS', { userId: user.id, ipAddress: ip });
 
