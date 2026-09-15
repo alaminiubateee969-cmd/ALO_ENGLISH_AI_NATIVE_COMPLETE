@@ -2,11 +2,11 @@
  * GET /api/exam-types — List all active exam types.
  *
  * Public endpoint (no auth required).
- * Returns exam types with practice set counts.
+ * Returns exam types with practice set counts and question counts.
  */
 
 import { db } from '@/lib/db';
-import { ok, internalError } from '@/lib/responses';
+import { ok } from '@/lib/responses';
 import { withErrorHandler } from '@/lib/responses';
 
 export const runtime = 'nodejs';
@@ -18,7 +18,11 @@ export async function GET(): Promise<Response> {
       where: { isActive: true },
       orderBy: { category: 'asc' },
       include: {
-        _count: { select: { practiceSets: { where: { isActive: true } } } },
+        practiceSets: {
+          include: {
+            _count: { select: { questions: true } },
+          },
+        },
       },
     });
 
@@ -29,7 +33,8 @@ export async function GET(): Promise<Response> {
           code: et.code,
           name: et.name,
           category: et.category,
-          practiceSetCount: et._count.practiceSets,
+          practiceSetCount: et.practiceSets.length,
+          questionCount: et.practiceSets.reduce((sum, ps) => sum + ps._count.questions, 0),
         })),
       },
       'Exam types retrieved'

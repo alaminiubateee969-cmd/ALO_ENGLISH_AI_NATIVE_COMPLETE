@@ -1552,3 +1552,50 @@ Stage Summary:
 - Security headers: 6 (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
 - Tests: 60/60 passing
 - Critical vulnerabilities fixed: 2 (/api/deliverables and /api/deliverable were completely unprotected)
+
+---
+Task ID: REAL-EXAMS-ALL-TYPES-AND-PREP-MATERIALS
+Agent: main (Z.ai Code)
+Task: Verify all exam systems are real (matching official exam formats), add questions for all missing exam types, add exam preparation materials.
+
+Work Log:
+- Read live site (https://english.aloeducation.com) — old platform with 32 exam types, 12,500+ students.
+- Audited our build: 20 exam types in DB, but only 9 had questions. 11 exam types had ZERO questions: IELTS-G, IELTS-UKVI, OET, LanguageCert, Linguaskill, OIETC, TOEIC, Cambridge, LSAT, MCAT, Visa Interview.
+- Created prisma/seed-all-missing-exams.ts — seeded real-format questions for all 11 missing exam types:
+  * IELTS-G: 10 questions (reading T/F/NG, MC, letter writing, essay, speaking)
+  * IELTS-UKVI: 5 questions (listening fill-blank, reading MC, speaking, writing)
+  * OET: 6 questions (healthcare listening, reading, writing discharge letter, speaking role-play)
+  * LanguageCert: 5 questions (reading MC, fill-blank, essay, speaking, listening)
+  * Linguaskill: 5 questions (reading MC, fill-blank, email writing, speaking, listening)
+  * OIETC: 5 questions (reading MC, T/F/NG, essay, speaking, listening)
+  * TOEIC: 5 questions (business listening, reading, memo comprehension)
+  * Cambridge B2 First: 6 questions (reading MC, fill-blank, T/F/NG, essay, speaking, listening)
+  * LSAT: 5 questions (reading comprehension, logical reasoning, writing sample)
+  * MCAT: 5 questions (biology reading, fill-blank, research methodology)
+  * Visa Interview: 6 questions (speaking practice, SOP writing)
+- Total questions: 458 across 20 practice sets (was 395 across 9 sets)
+- Seeded 9 exam preparation study guides to RAG knowledge base:
+  * IELTS Academic, IELTS General Training, TOEFL iBT, PTE Academic, Duolingo, OET, Cambridge B2 First, TOEIC, Visa Interview
+  * Each guide covers: exam format, sections, duration, scoring, tips, common mistakes
+  * Total study materials: 14 (was 5)
+- Created /exam-prep page — comprehensive exam preparation center:
+  * Shows all 20 exam types with question counts, duration, sections, scoring
+  * Study tips for each exam type
+  * "Start Practice" buttons linking to practice-test
+  * "Guide" buttons linking to AI handbook
+  * AI Handbook banner (free, no sign-up)
+  * Category filter (English Proficiency, Academic, ALO Internal, Visa & Interview)
+  * Stats: 20 exam types, 458 questions, 14 study guides, 24/7 AI handbook
+  * Study Materials section showing all preparation guides
+- Added "Exam Prep" to site header navigation.
+- Updated /api/exam-types to return questionCount (was only returning practiceSetCount).
+
+Verification:
+- Lint: PASS (0 errors)
+- Typecheck: PASS (0 errors)
+- Tests: 60/60 PASS
+- All pages HTTP 200: /exam-prep, /ask-handbook, /practice-test, /live-exam, /
+- Agent Browser: /exam-prep renders "Exam Preparation Center" heading, 20 exam types with question counts, "Start Practice" buttons, study tips. No console errors.
+- Exam types API: returns 20 exam types, all with questionCount > 0, total 458 questions
+
+Final ZIP: public/alo-education-full-project.zip (519 files, 1.4MB, integrity PASS)
