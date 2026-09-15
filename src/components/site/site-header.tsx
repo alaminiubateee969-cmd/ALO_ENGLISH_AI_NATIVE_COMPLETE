@@ -16,7 +16,7 @@ export function SiteHeader() {
             { label: "Course Finder", href: "/course-finder" },
             { label: "Universities", href: "/universities" },
             { label: "Scholarships", href: "/scholarships" },
-            { label: "Services", href: "/services" },
+            { label: "Exam Prep", href: "/exam-prep" },
             { label: "Language Prep", href: "/language-prep" },
             { label: "AI Handbook", href: "/ask-handbook" },
             { label: "Resources", href: "/resources" },
