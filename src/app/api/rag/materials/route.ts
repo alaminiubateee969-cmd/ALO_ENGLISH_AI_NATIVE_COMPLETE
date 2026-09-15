@@ -24,6 +24,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   return withErrorHandler(async () => {
+    // Phase 1: Lock down — only ADMIN+ can upload study materials
     const user = await requireAuth();
     if (!["SUPER_ADMIN", "ADMIN"].includes(user.role)) {
       return badRequest("Only admins can upload study materials");

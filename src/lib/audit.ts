@@ -75,7 +75,22 @@ export type AuditAction =
   | 'NOTIFICATIONS_DELETE'
   | 'USERS_DELETE'
   | 'COMMISSIONS_DELETE'
-  | 'AUDIT-LOGS_DELETE';
+  | 'AUDIT-LOGS_DELETE'
+  // Phase 1: RBAC + Multi-tenancy audit actions
+  | 'ROLE_CREATED'
+  | 'ROLE_UPDATED'
+  | 'ROLE_DELETED'
+  | 'PERMISSION_GRANTED'
+  | 'PERMISSION_REVOKED'
+  | 'TEAM_CREATED'
+  | 'TEAM_UPDATED'
+  | 'TEAM_MEMBER_ADDED'
+  | 'TEAM_MEMBER_REMOVED'
+  | 'SESSION_REVOKED'
+  | 'USER_CREATED'
+  | 'USER_UPDATED'
+  | 'USER_DISABLED'
+  | 'USER_ENABLED';
 
 /**
  * Record an audit log entry.

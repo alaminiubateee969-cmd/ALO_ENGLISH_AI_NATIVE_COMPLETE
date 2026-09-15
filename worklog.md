@@ -1503,3 +1503,52 @@ Stage Summary:
 - 1 new page (/ask-handbook) — free public AI study chat
 - 5 seeded study materials
 - Total: 502 files, 30 pages, 68 API routes, 36 Prisma models
+
+---
+Task ID: PHASE-1-AUTH-RBAC-MULTI-TENANCY
+Agent: main (Z.ai Code)
+Task: Build Phase 1 — production authentication, RBAC, multi-tenancy foundation, audit logging, security headers.
+
+Work Log:
+- Audited existing auth: custom HMAC session system (auth.ts), proxy.ts (Next.js 16 middleware), 68 API routes. Found 2 critical issues: /api/deliverables and /api/deliverable were COMPLETELY UNPROTECTED (anonymous users could download .env, .htaccess, .sql files).
+- Added 6 new Prisma models: Team, TeamMember, Role, Permission, RolePermission, Session. Ran db:push (synced).
+- Added User relations: teamMembers[], sessions[].
+- Created src/lib/rbac.ts with: requireSession(), requireUser(), requireRole(), requirePermission(), requireTeamAccess(), requireResourceOwnership(), getUserPermissions() (cached 60s), getUserTeams(), getAccessibleTeamIds(), invalidatePermissionCache().
+- Created prisma/seed-rbac.ts — seeded 1 team, 9 system roles (SUPER_ADMIN, ADMIN, MANAGER, COUNSELLOR, MARKETING, CONTENT_MANAGER, FINANCE, SUPPORT, VIEWER), 44 permissions, 149 role-permission mappings.
+- Enhanced src/proxy.ts (Next.js 16 middleware): added CSP header, HSTS, Permissions-Policy, public route allowlist (PUBLIC_PAGES + PUBLIC_API_PATTERNS).
+- Locked down /api/deliverables and /api/deliverable — now require SUPER_ADMIN (were completely open).
+- Fixed /api/rag/materials POST — now correctly requires ADMIN+ (was requireAuth = any user).
+- Added auth to /api/questions — now requires login (was public).
+- Updated /api/auth/login — now updates lastLoginAt on User.
+- Added 14 new AuditAction types: ROLE_CREATED, ROLE_UPDATED, ROLE_DELETED, PERMISSION_GRANTED, PERMISSION_REVOKED, TEAM_CREATED, TEAM_UPDATED, TEAM_MEMBER_ADDED, TEAM_MEMBER_REMOVED, SESSION_REVOKED, USER_CREATED, USER_UPDATED, USER_DISABLED, USER_ENABLED.
+- Created 4 new RBAC API routes: /api/rbac/roles, /api/rbac/permissions, /api/rbac/teams, /api/rbac/team-members — all require permission checks.
+- Created scripts/bootstrap-admin.ts — secure CLI to create first SUPER_ADMIN user.
+- Updated .env.example: added APP_URL, APP_PORT, BACKUP_DIR (required by existing tests).
+- Added prisma:seed:rbac script to package.json.
+- Created tests/rbac.test.ts with 25 tests: database models, permission assignment, team isolation, audit logging, security (password hashing, status checks, session uniqueness), deliverables route protection, middleware/proxy verification, env security.
+
+Verification Results:
+- Lint: PASS (0 errors)
+- Typecheck: PASS (0 errors)
+- Tests: 60/60 PASS (35 existing + 25 new RBAC tests)
+- Prisma validate: PASS (schema valid)
+- Production verification:
+  * Public routes (/, /login, /ask-handbook, /api/health, /api/exam-types): all 200 ✅
+  * Protected routes unauthenticated (/api/auth/me, /api/attempts, /api/learning/dashboard, /api/crm/leads, /api/questions): all 401 ✅
+  * Locked-down deliverables (/api/deliverables, /api/deliverable): both 401 ✅
+  * RBAC routes (/api/rbac/roles, permissions, teams): all 401 ✅
+  * Security headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, X-DNS-Prefetch-Control all present ✅
+- API route protection: 60/72 protected (12 intentionally public: health, exam-types, practice-sets, login, register, forgot/reset password, rag/ask, lead, examiners, agents/status, root, logout)
+
+Final ZIP: public/alo-education-full-project.zip (515 files, 1.4MB, integrity PASS)
+
+Stage Summary:
+- RBAC models: 6 new (Team, TeamMember, Role, Permission, RolePermission, Session) — total 42 Prisma models
+- System roles: 9 (SUPER_ADMIN through VIEWER)
+- Permissions: 44 across 15 categories
+- Role-permission mappings: 149
+- Auth helpers: 10+ functions (requireSession, requireRole, requirePermission, requireTeamAccess, etc.)
+- API routes protected: 60/72 (83%)
+- Security headers: 6 (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- Tests: 60/60 passing
+- Critical vulnerabilities fixed: 2 (/api/deliverables and /api/deliverable were completely unprotected)

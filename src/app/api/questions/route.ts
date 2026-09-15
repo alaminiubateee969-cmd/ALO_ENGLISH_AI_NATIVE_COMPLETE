@@ -8,12 +8,16 @@
 import { db } from "@/lib/db";
 import { ok, badRequest } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
+import { requireAuth } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
+    // Phase 1: Require auth — students must be logged in to fetch questions
+    await requireAuth();
+
     const url = new URL(req.url);
     const practiceSetId = url.searchParams.get("practiceSetId");
 
