@@ -2,7 +2,31 @@
 
 > Production-ready English proficiency exam platform with real-time AI voice examiner, daily learning loop, and self-building agents.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-6-indigo.svg)](https://www.prisma.io/)
+[![Tests](https://img.shields.io/badge/tests-60%2F60%20pass-brightgreen.svg)](#tests)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 **Live URL:** `https://english.aloeducation.com`
+
+---
+
+## Overview
+
+A comprehensive English proficiency exam platform serving 12,500+ students. Features 20 exam types (IELTS, TOEFL, PTE, Duolingo, OET, Cambridge, GRE, GMAT, SAT, ACT, LSAT, MCAT, and more) with 510+ real exam-aligned questions, a real-time AI voice examiner, daily learning loop, and self-building specialist agents.
+
+### Key Features
+
+- **20 Exam Types** — IELTS, TOEFL, PTE, Duolingo, OET, Cambridge, GRE, GMAT, SAT, ACT, LSAT, MCAT, Visa Interview, and more
+- **510+ Real Questions** — Every question follows the official exam format
+- **Real-Time Voice AI Examiner** — 5 Bengali AI examiner personas with STT + TTS + LLM
+- **Daily Learning Loop** — System learns from every exam and improves daily
+- **Self-Building Agents** — AI creates new specialist agents based on performance gaps
+- **RBAC + Multi-Tenancy** — 9 system roles, 44 permissions, team isolation
+- **RAG Handbook** — Free AI study chat (no signup required)
+- **CRM** — 18 entities, full CRUD, audit logging
 
 ---
 
