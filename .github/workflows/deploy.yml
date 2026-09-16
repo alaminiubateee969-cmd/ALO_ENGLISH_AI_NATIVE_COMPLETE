@@ -1,11 +1,14 @@
 # GitHub Actions — Auto-deploy to VPS on push to main
 #
+# Repository: https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE
+# VPS: 115.187.18.239 (english.aloeducation.com)
+#
 # Setup:
 #   1. Go to repo Settings → Secrets and variables → Actions
 #   2. Add these secrets:
 #      - VPS_HOST: 115.187.18.239
 #      - VPS_USER: root
-#      - VPS_SSH_KEY: your SSH private key
+#      - VPS_SSH_KEY: your SSH private key (cat ~/.ssh/id_rsa)
 #      - VPS_PATH: /var/www/alo-education-english
 #   3. Push to main → auto-deploys to VPS
 
@@ -22,11 +25,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
 
       - name: Install SSH key
         run: |
@@ -46,6 +44,8 @@ jobs:
             --exclude '.env' \
             --exclude 'upload' \
             --exclude 'skills' \
+            --exclude 'tool-results' \
+            --exclude 'logs' \
             -e "ssh -i ~/.ssh/id_rsa" \
             ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/
 
@@ -55,23 +55,45 @@ jobs:
             cd ${{ secrets.VPS_PATH }}
 
             # Install dependencies
-            bun install --frozen-lockfile
+            bun install --frozen-lockfile || bun install
 
             # Copy .env.example to .env if .env doesn't exist
             if [ ! -f .env ]; then
               cp .env.example .env
-              echo "WARNING: .env created from .env.example — edit it to set AUTH_SECRET!"
+              AUTH_SECRET=$(openssl rand -base64 48)
+              sed -i "s/REPLACE_WITH_RANDOM_32_CHAR_STRING/$AUTH_SECRET/" .env
+              echo "✅ .env created with generated AUTH_SECRET"
             fi
 
-            # Generate Prisma client
+            # Generate Prisma client + push schema
             bun run db:push
+
+            # Seed if database is empty
+            if [ ! -f db/custom.db ] || [ $(stat -c%s db/custom.db 2>/dev/null || echo 0) -lt 10000 ]; then
+              echo "🌱 Seeding database..."
+              bun run prisma:seed || true
+              bun run prisma:seed:rbac || true
+              bun run prisma:seed:exams || true
+            fi
 
             # Build for production
             bun run build
 
             # Restart PM2
-            pm2 restart alo-english || pm2 start "bun run start" --name alo-english
+            pm2 restart alo-english || pm2 start "node_modules/.bin/next start -p 3000" --name alo-english --cwd ${{ secrets.VPS_PATH }}
+            pm2 restart alo-examiner-stream || (cd mini-services/examiner-stream && bun install && pm2 start "bun run dev" --name alo-examiner-stream --cwd ${{ secrets.VPS_PATH }}/mini-services/examiner-stream)
             pm2 save
 
             echo "✅ Deployed successfully to ${{ secrets.VPS_HOST }}"
           EOF
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://english.aloeducation.com || echo "000")
+          echo "HTTPS status: $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Site is live!"
+          else
+            echo "⚠️  Site returned $HTTP_CODE — may still be starting up"
+          fi

@@ -1668,3 +1668,54 @@ Final ZIP: public/alo-education-full-project.zip (529 files, 1.4MB, integrity PA
 Download: HTTP 200, 1.4MB
 
 The project is now ready for submission to opensourceprojects.dev and has all standard open-source community files.
+
+---
+Task ID: GITHUB-PUSH-AND-VPS-DEPLOY-READY
+Agent: main (Z.ai Code)
+Task: Configure project for specific GitHub repo + VPS, create push/deploy scripts, final complete zip.
+
+Work Log:
+- Target GitHub repo: https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE.git
+- Target VPS: 115.187.18.239 (server.aloeducation.com), WHM: http://115.187.18.239:2087 (root)
+- Nameservers: ns1.aloeducation.com, ns2.aloeducation.com
+- Domain: english.aloeducation.com
+
+Created git-push.sh (7,094 bytes):
+  - Configured for the specific GitHub repo
+  - Security check (scans for secrets before commit)
+  - Verifies .env is gitignored
+  - Stages all files, commits with detailed message
+  - Adds/updates remote origin
+  - Pushes to main branch
+  - Error handling with credential/token instructions
+
+Updated deploy-vps.sh (12,133 bytes):
+  - Configured for VPS IP 115.187.18.239
+  - Domain: english.aloeducation.com
+  - App dir: /var/www/alo-education-english
+  - Clones from the specific GitHub repo
+  - Installs Node.js 20, Bun, PM2, Nginx, Certbot
+  - Sets up .env with generated AUTH_SECRET
+  - Pushes DB schema + seeds (basic + RBAC + exams)
+  - Builds for production
+  - Starts with PM2 (app + WebSocket service)
+  - Configures Nginx as reverse proxy with WebSocket support
+  - Sets up SSL via Let's Encrypt
+  - Security headers + gzip + file upload support
+
+Updated .github/workflows/deploy.yml (3,500 bytes):
+  - Configured for auto-deploy on push to main
+  - rsync to VPS at /var/www/alo-education-english
+  - SSH key-based authentication
+  - Auto-install, build, seed, restart PM2
+  - Post-deploy HTTPS verification
+
+Verification:
+- Lint: PASS
+- Typecheck: PASS
+- Tests: 60/60 PASS
+- All pages HTTP 200 (/, /exam-prep, /practice-test, /live-exam, /ask-handbook, /login, /register)
+- Exam data: 20 types, 510 questions
+- Download link: HTTP 200, 1.4MB
+
+Final ZIP: public/alo-education-full-project.zip (530 files, 1.4MB, integrity PASS)
