@@ -1,99 +1,306 @@
-# GitHub Actions — Auto-deploy to VPS on push to main
-#
-# Repository: https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE
-# VPS: 115.187.18.239 (english.aloeducation.com)
-#
-# Setup:
-#   1. Go to repo Settings → Secrets and variables → Actions
-#   2. Add these secrets:
-#      - VPS_HOST: 115.187.18.239
-#      - VPS_USER: root
-#      - VPS_SSH_KEY: your SSH private key (cat ~/.ssh/id_rsa)
-#      - VPS_PATH: /var/www/alo-education-english
-#   3. Push to main → auto-deploys to VPS
-
-name: Deploy to VPS
+name: Deploy ALO English to VPS
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alo-english-production
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+  BUN_VERSION: "1.3"
+  APP_NAME: "alo-english"
+  APP_PORT: "3016"
+  APP_HOST: "127.0.0.1"
 
 jobs:
   deploy:
+    name: Verify, build and deploy ALO English
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+      VPS_PATH: ${{ secrets.VPS_PATH }}
+
     steps:
-      - name: Checkout code
+      - name: Checkout exact commit
         uses: actions/checkout@v4
 
-      - name: Install SSH key
+      - name: Show deployment commit
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          echo "GitHub SHA: $GITHUB_SHA"
+          git rev-parse HEAD
 
-      - name: Sync files to VPS
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: bun run db:generate
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Run tests
+        run: bun test tests/
+
+      - name: Build production application
+        run: bun run build
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          AUTH_SECRET: ci-only-not-a-production-secret-32chars
+
+      - name: Verify standalone build
         run: |
-          rsync -avz --delete \
-            --exclude 'node_modules' \
-            --exclude '.next' \
-            --exclude '.git' \
-            --exclude 'db/*.db' \
-            --exclude 'db/*.db-journal' \
-            --exclude '.env' \
-            --exclude 'upload' \
-            --exclude 'skills' \
-            --exclude 'tool-results' \
-            --exclude 'logs' \
-            -e "ssh -i ~/.ssh/id_rsa" \
-            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/
+          set -euo pipefail
 
-      - name: Install + Build + Restart on VPS
+          test -f .next/standalone/server.js
+          test -d .next/static
+
+          echo "PASS: .next/standalone/server.js"
+          echo "PASS: .next/static"
+
+      - name: Configure SSH
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd ${{ secrets.VPS_PATH }}
+          set -euo pipefail
 
-            # Install dependencies
-            bun install --frozen-lockfile || bun install
+          test -n "$VPS_HOST"
+          test -n "$VPS_USER"
+          test -n "$VPS_SSH_PORT"
+          test -n "$VPS_PATH"
 
-            # Copy .env.example to .env if .env doesn't exist
-            if [ ! -f .env ]; then
-              cp .env.example .env
-              AUTH_SECRET=$(openssl rand -base64 48)
-              sed -i "s/REPLACE_WITH_RANDOM_32_CHAR_STRING/$AUTH_SECRET/" .env
-              echo "✅ .env created with generated AUTH_SECRET"
-            fi
+          mkdir -p "$HOME/.ssh"
 
-            # Generate Prisma client + push schema
-            bun run db:push
+          printf '%s\n' '${{ secrets.VPS_SSH_KEY }}' \
+            > "$HOME/.ssh/alo_english_key"
 
-            # Seed if database is empty
-            if [ ! -f db/custom.db ] || [ $(stat -c%s db/custom.db 2>/dev/null || echo 0) -lt 10000 ]; then
-              echo "🌱 Seeding database..."
-              bun run prisma:seed || true
-              bun run prisma:seed:rbac || true
-              bun run prisma:seed:exams || true
-            fi
+          chmod 600 "$HOME/.ssh/alo_english_key"
 
-            # Build for production
-            bun run build
+          ssh-keyscan \
+            -p "$VPS_SSH_PORT" \
+            -H "$VPS_HOST" \
+            >> "$HOME/.ssh/known_hosts"
 
-            # Restart PM2
-            pm2 restart alo-english || pm2 start "node_modules/.bin/next start -p 3000" --name alo-english --cwd ${{ secrets.VPS_PATH }}
-            pm2 restart alo-examiner-stream || (cd mini-services/examiner-stream && bun install && pm2 start "bun run dev" --name alo-examiner-stream --cwd ${{ secrets.VPS_PATH }}/mini-services/examiner-stream)
-            pm2 save
+          chmod 600 "$HOME/.ssh/known_hosts"
 
-            echo "✅ Deployed successfully to ${{ secrets.VPS_HOST }}"
-          EOF
-
-      - name: Verify deployment
+      - name: Verify VPS SSH access
         run: |
-          sleep 5
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://english.aloeducation.com || echo "000")
-          echo "HTTPS status: $HTTP_CODE"
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ Site is live!"
-          else
-            echo "⚠️  Site returned $HTTP_CODE — may still be starting up"
+          set -euo pipefail
+
+          ssh \
+            -i "$HOME/.ssh/alo_english_key" \
+            -p "$VPS_SSH_PORT" \
+            -o IdentitiesOnly=yes \
+            -o PasswordAuthentication=no \
+            -o KbdInteractiveAuthentication=no \
+            "$VPS_USER@$VPS_HOST" \
+            'echo SSH_AUTH_SUCCESS; hostname; whoami'
+
+      - name: Prepare dedicated deployment directory
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i "$HOME/.ssh/alo_english_key" \
+            -p "$VPS_SSH_PORT" \
+            -o IdentitiesOnly=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "mkdir -p '$VPS_PATH'"
+
+      - name: Sync source to dedicated VPS directory
+        run: |
+          set -euo pipefail
+
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='.next/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='*.db' \
+            --exclude='*.db-journal' \
+            --exclude='uploads/' \
+            --exclude='upload/' \
+            --exclude='logs/' \
+            --exclude='tool-results/' \
+            --exclude='skills/' \
+            -e "ssh -i $HOME/.ssh/alo_english_key -p $VPS_SSH_PORT -o IdentitiesOnly=yes" \
+            ./ \
+            "$VPS_USER@$VPS_HOST:$VPS_PATH/"
+
+      - name: Build and start exact ALO English service
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i "$HOME/.ssh/alo_english_key" \
+            -p "$VPS_SSH_PORT" \
+            -o IdentitiesOnly=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "VPS_PATH='$VPS_PATH' APP_NAME='${APP_NAME}' APP_PORT='${APP_PORT}' APP_HOST='${APP_HOST}' GITHUB_SHA='$GITHUB_SHA' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$VPS_PATH"
+
+          echo "===== VPS DEPLOYMENT ====="
+          echo "Path: $VPS_PATH"
+          echo "Expected SHA: $GITHUB_SHA"
+
+          command -v bun >/dev/null
+          command -v pm2 >/dev/null
+          command -v node >/dev/null
+
+          test -f package.json
+          test -f .env
+
+          echo "===== NODE / BUN / PM2 ====="
+          node --version
+          bun --version
+          pm2 --version
+
+          echo "===== INSTALL ====="
+          bun install --frozen-lockfile
+
+          echo "===== PRISMA GENERATE ====="
+          bun run db:generate
+
+          echo "===== PRODUCTION BUILD ====="
+          bun run build
+
+          test -f .next/standalone/server.js
+          test -d .next/static
+
+          echo "===== VERIFY STANDALONE ASSETS ====="
+
+          mkdir -p .next/standalone/.next
+
+          rm -rf .next/standalone/.next/static
+          cp -a .next/static .next/standalone/.next/static
+
+          if [ -d public ]; then
+            rm -rf .next/standalone/public
+            cp -a public .next/standalone/public
           fi
+
+          echo "===== VERIFY DATABASE PRESERVATION ====="
+          echo "Production .env is preserved."
+          echo "Production SQLite database files are excluded from rsync."
+
+          echo "===== STOP ONLY ALO ENGLISH ====="
+
+          if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
+            pm2 delete "$APP_NAME"
+          fi
+
+          echo "===== START ALO ENGLISH ====="
+
+          PORT="$APP_PORT" \
+          HOSTNAME="$APP_HOST" \
+          NODE_ENV=production \
+            pm2 start .next/standalone/server.js \
+              --name "$APP_NAME" \
+              --cwd "$VPS_PATH" \
+              --time
+
+          pm2 save
+
+          echo "===== PM2 STATUS ====="
+          pm2 describe "$APP_NAME"
+
+          echo "===== WAIT FOR LOCAL HTTP ====="
+
+          for attempt in $(seq 1 30); do
+            if curl \
+              --fail \
+              --silent \
+              --show-error \
+              --max-time 5 \
+              "http://$APP_HOST:$APP_PORT/" \
+              >/dev/null; then
+
+              echo "PASS: ALO English responded on $APP_HOST:$APP_PORT"
+              break
+            fi
+
+            if [ "$attempt" = "30" ]; then
+              echo "FAIL: ALO English did not respond on $APP_HOST:$APP_PORT"
+              pm2 logs "$APP_NAME" --lines 150 --nostream || true
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          echo "===== LOCAL PORT CHECK ====="
+          ss -lntp | grep ":$APP_PORT"
+
+          echo "===== PM2 FINAL STATUS ====="
+          pm2 status "$APP_NAME"
+
+          echo "===== DEPLOYMENT COMPLETE ON VPS ====="
+          REMOTE
+
+      - name: Verify public HTTPS
+        run: |
+          set -euo pipefail
+
+          echo "===== PUBLIC HTTPS CHECK ====="
+
+          for attempt in $(seq 1 15); do
+            code="$(
+              curl \
+                --silent \
+                --show-error \
+                --output /dev/null \
+                --write-out '%{http_code}' \
+                --max-time 15 \
+                https://english.aloeducation.com/ \
+                || true
+            )"
+
+            echo "Attempt $attempt: HTTPS status = $code"
+
+            if [ "$code" = "200" ]; then
+              echo "PASS: https://english.aloeducation.com/"
+              exit 0
+            fi
+
+            sleep 4
+          done
+
+          echo "FAIL: Public HTTPS did not return HTTP 200."
+          exit 1
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "=========================================="
+          echo "ALO ENGLISH DEPLOYMENT SUCCESS"
+          echo "=========================================="
+          echo "Commit: $GITHUB_SHA"
+          echo "Domain: https://english.aloeducation.com"
+          echo "VPS port: 3016"
+          echo "PM2 app: alo-english"
+          echo "=========================================="
