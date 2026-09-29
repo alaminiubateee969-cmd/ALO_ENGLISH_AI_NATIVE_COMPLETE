@@ -44,7 +44,10 @@ async function main() {
     questionsByExam: Object.fromEntries(exams.map((exam) => [exam.code,
       exam.practiceSets.reduce((sum, set) => sum + set.questions.filter((q) => q.status === "ACTIVE").length, 0)])),
     brokenQuestions, duplicateQuestions: Number(duplicateQuestions[0]?.count || 0),
-    attempts, results, crmActivities, agentLearnings, learningMaterials,
+    attempts, answers: await db.attemptAnswer.count(), results, crmActivities,
+    agentJobs: await db.agentJob.count(), agentLearnings, learningMaterials,
+    questionHistory: await db.studentQuestionHistory.count(),
+    practiceAttempts: await db.practiceAttempt.count(),
     status: failures.length ? "FAIL" : "PASS", failures,
   }, null, 2));
   if (failures.length) process.exitCode = 1;
