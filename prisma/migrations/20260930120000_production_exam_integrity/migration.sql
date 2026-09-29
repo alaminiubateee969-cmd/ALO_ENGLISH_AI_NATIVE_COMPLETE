@@ -19,6 +19,7 @@ CREATE TABLE "AttemptAnswer" (
   "answer" TEXT NOT NULL,
   "isCorrect" BOOLEAN,
   "pointsAwarded" REAL,
+  "markedForReview" BOOLEAN NOT NULL DEFAULT false,
   "answeredAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" DATETIME NOT NULL,
   CONSTRAINT "AttemptAnswer_attemptId_fkey" FOREIGN KEY ("attemptId") REFERENCES "Attempt" ("id") ON DELETE CASCADE ON UPDATE CASCADE,

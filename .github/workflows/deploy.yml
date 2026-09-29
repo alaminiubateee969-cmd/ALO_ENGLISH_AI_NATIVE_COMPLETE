@@ -186,6 +186,19 @@ jobs:
           echo "===== PRISMA GENERATE ====="
           bun run db:generate
 
+          echo "===== BACKUP BEFORE DATABASE CHANGE ====="
+          bash scripts/backup.sh
+
+          echo "===== SAFE DATABASE MIGRATION ====="
+          bun run db:migrate
+
+          echo "===== IDEMPOTENT SEED ====="
+          bun run db:seed
+
+          echo "===== PRODUCTION INTEGRITY AUDIT ====="
+          bun run audit:exams
+          bun run audit:production
+
           echo "===== PRODUCTION BUILD ====="
           bun run build
 

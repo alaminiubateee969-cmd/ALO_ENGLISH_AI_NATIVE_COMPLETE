@@ -28,7 +28,8 @@
     "backup": "bash scripts/backup.sh",
     "restore": "bash scripts/restore.sh",
     "healthcheck": "bash scripts/healthcheck.sh",
-    "audit:production": "bun run scripts/audit-production.ts"
+    "audit:production": "bun run scripts/audit-production.ts",
+    "audit:exams": "bun run scripts/audit-exams.ts"
   },
   "prisma": {
     "seed": "bun run prisma/seed.ts"

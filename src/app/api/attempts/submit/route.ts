@@ -13,6 +13,7 @@ import { audit, getClientIp } from "@/lib/audit";
 import { conductExam } from "@/lib/agents/ExamConductorAgent";
 import { ExamOrchestrator } from "@/lib/ai/learning/ExamOrchestrator";
 import { z } from "zod";
+import { runAgentJob } from "@/lib/agents/AgentJobService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function POST(req: Request): Promise<Response> {
     // Verify ownership
     const attempt = await db.attempt.findUnique({
       where: { id: attemptId },
-      include: { practiceSet: { include: { questions: true } } },
+      include: { practiceSet: true, assignedQuestions: { include: { question: true }, orderBy: { position: "asc" } } },
     });
     if (!attempt) return notFound("Attempt not found");
     if (attempt.userId !== user.id) return forbidden("You can only submit your own attempt");
@@ -51,7 +52,7 @@ export async function POST(req: Request): Promise<Response> {
     // this attempt's practice set are accepted; unknown IDs are discarded.
     const payload = (answers || {}) as Record<string, unknown>;
     const objectivePayload = (payload.objectiveAnswers || {}) as Record<string, unknown>;
-    const validQuestionIds = new Set(attempt.practiceSet.questions.map((q) => q.id));
+    const validQuestionIds = new Set(attempt.assignedQuestions.map((item) => item.question).map((q) => q.id));
     const answerMap: Record<string, string> = {};
     for (const [questionId, value] of Object.entries({ ...payload, ...objectivePayload })) {
       if (validQuestionIds.has(questionId) && typeof value === "string" && value.trim()) {
@@ -70,15 +71,15 @@ export async function POST(req: Request): Promise<Response> {
 
     const persisted = await db.attemptAnswer.findMany({ where: { attemptId } });
     const persistedByQuestion = new Map(persisted.map((item) => [item.questionId, item.answer]));
-    const objectiveQuestions = attempt.practiceSet.questions.filter((q) =>
+    const objectiveQuestions = attempt.assignedQuestions.map((item) => item.question).filter((q) =>
       ["MULTIPLE_CHOICE", "TRUE_FALSE", "TRUE_FALSE_NOT_GIVEN", "FILL_BLANK", "SHORT_ANSWER", "SENTENCE_COMPLETION"].includes(q.type)
     );
     let objectiveCorrect = 0;
-    const gradingWrites = [];
+    const gradingWrites: Promise<unknown>[] = [];
     for (const q of objectiveQuestions) {
       const userAnswer = persistedByQuestion.get(q.id);
       if (!userAnswer) continue;
-      const expectedText = q.correctAnswer?.trim().toLowerCase();
+      const expectedText = q.correctAnswer == null ? undefined : String(q.correctAnswer).trim().toLowerCase();
       const correct = q.correctIndex != null
         ? Number(userAnswer) === q.correctIndex
         : Boolean(expectedText && userAnswer.trim().toLowerCase() === expectedText);
@@ -89,12 +90,30 @@ export async function POST(req: Request): Promise<Response> {
       }));
     }
     if (gradingWrites.length) await db.$transaction(gradingWrites);
-    const objectiveTotal = objectiveQuestions.length || 1;
+    if (persisted.length) {
+      const gradedAnswers = await db.attemptAnswer.findMany({ where: { attemptId } });
+      await db.$transaction(gradedAnswers.map((answer) => db.studentQuestionHistory.update({
+        where: { attemptId_questionId: { attemptId, questionId: answer.questionId } },
+        data: { answeredAt: new Date(), isCorrect: answer.isCorrect },
+      })));
+    }
+    const sectionStats = (section: string) => {
+      const sectionQuestions = objectiveQuestions.filter((q) => q.section === section);
+      const correct = sectionQuestions.filter((q) => {
+        const answer = persistedByQuestion.get(q.id);
+        if (!answer) return false;
+        return q.correctIndex != null ? Number(answer) === q.correctIndex :
+          Boolean(q.correctAnswer && String(answer).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase());
+      }).length;
+      return { correct, total: sectionQuestions.length };
+    };
+    const readingStats = sectionStats("READING");
+    const listeningStats = sectionStats("LISTENING");
 
-    const writingText = attempt.practiceSet.questions
+    const writingText = attempt.assignedQuestions.map((item) => item.question)
       .filter((q) => q.section === "WRITING")
       .map((q) => persistedByQuestion.get(q.id) || "").filter(Boolean).join("\n\n");
-    const speakingText = attempt.practiceSet.questions
+    const speakingText = attempt.assignedQuestions.map((item) => item.question)
       .filter((q) => q.section === "SPEAKING")
       .map((q) => persistedByQuestion.get(q.id) || "").filter(Boolean).join("\n\n");
 
@@ -102,10 +121,10 @@ export async function POST(req: Request): Promise<Response> {
     const result = await conductExam(attemptId, {
       writing: writingText,
       speaking: speakingText,
-      readingCorrect: objectiveCorrect,
-      readingTotal: objectiveTotal,
-      listeningCorrect: objectiveCorrect,
-      listeningTotal: objectiveTotal,
+      readingCorrect: readingStats.correct,
+      readingTotal: readingStats.total,
+      listeningCorrect: listeningStats.correct,
+      listeningTotal: listeningStats.total,
     });
 
     // Audit log
@@ -125,9 +144,12 @@ export async function POST(req: Request): Promise<Response> {
 
     // Trigger the daily learning loop (non-blocking — don't delay the response)
     // This is the "প্রতিদিন তারা শিখবে" (every day they learn) feature.
-    ExamOrchestrator.onExamSubmitted(attemptId).catch((err) => {
-      console.error("[submit] Learning loop trigger failed:", err);
-    });
+    ExamOrchestrator.onExamSubmitted(attemptId).catch((err) => console.error("[submit] Learning loop trigger failed:", err));
+    const student = await db.student.findUnique({ where: { userId: user.id }, select: { id: true } });
+    if (student) {
+      runAgentJob("PerformanceAnalyticsAgent", { studentId: student.id, attemptId }).catch((err) => console.error("[agent-job] analytics failed", err));
+      runAgentJob("CRMAgent", { studentId: student.id, action: "EXAM_COMPLETED", attemptId, score: result.overall }).catch((err) => console.error("[agent-job] CRM failed", err));
+    }
 
     return ok({ attempt: { id: attemptId, status: result.status }, result }, "Exam evaluated by AI agents");
   });

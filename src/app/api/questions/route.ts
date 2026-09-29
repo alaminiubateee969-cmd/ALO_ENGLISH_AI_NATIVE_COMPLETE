@@ -21,16 +21,15 @@ export async function GET(req: Request): Promise<Response> {
     if (attempt.userId !== user.id) return forbidden("Not your attempt");
     if (attempt.status !== "IN_PROGRESS") return badRequest("Attempt is not in progress");
 
-    const questions = await db.question.findMany({
-      where: { practiceSetId: attempt.practiceSetId, status: "ACTIVE" },
-      orderBy: { order: "asc" },
-      select: {
+    const assignments = await db.attemptQuestion.findMany({
+      where: { attemptId }, orderBy: { position: "asc" },
+      select: { position: true, question: { select: {
         id: true, section: true, type: true, prompt: true, passage: true,
         audioUrl: true, options: true, wordLimit: true, imageUrl: true,
         points: true, order: true, difficulty: true, skill: true,
-        // Correct answers and explanations intentionally never leave the server.
-      },
+      }}},
     });
+    const questions = assignments.map(({ question, position }) => ({ ...question, order: position }));
 
     const bySection = questions.reduce((acc, question) => {
       (acc[question.section] ??= []).push(question);

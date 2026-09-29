@@ -162,7 +162,11 @@ model Student {
   documents  Document[]
   commissions Commission[]
   tasks      Task[]
-  messages   Message[]
+  messages      Message[]
+  questionHistory StudentQuestionHistory[]
+  practiceAttempts PracticeAttempt[]
+  progressRecords StudentProgress[]
+  recommendations Recommendation[]
 
   @@index([counselorId])
   @@index([status])
@@ -474,6 +478,7 @@ model ExamType {
   name      String
   category  String
   isActive  Boolean  @default(true)
+  configuration String? // JSON ExamConfiguration: navigation, timing, scoring, section rules
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -511,6 +516,8 @@ model Attempt {
   practiceSet PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
   score       Score?
   answers     AttemptAnswer[]
+  assignedQuestions AttemptQuestion[]
+  questionHistory StudentQuestionHistory[]
 
   @@index([userId])
   @@index([status])
@@ -565,9 +572,49 @@ model Question {
 
   practiceSet   PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
   attemptAnswers AttemptAnswer[]
+  attemptAssignments AttemptQuestion[]
+  studentHistory StudentQuestionHistory[]
 
   @@index([practiceSetId, status])
   @@index([section])
+}
+
+model AttemptQuestion {
+  id         String   @id @default(cuid())
+  attemptId  String
+  questionId String
+  position   Int
+  section    String
+  assignedAt DateTime @default(now())
+
+  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@unique([attemptId, questionId])
+  @@unique([attemptId, position])
+  @@index([attemptId, section])
+}
+
+model StudentQuestionHistory {
+  id         String    @id @default(cuid())
+  studentId  String
+  questionId String
+  attemptId  String
+  examCode   String
+  servedAt   DateTime  @default(now())
+  answeredAt DateTime?
+  isCorrect  Boolean?
+  revisionMode Boolean @default(false)
+  revisionReason String?
+
+  student    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  attempt    Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, questionId])
+  @@unique([attemptId, questionId])
+  @@index([studentId, servedAt])
+  @@index([examCode])
 }
 
 model AttemptAnswer {
@@ -577,7 +624,8 @@ model AttemptAnswer {
   answer      String
   isCorrect   Boolean?
   pointsAwarded Float?
-  answeredAt  DateTime @default(now())
+  markedForReview Boolean @default(false)
+  answeredAt    DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   attempt     Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
@@ -762,6 +810,94 @@ model ChatSession {
 
   @@index([userId])
   @@index([sessionId])
+}
+
+// ═══ Persistent practice, progress, recommendations and agent jobs ═══════
+
+model PracticeAttempt {
+  id           String    @id @default(cuid())
+  studentId    String
+  kind         String    // SPEAKING|WRITING|READING|LISTENING|GRAMMAR|VOCABULARY|PRONUNCIATION|DAILY
+  prompt       String
+  responseText String?
+  audioPath    String?
+  transcript   String?
+  evaluation   String?   // JSON, measured/rule-based fields only
+  status       String    @default("IN_PROGRESS")
+  score        Float?
+  providerUsed String    @default("local_rule_engine")
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@index([studentId, kind])
+  @@index([status])
+}
+
+model StudentProgress {
+  id          String   @id @default(cuid())
+  studentId   String
+  skill       String
+  completed   Int      @default(0)
+  accuracy    Float    @default(0)
+  lastScore   Float?
+  lastActivityAt DateTime @default(now())
+  metadata    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@unique([studentId, skill])
+}
+
+model Recommendation {
+  id          String    @id @default(cuid())
+  studentId   String
+  skill       String
+  title       String
+  reason      String
+  status      String    @default("ACTIVE")
+  source      String    @default("PerformanceAnalyticsAgent")
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@index([studentId, status])
+}
+
+model AgentJob {
+  id          String    @id @default(cuid())
+  agentType   String
+  status      String    @default("QUEUED")
+  input       String
+  output      String?
+  error       String?
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(3)
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@index([agentType, status])
+  @@index([createdAt])
+}
+
+model DailyLearningTask {
+  id          String    @id @default(cuid())
+  studentId   String
+  taskDate    String
+  activityType String
+  questionId  String?
+  materialId  String?
+  title       String
+  status      String    @default("ASSIGNED")
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([studentId, taskDate])
+  @@index([studentId, status])
 }
 
 // ═══ Phase 1: RBAC + Multi-Tenancy + Session Management ═════════════════

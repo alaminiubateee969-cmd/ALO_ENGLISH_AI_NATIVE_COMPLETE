@@ -12,6 +12,7 @@ import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
 import { audit, getClientIp } from "@/lib/audit";
 import { z } from "zod";
+import { allocateExamQuestions, InventoryInsufficientError } from "@/lib/agents/ExamQuestionAllocationAgent";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -101,20 +102,17 @@ export async function POST(req: Request): Promise<Response> {
       }
     }
 
-    // Create attempt
-    const attempt = await db.attempt.create({
-      data: {
-        userId: user.id,
-        practiceSetId,
-        status: "IN_PROGRESS",
-      },
-    });
+    let allocation;
+    try {
+      allocation = await allocateExamQuestions(user.id, practiceSetId);
+    } catch (error) {
+      if (error instanceof InventoryInsufficientError) return forbidden(error.message);
+      throw error;
+    }
+    const attempt = allocation.attempt;
 
-    // Update quota usage
-    await db.freeQuota.update({
-      where: { userId: user.id },
-      data: { attemptsUsed: { increment: 1 } },
-    });
+    // Consume quota only after allocation succeeds.
+    await db.freeQuota.update({ where: { userId: user.id }, data: { attemptsUsed: { increment: 1 } } });
 
     await audit("EXAM_START", {
       userId: user.id,
@@ -124,7 +122,7 @@ export async function POST(req: Request): Promise<Response> {
     });
 
     return ok({
-      attempt: { id: attempt.id, startedAt: attempt.startedAt },
+      attempt: { id: attempt.id, startedAt: attempt.startedAt, questionCount: allocation.questionCount },
       quota: {
         used: completedAttempts + 1,
         limit: quota.attemptsLimit,

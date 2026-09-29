@@ -1,0 +1,23 @@
+ALTER TABLE "ExamType" ADD COLUMN "configuration" TEXT;
+
+CREATE TABLE "AttemptQuestion" ("id" TEXT NOT NULL PRIMARY KEY,"attemptId" TEXT NOT NULL,"questionId" TEXT NOT NULL,"position" INTEGER NOT NULL,"section" TEXT NOT NULL,"assignedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY("attemptId") REFERENCES "Attempt"("id") ON DELETE CASCADE ON UPDATE CASCADE,FOREIGN KEY("questionId") REFERENCES "Question"("id") ON DELETE RESTRICT ON UPDATE CASCADE);
+CREATE UNIQUE INDEX "AttemptQuestion_attemptId_questionId_key" ON "AttemptQuestion"("attemptId","questionId");
+CREATE UNIQUE INDEX "AttemptQuestion_attemptId_position_key" ON "AttemptQuestion"("attemptId","position");
+CREATE INDEX "AttemptQuestion_attemptId_section_idx" ON "AttemptQuestion"("attemptId","section");
+
+CREATE TABLE "StudentQuestionHistory" ("id" TEXT NOT NULL PRIMARY KEY,"studentId" TEXT NOT NULL,"questionId" TEXT NOT NULL,"attemptId" TEXT NOT NULL,"examCode" TEXT NOT NULL,"servedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"answeredAt" DATETIME,"isCorrect" BOOLEAN,"revisionMode" BOOLEAN NOT NULL DEFAULT false,"revisionReason" TEXT,FOREIGN KEY("studentId") REFERENCES "Student"("id") ON DELETE CASCADE ON UPDATE CASCADE,FOREIGN KEY("questionId") REFERENCES "Question"("id") ON DELETE RESTRICT ON UPDATE CASCADE,FOREIGN KEY("attemptId") REFERENCES "Attempt"("id") ON DELETE CASCADE ON UPDATE CASCADE);
+CREATE UNIQUE INDEX "StudentQuestionHistory_studentId_questionId_key" ON "StudentQuestionHistory"("studentId","questionId");
+CREATE UNIQUE INDEX "StudentQuestionHistory_attemptId_questionId_key" ON "StudentQuestionHistory"("attemptId","questionId");
+CREATE INDEX "StudentQuestionHistory_studentId_servedAt_idx" ON "StudentQuestionHistory"("studentId","servedAt");
+CREATE INDEX "StudentQuestionHistory_examCode_idx" ON "StudentQuestionHistory"("examCode");
+
+CREATE TABLE "PracticeAttempt" ("id" TEXT NOT NULL PRIMARY KEY,"studentId" TEXT NOT NULL,"kind" TEXT NOT NULL,"prompt" TEXT NOT NULL,"responseText" TEXT,"audioPath" TEXT,"transcript" TEXT,"evaluation" TEXT,"status" TEXT NOT NULL DEFAULT 'IN_PROGRESS',"score" REAL,"providerUsed" TEXT NOT NULL DEFAULT 'local_rule_engine',"startedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"completedAt" DATETIME,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" DATETIME NOT NULL,FOREIGN KEY("studentId") REFERENCES "Student"("id") ON DELETE CASCADE ON UPDATE CASCADE);
+CREATE INDEX "PracticeAttempt_studentId_kind_idx" ON "PracticeAttempt"("studentId","kind"); CREATE INDEX "PracticeAttempt_status_idx" ON "PracticeAttempt"("status");
+CREATE TABLE "StudentProgress" ("id" TEXT NOT NULL PRIMARY KEY,"studentId" TEXT NOT NULL,"skill" TEXT NOT NULL,"completed" INTEGER NOT NULL DEFAULT 0,"accuracy" REAL NOT NULL DEFAULT 0,"lastScore" REAL,"lastActivityAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"metadata" TEXT,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" DATETIME NOT NULL,FOREIGN KEY("studentId") REFERENCES "Student"("id") ON DELETE CASCADE ON UPDATE CASCADE);
+CREATE UNIQUE INDEX "StudentProgress_studentId_skill_key" ON "StudentProgress"("studentId","skill");
+CREATE TABLE "Recommendation" ("id" TEXT NOT NULL PRIMARY KEY,"studentId" TEXT NOT NULL,"skill" TEXT NOT NULL,"title" TEXT NOT NULL,"reason" TEXT NOT NULL,"status" TEXT NOT NULL DEFAULT 'ACTIVE',"source" TEXT NOT NULL DEFAULT 'PerformanceAnalyticsAgent',"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"completedAt" DATETIME,FOREIGN KEY("studentId") REFERENCES "Student"("id") ON DELETE CASCADE ON UPDATE CASCADE);
+CREATE INDEX "Recommendation_studentId_status_idx" ON "Recommendation"("studentId","status");
+CREATE TABLE "AgentJob" ("id" TEXT NOT NULL PRIMARY KEY,"agentType" TEXT NOT NULL,"status" TEXT NOT NULL DEFAULT 'QUEUED',"input" TEXT NOT NULL,"output" TEXT,"error" TEXT,"retryCount" INTEGER NOT NULL DEFAULT 0,"maxRetries" INTEGER NOT NULL DEFAULT 3,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"startedAt" DATETIME,"completedAt" DATETIME);
+CREATE INDEX "AgentJob_agentType_status_idx" ON "AgentJob"("agentType","status"); CREATE INDEX "AgentJob_createdAt_idx" ON "AgentJob"("createdAt");
+CREATE TABLE "DailyLearningTask" ("id" TEXT NOT NULL PRIMARY KEY,"studentId" TEXT NOT NULL,"taskDate" TEXT NOT NULL,"activityType" TEXT NOT NULL,"questionId" TEXT,"materialId" TEXT,"title" TEXT NOT NULL,"status" TEXT NOT NULL DEFAULT 'ASSIGNED',"completedAt" DATETIME,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE UNIQUE INDEX "DailyLearningTask_studentId_taskDate_key" ON "DailyLearningTask"("studentId","taskDate"); CREATE INDEX "DailyLearningTask_studentId_status_idx" ON "DailyLearningTask"("studentId","status");

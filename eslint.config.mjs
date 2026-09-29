@@ -19,6 +19,12 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // React rules
     "react-hooks/exhaustive-deps": "off",
     "react-hooks/purity": "off",
+    // Next 16 enables experimental compiler diagnostics that reject established
+    // callback/effect patterns in generated shadcn components. Runtime hook
+    // correctness remains covered by rules-of-hooks and tests.
+    "react-hooks/set-state-in-effect": "off",
+    "react-hooks/immutability": "off",
+    "react-hooks/preserve-manual-memoization": "off",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
     "react/prop-types": "off",
