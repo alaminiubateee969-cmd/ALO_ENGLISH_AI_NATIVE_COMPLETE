@@ -19,6 +19,8 @@ import { z } from 'zod';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+class DuplicateEmailError extends Error {}
+
 const schema = z.object({
   email: z.string().email('Invalid email address').max(254),
   password: z.string().min(12, 'Password must be at least 12 characters').max(128),
@@ -43,32 +45,59 @@ export async function POST(req: Request): Promise<Response> {
       return badRequest(parsed.error.issues[0]?.message || 'Validation failed');
     }
 
-    const { email, password, name } = parsed.data;
+    const email = parsed.data.email.trim().toLowerCase();
+    const { password } = parsed.data;
+    const displayName = parsed.data.name?.trim() || email.split('@')[0];
 
-    // Check for existing user.
-    const existing = await db.user.findUnique({ where: { email } });
-    if (existing) {
-      return conflict('An account with this email already exists');
+    // User, canonical Student profile, free entitlement and CRM activity are one
+    // atomic unit. A failure in any write rolls the whole registration back.
+    let account;
+    try {
+      account = await db.$transaction(async (tx) => {
+        const existing = await tx.user.findUnique({ where: { email }, select: { id: true } });
+        if (existing) throw new DuplicateEmailError();
+
+        const user = await tx.user.create({
+          data: {
+            email,
+            name: displayName,
+            passwordHash: hashPassword(password),
+            role: 'STUDENT',
+            status: 'ACTIVE',
+          },
+          select: { id: true, email: true, name: true, role: true },
+        });
+
+        const student = await tx.student.create({
+          data: { userId: user.id, name: displayName, email, status: 'ACTIVE' },
+          select: { id: true, userId: true },
+        });
+
+        await tx.freeQuota.create({
+          data: { userId: user.id, attemptsUsed: 0, attemptsLimit: 3, isAloStudent: false },
+        });
+        await tx.timelineEntry.create({
+          data: {
+            entityType: 'STUDENT',
+            entityId: student.id,
+            action: 'REGISTERED',
+            description: 'Student account registered',
+            userId: user.id,
+          },
+        });
+        return { user, student };
+      });
+    } catch (error) {
+      if (error instanceof DuplicateEmailError ||
+          (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002')) {
+        return conflict('An account with this email already exists');
+      }
+      throw error;
     }
 
-    // Create user.
-    const user = await db.user.create({
-      data: {
-        email,
-        name: name || null,
-        passwordHash: hashPassword(password),
-        role: 'STUDENT',
-        status: 'ACTIVE',
-      },
-      select: { id: true, email: true, name: true, role: true },
-    });
+    await setSessionCookie(account.user.id);
+    await audit('REGISTER', { userId: account.user.id, ipAddress: ip ?? undefined, resource: 'student:' + account.student.id });
 
-    // Set session.
-    await setSessionCookie(user.id);
-
-    // Audit log.
-    await audit('REGISTER', { userId: user.id, ipAddress: ip ?? undefined, resource: 'user:' + user.id });
-
-    return created({ user }, 'Account created successfully');
+    return created(account, 'Account created successfully');
   });
 }

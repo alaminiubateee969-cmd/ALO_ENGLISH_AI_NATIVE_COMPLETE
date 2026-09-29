@@ -60,15 +60,26 @@ export async function POST(req: Request): Promise<Response> {
       return unauthorized('Account is suspended. Contact support.');
     }
 
-    // Set session.
+    // Student identities must already have exactly one canonical Student row.
+    // Login never auto-creates profiles because that would hide corrupt data.
+    let student: { id: string } | null = null;
+    if (user.role === 'STUDENT') {
+      student = await db.student.findUnique({ where: { userId: user.id }, select: { id: true } });
+      if (!student) {
+        await audit('LOGIN_FAILED', { userId: user.id, ipAddress: ip, resource: 'missing-student-profile' });
+        return internalError('Student account integrity check failed. Contact support.');
+      }
+    }
+
     await setSessionCookie(user.id);
 
-    // Update lastLoginAt + create a Session record (for revocation tracking)
-    const userAgent = req.headers.get('user-agent') || null;
-    await db.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    }).catch(() => {}); // Non-critical — don't fail login if this errors
+    await db.$transaction([
+      db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
+      ...(student ? [db.timelineEntry.create({ data: {
+        entityType: 'STUDENT', entityId: student.id, action: 'LOGIN',
+        description: 'Student logged in', userId: user.id,
+      } })] : []),
+    ]);
 
     // Audit log.
     await audit('LOGIN_SUCCESS', { userId: user.id, ipAddress: ip });

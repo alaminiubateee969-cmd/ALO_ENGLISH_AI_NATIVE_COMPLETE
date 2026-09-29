@@ -25,7 +25,7 @@ VPS_IP="115.187.18.239"
 DOMAIN="english.aloeducation.com"
 APP_DIR="/var/www/alo-education-english"
 GITHUB_REPO="https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE.git"
-PORT=3000
+PORT=3016
 WS_PORT=3003
 
 echo "═══════════════════════════════════════════════════════════"

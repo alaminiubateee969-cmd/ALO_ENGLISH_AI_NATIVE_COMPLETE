@@ -33,9 +33,31 @@ export async function POST(req: Request): Promise<Response> {
 
     // Verify practice set exists and is active
     const practiceSet = await db.practiceSet.findFirst({
-      where: { id: practiceSetId, isActive: true },
+      where: { id: practiceSetId, isActive: true, examType: { isActive: true } },
+      include: { questions: { where: { status: "ACTIVE" } } },
     });
     if (!practiceSet) return notFound("Practice set not found");
+
+    // Refuse broken or empty exams even if an administrator accidentally marked
+    // them active. Objective questions require a server-side answer and MCQs
+    // require a parseable option list with at least two choices.
+    const invalidQuestion = practiceSet.questions.find((q) => {
+      if (!q.prompt.trim() || !q.section || !q.type || q.points <= 0) return true;
+      if (q.type === "MULTIPLE_CHOICE") {
+        try {
+          const options = JSON.parse(q.options || "[]");
+          return !Array.isArray(options) || options.length < 2 || q.correctIndex == null ||
+            q.correctIndex < 0 || q.correctIndex >= options.length;
+        } catch { return true; }
+      }
+      if (["TRUE_FALSE", "TRUE_FALSE_NOT_GIVEN", "FILL_BLANK", "SHORT_ANSWER", "SENTENCE_COMPLETION"].includes(q.type)) {
+        return q.correctAnswer == null && q.correctIndex == null;
+      }
+      return false;
+    });
+    if (practiceSet.durationMin <= 0 || practiceSet.questions.length === 0 || invalidQuestion) {
+      return forbidden("This exam is unavailable because its content failed the production integrity check");
+    }
 
     // ═══ FREE QUOTA ENFORCEMENT ═══════════════════════════════════════
     // ALO students get 3 free tests, public students get 1 free test

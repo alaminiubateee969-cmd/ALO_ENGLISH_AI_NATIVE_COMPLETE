@@ -47,6 +47,8 @@ model User {
 
   attempts     Attempt[]
   scores       Score[]
+  freeQuota    FreeQuota?
+  payments     Payment[]
 
   // Phase 1: RBAC + Multi-tenancy relations
   teamMembers  TeamMember[]
@@ -508,6 +510,7 @@ model Attempt {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   practiceSet PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
   score       Score?
+  answers     AttemptAnswer[]
 
   @@index([userId])
   @@index([status])
@@ -551,12 +554,38 @@ model Question {
   imageUrl      String?  // For chart/diagram/map questions
   points        Int      @default(1)
   order         Int      @default(0)
+  status        String   @default("ACTIVE") // DRAFT|ACTIVE|INACTIVE|REJECTED
+  difficulty    String   @default("MEDIUM") // EASY|MEDIUM|HARD
+  skill         String?
+  explanation   String?
+  source        String?
+  stableKey     String?  @unique
+  updatedAt     DateTime @updatedAt
   createdAt     DateTime @default(now())
 
   practiceSet   PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+  attemptAnswers AttemptAnswer[]
 
-  @@index([practiceSetId])
+  @@index([practiceSetId, status])
   @@index([section])
+}
+
+model AttemptAnswer {
+  id          String   @id @default(cuid())
+  attemptId   String
+  questionId  String
+  answer      String
+  isCorrect   Boolean?
+  pointsAwarded Float?
+  answeredAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attempt     Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
 }
 
 // ═══ Free Quota + Payment ═════════════════════════════════════════════
@@ -569,6 +598,8 @@ model FreeQuota {
   isAloStudent Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -584,6 +615,8 @@ model Payment {
   txnId        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])

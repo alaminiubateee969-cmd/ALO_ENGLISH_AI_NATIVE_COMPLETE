@@ -19,8 +19,13 @@ export async function GET(): Promise<Response> {
       orderBy: { category: 'asc' },
       include: {
         practiceSets: {
+          where: {
+            isActive: true,
+            durationMin: { gt: 0 },
+            questions: { some: { status: 'ACTIVE' } },
+          },
           include: {
-            _count: { select: { questions: true } },
+            _count: { select: { questions: { where: { status: 'ACTIVE' } } } },
           },
         },
       },
@@ -28,7 +33,7 @@ export async function GET(): Promise<Response> {
 
     return ok(
       {
-        examTypes: examTypes.map((et) => ({
+        examTypes: examTypes.filter((et) => et.practiceSets.length > 0).map((et) => ({
           id: et.id,
           code: et.code,
           name: et.name,

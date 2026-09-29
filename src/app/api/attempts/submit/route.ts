@@ -47,32 +47,56 @@ export async function POST(req: Request): Promise<Response> {
       return badRequest("Attempt already submitted");
     }
 
-    // Auto-score objective questions
-    const objectiveQuestions = attempt.practiceSet.questions.filter(
-      (q) => q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE" || q.type === "FILL_BLANK"
-    );
-    let objectiveCorrect = 0;
-    for (const q of objectiveQuestions) {
-      const userAnswer = (answers as Record<string, unknown>)?.objectiveAnswers?.[q.id];
-      if (!userAnswer) continue;
-      if (q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE") {
-        if (parseInt(String(userAnswer)) === q.correctIndex) objectiveCorrect++;
-      } else if (q.type === "FILL_BLANK") {
-        if (String(userAnswer).trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase()) objectiveCorrect++;
+    // Persist all submitted per-question answers before evaluation. Only IDs in
+    // this attempt's practice set are accepted; unknown IDs are discarded.
+    const payload = (answers || {}) as Record<string, unknown>;
+    const objectivePayload = (payload.objectiveAnswers || {}) as Record<string, unknown>;
+    const validQuestionIds = new Set(attempt.practiceSet.questions.map((q) => q.id));
+    const answerMap: Record<string, string> = {};
+    for (const [questionId, value] of Object.entries({ ...payload, ...objectivePayload })) {
+      if (validQuestionIds.has(questionId) && typeof value === "string" && value.trim()) {
+        answerMap[questionId] = value.trim();
       }
     }
+    if (Object.keys(answerMap).length) {
+      await db.$transaction(Object.entries(answerMap).map(([questionId, answer]) =>
+        db.attemptAnswer.upsert({
+          where: { attemptId_questionId: { attemptId, questionId } },
+          create: { attemptId, questionId, answer },
+          update: { answer, answeredAt: new Date() },
+        })
+      ));
+    }
+
+    const persisted = await db.attemptAnswer.findMany({ where: { attemptId } });
+    const persistedByQuestion = new Map(persisted.map((item) => [item.questionId, item.answer]));
+    const objectiveQuestions = attempt.practiceSet.questions.filter((q) =>
+      ["MULTIPLE_CHOICE", "TRUE_FALSE", "TRUE_FALSE_NOT_GIVEN", "FILL_BLANK", "SHORT_ANSWER", "SENTENCE_COMPLETION"].includes(q.type)
+    );
+    let objectiveCorrect = 0;
+    const gradingWrites = [];
+    for (const q of objectiveQuestions) {
+      const userAnswer = persistedByQuestion.get(q.id);
+      if (!userAnswer) continue;
+      const expectedText = q.correctAnswer?.trim().toLowerCase();
+      const correct = q.correctIndex != null
+        ? Number(userAnswer) === q.correctIndex
+        : Boolean(expectedText && userAnswer.trim().toLowerCase() === expectedText);
+      if (correct) objectiveCorrect++;
+      gradingWrites.push(db.attemptAnswer.update({
+        where: { attemptId_questionId: { attemptId, questionId: q.id } },
+        data: { isCorrect: correct, pointsAwarded: correct ? q.points : 0 },
+      }));
+    }
+    if (gradingWrites.length) await db.$transaction(gradingWrites);
     const objectiveTotal = objectiveQuestions.length || 1;
 
-    // Gather writing and speaking answers
     const writingText = attempt.practiceSet.questions
-      .filter((q) => q.section === "WRITING" && (answers as Record<string, unknown>)?.[q.id])
-      .map((q) => String((answers as Record<string, unknown>)[q.id]))
-      .join("\n\n") || ((answers as Record<string, unknown>)?.writing as string) || "";
-
+      .filter((q) => q.section === "WRITING")
+      .map((q) => persistedByQuestion.get(q.id) || "").filter(Boolean).join("\n\n");
     const speakingText = attempt.practiceSet.questions
-      .filter((q) => q.section === "SPEAKING" && (answers as Record<string, unknown>)?.[q.id])
-      .map((q) => String((answers as Record<string, unknown>)[q.id]))
-      .join("\n\n") || ((answers as Record<string, unknown>)?.speaking as string) || "";
+      .filter((q) => q.section === "SPEAKING")
+      .map((q) => persistedByQuestion.get(q.id) || "").filter(Boolean).join("\n\n");
 
     // Run the Exam Conductor Agent
     const result = await conductExam(attemptId, {

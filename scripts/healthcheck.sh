@@ -6,7 +6,7 @@
 # Non-destructive: only reads.
 #
 # Usage:   bash scripts/healthcheck.sh [URL]
-#   URL  Health endpoint URL (default: http://localhost:3000/api/health)
+#   URL  Health endpoint URL (default: http://localhost:3016/api/health)
 #
 # Exit codes:
 #   0 = healthy
@@ -14,7 +14,7 @@
 # ═══════════════════════════════════════════════════════════════════════
 set -Eeuo pipefail
 
-HEALTH_URL="${1:-http://localhost:3000/api/health}"
+HEALTH_URL="${1:-http://localhost:3016/api/health}"
 TIMEOUT=10
 
 echo "▸ Checking health endpoint: $HEALTH_URL"

@@ -19,7 +19,7 @@ type EnvVar = {
 const ENV_SCHEMA: EnvVar[] = [
   { key: 'NODE_ENV', required: true, description: 'Application environment (production|development)', validate: (v) => ['production', 'development', 'test'].includes(v) },
   { key: 'APP_URL', required: true, description: 'Public application URL' },
-  { key: 'APP_PORT', required: true, description: 'Application port (3000)' },
+  { key: 'APP_PORT', required: true, description: 'Application port (3016)' },
   { key: 'DATABASE_URL', required: true, description: 'SQLite database path (file:/path)' },
   { key: 'AUTH_SECRET', required: true, description: '32+ char session signing secret' },
   { key: 'NEXTAUTH_URL', required: false, description: 'NextAuth base URL' },

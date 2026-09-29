@@ -1,59 +1,41 @@
-/**
- * GET /api/health — Application health check.
- *
- * Checks:
- *   - Application process (always 200 if this runs)
- *   - Database connectivity (Prisma query)
- *   - Version/build identifier
- *
- * Does NOT expose secrets. Returns a minimal public response.
- */
-
+/** Public production readiness probe. Returns 503 for DB or exam-data failure. */
 import { db } from '@/lib/db';
-import { ok } from '@/lib/responses';
-import { withErrorHandler } from '@/lib/responses';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<Response> {
-  return withErrorHandler(async () => {
-    const timestamp = new Date().toISOString();
-    const version = process.env.npm_package_version || '1.0.0';
+  const timestamp = new Date().toISOString();
+  const version = process.env.npm_package_version || 'unknown';
+  try {
+    await db.$queryRaw`SELECT 1`;
+    const [activeExamTypes, playableSets, playableQuestions, orphanStudents] = await Promise.all([
+      db.examType.count({ where: { isActive: true } }),
+      db.practiceSet.count({ where: {
+        isActive: true, durationMin: { gt: 0 }, examType: { isActive: true },
+        questions: { some: { status: 'ACTIVE' } },
+      } }),
+      db.question.count({ where: {
+        status: 'ACTIVE', prompt: { not: '' }, points: { gt: 0 },
+        practiceSet: { isActive: true, examType: { isActive: true } },
+      } }),
+      db.student.count({ where: { userId: null } }),
+    ]);
 
-    let dbStatus: 'connected' | 'disconnected' = 'disconnected';
-    let examCount = 0;
-
-    try {
-      examCount = await db.examType.count({ where: { isActive: true } });
-      dbStatus = 'connected';
-    } catch {
-      dbStatus = 'disconnected';
-    }
-
-    const healthy = dbStatus === 'connected';
-
-    if (!healthy) {
-      return NextResponse.json(
-        {
-          status: 'unhealthy',
-          version,
-          timestamp,
-          checks: { database: dbStatus, examTypes: examCount },
-        },
-        { status: 503 }
-      );
-    }
-
+    const checks = {
+      application: 'running', database: 'connected', requiredTables: 'available',
+      activeExamTypes, playableSets, playableQuestions, orphanStudents,
+    };
+    const healthy = activeExamTypes > 0 && playableSets > 0 && playableQuestions > 0 && orphanStudents === 0;
     return NextResponse.json(
-      {
-        status: 'healthy',
-        version,
-        timestamp,
-        checks: { database: dbStatus, examTypes: examCount },
-      },
-      { status: 200 }
+      { status: healthy ? 'healthy' : 'unhealthy', version, timestamp, checks },
+      { status: healthy ? 200 : 503 }
     );
-  });
+  } catch {
+    return NextResponse.json({
+      status: 'unhealthy', version, timestamp,
+      checks: { application: 'running', database: 'disconnected', requiredTables: 'unavailable' },
+    }, { status: 503 });
+  }
 }

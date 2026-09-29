@@ -94,7 +94,7 @@ fi
 
 # ─── Health check ──────────────────────────────────────────────────────
 echo "▸ Health check…"
-APP_PORT="${APP_PORT:-3000}"
+APP_PORT="${APP_PORT:-3016}"
 if curl -sf "http://localhost:${APP_PORT}/api/health" | grep -q '"status"'; then
   echo "  ✓ Health endpoint responding"
 else

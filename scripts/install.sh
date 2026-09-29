@@ -21,7 +21,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # ─── Configuration ─────────────────────────────────────────────────────
 DEPLOY_ROOT="/opt/alo-english"
 APP_USER="aloenglish"
-APP_PORT="${APP_PORT:-3000}"
+APP_PORT="${APP_PORT:-3016}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 RELEASE_DIR="${DEPLOY_ROOT}/releases/${TIMESTAMP}"
 SHARED_DIR="${DEPLOY_ROOT}/shared"

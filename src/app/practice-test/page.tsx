@@ -95,7 +95,7 @@ export default function PracticeTestPage() {
         setCurrentQuestion(0);
 
         // Fetch questions
-        const qRes = await fetch(`/api/questions?practiceSetId=${set.id}`);
+        const qRes = await fetch(`/api/questions?attemptId=${data.data.attempt.id}`);
         const qData = await qRes.json();
         if (qData.success) {
           setQuestions(qData.data.questions);
@@ -159,6 +159,18 @@ export default function PracticeTestPage() {
 
   function setAnswer(qId: string, value: string) {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
+    if (attemptId && value.trim()) {
+      fetch("/api/attempts/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attemptId, questionId: qId, answer: value }),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          setError(body?.message || "Your answer could not be saved");
+        }
+      }).catch(() => setError("Your answer could not be saved"));
+    }
   }
 
   function toggleFlag(qId: string) {
