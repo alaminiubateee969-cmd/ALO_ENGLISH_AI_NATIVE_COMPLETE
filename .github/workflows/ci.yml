@@ -55,8 +55,80 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Smoke tests
-        run: bun test tests/
+      # The suite includes database-backed tests (RBAC, attempt engine).
+      # They run against a real migrated + seeded SQLite database rather than
+      # being skipped: provision the database, then run everything.
+      - name: Provision test database
+        run: |
+          bunx prisma db push --skip-generate
+          bun run prisma:seed
+          bun run prisma:seed:rbac
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+          ADMIN_SEED_EMAIL: "ci-admin@test.local"
+          ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      # Every suite runs against the database provisioned above, including the
+      # database-backed RBAC and attempt-engine tests. No suite is skipped.
+      #
+      # Suites are separate steps so a red build names the exact file. Each
+      # records its own exit code; the gate step below fails the job if any
+      # code is non-zero, so continue-on-error buys diagnosability only and
+      # can never produce a green build.
+      - name: Tests — smoke (no database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/smoke.test.ts --timeout 30000 2>&1 | tee smoke.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" smoke.log | head -15 | sed 's/^/::error ::smoke /'
+          echo "smoke=$code" >> test-results.txt
+
+      - name: Tests — exam engine (no database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/exam-engine.test.ts --timeout 30000 2>&1 | tee engine.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" engine.log | head -15 | sed 's/^/::error ::engine /'
+          echo "engine=$code" >> test-results.txt
+
+      - name: Tests — RBAC (database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/rbac.test.ts --timeout 30000 2>&1 | tee rbac.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" rbac.log | head -15 | sed 's/^/::error ::rbac /'
+          echo "rbac=$code" >> test-results.txt
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+
+      - name: Tests — attempt engine (database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/exam-attempt.test.ts --timeout 30000 2>&1 | tee attempt.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" attempt.log | head -15 | sed 's/^/::error ::attempt /'
+          echo "attempt=$code" >> test-results.txt
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+
+      - name: Verify every suite passed
+        if: always()
+        run: |
+          cat test-results.txt
+          while IFS='=' read -r name code; do
+            [ -z "$name" ] && continue
+            if [ "$code" != "0" ]; then
+              echo "::error ::test suite failed: $name (exit $code)"
+            fi
+          done < test-results.txt
+          if grep -qvE '=0$' test-results.txt; then
+            exit 1
+          fi
+          echo "All test suites passed."
 
       - name: Build
         run: bun run build

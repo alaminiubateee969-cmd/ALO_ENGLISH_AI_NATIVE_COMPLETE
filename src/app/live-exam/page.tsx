@@ -24,7 +24,7 @@
  *   - FollowUpEngine (context-aware questions)
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ExaminerAvatar } from "@/components/exam/ExaminerAvatar";
@@ -43,6 +43,12 @@ type Turn = {
 };
 
 type ExamPhase = "not-started" | "greeting" | "awaiting-student" | "recording" | "transcribing" | "examiner-responding" | "examiner-speaking" | "completed";
+
+// Browser capability reads for useSyncExternalStore. The server snapshot stays
+// optimistic so server HTML and the hydration render agree.
+const subscribeToNothing = () => () => {};
+const isMicSupported = () => SpeakingRecorder.isSupported();
+const isMicSupportedOnServer = () => true;
 
 const STATE_LABELS: Record<string, string> = {
   introduction: "Introduction",
@@ -64,19 +70,105 @@ export default function LiveExamPage() {
   const [currentState, setCurrentState] = useState<string>("introduction");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string>("");
-  const [micSupported, setMicSupported] = useState(true);
-
   const recorderRef = useRef<SpeakingRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
 
-  // Check microphone support on mount
-  useEffect(() => {
-    if (!SpeakingRecorder.isSupported()) {
-      setMicSupported(false);
-      setError("Your browser does not support microphone recording. Please use Chrome, Firefox, or Edge.");
+  // Microphone support is a browser capability, so it is read through
+  // useSyncExternalStore: the server snapshot stays optimistic (true) to keep
+  // hydration stable, then React re-reads the real value after hydration.
+  const micSupported = useSyncExternalStore(
+    subscribeToNothing,
+    isMicSupported,
+    isMicSupportedOnServer
+  );
+
+  // ─── Browser speech synthesis fallback (if TTS API fails) ─────────────
+  const speakWithBrowser = useCallback((text: string) => {
+    if (!text || typeof window === "undefined" || !window.speechSynthesis) return;
+    setPhase("examiner-speaking");
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.onend = () => {
+      setPhase((prev) => (prev === "examiner-speaking" ? "awaiting-student" : prev));
+    };
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  // ─── Play examiner audio ──────────────────────────────────────────────
+  const playExaminerAudio = useCallback((audioUrl: string) => {
+    setPhase("examiner-speaking");
+    if (audioRef.current) {
+      audioRef.current.src = audioUrl;
+      audioRef.current.play().catch(() => {
+        // Autoplay blocked — show play button
+        speakWithBrowser("");
+      });
     }
   }, []);
+
+  // ─── Get examiner's response (LLM + TTS) ─────────────────────────────
+  const getExaminerResponse = useCallback(
+    async (transcript: string) => {
+      setPhase("examiner-responding");
+      setError("");
+
+      try {
+        const history = turns.map((t) => ({
+          role: t.role,
+          text: t.text,
+          timestamp: t.timestamp,
+        }));
+
+        const response = await fetch("/api/speaking/examiner-respond", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transcript,
+            history,
+            currentState,
+            examinerId: examiner.id,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Examiner response failed");
+        const data = await response.json();
+
+        if (!data.success) throw new Error(data.message || "Examiner response failed");
+
+        const examinerTurn: Turn = {
+          role: "examiner",
+          text: data.data.text,
+          timestamp: new Date().toISOString(),
+          audioUrl: data.data.audioBase64
+            ? `data:${data.data.audioMimeType || "audio/wav"};base64,${data.data.audioBase64}`
+            : undefined,
+        };
+
+        setTurns((prev) => [...prev, examinerTurn]);
+        setCurrentState(data.data.nextState || currentState);
+
+        // Play examiner voice
+        if (examinerTurn.audioUrl) {
+          playExaminerAudio(examinerTurn.audioUrl);
+        } else {
+          speakWithBrowser(examinerTurn.text);
+        }
+
+        // Check if exam is complete
+        if (data.data.isComplete || data.data.nextState === "completed") {
+          setTimeout(() => setPhase("completed"), 2000);
+        } else {
+          setTimeout(() => setPhase("awaiting-student"), 1000);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to get examiner response");
+        setPhase("awaiting-student");
+      }
+    },
+    [turns, currentState, examiner.id]
+  );
 
   // ─── Start the exam: greet the student ─────────────────────────────────
   const startExam = useCallback(async () => {
@@ -201,93 +293,6 @@ export default function LiveExamPage() {
       setPhase("awaiting-student");
     }
   }, [turns]);
-
-  // ─── Get examiner's response (LLM + TTS) ─────────────────────────────
-  const getExaminerResponse = useCallback(
-    async (transcript: string) => {
-      setPhase("examiner-responding");
-      setError("");
-
-      try {
-        const history = turns.map((t) => ({
-          role: t.role,
-          text: t.text,
-          timestamp: t.timestamp,
-        }));
-
-        const response = await fetch("/api/speaking/examiner-respond", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            transcript,
-            history,
-            currentState,
-            examinerId: examiner.id,
-          }),
-        });
-
-        if (!response.ok) throw new Error("Examiner response failed");
-        const data = await response.json();
-
-        if (!data.success) throw new Error(data.message || "Examiner response failed");
-
-        const examinerTurn: Turn = {
-          role: "examiner",
-          text: data.data.text,
-          timestamp: new Date().toISOString(),
-          audioUrl: data.data.audioBase64
-            ? `data:${data.data.audioMimeType || "audio/wav"};base64,${data.data.audioBase64}`
-            : undefined,
-        };
-
-        setTurns((prev) => [...prev, examinerTurn]);
-        setCurrentState(data.data.nextState || currentState);
-
-        // Play examiner voice
-        if (examinerTurn.audioUrl) {
-          playExaminerAudio(examinerTurn.audioUrl);
-        } else {
-          speakWithBrowser(examinerTurn.text);
-        }
-
-        // Check if exam is complete
-        if (data.data.isComplete || data.data.nextState === "completed") {
-          setTimeout(() => setPhase("completed"), 2000);
-        } else {
-          setTimeout(() => setPhase("awaiting-student"), 1000);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to get examiner response");
-        setPhase("awaiting-student");
-      }
-    },
-    [turns, currentState, examiner.id]
-  );
-
-  // ─── Play examiner audio ──────────────────────────────────────────────
-  const playExaminerAudio = useCallback((audioUrl: string) => {
-    setPhase("examiner-speaking");
-    if (audioRef.current) {
-      audioRef.current.src = audioUrl;
-      audioRef.current.play().catch(() => {
-        // Autoplay blocked — show play button
-        speakWithBrowser("");
-      });
-    }
-  }, []);
-
-  // ─── Browser speech synthesis fallback (if TTS API fails) ─────────────
-  const speakWithBrowser = useCallback((text: string) => {
-    if (!text || typeof window === "undefined" || !window.speechSynthesis) return;
-    setPhase("examiner-speaking");
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-    utterance.onend = () => {
-      setPhase((prev) => (prev === "examiner-speaking" ? "awaiting-student" : prev));
-    };
-    window.speechSynthesis.speak(utterance);
-  }, []);
 
   // ─── Cleanup on unmount ───────────────────────────────────────────────
   useEffect(() => {

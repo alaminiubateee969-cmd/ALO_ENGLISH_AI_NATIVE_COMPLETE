@@ -501,6 +501,14 @@ model Attempt {
   practiceSetId String
   status      String    @default("IN_PROGRESS")
   startedAt   DateTime  @default(now())
+  /// Server-authoritative deadline. Derived from the practice set duration at
+  /// start time; the browser clock is never trusted.
+  expiresAt   DateTime?
+  /// Snapshot of the practice set duration so later edits cannot change a
+  /// running attempt's deadline.
+  durationMin Int?
+  /// 1-based count of attempts this user has made on this practice set.
+  attemptNumber Int     @default(1)
   submittedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -508,9 +516,48 @@ model Attempt {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   practiceSet PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
   score       Score?
+  /// The question set frozen at attempt start. Reused on every resume so a
+  /// refresh or a different device always yields the same questions.
+  attemptQuestions AttemptQuestion[]
+  answers     AttemptAnswer[]
 
   @@index([userId])
   @@index([status])
+  @@index([userId, practiceSetId])
+  @@index([expiresAt])
+}
+
+/// Join table freezing the exact question set (and order) for one attempt.
+model AttemptQuestion {
+  id         String   @id @default(cuid())
+  attemptId  String
+  questionId String
+  order      Int      @default(0)
+  section    String
+  createdAt  DateTime @default(now())
+
+  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+/// Server-side answer store. Powers autosave, refresh recovery and
+/// submission grading — grading never trusts a client-side answer set.
+model AttemptAnswer {
+  id         String   @id @default(cuid())
+  attemptId  String
+  questionId String
+  answer     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
 }
 
 model Score {
@@ -554,6 +601,7 @@ model Question {
   createdAt     DateTime @default(now())
 
   practiceSet   PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+  attemptQuestions AttemptQuestion[]
 
   @@index([practiceSetId])
   @@index([section])

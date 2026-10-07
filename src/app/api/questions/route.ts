@@ -6,8 +6,9 @@
  */
 
 import { db } from "@/lib/db";
-import { ok, badRequest } from "@/lib/responses";
+import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
+import { SAFE_QUESTION_SELECT, loadAttemptQuestions } from "@/lib/exam/questions";
 import { requireAuth } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -16,30 +17,40 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
     // Phase 1: Require auth — students must be logged in to fetch questions
-    await requireAuth();
+    const user = await requireAuth();
 
     const url = new URL(req.url);
     const practiceSetId = url.searchParams.get("practiceSetId");
+    const attemptId = url.searchParams.get("attemptId");
+
+    // Resume path: serve the question set frozen on the attempt. Guarantees a
+    // refresh (or a different device) replays the exact same exam.
+    if (attemptId) {
+      const attempt = await db.attempt.findUnique({
+        where: { id: attemptId },
+        select: { userId: true, practiceSetId: true },
+      });
+      if (!attempt) return notFound("Attempt not found");
+      if (attempt.userId !== user.id) return forbidden("You can only open your own attempt");
+
+      const questions = await loadAttemptQuestions(db, attemptId);
+      const bySection = questions.reduce((acc, q) => {
+        if (!acc[q.section]) acc[q.section] = [];
+        acc[q.section].push(q);
+        return acc;
+      }, {} as Record<string, typeof questions>);
+
+      return ok({ questions, bySection, total: questions.length, frozen: true }, "Questions retrieved");
+    }
 
     if (!practiceSetId) {
-      return badRequest("practiceSetId is required");
+      return badRequest("practiceSetId (or attemptId) is required");
     }
 
     const questions = await db.question.findMany({
       where: { practiceSetId },
       orderBy: { order: "asc" },
-      select: {
-        id: true,
-        section: true,
-        type: true,
-        prompt: true,
-        passage: true,
-        options: true,
-        wordLimit: true,
-        points: true,
-        order: true,
-        // NOTE: correctAnswer and correctIndex are NOT included (security)
-      },
+      select: SAFE_QUESTION_SELECT,
     });
 
     // Group by section
