@@ -61,6 +61,7 @@ export type ExamType =
   | "TOEFL"
   | "Duolingo"
   | "OIETC"
+  | "OET"
   // CBT expansion (Task 1-cbt)
   | "SAT"
   | "GRE"
@@ -2555,6 +2556,12 @@ export const EXAM_SECTIONS: Record<
   ExamType,
   { name: string; duration: number; questionCount: number }[]
 > = {
+  OET: [
+    { name: "Listening", duration: 2400, questionCount: 24 },
+    { name: "Reading", duration: 3600, questionCount: 20 },
+    { name: "Writing", duration: 2700, questionCount: 1 },
+    { name: "Speaking", duration: 1200, questionCount: 2 },
+  ],
   IELTS: [
     { name: "Listening", duration: 1800, questionCount: 40 },
     { name: "Reading", duration: 3600, questionCount: 40 },
@@ -2675,6 +2682,7 @@ export const QUESTION_COUNT_BY_EXAM: Record<ExamType, number> = {
   TOEFL: QUESTIONS.filter((q) => q.examType === "TOEFL").length,
   Duolingo: QUESTIONS.filter((q) => q.examType === "Duolingo").length,
   OIETC: QUESTIONS.filter((q) => q.examType === "OIETC").length,
+  OET: QUESTIONS.filter((q) => q.examType === "OET").length,
   // CBT expansion (Task 1-cbt)
   SAT: QUESTIONS.filter((q) => q.examType === "SAT").length,
   GRE: QUESTIONS.filter((q) => q.examType === "GRE").length,

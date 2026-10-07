@@ -17,6 +17,8 @@
  * on the server.
  */
 
+import { hasAnswerKey } from "./grading";
+
 type Db = typeof import("@/lib/db").db;
 
 export type ShortageInfo = {
@@ -29,6 +31,8 @@ export type ShortageInfo = {
 
 export type SelectionResult = {
   questionIds: string[];
+  /** Questions in the set that carry no answer key and were excluded. */
+  ungradeableCount: number;
   requiredCount: number;
   eligibleCount: number;
   poolSize: number;
@@ -75,10 +79,27 @@ export async function selectQuestions({
   const pool = await db.question.findMany({
     where: { practiceSetId },
     orderBy: [{ order: "asc" }, { id: "asc" }],
-    select: { id: true },
+    select: {
+      id: true,
+      type: true,
+      correctAnswer: true,
+      correctIndex: true,
+      correctIndices: true,
+    },
   });
 
-  const poolIds = pool.map((q) => q.id);
+  // A question with no answer key can never be marked correct, so it must
+  // never be served. Skipping it here is what keeps an attempt gradeable.
+  const ungradeable = pool.filter((q) => !hasAnswerKey(q));
+  const gradeable = pool.filter((q) => hasAnswerKey(q));
+  if (ungradeable.length > 0) {
+    console.warn(
+      `[selection] ${ungradeable.length} question(s) without an answer key were excluded: ` +
+        ungradeable.slice(0, 5).map((q) => q.id).join(", ")
+    );
+  }
+
+  const poolIds = gradeable.map((q) => q.id);
   // Deliberately NOT clamped to the pool size: asking for more questions
   // than the bank holds is a real shortage and must surface as one, not be
   // quietly downgraded to a shorter paper.
@@ -112,6 +133,7 @@ export async function selectQuestions({
   if (eligibleIds.length >= requiredCount) {
     return {
       questionIds: eligibleIds.slice(0, requiredCount),
+      ungradeableCount: ungradeable.length,
       requiredCount,
       eligibleCount: eligibleIds.length,
       poolSize: poolIds.length,
@@ -126,6 +148,7 @@ export async function selectQuestions({
   const served = poolIds.slice(0, requiredCount);
   return {
     questionIds: served,
+    ungradeableCount: ungradeable.length,
     requiredCount,
     eligibleCount: eligibleIds.length,
     poolSize: poolIds.length,
