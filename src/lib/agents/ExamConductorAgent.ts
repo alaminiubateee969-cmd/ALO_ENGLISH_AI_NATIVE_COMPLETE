@@ -49,7 +49,13 @@ const PRACTICE_DISCLAIMER =
  */
 export async function conductExam(
   attemptId: string,
-  answers: Record<string, unknown> = {}
+  answers: Record<string, unknown> = {},
+  /**
+   * Set when the caller has already atomically claimed the attempt with an
+   * `updateMany` guard (see /api/attempts/submit). The status guard below is
+   * then skipped so the claim is not mistaken for a double submission.
+   */
+  opts: { alreadyClaimed?: boolean } = {}
 ): Promise<ExamResult> {
   // Fetch the attempt + practice set.
   const attempt = await db.attempt.findUnique({
@@ -62,7 +68,7 @@ export async function conductExam(
   });
 
   if (!attempt) throw new Error('Attempt not found');
-  if (attempt.status === 'SUBMITTED' || attempt.status === 'SCORED') {
+  if (!opts.alreadyClaimed && (attempt.status === 'SUBMITTED' || attempt.status === 'SCORED')) {
     throw new Error('Attempt already submitted');
   }
 

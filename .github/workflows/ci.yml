@@ -55,12 +55,23 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      # Only the smoke suite runs here: tests/rbac.test.ts talks to a real
-      # database (roles, permissions, team isolation, audit log) and needs a
-      # migrated + seeded DATABASE_URL, which this runner does not have.
-      # Run it with `bun test tests/rbac.test.ts` against a provisioned DB.
-      - name: Smoke tests
-        run: bun test tests/smoke.test.ts
+      # The suite includes database-backed tests (RBAC, attempt engine).
+      # They run against a real migrated + seeded SQLite database rather than
+      # being skipped: provision the database, then run everything.
+      - name: Provision test database
+        run: |
+          bunx prisma db push --skip-generate
+          bun run prisma:seed
+          bun run prisma:seed:rbac
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+          ADMIN_SEED_EMAIL: "ci-admin@test.local"
+          ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      - name: Tests
+        run: bun test tests/
+        env:
+          DATABASE_URL: "file:./ci-test.db"
 
       - name: Build
         run: bun run build
