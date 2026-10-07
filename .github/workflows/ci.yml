@@ -68,46 +68,12 @@ jobs:
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
 
-      # Each suite is its own step so a failure is attributable to an exact
-      # file. The final gate below fails the job if any suite failed — the
-      # continue-on-error flags only buy diagnosability, never a green build.
-      - name: Tests — smoke (no database)
-        id: tests_smoke
-        continue-on-error: true
-        run: bun test tests/smoke.test.ts
-
-      - name: Tests — exam engine (no database)
-        id: tests_engine
-        continue-on-error: true
-        run: bun test tests/exam-engine.test.ts
-
-      - name: Tests — RBAC (database)
-        id: tests_rbac
-        continue-on-error: true
-        run: bun test tests/rbac.test.ts
+      # Runs every suite against the database provisioned above, including the
+      # database-backed RBAC and attempt-engine tests. No suite is skipped.
+      - name: Tests
+        run: bun test tests/
         env:
           DATABASE_URL: "file:./ci-test.db"
-
-      - name: Tests — attempt engine (database)
-        id: tests_attempt
-        continue-on-error: true
-        run: bun test tests/exam-attempt.test.ts
-        env:
-          DATABASE_URL: "file:./ci-test.db"
-
-      - name: Verify every suite passed
-        if: always()
-        run: |
-          failed=0
-          for outcome in "${{ steps.tests_smoke.outcome }}" "${{ steps.tests_engine.outcome }}" "${{ steps.tests_rbac.outcome }}" "${{ steps.tests_attempt.outcome }}"; do
-            echo "suite outcome: $outcome"
-            [ "$outcome" = "success" ] || failed=1
-          done
-          if [ "$failed" -ne 0 ]; then
-            echo "::error::One or more test suites failed."
-            exit 1
-          fi
-          echo "All test suites passed."
 
       - name: Build
         run: bun run build
