@@ -79,7 +79,10 @@ export async function selectQuestions({
   });
 
   const poolIds = pool.map((q) => q.id);
-  const requiredCount = Math.min(count ?? poolIds.length, poolIds.length);
+  // Deliberately NOT clamped to the pool size: asking for more questions
+  // than the bank holds is a real shortage and must surface as one, not be
+  // quietly downgraded to a shorter paper.
+  const requiredCount = count ?? poolIds.length;
 
   let seenIds = new Set<string>();
   if (excludePreviouslySeen) {
@@ -92,6 +95,19 @@ export async function selectQuestions({
 
   const eligibleIds = poolIds.filter((id) => !seenIds.has(id));
 
+  // Case 2 — the bank cannot even supply one full sitting. Never downgraded
+  // to "here are the few questions we have": that would produce a paper the
+  // scoring rules cannot interpret.
+  if (poolIds.length < requiredCount) {
+    throw new QuestionShortageError({
+      requiredCount,
+      eligibleCount: eligibleIds.length,
+      poolSize: poolIds.length,
+      reusedQuestionIds: poolIds.filter((id) => seenIds.has(id)),
+      reason: "BANK_TOO_SMALL",
+    });
+  }
+
   // Case 1 — enough fresh questions: serve them, nothing reused.
   if (eligibleIds.length >= requiredCount) {
     return {
@@ -102,17 +118,6 @@ export async function selectQuestions({
       reusedQuestionIds: [],
       shortage: null,
     };
-  }
-
-  // Case 2 — the bank cannot even supply one full sitting.
-  if (poolIds.length < requiredCount) {
-    throw new QuestionShortageError({
-      requiredCount,
-      eligibleCount: eligibleIds.length,
-      poolSize: poolIds.length,
-      reusedQuestionIds: poolIds.filter((id) => seenIds.has(id)),
-      reason: "BANK_TOO_SMALL",
-    });
   }
 
   // Case 3 — the bank is large enough for one sitting but this student has
