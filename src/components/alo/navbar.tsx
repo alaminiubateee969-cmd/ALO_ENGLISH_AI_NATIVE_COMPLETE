@@ -9,7 +9,7 @@ import {
   NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { useApp } from "./app-shell";
-import { EXAM_MODULES } from "@/lib/exam-catalog";
+import { PUBLISHED_EXAM_MODULES as EXAM_MODULES } from "@/lib/exam-catalog";
 
 const NAV_LINKS = [
   { id: "computer-based-exams", label: "Exams" },

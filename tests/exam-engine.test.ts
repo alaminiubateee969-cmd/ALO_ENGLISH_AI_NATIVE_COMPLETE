@@ -11,6 +11,7 @@
 import { describe, test, expect } from "bun:test";
 import {
   gradeObjective,
+  hasAnswerKey,
   isObjective,
   isSubjective,
   normaliseText,
@@ -158,5 +159,26 @@ describe("Selection — shortage is a controlled condition", () => {
     expect(err.shortage.reason).toBe("BANK_TOO_SMALL");
     expect(err.shortage.requiredCount).toBe(40);
     expect(err.shortage.poolSize).toBe(12);
+  });
+});
+
+describe("Selection — ungradeable questions are never served", () => {
+  test("an objective question with no key is rejected", () => {
+    expect(hasAnswerKey({ type: "MULTIPLE_CHOICE", correctIndex: null })).toBe(false);
+    expect(hasAnswerKey({ type: "TRUE_FALSE_NOT_GIVEN", correctIndex: null })).toBe(false);
+    expect(hasAnswerKey({ type: "FILL_BLANK", correctAnswer: null })).toBe(false);
+    expect(hasAnswerKey({ type: "FILL_BLANK", correctAnswer: "   " })).toBe(false);
+    expect(hasAnswerKey({ type: "MATCHING", correctIndices: null })).toBe(false);
+  });
+
+  test("a keyed objective question is accepted", () => {
+    expect(hasAnswerKey({ type: "MULTIPLE_CHOICE", correctIndex: 0 })).toBe(true);
+    expect(hasAnswerKey({ type: "FILL_BLANK", correctAnswer: "climate" })).toBe(true);
+    expect(hasAnswerKey({ type: "MATCHING", correctIndices: "[1,2]" })).toBe(true);
+  });
+
+  test("subjective questions are always served (an evaluator marks them)", () => {
+    expect(hasAnswerKey({ type: "ESSAY" })).toBe(true);
+    expect(hasAnswerKey({ type: "SPEAKING" })).toBe(true);
   });
 });

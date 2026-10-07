@@ -127,6 +127,30 @@ function gradeOne(q: GradableQuestion, rawAnswer: unknown): QuestionGrade {
 }
 
 /**
+ * Does this question carry a usable answer key?
+ *
+ * A question with no key can never be marked correct, so it must not be
+ * served to a student. Used by the selection step to keep ungradeable items
+ * out of an attempt (and reported by the question-bank validator so content
+ * authors can fix them).
+ */
+export function hasAnswerKey(q: {
+  type: string;
+  correctAnswer?: string | null;
+  correctIndex?: number | null;
+  correctIndices?: string | null;
+}): boolean {
+  const type = q.type.toUpperCase();
+
+  if (INDEX_TYPES.has(type)) return q.correctIndex !== null && q.correctIndex !== undefined;
+  if (TEXT_TYPES.has(type)) return typeof q.correctAnswer === "string" && q.correctAnswer.trim().length > 0;
+  if (SET_TYPES.has(type)) return typeof q.correctIndices === "string" && q.correctIndices.trim().length > 0;
+
+  // Subjective work (essay, speaking) is marked by an evaluator, not a key.
+  return true;
+}
+
+/**
  * Grade every objective question in an attempt.
  *
  * `answers` must come from the persisted AttemptAnswer rows (or, for a
