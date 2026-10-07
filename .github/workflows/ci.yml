@@ -79,22 +79,28 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          bun test tests/smoke.test.ts --timeout 30000
-          echo "smoke=$?" >> test-results.txt
+          bun test tests/smoke.test.ts --timeout 30000 2>&1 | tee smoke.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" smoke.log | head -15 | sed 's/^/::error ::smoke /'
+          echo "smoke=$code" >> test-results.txt
 
       - name: Tests — exam engine (no database)
         continue-on-error: true
         run: |
           set +e
-          bun test tests/exam-engine.test.ts --timeout 30000
-          echo "engine=$?" >> test-results.txt
+          bun test tests/exam-engine.test.ts --timeout 30000 2>&1 | tee engine.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" engine.log | head -15 | sed 's/^/::error ::engine /'
+          echo "engine=$code" >> test-results.txt
 
       - name: Tests — RBAC (database)
         continue-on-error: true
         run: |
           set +e
-          bun test tests/rbac.test.ts --timeout 30000
-          echo "rbac=$?" >> test-results.txt
+          bun test tests/rbac.test.ts --timeout 30000 2>&1 | tee rbac.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" rbac.log | head -15 | sed 's/^/::error ::rbac /'
+          echo "rbac=$code" >> test-results.txt
         env:
           DATABASE_URL: "file:./ci-test.db"
 
@@ -102,8 +108,10 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          bun test tests/exam-attempt.test.ts --timeout 30000
-          echo "attempt=$?" >> test-results.txt
+          bun test tests/exam-attempt.test.ts --timeout 30000 2>&1 | tee attempt.log
+          code=${PIPESTATUS[0]}
+          grep -E "^\(fail\)" attempt.log | head -15 | sed 's/^/::error ::attempt /'
+          echo "attempt=$code" >> test-results.txt
         env:
           DATABASE_URL: "file:./ci-test.db"
 
@@ -111,8 +119,13 @@ jobs:
         if: always()
         run: |
           cat test-results.txt
+          while IFS='=' read -r name code; do
+            [ -z "$name" ] && continue
+            if [ "$code" != "0" ]; then
+              echo "::error ::test suite failed: $name (exit $code)"
+            fi
+          done < test-results.txt
           if grep -qvE '=0$' test-results.txt; then
-            echo "::error::at least one test suite reported a non-zero exit code"
             exit 1
           fi
           echo "All test suites passed."
