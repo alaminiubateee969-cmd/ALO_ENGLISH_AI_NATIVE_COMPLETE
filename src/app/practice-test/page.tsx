@@ -60,6 +60,53 @@ export default function PracticeTestPage() {
       .catch(() => {});
   }, [selectedExam]);
 
+  const submitTest = useCallback(async () => {
+    if (!attemptId) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const writingAnswers = questions
+        .filter((q) => q.section === "WRITING" && answers[q.id])
+        .map((q) => answers[q.id])
+        .join("\n\n");
+      const speakingAnswers = questions
+        .filter((q) => q.section === "SPEAKING" && answers[q.id])
+        .map((q) => answers[q.id])
+        .join("\n\n");
+      const objectiveQuestions = questions.filter(
+        (q) => q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE_NOT_GIVEN" || q.type === "FILL_BLANK" || q.type === "MATCHING" || q.type === "SENTENCE_COMPLETION"
+      );
+
+      const res = await fetch("/api/attempts/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attemptId,
+          answers: {
+            writing: writingAnswers,
+            speaking: speakingAnswers,
+            objectiveAnswers: answers,
+            readingCorrect: objectiveQuestions.filter((q) => answers[q.id]).length,
+            readingTotal: objectiveQuestions.length,
+            listeningCorrect: objectiveQuestions.filter((q) => answers[q.id]).length,
+            listeningTotal: objectiveQuestions.length,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setResult(data.data.result);
+        setTestStarted(false);
+      } else {
+        setError(data.message || "Failed to submit test");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [attemptId, answers, questions]);
+
   // Timer
   useEffect(() => {
     if (!testStarted || timeLeft <= 0) return;
@@ -109,53 +156,6 @@ export default function PracticeTestPage() {
       setSubmitting(false);
     }
   }
-
-  const submitTest = useCallback(async () => {
-    if (!attemptId) return;
-    setSubmitting(true);
-    setError("");
-    try {
-      const writingAnswers = questions
-        .filter((q) => q.section === "WRITING" && answers[q.id])
-        .map((q) => answers[q.id])
-        .join("\n\n");
-      const speakingAnswers = questions
-        .filter((q) => q.section === "SPEAKING" && answers[q.id])
-        .map((q) => answers[q.id])
-        .join("\n\n");
-      const objectiveQuestions = questions.filter(
-        (q) => q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE_NOT_GIVEN" || q.type === "FILL_BLANK" || q.type === "MATCHING" || q.type === "SENTENCE_COMPLETION"
-      );
-
-      const res = await fetch("/api/attempts/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          attemptId,
-          answers: {
-            writing: writingAnswers,
-            speaking: speakingAnswers,
-            objectiveAnswers: answers,
-            readingCorrect: objectiveQuestions.filter((q) => answers[q.id]).length,
-            readingTotal: objectiveQuestions.length,
-            listeningCorrect: objectiveQuestions.filter((q) => answers[q.id]).length,
-            listeningTotal: objectiveQuestions.length,
-          },
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setResult(data.data.result);
-        setTestStarted(false);
-      } else {
-        setError(data.message || "Failed to submit test");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }, [attemptId, answers, questions]);
 
   function setAnswer(qId: string, value: string) {
     setAnswers((prev) => ({ ...prev, [qId]: value }));

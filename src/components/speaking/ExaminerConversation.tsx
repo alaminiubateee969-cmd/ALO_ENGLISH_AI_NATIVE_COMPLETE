@@ -24,11 +24,6 @@ export function ExaminerConversation({ attemptId }: { attemptId: string }) {
     conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation]);
 
-  // Start exam automatically
-  useEffect(() => {
-    startExaminerTurn("");
-  }, []);
-
   const playAudioFromBase64 = useCallback((base64: string, mimeType: string) => {
     if (!base64) {
       // Fallback: use browser speech synthesis
@@ -115,6 +110,21 @@ export function ExaminerConversation({ attemptId }: { attemptId: string }) {
       setIsProcessing(false);
     }
   }, [conversation, examinerState, isComplete, playAudioFromBase64]);
+
+  // Start exam automatically. The call is deferred to a microtask so the turn's
+  // own state updates land outside the effect body, and it is guarded so a
+  // fast unmount cannot apply a stale result.
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.resolve().then(() => {
+      if (!cancelled) startExaminerTurn("");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const startRecording = useCallback(async () => {
     setError("");
