@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, Flag, ArrowLeft, ArrowRight, Check } from "lucide-react";
+
+/** Key used to survive a page refresh within the same browser tab session. */
+const ATTEMPT_STORAGE_KEY = "alo.activeAttemptId";
 
 type Question = {
   id: string;
@@ -17,7 +20,7 @@ type Question = {
 };
 
 type ExamType = { id: string; code: string; name: string };
-type PracticeSet = { id: string; title: string; description: string; durationMin: number; examType: { code: string; name: string } };
+type PracticeSet = { id: string; title: string; description?: string; durationMin: number; examType: { code: string; name: string } };
 
 const SECTIONS = ["LISTENING", "READING", "WRITING", "SPEAKING"];
 
@@ -42,6 +45,18 @@ export default function PracticeTestPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [testStarted, setTestStarted] = useState(false);
 
+  // ─── Server-authoritative clock + autosave plumbing ──────────────────
+  // `expiresAt` is the server's deadline. The browser only interpolates
+  // between server readings, so changing the local clock cannot extend an exam.
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<Record<string, "saving" | "saved" | "failed">>({});
+  const [resuming, setResuming] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const skewRef = useRef(0); // serverNow - localNow, from the last server contact
+  const answersRef = useRef<Record<string, string>>({});
+  const submittingRef = useRef(false);
+  const pendingSaves = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
   // Fetch exam types
   useEffect(() => {
     fetch("/api/exam-types")
@@ -62,66 +77,81 @@ export default function PracticeTestPage() {
 
   const submitTest = useCallback(async () => {
     if (!attemptId) return;
+    if (submittingRef.current) return; // double-submit guard
+    submittingRef.current = true;
     setSubmitting(true);
     setError("");
     try {
-      const writingAnswers = questions
-        .filter((q) => q.section === "WRITING" && answers[q.id])
-        .map((q) => answers[q.id])
-        .join("\n\n");
-      const speakingAnswers = questions
-        .filter((q) => q.section === "SPEAKING" && answers[q.id])
-        .map((q) => answers[q.id])
-        .join("\n\n");
-      const objectiveQuestions = questions.filter(
-        (q) => q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE_NOT_GIVEN" || q.type === "FILL_BLANK" || q.type === "MATCHING" || q.type === "SENTENCE_COMPLETION"
-      );
-
+      // Send the student's answers only — never a score. The server grades
+      // them against the stored correct answers and owns the result.
       const res = await fetch("/api/attempts/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          attemptId,
-          answers: {
-            writing: writingAnswers,
-            speaking: speakingAnswers,
-            objectiveAnswers: answers,
-            readingCorrect: objectiveQuestions.filter((q) => answers[q.id]).length,
-            readingTotal: objectiveQuestions.length,
-            listeningCorrect: objectiveQuestions.filter((q) => answers[q.id]).length,
-            listeningTotal: objectiveQuestions.length,
-          },
-        }),
+        body: JSON.stringify({ attemptId, answers: answersRef.current }),
       });
       const data = await res.json();
       if (data.success) {
         setResult(data.data.result);
         setTestStarted(false);
+        setExpiresAt(null);
+        window.sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
+        submittingRef.current = false;
       } else {
         setError(data.message || "Failed to submit test");
+        submittingRef.current = false;
       }
     } catch {
       setError("Network error. Please try again.");
+      submittingRef.current = false;
     } finally {
       setSubmitting(false);
     }
-  }, [attemptId, answers, questions]);
+  }, [attemptId]);
 
-  // Timer
+  // ─── Timer ───────────────────────────────────────────────────────────
+  // Counts down to the server's deadline. The local clock is only used to
+  // interpolate between server readings; a resync every 60s (and whenever
+  // the tab regains focus) corrects drift or a manipulated system clock.
   useEffect(() => {
-    if (!testStarted || timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timer);
-          submitTest();
-          return 0;
+    if (!testStarted || !expiresAt) return;
+    const deadline = new Date(expiresAt).getTime();
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((deadline - (Date.now() + skewRef.current)) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) void submitTest();
+    };
+
+    // Deferred one tick so no state is set synchronously inside the effect.
+    const kickoff = setTimeout(tick, 0);
+    const timer = setInterval(tick, 1000);
+
+    const resync = async () => {
+      if (!attemptId) return;
+      try {
+        const res = await fetch(`/api/attempts/${attemptId}`);
+        const data = await res.json();
+        if (data.success && data.data.attempt.status === "IN_PROGRESS") {
+          skewRef.current = new Date(data.data.clock.serverNow).getTime() - Date.now();
+          setExpiresAt(data.data.clock.expiresAt);
         }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [testStarted, timeLeft]);
+      } catch {
+        /* offline — keep counting down to the last known server deadline */
+      }
+    };
+    const syncTimer = setInterval(resync, 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void resync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearTimeout(kickoff);
+      clearInterval(timer);
+      clearInterval(syncTimer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [testStarted, expiresAt, attemptId, submitTest]);
 
   async function startTest(set: PracticeSet) {
     setSubmitting(true);
@@ -134,18 +164,28 @@ export default function PracticeTestPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setActiveSet(set);
-        setAttemptId(data.data.attempt.id);
-        setTimeLeft(set.durationMin * 60);
-        setTestStarted(true);
-        setCurrentSection(0);
-        setCurrentQuestion(0);
+        const { attempt, clock } = data.data;
 
-        // Fetch questions
-        const qRes = await fetch(`/api/questions?practiceSetId=${set.id}`);
+        // The server owns the deadline — never derive it from the client.
+        skewRef.current = new Date(clock.serverNow).getTime() - Date.now();
+        setExpiresAt(clock.expiresAt);
+        setTimeLeft(clock.remainingSec);
+        setAttemptId(attempt.id);
+        window.sessionStorage.setItem(ATTEMPT_STORAGE_KEY, attempt.id);
+
+        // Fetch the question set frozen on this attempt.
+        const qRes = await fetch(`/api/questions?attemptId=${attempt.id}`);
         const qData = await qRes.json();
         if (qData.success) {
           setQuestions(qData.data.questions);
+          setAnswers({});
+          answersRef.current = {};
+          setActiveSet(set);
+          setCurrentSection(0);
+          setCurrentQuestion(0);
+          setTestStarted(true);
+        } else {
+          setError(qData.message || "Failed to load questions");
         }
       } else {
         setError(data.message || "Failed to start test");
@@ -157,8 +197,40 @@ export default function PracticeTestPage() {
     }
   }
 
+  // ─── Autosave ────────────────────────────────────────────────────────
+  // Every answer is pushed to the server. The UI only reports "saved" once
+  // the server confirms persistence; a failure stays visible and retryable.
+  const saveAnswer = useCallback(
+    async (qId: string, value: string) => {
+      if (!attemptId) return;
+      setSaveStatus((prev) => ({ ...prev, [qId]: "saving" }));
+      try {
+        const res = await fetch("/api/attempts/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ attemptId, questionId: qId, answer: value }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || "Save rejected");
+        setSaveStatus((prev) => ({ ...prev, [qId]: "saved" }));
+        setSaveError("");
+      } catch (err) {
+        setSaveStatus((prev) => ({ ...prev, [qId]: "failed" }));
+        setSaveError(err instanceof Error ? err.message : "Could not save answer");
+      }
+    },
+    [attemptId]
+  );
+
   function setAnswer(qId: string, value: string) {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
+    answersRef.current = { ...answersRef.current, [qId]: value };
+
+    // Debounce so typing does not hammer the API; the last write wins.
+    if (pendingSaves.current[qId]) clearTimeout(pendingSaves.current[qId]);
+    pendingSaves.current[qId] = setTimeout(() => {
+      void saveAnswer(qId, value);
+    }, 600);
   }
 
   function toggleFlag(qId: string) {
@@ -171,14 +243,22 @@ export default function PracticeTestPage() {
   }
 
   function reset() {
+    Object.values(pendingSaves.current).forEach((t) => clearTimeout(t));
+    pendingSaves.current = {};
+    submittingRef.current = false;
+    window.sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
     setActiveSet(null);
     setQuestions([]);
     setAnswers({});
+    answersRef.current = {};
     setFlagged(new Set());
     setAttemptId("");
     setResult(null);
     setTestStarted(false);
     setTimeLeft(0);
+    setExpiresAt(null);
+    setSaveStatus({});
+    setSaveError("");
     setCurrentSection(0);
     setCurrentQuestion(0);
   }
@@ -197,10 +277,12 @@ export default function PracticeTestPage() {
   );
   const currentQ = sectionQuestions[currentQuestion];
 
-  if (loading) {
+  if (loading || resuming) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-12">
-        <p className="text-center text-slate-500">Loading practice tests...</p>
+        <p className="text-center text-slate-500">
+          {resuming ? "Restoring your attempt..." : "Loading practice tests..."}
+        </p>
       </div>
     );
   }
@@ -300,7 +382,22 @@ export default function PracticeTestPage() {
           <div className="mx-auto flex max-w-7xl items-center justify-between">
             <div>
               <h1 className="text-lg font-bold">{activeSet.title}</h1>
-              <p className="text-xs text-slate-500">Attempt: {attemptId.slice(-8)} · {answeredInSection}/{sectionQuestions.length} answered in section</p>
+              <p className="text-xs text-slate-500">
+                Attempt: {attemptId.slice(-8)} · {answeredInSection}/{sectionQuestions.length} answered in section
+                {(() => {
+                  const states = currentQ ? Object.values(saveStatus).filter(Boolean) : [];
+                  const saving = states.includes("saving");
+                  const failed = states.includes("failed");
+                  const saved = states.length > 0 && !saving && !failed;
+                  return (
+                    <span className="ml-2">
+                      {saving && <span className="text-amber-600">· saving…</span>}
+                      {saved && <span className="text-emerald-600">· answers saved</span>}
+                      {failed && <span className="text-red-600">· not saved — check connection</span>}
+                    </span>
+                  );
+                })()}
+              </p>
             </div>
             <div className={`rounded-lg px-4 py-2 font-mono text-lg font-bold ${timeLeft < 300 ? "bg-red-100 text-red-700 animate-pulse" : "bg-slate-100 text-slate-700"}`}>
               <Clock className="mr-1 inline h-5 w-5" />{formatTime(timeLeft)}
