@@ -68,12 +68,54 @@ jobs:
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
 
-      # Runs every suite against the database provisioned above, including the
+      # Every suite runs against the database provisioned above, including the
       # database-backed RBAC and attempt-engine tests. No suite is skipped.
-      - name: Tests
-        run: bun test tests/
+      #
+      # Suites are separate steps so a red build names the exact file. Each
+      # records its own exit code; the gate step below fails the job if any
+      # code is non-zero, so continue-on-error buys diagnosability only and
+      # can never produce a green build.
+      - name: Tests — smoke (no database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/smoke.test.ts --timeout 30000
+          echo "smoke=$?" >> test-results.txt
+
+      - name: Tests — exam engine (no database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/exam-engine.test.ts --timeout 30000
+          echo "engine=$?" >> test-results.txt
+
+      - name: Tests — RBAC (database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/rbac.test.ts --timeout 30000
+          echo "rbac=$?" >> test-results.txt
         env:
           DATABASE_URL: "file:./ci-test.db"
+
+      - name: Tests — attempt engine (database)
+        continue-on-error: true
+        run: |
+          set +e
+          bun test tests/exam-attempt.test.ts --timeout 30000
+          echo "attempt=$?" >> test-results.txt
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+
+      - name: Verify every suite passed
+        if: always()
+        run: |
+          cat test-results.txt
+          if grep -qvE '=0$' test-results.txt; then
+            echo "::error::at least one test suite reported a non-zero exit code"
+            exit 1
+          fi
+          echo "All test suites passed."
 
       - name: Build
         run: bun run build
