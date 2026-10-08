@@ -49,6 +49,25 @@ below is about the pipeline between a push to `main` and a working site.
   restart discards; they resolve under `APP_DATA_DIR`.
 - `/api/deliverables` returned 500 when the optional legacy bundle was absent,
   which reads as a server fault. It now returns 404 with an explanation.
+- **The four root inventory CSVs described a different application.** They were
+  hand-written once and never regenerated: 25 models against 44 in the schema
+  (every field literally `see schema`), 51 API endpoints against 73 route files
+  (every description `API endpoint`), a `ROUTE_INVENTORY.csv` that duplicated
+  `API_INVENTORY.csv` instead of listing the 31 pages, and a 265-row
+  `FILE_MANIFEST.csv` whose `Size` column read `unknown` on every line. All four
+  are now generated and accurate. The auth column in `API_INVENTORY.csv` is read
+  out of the `PUBLIC_API_PATTERNS` regexes in `src/proxy.ts` rather than copied,
+  so it cannot disagree with the middleware that actually enforces it.
+- **`git-push.sh` was a deployment bootstrap, not a verification script.** It ran
+  `git add -A`, committed with a canned message and pushed to `main` — the branch
+  that auto-deploys to production — then told the operator to run
+  `./deploy-vps.sh`, which does not exist on `main`. Its secret guard tested the
+  exit status of the second `grep` in a pipe that always received empty input, so
+  it could never fire, and every run appended `.env` to `.gitignore`. It is now a
+  pre-push gate: it verifies, scans only the lines being *added* for private keys,
+  platform tokens and credential-bearing connection strings (allowlisting the
+  documented placeholders in `.env.example`), and requires typed confirmation to
+  push to `main`. It never stages, commits, force-pushes or switches branches.
 
 ### Added
 
@@ -68,6 +87,12 @@ below is about the pipeline between a push to `main` and a working site.
 - `server-config/README.md` — those four files are validated by CI and used by
   nothing in production; without a note saying so they read as the deployment
   configuration.
+- `scripts/generate-inventories.mjs` — regenerates `DATABASE_MODEL_INVENTORY.csv`,
+  `API_INVENTORY.csv`, `ROUTE_INVENTORY.csv` and `FILE_MANIFEST.csv` from the
+  Prisma schema, the route tree and `git ls-files`. `--check` fails when what is
+  committed differs from what the source now says; CI runs it on every push.
+  Exposed as `make inventories` / `npm run inventories`.
+- `docs/archive/legacy-deployment-guides/` — see Changed below.
 
 ### Changed
 
@@ -113,6 +138,23 @@ below is about the pipeline between a push to `main` and a working site.
   same artifact.
 - Root-level screenshots moved to `docs/images/`; `SHA256SUMS.txt` removed (it
   checksummed an artifact not in the repository).
+- **Four root deployment guides named four different production targets for the
+  same domain.** `DEPLOYMENT_GUIDE.md` and `CPANEL_DEPLOYMENT_GUIDE.md` described
+  a cPanel release, `VPS-DEPLOYMENT-GUIDE.md` a WHM server at `115.187.18.239`,
+  `SERVER-DEPLOYMENT-103.231.239.79.md` a third host. An operator following any
+  of them would deploy somewhere other than `english.aloeducation.com`. All four
+  are archived under `docs/archive/legacy-deployment-guides/` with a README
+  explaining what each got wrong. `HOSTINGER_DEPLOYMENT.md` is now the only
+  production guide at the root, alongside `DEPLOYMENT.md`, which already says it
+  is the optional self-managed path.
+- `PROJECT-INDEX.md` is flagged as partly stale at the top and points at the
+  authoritative deployment guide and the generated inventories. Rewriting the
+  hand-written index was not attempted; the generated CSVs supersede its counts.
+- `.zscripts/dev.pid` — a `dev.sh` runtime PID file — was tracked. Untracked, and
+  `*.pid` is now ignored.
+- The `Makefile` gained `preflight`, `smoke` and `inventories` targets; `ci:` now
+  runs the preflight gates and boots the built artifact; and `deploy:` states on
+  the line that it is the optional self-managed path and not production.
 
 ### Merged
 

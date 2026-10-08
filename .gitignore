@@ -117,3 +117,6 @@ Thumbs.db
 # ─── Kept on purpose ───────────────────────────────────────────────────
 !mini-services/
 !examples/
+
+# Runtime PID files from .zscripts/dev.sh
+*.pid

@@ -1,5 +1,17 @@
 # Project File Index
 
+> **Status: partly stale.** This index was written by hand and the repository has
+> moved since — counts, filenames and the deployment description below lag what
+> is on disk. Two things are authoritative and generated instead:
+>
+> - **Deployment** — [`HOSTINGER_DEPLOYMENT.md`](./HOSTINGER_DEPLOYMENT.md). The
+>   VPS/cPanel guides this index may still point at are archived under
+>   [`docs/archive/legacy-deployment-guides/`](./docs/archive/legacy-deployment-guides/).
+> - **Inventories** — `FILE_MANIFEST.csv`, `API_INVENTORY.csv`,
+>   `ROUTE_INVENTORY.csv` and `DATABASE_MODEL_INVENTORY.csv` are generated from
+>   source by `node scripts/generate-inventories.mjs`. Trust those over any
+>   count written in prose here.
+
 A complete map of every file in this project, organized by purpose.
 
 ## Root Configuration (12 files)

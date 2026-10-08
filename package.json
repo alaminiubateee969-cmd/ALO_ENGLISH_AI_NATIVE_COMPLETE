@@ -29,6 +29,8 @@
     "audio:install-deps": "pip install --break-system-packages edge-tts 2>&1 || pip install edge-tts",
     "audio:generate": "node scripts/generate-listening-audio.mjs",
     "content:validate": "node scripts/validate-content.mjs",
+    "inventories": "node scripts/generate-inventories.mjs",
+    "inventories:check": "node scripts/generate-inventories.mjs --check",
     "verify": "bash scripts/verify.sh",
     "backup": "bash scripts/backup.sh",
     "restore": "bash scripts/restore.sh",

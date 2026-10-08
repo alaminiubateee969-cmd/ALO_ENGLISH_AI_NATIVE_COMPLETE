@@ -1,26 +1,45 @@
-Model,Category,Key Fields,Indexes
-User,-,see schema,-
-Branch,-,see schema,-
-Department,-,see schema,-
-PasswordReset,-,see schema,-
-Lead,-,see schema,-
-Student,-,see schema,-
-Partner,-,see schema,-
-Commission,-,see schema,-
-Country,-,see schema,-
-University,-,see schema,-
-Course,-,see schema,-
-Scholarship,-,see schema,-
-Application,-,see schema,-
-Document,-,see schema,-
-Message,-,see schema,-
-Task,-,see schema,-
-Appointment,-,see schema,-
-TimelineEntry,-,see schema,-
-Notification,-,see schema,-
-AuditLog,-,see schema,-
-Setting,-,see schema,-
-ExamType,-,see schema,-
-PracticeSet,-,see schema,-
-Attempt,-,see schema,-
-Score,-,see schema,-
+Model,Category,ScalarFields,Relations,Identifiers,Indexes
+User,Authentication & RBAC,15,18,id (@id); email (@unique),@@index(role); @@index(status); @@index(branchId); @@index(departmentId)
+Branch,Authentication & RBAC,8,3,id (@id); name (@unique),-
+Department,Authentication & RBAC,5,2,id (@id),-
+PasswordReset,Authentication & RBAC,6,1,id (@id); token (@unique),@@index(userId); @@index(token)
+Lead,"CRM Core: Leads, Students, Partners",17,6,id (@id),@@index(status); @@index(counselorId); @@index(branchId); @@index(source)
+Student,"CRM Core: Leads, Students, Partners",18,9,id (@id); userId (@unique); leadId (@unique),@@index(counselorId); @@index(status)
+Partner,"CRM Core: Leads, Students, Partners",11,4,id (@id); userId (@unique),@@index(status)
+Commission,"CRM Core: Leads, Students, Partners",7,2,id (@id),@@index(partnerId); @@index(status)
+Country,Education Catalog,6,1,id (@id); name (@unique); code (@unique),-
+University,Education Catalog,11,3,id (@id),@@index(countryId); @@index(isPublished)
+Course,Education Catalog,13,2,id (@id),@@index(universityId); @@index(isPublished)
+Scholarship,Education Catalog,11,1,id (@id),@@index(universityId)
+Application,Applications,10,5,id (@id),@@index(studentId); @@index(status); @@index(assignedTo)
+Document,Documents & OCR,16,2,id (@id),@@index(studentId); @@index(type); @@index(ocrStatus)
+Message,Communications,20,3,id (@id),@@index(channel); @@index(leadId); @@index(studentId); @@index(createdAt)
+Task,"Tasks, Appointments, Timeline",13,4,id (@id),@@index(assigneeId); @@index(status); @@index(dueDate)
+Appointment,"Tasks, Appointments, Timeline",11,0,id (@id),@@index(startTime); @@index(assigneeId)
+TimelineEntry,"Tasks, Appointments, Timeline",8,0,id (@id),@@index(entityType); @@index(entityId); @@index(createdAt)
+Notification,Notifications,7,1,id (@id),@@index(userId); @@index(readAt)
+AuditLog,Audit & Settings,7,1,id (@id),@@index(userId); @@index(action); @@index(createdAt)
+Setting,Audit & Settings,3,0,id (@id); key (@unique),-
+ExamType,Exam Platform,7,1,id (@id); code (@unique),-
+PracticeSet,Exam Platform,8,3,id (@id),@@index(examTypeId)
+Attempt,Exam Platform,11,5,id (@id),"@@index(userId); @@index(status); @@index(userId,practiceSetId); @@index(expiresAt)"
+AttemptQuestion,Exam Platform,6,2,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId); @@index(questionId)
+AttemptAnswer,Exam Platform,6,1,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId)
+Score,Exam Platform,12,2,id (@id); attemptId (@unique),@@index(userId)
+Question,Exam Questions,16,2,id (@id),@@index(practiceSetId); @@index(section)
+FreeQuota,Free Quota + Payment,7,0,id (@id); userId (@unique),@@index(userId)
+Payment,Free Quota + Payment,10,0,id (@id),@@index(userId); @@index(status)
+DailyQuestionSet,Free Quota + Payment,6,0,"id (@id); @@unique(examTypeCode,date)","@@index(examTypeCode,date)"
+LearningMemory,Student Learning Memory,10,0,"id (@id); @@unique(userId,weaknessArea)",@@index(userId); @@index(weaknessType)
+AgentLearning,Agent Learning & Self-Development,11,0,id (@id),"@@index(agentId,learnDate); @@index(agentType); @@index(examTypeCode)"
+AgentEvolution,Agent Learning & Self-Development,13,0,id (@id),"@@index(agentId,version); @@index(isActive)"
+ExamAnalytics,Agent Learning & Self-Development,13,0,"id (@id); @@unique(examTypeCode,questionId)",@@index(examTypeCode); @@index(section)
+AgentSpecialist,Agent Learning & Self-Development,12,0,id (@id),@@index(specialization); @@index(examTypeCode); @@index(isActive)
+StudyMaterial,RAG Knowledge Base (ExamCite-style),12,0,id (@id),"@@index(category); @@index(isPublic,isActive)"
+ChatSession,RAG Knowledge Base (ExamCite-style),7,0,id (@id); sessionId (@unique),@@index(userId); @@index(sessionId)
+Team,Phase 1: RBAC + Multi-Tenancy + Session Management,7,2,id (@id); slug (@unique),@@index(status)
+TeamMember,Phase 1: RBAC + Multi-Tenancy + Session Management,5,3,"id (@id); @@unique(teamId,userId)",@@index(teamId); @@index(userId); @@index(roleId)
+Role,Phase 1: RBAC + Multi-Tenancy + Session Management,8,3,id (@id); slug (@unique),@@index(teamId); @@index(slug)
+Permission,Phase 1: RBAC + Multi-Tenancy + Session Management,4,1,id (@id); key (@unique),@@index(category); @@index(key)
+RolePermission,Phase 1: RBAC + Multi-Tenancy + Session Management,2,2,-,@@index(permissionId)
+Session,Phase 1: RBAC + Multi-Tenancy + Session Management,8,1,id (@id); token (@unique),@@index(userId); @@index(expiresAt); @@index(token)

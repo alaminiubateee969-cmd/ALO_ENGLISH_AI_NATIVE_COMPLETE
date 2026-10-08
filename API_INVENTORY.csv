@@ -1,52 +1,74 @@
-Method,Path,Auth,Description
-GET/POST,/admin/settings,varies,API endpoint
-GET/POST,/admin/stats,varies,API endpoint
-GET/POST,/agents/status,varies,API endpoint
-GET/POST,/attempts,varies,API endpoint
-GET/POST,/attempts/start,varies,API endpoint
-GET/POST,/attempts/submit,varies,API endpoint
-GET/POST,/auth/login,varies,API endpoint
-GET/POST,/auth/logout,varies,API endpoint
-GET/POST,/auth/me,varies,API endpoint
-GET/POST,/auth/register,varies,API endpoint
-GET/POST,/crm/applications/[id],varies,API endpoint
-GET/POST,/crm/applications,varies,API endpoint
-GET/POST,/crm/appointments/[id],varies,API endpoint
-GET/POST,/crm/appointments,varies,API endpoint
-GET/POST,/crm/branches/[id],varies,API endpoint
-GET/POST,/crm/branches,varies,API endpoint
-GET/POST,/crm/commissions/[id],varies,API endpoint
-GET/POST,/crm/commissions,varies,API endpoint
-GET/POST,/crm/countries/[id],varies,API endpoint
-GET/POST,/crm/countries,varies,API endpoint
-GET/POST,/crm/courses/[id],varies,API endpoint
-GET/POST,/crm/courses,varies,API endpoint
-GET/POST,/crm/departments/[id],varies,API endpoint
-GET/POST,/crm/departments,varies,API endpoint
-GET/POST,/crm/documents/[id],varies,API endpoint
-GET/POST,/crm/documents,varies,API endpoint
-GET/POST,/crm/leads/[id],varies,API endpoint
-GET/POST,/crm/leads,varies,API endpoint
-GET/POST,/crm/messages/[id],varies,API endpoint
-GET/POST,/crm/messages,varies,API endpoint
-GET/POST,/crm/notifications/[id],varies,API endpoint
-GET/POST,/crm/notifications,varies,API endpoint
-GET/POST,/crm/partners/[id],varies,API endpoint
-GET/POST,/crm/partners,varies,API endpoint
-GET/POST,/crm/scholarships/[id],varies,API endpoint
-GET/POST,/crm/scholarships,varies,API endpoint
-GET/POST,/crm/students/[id],varies,API endpoint
-GET/POST,/crm/students,varies,API endpoint
-GET/POST,/crm/tasks/[id],varies,API endpoint
-GET/POST,/crm/tasks,varies,API endpoint
-GET/POST,/crm/universities/[id],varies,API endpoint
-GET/POST,/crm/universities,varies,API endpoint
-GET/POST,/crm/users/[id],varies,API endpoint
-GET/POST,/crm/users,varies,API endpoint
-GET/POST,/deliverable,varies,API endpoint
-GET/POST,/deliverables,varies,API endpoint
-GET/POST,/exam-types,varies,API endpoint
-GET/POST,/health,varies,API endpoint
-GET/POST,/lead,varies,API endpoint
-GET/POST,/practice-sets,varies,API endpoint
-GET/POST,,varies,API endpoint
+/api,GET,none declared,nodejs,src/app/api/route.ts
+/api/admin/settings,GET POST,role:ADMIN,nodejs,src/app/api/admin/settings/route.ts
+/api/admin/stats,GET,role:ADMIN,nodejs,src/app/api/admin/stats/route.ts
+/api/agents/status,GET,public (proxy allowlist),nodejs,src/app/api/agents/status/route.ts
+/api/attempts,GET,authenticated,nodejs,src/app/api/attempts/route.ts
+/api/attempts/{id},GET,authenticated,nodejs,src/app/api/attempts/[id]/route.ts
+/api/attempts/save,POST,authenticated,nodejs,src/app/api/attempts/save/route.ts
+/api/attempts/start,POST,authenticated,nodejs,src/app/api/attempts/start/route.ts
+/api/attempts/submit,POST,authenticated,nodejs,src/app/api/attempts/submit/route.ts
+/api/audio,GET,authenticated,nodejs,src/app/api/audio/route.ts
+/api/auth/forgot-password,POST,public (proxy allowlist),nodejs,src/app/api/auth/forgot-password/route.ts
+/api/auth/login,POST,public (proxy allowlist),nodejs,src/app/api/auth/login/route.ts
+/api/auth/logout,POST,public (proxy allowlist),nodejs,src/app/api/auth/logout/route.ts
+/api/auth/me,GET,public (proxy allowlist),nodejs,src/app/api/auth/me/route.ts
+/api/auth/register,POST,public (proxy allowlist),nodejs,src/app/api/auth/register/route.ts
+/api/auth/reset-password,POST,public (proxy allowlist),nodejs,src/app/api/auth/reset-password/route.ts
+/api/crm/applications,(none exported),none declared,nodejs,src/app/api/crm/applications/route.ts
+/api/crm/applications/{id},(none exported),none declared,nodejs,src/app/api/crm/applications/[id]/route.ts
+/api/crm/appointments,(none exported),none declared,nodejs,src/app/api/crm/appointments/route.ts
+/api/crm/appointments/{id},(none exported),none declared,nodejs,src/app/api/crm/appointments/[id]/route.ts
+/api/crm/branches,(none exported),none declared,nodejs,src/app/api/crm/branches/route.ts
+/api/crm/branches/{id},(none exported),none declared,nodejs,src/app/api/crm/branches/[id]/route.ts
+/api/crm/commissions,(none exported),none declared,nodejs,src/app/api/crm/commissions/route.ts
+/api/crm/commissions/{id},(none exported),none declared,nodejs,src/app/api/crm/commissions/[id]/route.ts
+/api/crm/countries,(none exported),none declared,nodejs,src/app/api/crm/countries/route.ts
+/api/crm/countries/{id},(none exported),none declared,nodejs,src/app/api/crm/countries/[id]/route.ts
+/api/crm/courses,(none exported),none declared,nodejs,src/app/api/crm/courses/route.ts
+/api/crm/courses/{id},(none exported),none declared,nodejs,src/app/api/crm/courses/[id]/route.ts
+/api/crm/departments,(none exported),none declared,nodejs,src/app/api/crm/departments/route.ts
+/api/crm/departments/{id},(none exported),none declared,nodejs,src/app/api/crm/departments/[id]/route.ts
+/api/crm/documents,(none exported),none declared,nodejs,src/app/api/crm/documents/route.ts
+/api/crm/documents/{id},(none exported),none declared,nodejs,src/app/api/crm/documents/[id]/route.ts
+/api/crm/leads,(none exported),none declared,nodejs,src/app/api/crm/leads/route.ts
+/api/crm/leads/{id},(none exported),none declared,nodejs,src/app/api/crm/leads/[id]/route.ts
+/api/crm/messages,(none exported),none declared,nodejs,src/app/api/crm/messages/route.ts
+/api/crm/messages/{id},(none exported),none declared,nodejs,src/app/api/crm/messages/[id]/route.ts
+/api/crm/notifications,(none exported),none declared,nodejs,src/app/api/crm/notifications/route.ts
+/api/crm/notifications/{id},(none exported),none declared,nodejs,src/app/api/crm/notifications/[id]/route.ts
+/api/crm/partners,(none exported),none declared,nodejs,src/app/api/crm/partners/route.ts
+/api/crm/partners/{id},(none exported),none declared,nodejs,src/app/api/crm/partners/[id]/route.ts
+/api/crm/scholarships,(none exported),none declared,nodejs,src/app/api/crm/scholarships/route.ts
+/api/crm/scholarships/{id},(none exported),none declared,nodejs,src/app/api/crm/scholarships/[id]/route.ts
+/api/crm/students,(none exported),none declared,nodejs,src/app/api/crm/students/route.ts
+/api/crm/students/{id},(none exported),none declared,nodejs,src/app/api/crm/students/[id]/route.ts
+/api/crm/tasks,(none exported),none declared,nodejs,src/app/api/crm/tasks/route.ts
+/api/crm/tasks/{id},(none exported),none declared,nodejs,src/app/api/crm/tasks/[id]/route.ts
+/api/crm/universities,(none exported),none declared,nodejs,src/app/api/crm/universities/route.ts
+/api/crm/universities/{id},(none exported),none declared,nodejs,src/app/api/crm/universities/[id]/route.ts
+/api/crm/users,(none exported),none declared,nodejs,src/app/api/crm/users/route.ts
+/api/crm/users/{id},(none exported),none declared,nodejs,src/app/api/crm/users/[id]/route.ts
+/api/deliverable,GET,role:SUPER_ADMIN,nodejs,src/app/api/deliverable/route.ts
+/api/deliverables,GET,role:SUPER_ADMIN,nodejs,src/app/api/deliverables/route.ts
+/api/exam-types,GET,public (proxy allowlist),nodejs,src/app/api/exam-types/route.ts
+/api/exam/analytics,GET,role:ADMIN,nodejs,src/app/api/exam/analytics/route.ts
+/api/examiners,GET,public (proxy allowlist),nodejs,src/app/api/examiners/route.ts
+/api/health,GET,public (proxy allowlist),nodejs,src/app/api/health/route.ts
+/api/lead,POST,public (proxy allowlist),nodejs,src/app/api/lead/route.ts
+/api/learning-memory,GET,authenticated,nodejs,src/app/api/learning-memory/route.ts
+/api/learning/daily,GET POST,authenticated,nodejs,src/app/api/learning/daily/route.ts
+/api/learning/dashboard,GET,authenticated,nodejs,src/app/api/learning/dashboard/route.ts
+/api/learning/orchestrator,GET POST,authenticated,nodejs,src/app/api/learning/orchestrator/route.ts
+/api/payment,GET POST,authenticated,nodejs,src/app/api/payment/route.ts
+/api/practice-sets,GET,public (proxy allowlist),nodejs,src/app/api/practice-sets/route.ts
+/api/questions,GET,authenticated,nodejs,src/app/api/questions/route.ts
+/api/rag/ask,POST,public (proxy allowlist),nodejs,src/app/api/rag/ask/route.ts
+/api/rag/materials,GET POST,authenticated,nodejs,src/app/api/rag/materials/route.ts
+/api/rbac/permissions,GET,none declared,nodejs,src/app/api/rbac/permissions/route.ts
+/api/rbac/roles,GET POST,none declared,nodejs,src/app/api/rbac/roles/route.ts
+/api/rbac/team-members,GET POST DELETE,none declared,nodejs,src/app/api/rbac/team-members/route.ts
+/api/rbac/teams,GET POST,none declared,nodejs,src/app/api/rbac/teams/route.ts
+/api/speaking/examiner-respond,POST,authenticated,nodejs,src/app/api/speaking/examiner-respond/route.ts
+/api/speaking/examiner-voice,POST,authenticated,nodejs,src/app/api/speaking/examiner-voice/route.ts
+/api/speaking/transcribe,POST,authenticated,nodejs,src/app/api/speaking/transcribe/route.ts
+Path,Methods,Auth,Runtime,Source
