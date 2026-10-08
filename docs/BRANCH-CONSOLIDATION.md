@@ -128,12 +128,37 @@ addressed. But they describe a retired VPS pipeline, six unrelated root domains
 and a port map that no longer exists, so placing them in `docs/` as current
 architecture would mislead the next person to deploy.
 
+## Since consolidation
+
+`main` moved while this work was being verified. PR #7 merged `arena/21ea772f-…`
+into `main` as `cae9429`; that branch's tip had advanced from `ca5d32c` to
+`21ad483`, restoring the question-seed chain in `package.json` and making
+`scripts/validate-content.mjs` fail on an empty question bank. `origin/main` was
+merged back into the deployment-reliability branch (`65ac9a6`) rather than the
+other way round, so this branch stays a superset of `main` and the PR is a
+fast-forward-equivalent merge.
+
+Two consequences were handled rather than left to the next reader:
+
+- `HOSTINGER_DEPLOYMENT.md` told operators to seed the question bank with
+  `node prisma/seed.mjs` + `npm run prisma:seed:exams`. After `21ad483` the
+  questions live in the `prisma:seed` chain, so those instructions produced a
+  healthy deploy serving an exam platform with no exams in it. The sequence and
+  the command table now match `package.json` and end with `content:validate`.
+- `arena/21ea772f-…` is listed above as one commit ahead at `ca5d32c`. It is now
+  two commits ahead at `21ad483`, and both are reachable from this branch.
+
 ## Result
 
 ```
-144 commits reachable from main   (was 1)
-7 branches merged                 (was 0)
-0 branches with unique content that is not either in main or accounted for above
+at consolidation   144 commits reachable from main   (was 1)
+                   7 branches merged                 (was 0)
+                   0 branches with unique content that is not either in main
+                     or accounted for above
+
+now                151 commits reachable from this branch
+                   147 ahead of main, 0 behind
+                   all 7 branches and origin/main are ancestors of HEAD
 ```
 
 Verified with:
