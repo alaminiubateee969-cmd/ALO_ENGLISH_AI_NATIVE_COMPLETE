@@ -6,7 +6,8 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-indigo.svg)](https://www.prisma.io/)
-[![Tests](https://img.shields.io/badge/tests-60%2F60%20pass-brightgreen.svg)](#tests)
+[![CI](https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE/actions/workflows/ci.yml/badge.svg)](https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-4%20suites-brightgreen.svg)](#tests)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 **Live URL:** `https://english.aloeducation.com`
@@ -33,111 +34,89 @@ A comprehensive English proficiency exam platform serving 12,500+ students. Feat
 ## Quick Start (Local Development)
 
 ```bash
-# 1. Install dependencies
-bun install
+# 1. Install dependencies (bun for development and CI, npm on the host)
+bun install          # or: npm install
 
-# 2. Set up environment
-cp .env.example .env
-# Edit .env — set AUTH_SECRET (run: openssl rand -base64 48)
+# 2. Environment
+#    `.env` is already in the repository with NON-SECRET defaults, so this
+#    boots as-is. For anything real, copy the template and use .env.local —
+#    it is git-ignored and takes precedence over .env.
+cp .env.example .env.local
+#    then set AUTH_SECRET:  openssl rand -base64 48
 
-# 3. Set up database
-bun run db:push
+# 3. Database (development only — production uses `migrate deploy`)
+bun run db:migrate:dev
 bun run prisma:seed
 
-# 4. Start dev server
+# 4. Dev server (Turbopack)
 bun run dev
 # → http://localhost:3000
 ```
 
----
-
-## Deploy to VPS (server.aloeducation.com)
-
-### Option A: PM2 + Nginx (Recommended)
+### Before you push
 
 ```bash
-# 1. SSH into your VPS
-ssh root@115.187.18.239
-
-# 2. Install Node.js + Bun + PM2
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
-curl -fsSL https://bun.sh/install | bash
-npm install -g pm2
-
-# 3. Clone the repo
-cd /var/www
-git clone https://github.com/YOUR_USERNAME/alo-education-english.git
-cd alo-education-english
-
-# 4. Install + build
-bun install
-cp .env.example .env
-# Edit .env — set AUTH_SECRET and DATABASE_URL
-bun run db:push
-bun run prisma:seed
-
-# 5. Build for production
-bun run build
-
-# 6. Start with PM2
-pm2 start ecosystem.config.js --name alo-english
-pm2 save
-pm2 startup
-
-# 7. Set up Nginx reverse proxy
-cp server-config/alo-english.nginx /etc/nginx/sites-available/alo-english
-ln -s /etc/nginx/sites-available/alo-english /etc/nginx/sites-enabled/
-nginx -t && systemctl reload nginx
-
-# 8. SSL certificate (free via Let's Encrypt)
-certbot --nginx -d english.aloeducation.com -d www.english.aloeducation.com
+npm run verify        # every pre-deployment gate: files, schema, lint, types,
+                      # build artifact, and a live boot of the built server
 ```
-
-### Option B: cPanel (WHM Panel)
-
-1. Log in to WHM: `http://115.187.18.239:2087`
-2. Create a Node.js app in cPanel
-3. Set the app root to `/home/username/alo-english`
-4. Set the startup file to `server.js`
-5. Upload the project files (from the zip)
-6. Install dependencies: `bun install`
-7. Run database setup: `bun run db:push && bun run prisma:seed`
-8. Set environment variables in cPanel → "Environment Variables"
-9. Start the app
 
 ---
 
-## Push to GitHub
+## Deployment
 
-```bash
-# 1. Initialize git (if not already)
-git init
-git add .
-git commit -m "ALO Education English Test Platform — production ready"
+**Production is Hostinger, and `main` is the only branch that deploys.**
 
-# 2. Create a repo on GitHub: https://github.com/new
-#    Name: alo-education-english
-#    Private: recommended
-
-# 3. Add remote and push
-git remote add origin https://github.com/YOUR_USERNAME/alo-education-english.git
-git branch -M main
-git push -u origin main
+```
+push to main
+   → Hostinger automatic Git deployment
+   → npm install
+   → npm run build
+        prebuild  scripts/ensure-prisma-client.mjs  → prisma generate
+        build     next build --webpack
+        finalize  scripts/finalize-standalone.mjs   → .next/static + public/ + prisma/
+   → npx prisma migrate deploy      (first deploy / after a schema change)
+   → node server.js                 (or: npm start)
+   → https://english.aloeducation.com
 ```
 
-### Auto-deploy on push (GitHub Actions)
+Full step-by-step panel setup, environment variables and verification:
+**[`HOSTINGER_DEPLOYMENT.md`](./HOSTINGER_DEPLOYMENT.md)** — that file is the
+authoritative deployment guide.
 
-The included `.github/workflows/deploy.yml` automatically deploys to your VPS when you push to `main`.
+Three things about this pipeline that are easy to undo by accident:
 
-**Setup:**
-1. Go to your GitHub repo → Settings → Secrets and variables → Actions
-2. Add these secrets:
-   - `VPS_HOST` = `115.187.18.239`
-   - `VPS_USER` = `root`
-   - `VPS_SSH_KEY` = your SSH private key (for the VPS)
-   - `VPS_PATH` = `/var/www/alo-education-english`
-3. Push to `main` → the workflow deploys automatically
+| | |
+| --- | --- |
+| `next build --webpack` is mandatory | Turbopack runs PostCSS in a `node` worker that must connect back over `127.0.0.1`. The host's build container blocks that, so the deploy panics on `src/app/globals.css`. `scripts/check-manifest.mjs` fails CI if the flag is removed. See [`docs/ADR-0001-build-with-webpack.md`](./docs/ADR-0001-build-with-webpack.md). |
+| `DATABASE_URL` must be absolute | The generated standalone server calls `process.chdir(__dirname)`, so at runtime the working directory is `.next/standalone`. A relative `file:./db/*.db` resolves inside the build output — a directory every deploy replaces — and the site comes back with an empty database. `src/lib/paths.ts` resolves and logs the path it used, and warns when it lands there. |
+| GitHub Actions never deploys | `ci.yml` is the quality gate; `deploy.yml` verifies readiness and records the release. Deployment is Hostinger's. Do not add an SSH/PM2 workflow — two competing pipelines means neither is authoritative. |
+
+### Repository layout for deployment
+
+```
+src/                 the application (App Router under src/app)
+prisma/              schema.prisma + migrations (the only way to provision prod)
+public/              static assets, copied into .next/standalone by the build
+scripts/             build, verification, backup and seeding tooling
+server.js            stable production entry point → .next/standalone/server.js
+hostinger.json       checked-in record of the panel settings this commit expects
+docs/                architecture decisions and audits
+tests/               bun test suites run by CI
+cpanel-production/   legacy PHP deliverables, served to SUPER_ADMIN by /api/deliverable*
+```
+
+Everything else that used to sit in the repository root — release archives,
+agent scratch output, an archived sibling Next.js project, a 1.4 MB development
+database, runtime uploads — is git-ignored and no longer tracked, so the host
+clones 10 MB instead of 32 MB per deploy. `git ls-files -i -c --exclude-standard`
+returns empty: nothing tracked is also ignored.
+
+### Optional: self-managed VPS
+
+`server-config/` holds a systemd unit, a Caddyfile, an nginx config and a
+sudoers policy, and `DEPLOYMENT.md` describes that path. It is **not** used by
+production and is kept only for running the platform on infrastructure you
+control yourself. See the warning at the top of `DEPLOYMENT.md`.
 
 ---
 
@@ -187,16 +166,16 @@ The included `.github/workflows/deploy.yml` automatically deploys to your VPS wh
 
 - **Framework:** Next.js 16 with App Router
 - **Language:** TypeScript 5
-- **Database:** Prisma ORM (SQLite for dev, MySQL for production)
+- **Database:** Prisma 6 ORM over SQLite (MySQL supported via `DATABASE_URL`)
 - **Styling:** Tailwind CSS 4 + shadcn/ui
 - **AI:** z-ai-web-dev-sdk (ASR, TTS, LLM, image generation)
 - **Auth:** Session-based with bcrypt
-- **Process Manager:** PM2 (production)
-- **Reverse Proxy:** Nginx
+- **Production build:** `next build --webpack` → `.next/standalone` (see ADR-0001)
+- **Hosting:** Hostinger Node.js Web App, automatic Git deployment from `main`
 
 ---
 
-## API Routes (69 total)
+## API Routes (73 total)
 
 ### Auth
 - `POST /api/auth/register` — Create student account
@@ -231,13 +210,13 @@ The included `.github/workflows/deploy.yml` automatically deploys to your VPS wh
 
 ---
 
-## Pages (28 total)
+## Pages (31 total)
 
 ### Public
 - `/` — Homepage
 - `/destinations`, `/course-finder`, `/universities`, `/scholarships`
-- `/services`, `/language-prep`, `/resources`, `/events`
-- `/contact`, `/book-consultation`
+- `/services`, `/language-prep`, `/resources`, `/events`, `/exam-prep`
+- `/contact`, `/book-consultation`, `/ask-handbook`, `/portals`
 - `/privacy-policy`, `/terms`, `/cookie-policy`
 
 ### Auth
@@ -259,7 +238,7 @@ The included `.github/workflows/deploy.yml` automatically deploys to your VPS wh
 
 ---
 
-## Database Models (34 total)
+## Database Models (44 total)
 
 ### Auth & RBAC
 User, PasswordReset, Branch, Department
@@ -268,7 +247,10 @@ User, PasswordReset, Branch, Department
 Lead, Student, Partner, Commission, Country, University, Course, Scholarship, Application, Document, Message, Notification, Task, Appointment, TimelineEntry, AuditLog, Setting
 
 ### Exam
-ExamType, PracticeSet, Question, Attempt, Score, FreeQuota, Payment, DailyQuestionSet
+ExamType, PracticeSet, Question, Attempt, AttemptQuestion, AttemptAnswer, Score, FreeQuota, Payment, DailyQuestionSet
+
+### Collaboration & Sessions
+ChatSession, StudyMaterial, Team, TeamMember, Role, Permission, RolePermission, Session
 
 ### AI Learning
 LearningMemory, AgentLearning, AgentEvolution, ExamAnalytics, AgentSpecialist
@@ -277,4 +259,4 @@ LearningMemory, AgentLearning, AgentEvolution, ExamAnalytics, AgentSpecialist
 
 ## License
 
-Proprietary — ALO Education. All rights reserved.
+MIT — see [`LICENSE`](./LICENSE). Copyright (c) 2026 ALO Education.

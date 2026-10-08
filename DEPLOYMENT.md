@@ -1,14 +1,70 @@
-# Deployment Guide
+# Deployment
 
-## Architecture Lock
+> ## ⚠️ This is NOT the production deployment path
+>
+> **Production runs on Hostinger and is deployed automatically from the `main`
+> branch.** The authoritative guide is
+> **[`HOSTINGER_DEPLOYMENT.md`](./HOSTINGER_DEPLOYMENT.md)**.
+>
+> Everything below describes an *optional* self-managed deployment on
+> infrastructure you control yourself — a VPS with systemd, Caddy and Bun. It is
+> kept working and CI still validates its scripts and config files, but:
+>
+> - it is **not** what `english.aloeducation.com` runs on;
+> - GitHub Actions **never** deploys anywhere (`.github/workflows/deploy.yml` is
+>   CI and release-record only, and `scripts/check-manifest.mjs` fails the build
+>   if an SSH/PM2/rsync directive is added to any workflow);
+> - running both paths against the same domain at once produces two
+>   authoritative deployments, which is how configuration drift and data loss
+>   happen.
+>
+> If you are deploying this project, read `HOSTINGER_DEPLOYMENT.md` first and
+> only continue here if you deliberately chose to self-host.
 
-This project uses exactly ONE production architecture. Do not mix.
+## Two paths, one artifact
+
+Both paths build the same artifact and start it the same way:
+
+```bash
+npm install          # or: bun install
+npm run build        # prebuild → prisma generate; next build --webpack; finalize-standalone
+node server.js       # → .next/standalone/server.js
+```
+
+They differ only in who runs those commands, where the data directory lives,
+and what terminates TLS.
+
+| | Hostinger (production) | Self-managed VPS (optional) |
+| --- | --- | --- |
+| Triggered by | push to `main`, automatic Git deployment | `scripts/install.sh` |
+| Package manager | npm (`package-lock.json`) | Bun (`bun.lock`) |
+| Process supervision | Hostinger Node.js Web App | systemd (`alo-english.service`) |
+| TLS / proxy | Hostinger | Caddy or nginx (`server-config/`) |
+| Data directory | panel env: `APP_DATA_DIR`, absolute `DATABASE_URL` | `/opt/alo-english/shared` |
+| Guide | `HOSTINGER_DEPLOYMENT.md` | this file |
+
+Two consequences that apply to **both** paths, because both run the standalone
+server, which calls `process.chdir(__dirname)`:
+
+1. `DATABASE_URL` must be an **absolute** path. A relative `file:./db/*.db`
+   resolves inside `.next/standalone` — a directory every deploy replaces.
+2. Uploads and backups must live under `APP_DATA_DIR`, not under the release
+   directory or `/tmp`.
+
+`src/lib/paths.ts` enforces both and logs the paths it resolved, so a
+misconfiguration is visible in the very first line of the deploy log.
+
+---
+
+## Optional self-managed VPS reference
+
+### Architecture
 
 | Component | Value |
 |---|---|
 | Operating System | Ubuntu 24.04 LTS |
 | Runtime | Node.js 22 LTS |
-| Package Manager | Bun (single lockfile: `bun.lock`) |
+| Package Manager | Bun (lockfile: `bun.lock`) |
 | Framework | Next.js 16 standalone |
 | Database | SQLite via Prisma |
 | Reverse Proxy | Caddy |
@@ -17,7 +73,6 @@ This project uses exactly ONE production architecture. Do not mix.
 | Source Directory | `/opt/alo-english-source` |
 | Runtime Directory | `/opt/alo-english` |
 | Application Port | 3000 |
-| Public Domain | `english.aloeducation.com` (via env) |
 | Backups | `/var/backups/alo-english` |
 | Logs | systemd journal + `/opt/alo-english/shared/logs` |
 | Build Output | `.next/standalone/server.js` |
