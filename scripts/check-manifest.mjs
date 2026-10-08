@@ -21,11 +21,18 @@
  *      is the only production deployment path.
  *   7. Required production files must be present.
  *   8. The build script must still build with webpack, not Turbopack.
+ *   9. No tracked file may match .gitignore. This has now happened twice:
+ *      273 files / 25.7 MB were committed before the ignore rules existed, and
+ *      a later merge made from a shallow clone re-added three of them because
+ *      with no merge base `ort` treats "present in theirs, absent in ours" as
+ *      an addition. Both times the site still deployed; the cost was clone
+ *      size and a repository that contradicts its own ignore rules.
  *
  * Run:  node scripts/check-manifest.mjs
  * Exit: 0 when every check passes, 1 otherwise.
  */
 
+import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -332,6 +339,38 @@ if (manifest) {
         `See docs/ADR-0001-build-with-webpack.md before changing this.`,
     );
   }
+}
+
+// ─── 9: nothing tracked may be git-ignored ────────────────────────────────
+//
+// `git ls-files -i -c --exclude-standard` lists tracked files that the ignore
+// rules would exclude. It should always be empty. It is not a style preference:
+// a tracked-and-ignored file is invisible to `git status`, so it silently
+// survives every cleanup, ships to the host on every clone, and can be
+// reintroduced by a merge that has no merge base to compare against.
+
+try {
+  const ignoredButTracked = execFileSync("git", ["ls-files", "-i", "-c", "--exclude-standard"], {
+    cwd: ROOT,
+    encoding: "utf8",
+    maxBuffer: 16e6,
+  })
+    .split("\n")
+    .filter(Boolean);
+
+  if (ignoredButTracked.length > 0) {
+    const shown = ignoredButTracked.slice(0, 10).join(", ");
+    const more = ignoredButTracked.length > 10 ? ` and ${ignoredButTracked.length - 10} more` : "";
+    fail(
+      `${ignoredButTracked.length} tracked file(s) match .gitignore: ${shown}${more}. ` +
+        `Untrack them with \`git rm --cached <path>\` — they are invisible to git status ` +
+        `and ship to the host on every clone.`,
+    );
+  }
+} catch {
+  // No git, or not a repository (an extracted source archive). The other eight
+  // checks are filesystem-only and still apply; skipping this one is better
+  // than failing a build that has nothing to do with it.
 }
 
 // ─── Report ───────────────────────────────────────────────────────────────

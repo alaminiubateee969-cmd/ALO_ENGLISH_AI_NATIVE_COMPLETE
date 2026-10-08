@@ -5,6 +5,49 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Corrections and one new gate, following the merge of 1.1.0 to `main` (`bebc470`).
+
+### Added
+
+- **`check-manifest.mjs` gained check 9: no tracked file may match `.gitignore`.**
+  `git ls-files -i -c --exclude-standard` must be empty. This class of defect has
+  now occurred twice — 273 files / 25.7 MB committed before the ignore rules
+  existed, and three `cpanel-production/dist/` archives re-added afterwards by a
+  commit made on a stale base. A tracked-and-ignored file is invisible to
+  `git status`, so it survives every cleanup and ships to the host on every
+  clone. The check skips itself when there is no git repository, so an extracted
+  source archive still passes the other eight.
+
+### Fixed
+
+- **The 1.1.0 branch-consolidation record was wrong about `main`'s history.** It
+  said `main` was a single orphan commit and that six of the seven open branches
+  shared no ancestor with it. The analysis was run in a **shallow** clone whose
+  `.git/shallow` listed `c5ef20d`, so `git merge-base` reported "no common
+  ancestor" for branches whose shared history lay below the cut and
+  `git rev-list --count` reported 1. After `git fetch --unshallow`: `main` had
+  **79** reachable commits from root `8efe9b6`; there were **three** unrelated
+  root histories, not seven; `arena/847f6969-…` and `arena/c61b298e-…` were
+  **already ancestors of `main`** and their `-s ours` merges were no-op records;
+  and `arena/01a0eea6-…` had **one** unique commit, not 56. `main` now has 163
+  reachable commits and all eight remote branches are ancestors of it. The
+  merges themselves were unaffected — `-s ours` cannot change a tree — and no
+  content was lost. `docs/BRANCH-CONSOLIDATION.md` carries the correction and its
+  verification snippet now begins with `git rev-parse --is-shallow-repository`,
+  because an ancestry test in a shallow clone fails silently rather than loudly.
+- **The one unique commit on `arena/01a0eea6-…` was dropped without being
+  checked.** `4c7644f` documented 14 environment variables in `.env.example`
+  (`SESSION_SECRET`, `ENCRYPTION_KEY`, `BOOTSTRAP_ADMIN_*`, Stripe, SMTP,
+  WhatsApp, S3). Each was grepped through `src/`, `prisma/`, `scripts/` and
+  `server.js`: **none is read by any code**. The single hit,
+  `WHATSAPP_ACCESS_TOKEN` in `src/components/alo/portals.tsx`, is a hardcoded
+  display string in a client-component status panel that reads no environment
+  variable. Documenting them would advertise integrations that do not exist, so
+  they stay out; `git show 4c7644f:.env.example` has the wording if they are ever
+  built.
+
 ## [1.1.0] — 2026-10-08
 
 Deployment reliability release. No user-facing feature changes; every entry
@@ -173,14 +216,29 @@ below is about the pipeline between a push to `main` and a working site.
 
 ### Merged
 
-All seven open branches are now ancestors of `main` — 144 reachable commits, up
-from 1. One (`arena/21ea772f-…`) merged normally; the other six share no common
-ancestor with `main`, whose tip is an orphan repair commit, and were recorded
-with `-s ours` so their history is preserved without reverting those repairs.
+All seven open branches are now ancestors of `main`: **163 reachable commits
+across three unrelated root histories** (`8efe9b6`, `1bd5c44`, `9e80804`).
+`git branch -r --merged origin/main` lists every one.
+
+`arena/21ea772f-…` merged normally. The remaining six were recorded with
+`-s ours`, which makes a branch an ancestor of `main` without changing a single
+file — the right tool for four of them, and a redundant no-op for
+`arena/847f6969-…` and `arena/c61b298e-…`, which were *already* ancestors of
+`main`. That mistake, and an earlier claim that `main` was a single orphan
+commit, came from analysing a **shallow** clone: `.git/shallow` listed `c5ef20d`,
+so `git merge-base` reported "no common ancestor" for branches whose shared
+history lay below the cut. `main` in fact had 79 reachable commits. The
+correction is recorded at the top of `docs/BRANCH-CONSOLIDATION.md`, along with
+the verification commands, which now start with
+`git rev-parse --is-shallow-repository`.
+
 The 2026-09-18 ecosystem audit is rescued into `docs/archive/`. Two migrations
 dated before ones production has already applied were deliberately not carried:
-`prisma migrate deploy` would have replayed them against a live database. Full
-reasoning per branch in `docs/BRANCH-CONSOLIDATION.md`.
+`prisma migrate deploy` would have replayed them against a live database. The one
+unique commit on `arena/01a0eea6-…` documented 14 environment variables in
+`.env.example`; none is read by any code in `main`, so documenting them would
+have advertised integrations that do not exist. Full reasoning per branch in
+`docs/BRANCH-CONSOLIDATION.md`.
 
 ### Security
 
