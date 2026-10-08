@@ -101,7 +101,15 @@ async function validateDb() {
     }
 
     console.log(`  Content validation: ${questions.length} total questions, ${objectiveTotal} objective gradeable, ${ungradeable} ungradeable.`);
-    if (ungradeable > 0) {
+    if (questions.length === 0) {
+      // An empty bank passes every other check vacuously, so say so loudly.
+      // This is what happened when `prisma:seed` was reduced to a single seed
+      // file: CI reported "all selectable objective questions are gradeable"
+      // over a database with no questions in it.
+      console.error('\n  ✗ The question bank is EMPTY — the seed chain did not populate questions.');
+      console.error('    Expected `prisma:seed` to run the question seeds as well as the core seed.');
+      process.exitCode = 1;
+    } else if (ungradeable > 0) {
       console.error('\n  UNGRADEABLE QUESTIONS:');
       errors.slice(0, 20).forEach((e) => console.error(e));
       process.exitCode = 1;

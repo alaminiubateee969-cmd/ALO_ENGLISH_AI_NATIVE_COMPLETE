@@ -121,7 +121,15 @@ jobs:
       # the gate `postbuild` deliberately does not enforce (a content gap must
       # not take production down), so CI is where it is binding.
       - name: Validate question content
-        run: npm run content:validate
+        run: |
+          set +e
+          out=$(npm run content:validate 2>&1)
+          code=$?
+          echo "$out"
+          # Publish the summary as annotations so the question-bank numbers are
+          # visible in the job summary and the checks API, not only in the log.
+          echo "$out" | grep -E 'Content validation:|gradeable|lack audio|✗' | head -20 | sed 's/^/::notice ::content: /'
+          exit "$code"
         env:
           DATABASE_URL: "file:./ci-test.db"
 
