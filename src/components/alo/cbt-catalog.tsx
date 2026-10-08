@@ -38,7 +38,7 @@ export function CbtExamCatalog({ onStartExam }: { onStartExam: (examType: ExamTy
   }, [category, search]);
 
   if (selected) {
-    return <ExamLanding exam={selected} onBack={() => setSelected(null)} onStart={() => onStartExam(selected.examType, selected.slug)} />;
+    return <ExamLanding exam={selected} onBack={() => setSelected(null)} onStart={() => onStartExam(selected.examTypeCode, selected.slug)} />;
   }
 
   return (

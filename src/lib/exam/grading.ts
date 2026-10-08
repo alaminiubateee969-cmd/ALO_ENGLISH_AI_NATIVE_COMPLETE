@@ -99,8 +99,39 @@ function gradeOne(q: GradableQuestion, rawAnswer: unknown): QuestionGrade {
   let correct = false;
 
   if (INDEX_TYPES.has(type)) {
+    // Prefer correctIndex if available (the canonical MCQ form). Also support
+    // legacy TRUE_FALSE_NOT_GIVEN questions that store correctAnswer="TRUE"|"FALSE"|"NOT GIVEN"
+    // and ship without an explicit options array / correctIndex.
     const given = Number.parseInt(answer, 10);
-    correct = Number.isInteger(given) && q.correctIndex !== null && given === q.correctIndex;
+    if (Number.isInteger(given) && q.correctIndex !== null && given === q.correctIndex) {
+      correct = true;
+    } else if (type === "TRUE_FALSE_NOT_GIVEN" || type === "TRUE_FALSE") {
+      // Fall back to text match: accept both "0/1/2" (true/false/not-given index) and
+      // literal "TRUE"/"FALSE"/"NOT GIVEN" strings.
+      const expected = (q.correctAnswer || "").toUpperCase().replace(/-/g, " ").trim();
+      if (expected) {
+        let givenText: string | null = null;
+        if (!Number.isNaN(Number(answer)) && answer.length <= 1) {
+          const idx = Number(answer);
+          const tfnLabels = ["TRUE", "FALSE", "NOT GIVEN"];
+          givenText = tfnLabels[idx] ?? null;
+        } else {
+          givenText = answer.toUpperCase().replace(/-/g, " ").trim();
+        }
+        if (givenText) {
+          // Map synonyms.
+          const norm = (s: string) => s.replace(/[^A-Z]/g, "");
+          const map: Record<string, string> = {
+            T: "TRUE", TRUE: "TRUE", YES: "TRUE", Y: "TRUE",
+            F: "FALSE", FALSE: "FALSE", NO: "FALSE", N: "FALSE",
+            NG: "NOTGIVEN", NOTGIVEN: "NOTGIVEN", NOTGIVENNOT: "NOTGIVEN",
+          };
+          const expNorm = map[norm(expected)] || norm(expected);
+          const givNorm = map[norm(givenText)] || norm(givenText);
+          correct = expNorm === givNorm && expNorm.length > 0;
+        }
+      }
+    }
   } else if (TEXT_TYPES.has(type)) {
     const expected = q.correctAnswer;
     if (expected === null) {
@@ -111,13 +142,24 @@ function gradeOne(q: GradableQuestion, rawAnswer: unknown): QuestionGrade {
       correct = acceptable.includes(normaliseText(answer));
     }
   } else if (SET_TYPES.has(type)) {
-    const expected = parseIndices(q.correctIndices).slice().sort((a, b) => a - b);
+    // Prefer correctIndices (JSON array of indices). Fall back to a single
+    // correctIndex for one-to-one matching questions.
+    let expected: number[];
+    if (q.correctIndices) {
+      expected = parseIndices(q.correctIndices).slice().sort((a, b) => a - b);
+    } else if (q.correctIndex !== null && q.correctIndex !== undefined) {
+      expected = [q.correctIndex];
+    } else {
+      expected = [];
+    }
     let given: number[] = [];
     try {
       const parsed = JSON.parse(answer);
       given = (Array.isArray(parsed) ? parsed : [parsed]).map((v: unknown) => Number(v)).filter((n) => Number.isInteger(n));
     } catch {
-      given = answer.split(",").map((v) => Number.parseInt(v.trim(), 10)).filter((n) => Number.isInteger(n));
+      // Single numeric answer as string.
+      const n = Number.parseInt(answer.trim(), 10);
+      given = Number.isInteger(n) ? [n] : [];
     }
     given.sort((a, b) => a - b);
     correct = expected.length > 0 && given.length === expected.length && given.every((v, i) => v === expected[i]);

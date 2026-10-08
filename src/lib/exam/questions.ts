@@ -25,6 +25,23 @@ export const SAFE_QUESTION_SELECT = {
   order: true,
 } as const;
 
+const TFNG_DEFAULTS = JSON.stringify(["True", "False", "Not Given"]);
+const TF_DEFAULTS = JSON.stringify(["True", "False"]);
+
+/**
+ * Some legacy TRUE_FALSE(_NOT_GIVEN) questions were seeded without an
+ * explicit options array. Synthesise the canonical choices so the client
+ * always has radio buttons to render. Never mutates the caller's object —
+ * returns a (shallow) copy.
+ */
+export function withDefaultOptions<Q extends { type: string; options: string | null }>(q: Q): Q & { options: string } {
+  const t = q.type.toUpperCase();
+  if (q.options && q.options.length > 2) return { ...q, options: q.options };
+  if (t === "TRUE_FALSE_NOT_GIVEN") return { ...q, options: TFNG_DEFAULTS };
+  if (t === "TRUE_FALSE") return { ...q, options: TF_DEFAULTS };
+  return { ...q, options: q.options ?? "[]" };
+}
+
 /**
  * Load the frozen question set for an attempt, in the exact order it was
  * served, without any correct-answer fields.
@@ -40,7 +57,7 @@ export async function loadAttemptQuestions(db: Db, attemptId: string) {
     },
   });
 
-  return rows.map((r) => r.question);
+  return rows.map((r) => withDefaultOptions(r.question));
 }
 
 /** Load every persisted answer for an attempt as a plain map. */

@@ -1,99 +1,35 @@
-# GitHub Actions — Auto-deploy to VPS on push to main
+# GitHub Actions — CI ONLY (no production deployment from Actions).
 #
-# Repository: https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE
-# VPS: 115.187.18.239 (english.aloeducation.com)
+# Production deployment is handled by Hostinger's automatic Git deployment:
+#   GitHub main → Hostinger Node.js Web App → build → migrate → start.
 #
-# Setup:
-#   1. Go to repo Settings → Secrets and variables → Actions
-#   2. Add these secrets:
-#      - VPS_HOST: 115.187.18.239
-#      - VPS_USER: root
-#      - VPS_SSH_KEY: your SSH private key (cat ~/.ssh/id_rsa)
-#      - VPS_PATH: /var/www/alo-education-english
-#   3. Push to main → auto-deploys to VPS
+# This workflow previously deployed via SSH/PM2 to a VPS at 115.187.18.239.
+# That workflow has been retired: Hostinger is the single production authority.
+# Do not reintroduce SSH/VPS/PM2 deployment logic — it creates a competing
+# deployment pipeline.
 
-name: Deploy to VPS
+name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
-  deploy:
+  ci-info:
+    name: CI notice
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install SSH key
+      - name: Production deployment notice
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Sync files to VPS
-        run: |
-          rsync -avz --delete \
-            --exclude 'node_modules' \
-            --exclude '.next' \
-            --exclude '.git' \
-            --exclude 'db/*.db' \
-            --exclude 'db/*.db-journal' \
-            --exclude '.env' \
-            --exclude 'upload' \
-            --exclude 'skills' \
-            --exclude 'tool-results' \
-            --exclude 'logs' \
-            -e "ssh -i ~/.ssh/id_rsa" \
-            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/
-
-      - name: Install + Build + Restart on VPS
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd ${{ secrets.VPS_PATH }}
-
-            # Install dependencies
-            bun install --frozen-lockfile || bun install
-
-            # Copy .env.example to .env if .env doesn't exist
-            if [ ! -f .env ]; then
-              cp .env.example .env
-              AUTH_SECRET=$(openssl rand -base64 48)
-              sed -i "s/REPLACE_WITH_RANDOM_32_CHAR_STRING/$AUTH_SECRET/" .env
-              echo "✅ .env created with generated AUTH_SECRET"
-            fi
-
-            # Generate Prisma client + push schema
-            bun run db:push
-
-            # Seed if database is empty
-            if [ ! -f db/custom.db ] || [ $(stat -c%s db/custom.db 2>/dev/null || echo 0) -lt 10000 ]; then
-              echo "🌱 Seeding database..."
-              bun run prisma:seed || true
-              bun run prisma:seed:rbac || true
-              bun run prisma:seed:exams || true
-            fi
-
-            # Build for production
-            bun run build
-
-            # Restart PM2
-            pm2 restart alo-english || pm2 start "node_modules/.bin/next start -p 3000" --name alo-english --cwd ${{ secrets.VPS_PATH }}
-            pm2 restart alo-examiner-stream || (cd mini-services/examiner-stream && bun install && pm2 start "bun run dev" --name alo-examiner-stream --cwd ${{ secrets.VPS_PATH }}/mini-services/examiner-stream)
-            pm2 save
-
-            echo "✅ Deployed successfully to ${{ secrets.VPS_HOST }}"
-          EOF
-
-      - name: Verify deployment
-        run: |
-          sleep 5
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://english.aloeducation.com || echo "000")
-          echo "HTTPS status: $HTTP_CODE"
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ Site is live!"
-          else
-            echo "⚠️  Site returned $HTTP_CODE — may still be starting up"
-          fi
+          echo "═══════════════════════════════════════════════════════"
+          echo "  Production is deployed via Hostinger automatic"
+          echo "  Git deployment from the main branch."
+          echo ""
+          echo "  Domain: https://english.aloeducation.com"
+          echo "  This GitHub Actions workflow is CI-only — it does"
+          echo "  not push to production. Push to main and Hostinger"
+          echo "  will build, migrate, and restart automatically."
+          echo "═══════════════════════════════════════════════════════"

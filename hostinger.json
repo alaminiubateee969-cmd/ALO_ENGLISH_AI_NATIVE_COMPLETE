@@ -1,0 +1,23 @@
+{
+  "nodeVersion": "22",
+  "packageManager": "npm",
+  "installCommand": "npm install",
+  "buildCommand": "npm run db:generate && npm run build",
+  "startCommand": "NODE_ENV=production node .next/standalone/server.js",
+  "outputDirectory": ".next/standalone",
+  "installSubDirectory": "/",
+  "environmentVariables": {
+    "NODE_ENV": "production",
+    "APP_URL": "https://english.aloeducation.com",
+    "APP_PORT": "3000",
+    "PORT": "3000",
+    "DATABASE_URL": "CONFIGURE_IN_HOSTINGER_PANEL",
+    "AUTH_SECRET": "GENERATE_WITH_openssl_rand_base64_48"
+  },
+  "postDeployActions": [
+    "npx prisma migrate deploy",
+    "node prisma/seed.mjs || true",
+    "node prisma/seed-rbac.mjs || true",
+    "node prisma/seed-all-exams.mjs || true"
+  ]
+}
