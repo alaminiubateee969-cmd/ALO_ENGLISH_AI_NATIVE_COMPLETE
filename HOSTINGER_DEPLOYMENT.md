@@ -111,7 +111,7 @@ Then visit https://english.aloeducation.com, register/login, start a practice te
 | `npm run build` | Production build (Next.js standalone) |
 | `npm run db:migrate` | Apply database migrations |
 | `node prisma/seed.mjs` | Seed admin + exam types |
-| `node prisma/seed-all-missing-exams.mjs` | Seed question banks for all exams |
+| `node prisma/seed-all-missing-exams.ts` | Seed question banks for all exams |
 | `npm run audio:generate` | Generate listening audio MP3s |
 | `npm run content:validate` | Validate no ungradeable questions |
 | `npm start` | Start the production server |

@@ -2,7 +2,6 @@
 // All exam names are referenced in "-style practice" form per compliance rules.
 // No official exam content reproduced. All practice questions are original.
 
-import type { ExamType } from "./question-bank";
 
 export type ExamCategory = "english" | "study-abroad" | "university" | "visa" | "alo-internal";
 
@@ -11,7 +10,12 @@ export type ExamModule = {
   name: string;
   slug: string;
   category: ExamCategory;
-  examType: ExamType | null; // null = no question bank yet (e.g., interview-only / internal)
+  /**
+   * Database ExamType.code (e.g. "IELTS-A", "ALO-PLACEMENT"). Null means no
+   * question bank exists yet, so the entry must stay `available: false`.
+   * Consumers map this code to the in-memory question-bank ExamType.
+   */
+  examTypeCode: string | null;
   styleLabel: string; // e.g., "IELTS-style practice test"
   badge: string;
   accent: "blue" | "orange" | "royal" | "green" | "purple";
@@ -157,7 +161,6 @@ export const EXAM_MODULES: ExamModule[] = [
   },
   {
     id: "oet", name: "OET (Healthcare)", slug: "oet", category: "english", examTypeCode: "OET", available: true,
-    id: "oet", name: "OET (Healthcare)", slug: "oet", category: "english", examType: "OET",
     styleLabel: "OET-style practice test", badge: "Healthcare", accent: "blue",
     tagline: "Healthcare scenarios & clinical role-play",
     description: "OET-style practice with healthcare-specific scenarios across all four skills for nurses, doctors and allied health.",
@@ -437,7 +440,6 @@ export const EXAM_MODULES: ExamModule[] = [
   // ===== ALO INTERNAL =====
   {
     id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examTypeCode: null, available: false,
-    id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examType: null, available: false,
     styleLabel: "ALO Internal practice test", badge: "Internal", accent: "blue",
     tagline: "Assess counselor knowledge & process",
     description: "Internal ALO test to assess counselor knowledge of countries, universities, visas and ALO process.",
@@ -477,7 +479,6 @@ export const EXAM_MODULES: ExamModule[] = [
   },
   {
     id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examTypeCode: null, available: false,
-    id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examType: null, available: false,
     styleLabel: "ALO Internal practice test", badge: "Checklist", accent: "green",
     tagline: "Checklist for application documents",
     description: "An interactive checklist test verifying that a student's documents are application-ready.",

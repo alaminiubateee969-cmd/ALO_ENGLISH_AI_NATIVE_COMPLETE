@@ -49,6 +49,14 @@ jobs:
       - name: Validate package manifest
         run: node scripts/check-manifest.mjs
 
+      # CI provisions its database with `prisma db push` (built from the
+      # schema), while production provisions with `prisma migrate deploy`
+      # (replays prisma/migrations). Those two can disagree, and when they do
+      # CI is green while the production database is missing tables. Needs no
+      # Prisma engine and no database.
+      - name: Verify schema/migration parity
+        run: node scripts/check-schema-migrations.mjs
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -73,6 +81,15 @@ jobs:
           DATABASE_URL: "file:./ci-test.db"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      # Content integrity: every selectable objective question must be
+      # gradeable, and listening questions without audio are reported. This is
+      # the gate `postbuild` deliberately does not enforce (a content gap must
+      # not take production down), so CI is where it is binding.
+      - name: Validate question content
+        run: npm run content:validate
+        env:
+          DATABASE_URL: "file:./ci-test.db"
 
       # Every suite runs against the database provisioned above, including the
       # database-backed RBAC and attempt-engine tests. No suite is skipped.
