@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PUBLISHED_EXAM_MODULES as EXAM_MODULES, EXAM_CATEGORIES, CBT_ENGINE_FEATURES, CBT_QUESTION_TYPES, PRACTICE_DISCLAIMER, type ExamCategory, type ExamModule } from "@/lib/exam-catalog";
-import type { ExamType } from "@/lib/question-bank";
 
 const ACCENT_MAP = {
   blue: { bg: "bg-alo-blue", soft: "bg-alo-soft-blue", text: "text-alo-blue", border: "border-alo-blue/20" },
@@ -23,7 +22,7 @@ const FEATURE_ICONS: Record<string, any> = {
   timer: Clock, palette: LayoutGrid, save: Check, submit: Send, pause: Pause, report: BarChart3, review: FileText, download: Download,
 };
 
-export function CbtExamCatalog({ onStartExam }: { onStartExam: (examType: ExamType | null, slug: string) => void }) {
+export function CbtExamCatalog({ onStartExam }: { onStartExam: (examTypeCode: string | null, slug: string) => void }) {
   const [category, setCategory] = useState<ExamCategory | "all">("all");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");

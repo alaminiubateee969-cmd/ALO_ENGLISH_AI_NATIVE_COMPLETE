@@ -7,6 +7,8 @@
  * logs what is missing.
  */
 
+import { randomBytes } from 'node:crypto';
+
 type EnvVar = {
   key: string;
   required: boolean;
@@ -52,8 +54,10 @@ function validateEnv(): Record<string, string> {
     if (env.NODE_ENV === 'production') {
       errors.push('  - AUTH_SECRET must be at least 32 characters. Set it in Hostinger panel. Generate with: openssl rand -base64 48');
     } else {
-      // Dev fallback: deterministic per-machine secret so sessions survive restarts.
-      const fallback = require('crypto').randomBytes(48).toString('base64');
+      // Dev-only fallback so local runs do not need a secret configured.
+      // Deliberately random, not deterministic: sessions do not survive a
+      // restart, and that is acceptable outside production.
+      const fallback = randomBytes(48).toString('base64');
       env.AUTH_SECRET = fallback;
       process.env.AUTH_SECRET = fallback;
       console.warn('[env] Generated dev AUTH_SECRET (set a real one for production)');

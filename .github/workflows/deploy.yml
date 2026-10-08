@@ -8,7 +8,7 @@
 # Do not reintroduce SSH/VPS/PM2 deployment logic — it creates a competing
 # deployment pipeline.
 
-name: CI
+name: Deployment notice (Hostinger)
 
 on:
   push:

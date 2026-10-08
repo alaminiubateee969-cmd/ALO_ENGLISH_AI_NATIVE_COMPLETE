@@ -43,6 +43,20 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      # Preflight: a malformed manifest or a missing lockfile makes
+      # `bun install --frozen-lockfile` fail with a generic "exit code 1" and
+      # every later step is skipped. Name the actual problem first.
+      - name: Validate package manifest
+        run: node scripts/check-manifest.mjs
+
+      # CI provisions its database with `prisma db push` (built from the
+      # schema), while production provisions with `prisma migrate deploy`
+      # (replays prisma/migrations). Those two can disagree, and when they do
+      # CI is green while the production database is missing tables. Needs no
+      # Prisma engine and no database.
+      - name: Verify schema/migration parity
+        run: node scripts/check-schema-migrations.mjs
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -58,15 +72,58 @@ jobs:
       # The suite includes database-backed tests (RBAC, attempt engine).
       # They run against a real migrated + seeded SQLite database rather than
       # being skipped: provision the database, then run everything.
-      - name: Provision test database
+      # Provision the way production does. Hostinger runs `prisma migrate
+      # deploy`; using `db push` here builds the schema straight from
+      # schema.prisma and hides any gap in prisma/migrations — which is exactly
+      # how 17 tables went missing while CI stayed green.
+      #
+      # These are separate steps so a failure names the command that failed
+      # instead of hiding inside one three-line block.
+      - name: Provision test database (migrate deploy)
+        run: bunx prisma migrate deploy
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+
+      - name: Seed core data
         run: |
-          bunx prisma db push --skip-generate
-          bun run prisma:seed
-          bun run prisma:seed:rbac
+          set +e
+          out=$(bun run prisma:seed 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ]; then
+            # Re-emit the tail as annotations so the cause is visible in the
+            # job summary and the checks API, not only in the raw log.
+            echo "$out" | tail -25 | sed 's/^/::error ::seed core data: /'
+            exit "$code"
+          fi
         env:
           DATABASE_URL: "file:./ci-test.db"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      - name: Seed RBAC
+        run: |
+          set +e
+          out=$(bun run prisma:seed:rbac 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ]; then
+            echo "$out" | tail -25 | sed 's/^/::error ::seed rbac: /'
+            exit "$code"
+          fi
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+          ADMIN_SEED_EMAIL: "ci-admin@test.local"
+          ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      # Content integrity: every selectable objective question must be
+      # gradeable, and listening questions without audio are reported. This is
+      # the gate `postbuild` deliberately does not enforce (a content gap must
+      # not take production down), so CI is where it is binding.
+      - name: Validate question content
+        run: npm run content:validate
+        env:
+          DATABASE_URL: "file:./ci-test.db"
 
       # Every suite runs against the database provisioned above, including the
       # database-backed RBAC and attempt-engine tests. No suite is skipped.
@@ -115,20 +172,55 @@ jobs:
         env:
           DATABASE_URL: "file:./ci-test.db"
 
+      # The gate compares what ran against what was supposed to run. Three
+      # failure shapes are all reported explicitly:
+      #   - the ledger is absent, meaning an earlier step failed or was skipped
+      #     and no suite ran at all (this used to crash on `cat` and hide the
+      #     real cause behind "No such file or directory"),
+      #   - a suite is missing from the ledger, meaning it never executed,
+      #   - a suite recorded a non-zero exit code.
+      # A suite that silently did not run can therefore never look green.
       - name: Verify every suite passed
         if: always()
+        env:
+          EXPECTED_SUITES: "smoke engine rbac attempt"
         run: |
-          cat test-results.txt
-          while IFS='=' read -r name code; do
-            [ -z "$name" ] && continue
-            if [ "$code" != "0" ]; then
-              echo "::error ::test suite failed: $name (exit $code)"
-            fi
-          done < test-results.txt
-          if grep -qvE '=0$' test-results.txt; then
+          if [ ! -f test-results.txt ]; then
+            echo "::error ::no test suite ran: test-results.txt was never created. An earlier step failed or was skipped — see the first failing step above."
             exit 1
           fi
-          echo "All test suites passed."
+
+          echo "Recorded results:"
+          cat test-results.txt
+
+          status=0
+          ran=0
+          for suite in $EXPECTED_SUITES; do
+            line=$(grep -E "^${suite}=" test-results.txt | tail -1 || true)
+            if [ -z "$line" ]; then
+              echo "::error ::test suite did not run: $suite"
+              status=1
+            elif [ "$line" != "${suite}=0" ]; then
+              echo "::error ::test suite failed: ${suite} (exit ${line#${suite}=})"
+              status=1
+            else
+              ran=$((ran + 1))
+            fi
+          done
+
+          # Anything recorded that is not in the expected list means the suite
+          # list above is stale — fail rather than ignore untracked results.
+          while IFS='=' read -r name code; do
+            [ -z "$name" ] && continue
+            case " $EXPECTED_SUITES " in
+              *" $name "*) ;;
+              *) echo "::error ::unexpected suite in ledger: $name (expected: $EXPECTED_SUITES)"
+                 status=1 ;;
+            esac
+          done < test-results.txt
+
+          [ "$status" -eq 0 ] || exit 1
+          echo "All test suites passed ($ran/$ran green)."
 
       - name: Build
         run: bun run build

@@ -6,7 +6,12 @@
  * Run with: DATABASE_URL=file:./db/production.db node prisma/seed.mjs
  */
 import { PrismaClient } from '@prisma/client';
-import { hashSync } from 'bcryptjs';
+// bcryptjs is CommonJS and does not expose its functions as detectable ESM
+// named exports, so `import { hashSync }` throws under plain Node. Take the
+// default export and destructure it.
+import bcrypt from 'bcryptjs';
+
+const { hashSync } = bcrypt;
 import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();

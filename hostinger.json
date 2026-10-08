@@ -16,8 +16,8 @@
   },
   "postDeployActions": [
     "npx prisma migrate deploy",
-    "node prisma/seed.mjs || true",
-    "node prisma/seed-rbac.mjs || true",
-    "node prisma/seed-all-exams.mjs || true"
+    "node prisma/seed.mjs",
+    "node prisma/seed-rbac.ts",
+    "node prisma/seed-all-exams.ts"
   ]
 }
