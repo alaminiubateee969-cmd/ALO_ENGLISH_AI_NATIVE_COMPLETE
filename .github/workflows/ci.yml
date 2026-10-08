@@ -85,14 +85,32 @@ jobs:
           DATABASE_URL: "file:./ci-test.db"
 
       - name: Seed core data
-        run: bun run prisma:seed
+        run: |
+          set +e
+          out=$(bun run prisma:seed 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ]; then
+            # Re-emit the tail as annotations so the cause is visible in the
+            # job summary and the checks API, not only in the raw log.
+            echo "$out" | tail -25 | sed 's/^/::error ::seed core data: /'
+            exit "$code"
+          fi
         env:
           DATABASE_URL: "file:./ci-test.db"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
 
       - name: Seed RBAC
-        run: bun run prisma:seed:rbac
+        run: |
+          set +e
+          out=$(bun run prisma:seed:rbac 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ]; then
+            echo "$out" | tail -25 | sed 's/^/::error ::seed rbac: /'
+            exit "$code"
+          fi
         env:
           DATABASE_URL: "file:./ci-test.db"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
