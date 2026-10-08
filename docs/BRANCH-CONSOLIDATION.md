@@ -5,62 +5,98 @@ was merged, what content moved, and — where content did not move — exactly w
 
 ## Before
 
-`main` was a **single orphan commit**:
+> **Correction, 2026-10-08.** The first version of this section said `main` was
+> a single orphan commit with no parent and that six of the seven branches
+> shared no ancestor with it. That was wrong, and the reason matters: the clone
+> this was analysed in was **shallow**. `.git/shallow` listed `c5ef20d` and
+> `cae9429`, so `git rev-list --count` and `git merge-base` silently truncated at
+> those boundaries and reported 1 reachable commit and "no common ancestor" for
+> branches whose shared history lay below the cut. Everything below is measured
+> after `git fetch --unshallow`. The merges themselves were unaffected — `-s ours`
+> never changes a tree — but two of them were redundant, and the reasoning
+> recorded for them was not the real reasoning.
+
+`main`'s tip before this work was:
 
 ```
 c5ef20d  Repair merge corruption, manifest/Prisma drift, CI false-greens;
          add missing migration (#6)
 ```
 
-It had no parent. `git merge-base main <any other branch>` returned nothing for
-six of the seven open branches, so none of them could be merged normally: a
-content merge against an unrelated history conflicts on every file, and
-resolving it in the obvious direction would have reverted the repairs that
-commit was created to make.
+It had **79 reachable commits**, descending from the root `8efe9b6` ("Initial
+commit", 2026-07-09). Seven branches were open, and they fell into three groups,
+not two:
 
-Seven branches were open:
+| Branch | Ahead of `c5ef20d` | Behind | Root history | Relationship to old `main` |
+| --- | --- | --- | --- | --- |
+| `arena/21ea772f-…` | 2 | 0 | `8efe9b6` | descends from `main`'s tip |
+| `arena/847f6969-…` | **0** | 11 | `8efe9b6` | **already an ancestor of `main`** |
+| `arena/c61b298e-…` | **0** | 15 | `8efe9b6` | **already an ancestor of `main`** |
+| `arena/01a0eea6-…` | 1 | 24 | `8efe9b6` | shares history; merge-base `918c3c6` |
+| `arena/01a0b208-…` | 58 | 79 | `1bd5c44` | genuinely unrelated history |
+| `arena/01a0ee4c-…` | 62 | 79 | `1bd5c44` | genuinely unrelated history |
+| `upload/complete-project-2026-09-30` | 1 | 79 | `9e80804` | single-commit orphan upload |
 
-| Branch | Commits ahead | Common ancestor with `main` |
-| --- | --- | --- |
-| `arena/21ea772f-…` | 1 | **yes** — `main`'s tip |
-| `arena/847f6969-…` | 68 | none |
-| `arena/c61b298e-…` | 64 | none |
-| `arena/01a0ee4c-…` | 62 | none |
-| `arena/01a0b208-…` | 58 | none |
-| `arena/01a0eea6-…` | 56 | none |
-| `upload/complete-project-2026-09-30` | 1 | none |
+So the repository held **three** unrelated root histories — `8efe9b6` (main's
+own), `1bd5c44` (the two `01a0…` branches) and `9e80804` (the upload). Only
+three branches could not be merged normally, not six.
 
 ## What was done
 
-### 1. The one branch that could be merged normally, was
+### 1. The branches that could be merged normally, were
 
 `arena/21ea772f-…` descends from `main`'s tip, so it merged as an ordinary
-three-way merge (`5cff1c7`) and its single change applied cleanly alongside the
-CI restructuring: the "Validate question content" step now re-emits the
+three-way merge (`5cff1c7`) and its change applied cleanly alongside the CI
+restructuring: the "Validate question content" step now re-emits the
 question-bank numbers as `::notice` annotations while still exiting with the
-validator's own code.
+validator's own code. (A second commit, `21ad483`, later reached `main` through
+PR #7 — see *Since consolidation* below.)
 
-### 2. The other six were recorded with `-s ours`
+### 2. The rest were recorded with `-s ours`
 
 ```
 git merge -s ours --allow-unrelated-histories --no-ff origin/<branch>
 ```
 
 `-s ours` makes the branch an ancestor of `main` while keeping `main`'s tree.
-Their commits become reachable from `main` — 143 of them, taking `main` from 1
-reachable commit to 144; `git branch --merged main` reports every branch;
-nothing is orphaned, and any of it can be recovered with
+Nothing is orphaned, and any of it can be recovered with
 `git checkout <branch> -- <path>` at any time. What it does **not** do is change
 a single file — which is the point, because on every overlapping path `main` was
 the newer side.
+
+It was applied to all six remaining branches. For four of them that was the
+right tool: `arena/01a0eea6`, `arena/01a0b208`, `arena/01a0ee4c` and
+`upload/complete-project-2026-09-30` each carried content that had to be
+deliberately refused rather than auto-resolved. For **two it was a no-op**:
+`arena/847f6969` and `arena/c61b298e` were already ancestors of `main`, so
+`57b9f54` and the merge recorded for `c61b298e` added a merge commit and nothing
+else. Harmless — `-s ours` cannot alter a tree — but they should not have been
+needed, and the shallow clone is why they looked necessary.
+
+### The one unique commit on `arena/01a0eea6`
+
+`4c7644f` ("chore: document production secret and provider configuration") adds
+27 lines to `.env.example`: `SESSION_SECRET`, `ENCRYPTION_KEY`,
+`BOOTSTRAP_ADMIN_{EMAIL,PASSWORD}`, Stripe, SMTP/WhatsApp and S3 variables.
+`-s ours` dropped it, and `main`'s `.env.example` was rewritten independently, so
+those keys are not documented on `main`.
+
+That was checked rather than assumed. **None of the 14 is read by any code in
+`main`** — `src/`, `prisma/`, `scripts/` and `server.js` were all grepped.
+(`WHATSAPP_ACCESS_TOKEN` appears once, in `src/components/alo/portals.tsx`, as a
+hardcoded *display string* in a client-component status panel; it reads no
+environment variable.) Documenting variables nothing consumes is the same defect
+in the other direction: it tells an operator to provision integrations that do
+not exist. If those integrations are ever built, `git show 4c7644f:.env.example`
+has the wording.
 
 Each merge commit carries the branch-specific reasoning. Summary:
 
 | Branch | Merge | Unique content | Disposition |
 | --- | --- | --- | --- |
-| `arena/847f6969-…` | `57b9f54` | none | Fully superseded. Its own tip had already merged `main` in (`aada8fa`); `main` then repaired the result. |
-| `arena/c61b298e-…` | *(already reachable via `57b9f54`)* | `deploy-vps.sh`, `ecosystem.config.js` | Superseded. Its exam engine is in `main` as `src/lib/exam/*` with two test suites. Its `env.ts` is the older fail-fast variant that throws in production. |
-| `arena/01a0eea6-…` | `547266c` | `deploy-vps.sh`, `ecosystem.config.js` | Superseded. |
+| `arena/847f6969-…` | `57b9f54` | none | **Was already an ancestor of `main`** (0 commits ahead); the merge is a no-op record. Its tip `aada8fa` had merged `main` in and `main` then repaired the result. |
+| `arena/c61b298e-…` | *(already reachable via `57b9f54`)* | `deploy-vps.sh`, `ecosystem.config.js` | **Was already an ancestor of `main`** (0 commits ahead). Superseded. Its exam engine is in `main` as `src/lib/exam/*` with two test suites. Its `env.ts` is the older fail-fast variant that throws in production. |
+| `arena/01a0eea6-…` | `547266c` | `deploy-vps.sh`, `ecosystem.config.js`, and the `.env.example` keys discussed above | Superseded. Shares history with `main` (merge-base `918c3c6`); 1 unique commit. |
 | `upload/complete-project-2026-09-30` | `d1fb02c` | none | Fully superseded; `main` is a strict file-level superset. |
 | `arena/01a0b208-…` | `2489e05` | 22 `docs/GLOBAL-*.md`, `docs/domains/**`, `config/DOMAIN-REGISTRY.yaml`, `PROTECTED-SERVICES.md`, the two VPS scripts | Documentation **rescued** into `docs/archive/2026-09-18-ecosystem-audit/`. VPS scripts not carried. |
 | `arena/01a0ee4c-…` | `62e312e` | the same documentation, plus 6 Prisma models, 3 agent modules, 2 API routes, 2 audit scripts, 2 migrations | Documentation **rescued**. Code not carried — see below. |
@@ -145,28 +181,37 @@ Two consequences were handled rather than left to the next reader:
   questions live in the `prisma:seed` chain, so those instructions produced a
   healthy deploy serving an exam platform with no exams in it. The sequence and
   the command table now match `package.json` and end with `content:validate`.
-- `arena/21ea772f-…` is listed above as one commit ahead at `ca5d32c`. It is now
-  two commits ahead at `21ad483`, and both are reachable from this branch.
+- `arena/21ea772f-…` was recorded as one commit ahead at `ca5d32c`. It is two
+  commits ahead at `21ad483`, and both are reachable from `main`.
+
+PR #8 was then merged into `main` as `bebc470` with an ordinary merge commit, so
+the 151-commit history of this branch — including every `-s ours` record — is
+preserved rather than squashed away.
 
 ## Result
 
-```
-at consolidation   144 commits reachable from main   (was 1)
-                   7 branches merged                 (was 0)
-                   0 branches with unique content that is not either in main
-                     or accounted for above
+`main` is `bebc470` (PR #8 merged 2026-10-08).
 
-now                151 commits reachable from this branch
-                   147 ahead of main, 0 behind
-                   all 7 branches and origin/main are ancestors of HEAD
 ```
+163 commits reachable from main
+  3 root histories:  8efe9b6 (main's own)  1bd5c44  9e80804
+  8 branches merged: every arena/* and upload/* branch is an ancestor of main
+  0 branches with unique content that is not either in main or accounted for above
+```
+
+`git branch -r --merged origin/main` lists all of them.
 
 Verified with:
 
 ```bash
+# In a FULL clone. Run `git fetch --unshallow` first and confirm
+# `git rev-parse --is-shallow-repository` prints false, or the ancestry test
+# below silently truncates at the shallow boundary and reports false negatives.
+git rev-parse --is-shallow-repository
 for b in $(git branch -r --format='%(refname:short)' | grep -v HEAD); do
-  git merge-base --is-ancestor "$b" main && echo "$b merged" || echo "$b NOT merged"
+  git merge-base --is-ancestor "$b" origin/main && echo "$b merged" || echo "$b NOT merged"
 done
+git rev-list --count origin/main
 ```
 
 Once `main` has this, the remote branches can be deleted from GitHub without
