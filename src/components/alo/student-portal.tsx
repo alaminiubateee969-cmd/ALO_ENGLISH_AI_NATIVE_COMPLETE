@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { MockTestEngine } from "./mock-test-engine";
 import { STUDENT_KPIS, STUDENT_RESULTS, STUDENT_VOUCHERS, STUDENT_FEEDBACK, STUDENT_APPOINTMENTS, PRACTICE_DISCLAIMER } from "@/lib/platform-data";
-import { EXAM_MODULES, EXAM_CATEGORIES, type ExamCategory } from "@/lib/exam-catalog";
+import { PUBLISHED_EXAM_MODULES as EXAM_MODULES, EXAM_CATEGORIES, type ExamCategory } from "@/lib/exam-catalog";
 import { QUESTIONS, type ExamType } from "@/lib/question-bank";
 
 type Page = "dashboard" | "tests" | "mock-test" | "results" | "vouchers" | "feedback" | "study-plan" | "messages" | "settings";

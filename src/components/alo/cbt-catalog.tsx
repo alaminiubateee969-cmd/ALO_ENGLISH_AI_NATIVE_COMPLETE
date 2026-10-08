@@ -5,7 +5,7 @@ import { Search, ChevronRight, Clock, Award, BookOpen, Check, Filter, LayoutGrid
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EXAM_MODULES, EXAM_CATEGORIES, CBT_ENGINE_FEATURES, CBT_QUESTION_TYPES, PRACTICE_DISCLAIMER, type ExamCategory, type ExamModule } from "@/lib/exam-catalog";
+import { PUBLISHED_EXAM_MODULES as EXAM_MODULES, EXAM_CATEGORIES, CBT_ENGINE_FEATURES, CBT_QUESTION_TYPES, PRACTICE_DISCLAIMER, type ExamCategory, type ExamModule } from "@/lib/exam-catalog";
 import type { ExamType } from "@/lib/question-bank";
 
 const ACCENT_MAP = {

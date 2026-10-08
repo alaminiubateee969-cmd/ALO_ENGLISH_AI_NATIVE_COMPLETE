@@ -22,6 +22,11 @@ export type ExamModule = {
   sections: { name: string; detail: string }[];
   highlights: string[];
   popular?: boolean;
+  /**
+   * false = internal/tooling entry that has no backend exam definition.
+   * Hidden from every public catalog so no student can enter a dead flow.
+   */
+  available?: boolean;
 };
 
 export const EXAM_CATEGORIES: { id: ExamCategory; name: string; description: string; icon: string }[] = [
@@ -152,6 +157,7 @@ export const EXAM_MODULES: ExamModule[] = [
   },
   {
     id: "oet", name: "OET (Healthcare)", slug: "oet", category: "english", examTypeCode: "OET", available: true,
+    id: "oet", name: "OET (Healthcare)", slug: "oet", category: "english", examType: "OET",
     styleLabel: "OET-style practice test", badge: "Healthcare", accent: "blue",
     tagline: "Healthcare scenarios & clinical role-play",
     description: "OET-style practice with healthcare-specific scenarios across all four skills for nurses, doctors and allied health.",
@@ -431,6 +437,7 @@ export const EXAM_MODULES: ExamModule[] = [
   // ===== ALO INTERNAL =====
   {
     id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examTypeCode: null, available: false,
+    id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examType: null, available: false,
     styleLabel: "ALO Internal practice test", badge: "Internal", accent: "blue",
     tagline: "Assess counselor knowledge & process",
     description: "Internal ALO test to assess counselor knowledge of countries, universities, visas and ALO process.",
@@ -470,6 +477,7 @@ export const EXAM_MODULES: ExamModule[] = [
   },
   {
     id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examTypeCode: null, available: false,
+    id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examType: null, available: false,
     styleLabel: "ALO Internal practice test", badge: "Checklist", accent: "green",
     tagline: "Checklist for application documents",
     description: "An interactive checklist test verifying that a student's documents are application-ready.",
@@ -517,3 +525,8 @@ export const CBT_QUESTION_TYPES = [
   "Drag & drop matching", "Matching headings", "Matching sentence endings", "Reorder paragraphs",
   "Numeric answer", "Code / text input", "Case study", "Scenario-based", "File upload", "Image-based",
 ];
+
+/** Modules with a working backend exam definition — safe to advertise. */
+export const PUBLISHED_EXAM_MODULES: ExamModule[] = EXAM_MODULES.filter(
+  (e) => e.available !== false
+);

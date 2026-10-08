@@ -27,7 +27,7 @@ const EXAM_TYPE_LABELS: Record<ExamType, string> = {
   IELTS: "IELTS Academic", PTE: "PTE Academic", TOEFL: "TOEFL iBT", Duolingo: "Duolingo English Test",
   OIETC: "OIETC / Oxford ELLT", SAT: "Digital SAT", GRE: "GRE General", GMAT: "GMAT Focus",
   ACT: "ACT", LSAT: "LSAT", MCAT: "MCAT", LanguageCert: "LanguageCert", Linguaskill: "Linguaskill",
-  Placement: "ALO Placement", VisaInterview: "Visa Interview",
+  Placement: "ALO Placement", VisaInterview: "Visa Interview", OET: "OET (Healthcare)",
 };
 
 export function MockTestEngine({ initialExam }: { initialExam?: ExamType }) {

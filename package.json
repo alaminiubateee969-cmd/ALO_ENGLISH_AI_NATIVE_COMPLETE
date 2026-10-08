@@ -2,7 +2,7 @@
   "name": "alo-english-test-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "ALO English Test Platform — production-ready Next.js application for English exam practice.",
+  "description": "ALO English Test Platform \u2014 production-ready Next.js application for English exam practice.",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -29,6 +29,10 @@
     "content:validate": "node scripts/validate-content.mjs",
     "verify": "bash scripts/verify.sh",
     "healthcheck": "bash scripts/healthcheck.sh"
+    "backup": "bash scripts/backup.sh",
+    "restore": "bash scripts/restore.sh",
+    "healthcheck": "bash scripts/healthcheck.sh",
+    "qa:questions": "bun run scripts/validate-question-bank.ts"
   },
   "prisma": {
     "seed": "bun run prisma/seed.ts"
