@@ -72,9 +72,13 @@ jobs:
       # The suite includes database-backed tests (RBAC, attempt engine).
       # They run against a real migrated + seeded SQLite database rather than
       # being skipped: provision the database, then run everything.
+      # Provision the way production does. Hostinger runs `prisma migrate
+      # deploy`; using `db push` here builds the schema straight from
+      # schema.prisma and hides any gap in prisma/migrations — which is exactly
+      # how 17 tables went missing while CI stayed green.
       - name: Provision test database
         run: |
-          bunx prisma db push --skip-generate
+          bunx prisma migrate deploy
           bun run prisma:seed
           bun run prisma:seed:rbac
         env:
