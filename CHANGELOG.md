@@ -5,6 +5,136 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-10-08
+
+Deployment reliability release. No user-facing feature changes; every entry
+below is about the pipeline between a push to `main` and a working site.
+
+### Fixed
+
+- **Every deploy panicked at the first stylesheet.** `next build` runs Turbopack
+  by default, and Turbopack runs PostCSS — therefore Tailwind v4 — in a pool of
+  `node` workers that must connect back to the build over `127.0.0.1` TCP. The
+  host's build container does not permit that connection, so the worker exited
+  before it could report anything: `TurbopackInternalError:
+  [project]/src/app/globals.css … node process exited before we could connect to
+  it with exit status: 0`. The same source and lockfile built cleanly in CI and
+  locally. `build` now runs `next build --webpack`, Next 16's documented opt-out;
+  webpack runs `postcss-loader` in-process and Next's workers use IPC pipes, so
+  no loopback connection is needed. `next dev` keeps Turbopack.
+- **The Prisma client was never generated on the host.** Generation was left to
+  `@prisma/client`'s `postinstall` hook, which fails silently — npm swallows the
+  output and continues — so `next build` died much later, during page-data
+  collection, with `@prisma/client did not initialize yet`. CI never caught it
+  because CI ran `db:generate` as its own explicit step. `prebuild` now runs
+  `scripts/ensure-prisma-client.mjs`.
+- **The build did not produce a runnable artifact.** `cp -r .next/static
+  .next/standalone/.next/ && cp -r public .next/standalone/` renames the source
+  when the destination is absent and nests directories on a second run.
+  `scripts/finalize-standalone.mjs` replaces it: idempotent, verifying, and it
+  self-heals the Prisma query engine when file tracing leaves it behind — a gap
+  that otherwise surfaces only at first query, after the deploy has been
+  reported healthy.
+- **The standalone server relocated the database.** `.next/standalone/server.js`
+  runs `process.chdir(__dirname)`, so `process.cwd()` at runtime is
+  `<app>/.next/standalone`. The documented `DATABASE_URL="file:./db/production.db"`
+  therefore opened a database inside the build output — replaced on every deploy
+  — while `prisma migrate deploy` from the repository root wrote to a different
+  file. The site booted healthy and then reported an empty database.
+  `src/lib/paths.ts` now derives an app root that survives a redeploy, resolves
+  relative SQLite paths against it, rewrites `process.env.DATABASE_URL` to the
+  absolute value Prisma will use, creates the directory, logs what it resolved
+  and warns when it lands inside `.next/`.
+- Uploads no longer default to `/tmp/alo-english-uploads`, which a container
+  restart discards; they resolve under `APP_DATA_DIR`.
+- `/api/deliverables` returned 500 when the optional legacy bundle was absent,
+  which reads as a server fault. It now returns 404 with an explanation.
+
+### Added
+
+- `server.js` — a stable root entry point for the panel's "entry file" setting,
+  which was blank. It checks a build exists, defaults `NODE_ENV` / `HOSTNAME` /
+  `PORT`, and hands over to `.next/standalone/server.js`.
+- `scripts/smoke-standalone.mjs` — boots the built artifact and asserts it binds,
+  serves `/` and `/login`, serves `/logo.svg` from the copied `public/`, returns
+  a health document, and serves a real Tailwind stylesheet. A broken CSS
+  pipeline presents as an unstyled site, not as a build error, so it has to be
+  asserted on a running server.
+- `src/lib/paths.ts` — the single place that decides where the app's files live.
+- `docs/ADR-0001-build-with-webpack.md` — why the build flag is load-bearing, and
+  the alternatives rejected (`workerThreads` segfaults on Node 22; downgrading
+  `@tailwindcss/postcss` is the wrong fix).
+- `docs/BRANCH-CONSOLIDATION.md` and `docs/archive/2026-09-18-ecosystem-audit/`.
+- `server-config/README.md` — those four files are validated by CI and used by
+  nothing in production; without a note saying so they read as the deployment
+  configuration.
+
+### Changed
+
+- **CI now builds the way the host builds.** A new `host-build` job runs
+  `npm install` (not bun), deletes `node_modules/.prisma` and runs `npm run
+  prebuild` to prove the gate recovers an un-generated client, builds, asserts
+  the artifact is complete, provisions the database with `migrate deploy` the way
+  production does, and boots it. `package` now needs it, so no release artifact
+  is cut from a commit the host cannot build.
+- **`deploy.yml` does something.** It still does not deploy — Hostinger does, and
+  `check-manifest.mjs` forbids reintroducing an SSH pipeline — but on every push
+  to `main` it runs the dependency-free preflight gates, records a GitHub
+  deployment against the `production` environment, publishes the panel settings
+  and environment variables the commit expects as a job summary, and probes the
+  live health endpoint (informational on push, enforced on manual dispatch).
+- **`check-manifest.mjs` gained check 8:** the `build` script must contain
+  `next build --webpack`. Its required-files list covers the new deployment
+  plumbing.
+- **`verify.sh`** asserts the assembled artifact, not just that a build happened,
+  and runs both preflight scripts and the artifact smoke test.
+- **The repository is 22 MB smaller.** 273 files were tracked while also being
+  git-ignored — 25.7 MB of the 33.7 MB of tracked content — because they were
+  committed before the ignore rules were written. Untracked: 13 MB of runtime
+  uploads, 3.1 MB of agent scratch output, an archived sibling Next.js project,
+  a 1.4 MB development database holding test accounts and a session row, release
+  archives, and two superseded VPS delivery guides that instructed `scp` and
+  `db push` against production. Tracked content is now 10.1 MB across 569 files,
+  and `git ls-files -i -c --exclude-standard` returns empty.
+- `cpanel-production/` was ignored but **is** deployed — `/api/deliverable` and
+  `/api/deliverables` serve from it for `SUPER_ADMIN`. Its ignore rule is
+  narrowed to `dist/` and `logs/`, which those routes skip anyway.
+- `next.config.ts` keeps `@prisma/client` external so its native engine resolves
+  at runtime.
+- `hostinger.json` records the panel settings the pipeline actually needs, with
+  the reasons, instead of a build command the panel does not read.
+- `README.md` no longer instructs `ssh root@<vps>`, Node 20, a process manager,
+  `bun run db:push` against production, or SSH deployment secrets. Its counts are
+  corrected to 44 models / 73 API routes / 31 pages, and its licence footer now
+  matches the MIT `LICENSE` file it sits under.
+- `DEPLOYMENT.md` opened with "Architecture Lock — exactly ONE production
+  architecture" and then described a VPS with Caddy, systemd and Bun. It now says
+  plainly that it is the optional self-managed path and compares both against the
+  same artifact.
+- Root-level screenshots moved to `docs/images/`; `SHA256SUMS.txt` removed (it
+  checksummed an artifact not in the repository).
+
+### Merged
+
+All seven open branches are now ancestors of `main` — 144 reachable commits, up
+from 1. One (`arena/21ea772f-…`) merged normally; the other six share no common
+ancestor with `main`, whose tip is an orphan repair commit, and were recorded
+with `-s ours` so their history is preserved without reverting those repairs.
+The 2026-09-18 ecosystem audit is rescued into `docs/archive/`. Two migrations
+dated before ones production has already applied were deliberately not carried:
+`prisma migrate deploy` would have replayed them against a live database. Full
+reasoning per branch in `docs/BRANCH-CONSOLIDATION.md`.
+
+### Security
+
+- `db/custom.db` no longer ships. It remains in git history; purging it by
+  rewriting history and rotating the seeded passwords is recorded as an open
+  owner action in the archived audit (finding S-01) and needs a force-push to
+  `main`, so it was not done unilaterally.
+- `.env` is tracked deliberately and now says so: non-secret defaults only, and
+  Next.js never overwrites a value already in `process.env`, so panel values
+  always win. `.env.local` remains git-ignored for real local secrets.
+
 ## [1.0.0] — 2025-07-22
 
 ### Added

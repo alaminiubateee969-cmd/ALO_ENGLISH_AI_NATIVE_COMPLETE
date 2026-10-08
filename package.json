@@ -1,6 +1,6 @@
 {
   "name": "alo-english-test-platform",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "ALO English Test Platform — production-ready Next.js application for English exam practice.",
   "engines": {
