@@ -20,6 +20,7 @@
  *   6. No GitHub workflow may contain VPS/SSH deployment directives. Hostinger
  *      is the only production deployment path.
  *   7. Required production files must be present.
+ *   8. The build script must still build with webpack, not Turbopack.
  *
  * Run:  node scripts/check-manifest.mjs
  * Exit: 0 when every check passes, 1 otherwise.
@@ -285,9 +286,52 @@ const required = [
   "src/app/api/health/route.ts",
   "src/app/layout.tsx",
   "src/lib/db.ts",
+  // Deployment plumbing. Each of these is referenced by an npm script or by the
+  // host's entry-file setting, so a rename that misses one of them produces a
+  // build that only fails on the host.
+  "server.js",
+  "src/lib/paths.ts",
+  "scripts/ensure-prisma-client.mjs",
+  "scripts/finalize-standalone.mjs",
+  "postcss.config.mjs",
 ];
 for (const file of required) {
   if (!existsSync(join(ROOT, file))) fail(`required production file missing: ${file}`);
+}
+
+// ─── 8: the production build must use webpack, not Turbopack ───────────────
+//
+// Next.js 16 builds with Turbopack by default. Turbopack runs PostCSS — and
+// therefore Tailwind v4 — in a pool of `node` worker processes that must
+// connect back to the build over 127.0.0.1 TCP. Hostinger's build container
+// does not allow that connection: the worker exits before it can report
+// anything and the build panics with
+//
+//   TurbopackInternalError: [project]/src/app/globals.css [app-client] (css)
+//   Caused by: creating new process
+//            - node process exited before we could connect to it with exit status: 0
+//
+// It is not a CSS, Tailwind or dependency problem: the same source and lockfile
+// build cleanly in CI and locally, where loopback works. `next build --webpack`
+// is Next 16's documented opt-out; webpack runs postcss-loader in-process and
+// Next's own workers use IPC pipes, so no loopback connection is needed.
+//
+// This check exists because the flag looks like leftover cruft to anyone who
+// has not read the deploy log, and removing it silently breaks production
+// while CI stays green. See docs/ADR-0001-build-with-webpack.md.
+
+if (manifest) {
+  const buildScript = manifest.scripts?.build;
+  if (typeof buildScript !== "string") {
+    fail('package.json has no "build" script');
+  } else if (!buildScript.includes("next build --webpack")) {
+    fail(
+      `package.json "build" must run \`next build --webpack\` (found: "${buildScript}"). ` +
+        `Turbopack's PostCSS worker cannot connect back over loopback on the host's build ` +
+        `container and the deploy panics on src/app/globals.css. ` +
+        `See docs/ADR-0001-build-with-webpack.md before changing this.`,
+    );
+  }
 }
 
 // ─── Report ───────────────────────────────────────────────────────────────

@@ -1,9 +1,13 @@
 {
+  "_note": "Hostinger reads its build settings from the hPanel Node.js page, not from this file. This file is the checked-in record of what those settings must be, so a panel change that diverges from the repository is visible in review. scripts/check-manifest.mjs requires it to exist. If the panel and this file disagree, the panel wins at runtime and this file is wrong - fix it.",
+  "_buildPipeline": "The host runs `npm install` then `npm run build`. npm runs the lifecycle scripts around build automatically, so `npm run build` is really: prebuild (scripts/ensure-prisma-client.mjs -> prisma generate) -> next build --webpack -> scripts/finalize-standalone.mjs -> postbuild (content validation, non-blocking). Nothing else needs to be added to the panel's build command.",
+  "_whyWebpack": "next build --webpack is mandatory. Turbopack runs PostCSS in a node worker that must connect back over 127.0.0.1, which the host's build container blocks; the deploy panics on src/app/globals.css. See docs/ADR-0001-build-with-webpack.md.",
   "nodeVersion": "22",
   "packageManager": "npm",
   "installCommand": "npm install",
-  "buildCommand": "npm run db:generate && npm run build",
-  "startCommand": "NODE_ENV=production node .next/standalone/server.js",
+  "buildCommand": "npm run build",
+  "startCommand": "npm start",
+  "entryFile": "server.js",
   "outputDirectory": ".next/standalone",
   "installSubDirectory": "/",
   "environmentVariables": {
@@ -11,13 +15,22 @@
     "APP_URL": "https://english.aloeducation.com",
     "APP_PORT": "3000",
     "PORT": "3000",
-    "DATABASE_URL": "CONFIGURE_IN_HOSTINGER_PANEL",
-    "AUTH_SECRET": "GENERATE_WITH_openssl_rand_base64_48"
+    "HOSTNAME": "0.0.0.0",
+    "DATABASE_URL": "SET_AN_ABSOLUTE_PATH_IN_THE_PANEL__file:/home/<user>/alo-data/db/production.db",
+    "AUTH_SECRET": "GENERATE_WITH__openssl_rand_-base64_48",
+    "APP_DATA_DIR": "SET_AN_ABSOLUTE_PATH_IN_THE_PANEL__outside_the_release_directory",
+    "AI_ENABLED": "false"
+  },
+  "_environmentNotes": {
+    "DATABASE_URL": "Must be ABSOLUTE. The generated standalone server calls process.chdir(__dirname), so a relative file:./db/*.db resolves inside .next/standalone - a directory the deploy pipeline replaces on every push. src/lib/paths.ts detects this and logs a warning, but set it correctly.",
+    "APP_DATA_DIR": "Absolute directory for data that must survive a redeploy (database, uploads, backups). Defaults to the repository root when unset.",
+    "AUTH_SECRET": "Minimum 32 characters. Generate with: openssl rand -base64 48. Never commit it.",
+    "HOSTNAME": "Leave 0.0.0.0 so the host's reverse proxy can reach the app."
   },
   "postDeployActions": [
     "npx prisma migrate deploy",
     "node prisma/seed.mjs",
-    "node prisma/seed-rbac.ts",
-    "node prisma/seed-all-exams.ts"
-  ]
+    "npx prisma db seed"
+  ],
+  "_postDeployNotes": "Run once after the first successful deploy, from the repository root, with the same DATABASE_URL the app uses. `prisma migrate deploy` is the only safe way to provision production - never `migrate dev`, `db push` or `migrate reset`. Seeding is idempotent for exam types and RBAC; it must never be pointed at a database holding real user data without reading the script first."
 }

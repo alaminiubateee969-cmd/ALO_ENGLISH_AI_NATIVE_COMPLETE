@@ -4,6 +4,7 @@
 
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { getUploadDir } from "@/lib/paths";
 import { readFile } from "fs/promises";
 import { resolve, sep } from "path";
 
@@ -20,7 +21,10 @@ export async function GET(req: Request) {
     // UPLOAD_DIR is resolved at runtime, so these paths cannot be traced at
     // build time. Without the turbopackIgnore hints, Next.js traces and bundles
     // the entire project (including public/) into the server output.
-    const uploadDir = process.env.UPLOAD_DIR || "/tmp/alo-english-uploads";
+    //
+    // getUploadDir() resolves under the data root (see src/lib/paths.ts) rather
+    // than defaulting to /tmp, which a container restart discards.
+    const uploadDir = getUploadDir();
     const resolvedPath = resolve(/*turbopackIgnore: true*/ uploadDir, file);
     const normalizedBase = resolve(/*turbopackIgnore: true*/ uploadDir);
     if (!resolvedPath.startsWith(normalizedBase + sep) && resolvedPath !== normalizedBase) {

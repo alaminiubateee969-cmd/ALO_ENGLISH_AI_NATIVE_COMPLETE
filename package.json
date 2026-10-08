@@ -2,15 +2,17 @@
   "name": "alo-english-test-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "ALO English Test Platform \u2014 production-ready Next.js application for English exam practice.",
+  "description": "ALO English Test Platform — production-ready Next.js application for English exam practice.",
   "engines": {
     "node": ">=22.18.0"
   },
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "prebuild": "node scripts/ensure-prisma-client.mjs",
+    "build": "next build --webpack && node scripts/finalize-standalone.mjs",
     "postbuild": "node scripts/validate-content.mjs || echo '[postbuild] content validation reported problems (see above). The build continues so a content gap cannot take production down; CI enforces this gate via npm run content:validate.'",
-    "start": "NODE_ENV=production node .next/standalone/server.js",
+    "start": "node server.js",
+    "start:standalone": "NODE_ENV=production node .next/standalone/server.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "bun test tests/",
