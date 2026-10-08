@@ -8,7 +8,7 @@
 import { db } from "@/lib/db";
 import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
-import { SAFE_QUESTION_SELECT, loadAttemptQuestions } from "@/lib/exam/questions";
+import { SAFE_QUESTION_SELECT, loadAttemptQuestions, withDefaultOptions } from "@/lib/exam/questions";
 import { requireAuth } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -47,11 +47,12 @@ export async function GET(req: Request): Promise<Response> {
       return badRequest("practiceSetId (or attemptId) is required");
     }
 
-    const questions = await db.question.findMany({
+    const rawQuestions = await db.question.findMany({
       where: { practiceSetId },
       orderBy: { order: "asc" },
       select: SAFE_QUESTION_SELECT,
     });
+    const questions = rawQuestions.map((q) => withDefaultOptions(q));
 
     // Group by section
     const bySection = questions.reduce((acc, q) => {

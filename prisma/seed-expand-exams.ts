@@ -43,6 +43,23 @@ async function addQuestions(examCode: string, questions: Q[]) {
   let order = existing + 1;
 
   for (const q of questions) {
+    const type = q.type.toUpperCase();
+    let options = q.options || null;
+    let correctIndex = q.correctIndex ?? null;
+    let correctAnswer = q.correctAnswer || null;
+    if ((type === "TRUE_FALSE_NOT_GIVEN" || type === "TRUE_FALSE") && !options) {
+      const labels = type === "TRUE_FALSE" ? ["True", "False"] : ["True", "False", "Not Given"];
+      options = JSON.stringify(labels);
+      if (correctIndex === null && correctAnswer) {
+        const norm = String(correctAnswer).toUpperCase().replace(/[^A-Z]/g, "");
+        const map: Record<string, number> = { T: 0, TRUE: 0, YES: 0, Y: 0, F: 1, FALSE: 1, NO: 1, N: 1, NG: 2, NOTGIVEN: 2 };
+        correctIndex = map[norm] ?? null;
+      }
+    }
+    let correctIndices = (q as any).correctIndices || null;
+    if (type === "MATCHING" && !correctIndices && correctIndex !== null) {
+      correctIndices = JSON.stringify([correctIndex]);
+    }
     await db.question.create({
       data: {
         practiceSetId: ps.id,
@@ -50,9 +67,10 @@ async function addQuestions(examCode: string, questions: Q[]) {
         type: q.type,
         prompt: q.prompt,
         passage: q.passage || null,
-        options: q.options || null,
-        correctAnswer: q.correctAnswer || null,
-        correctIndex: q.correctIndex ?? null,
+        options,
+        correctAnswer,
+        correctIndex,
+        correctIndices,
         wordLimit: q.wordLimit || null,
         points: 1,
         order: order++,
