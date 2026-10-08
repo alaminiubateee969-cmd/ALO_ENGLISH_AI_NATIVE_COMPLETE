@@ -43,6 +43,12 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      # Preflight: a malformed manifest or a missing lockfile makes
+      # `bun install --frozen-lockfile` fail with a generic "exit code 1" and
+      # every later step is skipped. Name the actual problem first.
+      - name: Validate package manifest
+        run: node scripts/check-manifest.mjs
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -115,20 +121,55 @@ jobs:
         env:
           DATABASE_URL: "file:./ci-test.db"
 
+      # The gate compares what ran against what was supposed to run. Three
+      # failure shapes are all reported explicitly:
+      #   - the ledger is absent, meaning an earlier step failed or was skipped
+      #     and no suite ran at all (this used to crash on `cat` and hide the
+      #     real cause behind "No such file or directory"),
+      #   - a suite is missing from the ledger, meaning it never executed,
+      #   - a suite recorded a non-zero exit code.
+      # A suite that silently did not run can therefore never look green.
       - name: Verify every suite passed
         if: always()
+        env:
+          EXPECTED_SUITES: "smoke engine rbac attempt"
         run: |
-          cat test-results.txt
-          while IFS='=' read -r name code; do
-            [ -z "$name" ] && continue
-            if [ "$code" != "0" ]; then
-              echo "::error ::test suite failed: $name (exit $code)"
-            fi
-          done < test-results.txt
-          if grep -qvE '=0$' test-results.txt; then
+          if [ ! -f test-results.txt ]; then
+            echo "::error ::no test suite ran: test-results.txt was never created. An earlier step failed or was skipped — see the first failing step above."
             exit 1
           fi
-          echo "All test suites passed."
+
+          echo "Recorded results:"
+          cat test-results.txt
+
+          status=0
+          ran=0
+          for suite in $EXPECTED_SUITES; do
+            line=$(grep -E "^${suite}=" test-results.txt | tail -1 || true)
+            if [ -z "$line" ]; then
+              echo "::error ::test suite did not run: $suite"
+              status=1
+            elif [ "$line" != "${suite}=0" ]; then
+              echo "::error ::test suite failed: ${suite} (exit ${line#${suite}=})"
+              status=1
+            else
+              ran=$((ran + 1))
+            fi
+          done
+
+          # Anything recorded that is not in the expected list means the suite
+          # list above is stale — fail rather than ignore untracked results.
+          while IFS='=' read -r name code; do
+            [ -z "$name" ] && continue
+            case " $EXPECTED_SUITES " in
+              *" $name "*) ;;
+              *) echo "::error ::unexpected suite in ledger: $name (expected: $EXPECTED_SUITES)"
+                 status=1 ;;
+            esac
+          done < test-results.txt
+
+          [ "$status" -eq 0 ] || exit 1
+          echo "All test suites passed ($ran/$ran green)."
 
       - name: Build
         run: bun run build
