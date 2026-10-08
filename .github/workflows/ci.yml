@@ -9,6 +9,12 @@
 #   6. Production build
 #   7. Helper script syntax validation (bash -n)
 #   8. Archive verification + checksum
+#   9. Host-parity build — the host's exact npm pipeline, then boot the artifact
+#
+# Jobs 1-8 run under bun, which is how development and CI run. The host runs
+# npm, and runs only `npm install` followed by `npm run build`. Job 9 reproduces
+# that command for command; without it, CI can be green on a commit the host
+# cannot deploy.
 
 name: CI
 
@@ -56,6 +62,13 @@ jobs:
       # Prisma engine and no database.
       - name: Verify schema/migration parity
         run: node scripts/check-schema-migrations.mjs
+
+      # The four root inventory CSVs are generated from source. They were
+      # hand-written once and then drifted — 25 models against 44 in the schema,
+      # 51 endpoints against 73 route files. --check regenerates in memory and
+      # fails if what is committed differs, so they cannot drift again.
+      - name: Verify inventories match source
+        run: node scripts/generate-inventories.mjs --check
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -241,6 +254,92 @@ jobs:
           test -f .next/standalone/server.js || { echo "Build output missing"; exit 1; }
           echo "✓ Build output verified"
 
+  # ─── Host-parity build ─────────────────────────────────────────────────
+  #
+  # The host runs `npm install` then `npm run build` and nothing else. Every
+  # other job in this file uses bun and runs `db:generate` as its own explicit
+  # step — which is precisely how a missing generate step stayed invisible:
+  # CI green, deploy red.
+  #
+  # This job reproduces the host pipeline, proves the `prebuild` gate recovers a
+  # Prisma client that was never generated, and then BOOTS the resulting
+  # artifact and asserts it serves a styled page and a health document. A build
+  # that produces files is not the same as a deploy that works.
+  host-build:
+    name: Host-parity build (npm, exactly as the host runs it)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Validate package manifest
+        run: node scripts/check-manifest.mjs
+
+      - name: Install dependencies (host command)
+        run: npm install
+
+      # The failure this guards against: `@prisma/client`'s postinstall hook
+      # fails silently (npm swallows it and continues), leaving the un-generated
+      # stub, and `next build` dies much later during page-data collection with
+      # "@prisma/client did not initialize yet". Deleting the generated client
+      # reproduces that state exactly and proves `npm run build` repairs it.
+      - name: Prove prebuild recovers a missing Prisma client
+        run: |
+          rm -rf node_modules/.prisma
+          npm run prebuild
+          test -f node_modules/.prisma/client/schema.prisma || {
+            echo "::error ::prebuild did not generate the Prisma client"
+            exit 1
+          }
+          echo "✓ prebuild regenerated the client from scratch"
+
+      - name: Build (host command)
+        run: npm run build
+        env:
+          DATABASE_URL: "file:./ci-host-build.db"
+          AUTH_SECRET: "ci-test-secret-not-for-production-use-32chars"
+
+      # `next build` does not copy .next/static, public/ or prisma/ into the
+      # standalone output. A build that skipped that step publishes an
+      # unstyled, asset-less site while still reporting success.
+      - name: Verify the deployment artifact is complete
+        run: |
+          missing=0
+          for f in \
+            server.js \
+            .next/standalone/server.js \
+            .next/standalone/.next/static \
+            .next/standalone/public \
+            .next/standalone/prisma/schema.prisma \
+            .next/standalone/node_modules/.prisma/client/schema.prisma
+          do
+            if [ -e "$f" ]; then
+              echo "✓ $f"
+            else
+              echo "::error ::deployment artifact is missing $f"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+
+      - name: Provision the database the way production does
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: "file:./ci-host-build.db"
+
+      - name: Boot the artifact and assert it serves traffic
+        run: node scripts/smoke-standalone.mjs --timeout 120
+        env:
+          DATABASE_URL: "file:./ci-host-build.db"
+          AUTH_SECRET: "ci-test-secret-not-for-production-use-32chars"
+
   # ─── Script validation ───────────────────────────────────────────────
   scripts:
     name: Script syntax validation
@@ -253,7 +352,11 @@ jobs:
 
       - name: Validate bash scripts
         run: |
-          for script in scripts/*.sh; do
+          # git-push.sh lives at the repository root, not in scripts/, but it is
+          # the one script that touches production: it pushes to main, which
+          # Hostinger deploys automatically. It is syntax-checked here so it
+          # cannot rot between uses.
+          for script in scripts/*.sh git-push.sh; do
             echo "Checking $script…"
             bash -n "$script" || { echo "Syntax error in $script"; exit 1; }
           done
@@ -278,7 +381,7 @@ jobs:
   # ─── Deployment artifact ─────────────────────────────────────────────
   package:
     name: Create deployment artifact
-    needs: [verify, scripts]
+    needs: [verify, scripts, host-build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'

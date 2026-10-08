@@ -1,127 +1,301 @@
 # ALO English — Hostinger Production Deployment
 
-This is the authoritative production deployment guide.
+**This is the authoritative production deployment guide.**
 
-## Production Architecture
+Production is `https://english.aloeducation.com`, deployed automatically by
+Hostinger from the `main` branch of
+`alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE`. Nothing in GitHub
+Actions deploys; Actions only gates and records (see
+`.github/workflows/deploy.yml`).
+
+---
+
+## Production pipeline
 
 ```
-GitHub (main branch)
+push to main
    ↓
-Hostinger Git Automatic Deployment
-   ↓
-Hostinger Node.js Web App
+Hostinger automatic Git deployment
    ↓
 npm install
-npx prisma generate
 npm run build
-npx prisma migrate deploy
-node .next/standalone/server.js
+   ├─ prebuild   node scripts/ensure-prisma-client.mjs   → prisma generate
+   ├─ build      next build --webpack                    → .next + .next/standalone
+   ├─ finalize   node scripts/finalize-standalone.mjs    → copies .next/static,
+   │                                                       public/ and prisma/
+   │                                                       into .next/standalone
+   └─ postbuild  content validation (non-blocking; CI enforces it)
+   ↓
+npx prisma migrate deploy        (first deploy, and after any schema change)
+   ↓
+node server.js                   → .next/standalone/server.js
    ↓
 https://english.aloeducation.com
 ```
 
-## Step-by-step Setup in Hostinger Panel
+The host runs only `npm install` and `npm run build`. npm runs `prebuild`,
+`build` and `postbuild` automatically, so **nothing else has to be added to the
+panel's build command**.
 
-### 1. Create/Open Node.js Web App
-1. Log in to hPanel → Hosting → english.aloeducation.com → Advanced → Node.js.
-2. **Node.js version**: 22.x
-3. **Package manager**: npm
-4. **Application root**: `/` (repository root)
-5. **Application entry file**: `.next/standalone/server.js`
-6. **Application URL**: `https://english.aloeducation.com`
-7. Save.
+---
 
-### 2. Connect Git Repository
-1. In Hostinger → Website → Git → Configure.
-2. Connect the GitHub repository `alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE`.
-3. Branch: `main`.
-4. Enable **Auto Deployment**.
-5. Deploy path: `/`.
+## Panel settings
 
-### 3. Set Environment Variables
-In Node.js control panel → Configuration → Environment Variables, set:
+hPanel → Hosting → `english.aloeducation.com` → Advanced → Node.js
+
+| Setting | Value |
+| --- | --- |
+| Node.js version | **22.x** |
+| Package manager | **npm** |
+| Application root | `/` (repository root) |
+| Application entry file | **`server.js`** |
+| Application URL | `https://english.aloeducation.com` |
+
+hPanel → Website → Git → Configure
+
+| Setting | Value |
+| --- | --- |
+| Repository | `alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE` |
+| Branch | **`main`** |
+| Auto Deployment | **enabled** |
+| Deploy path | `/` |
+
+`server.js` at the repository root is a stable entry point that never moves
+between builds; it checks that a build exists, applies sane defaults for
+`NODE_ENV` / `HOSTNAME` / `PORT`, and hands over to
+`.next/standalone/server.js`. Pointing the panel directly at
+`.next/standalone/server.js` also works, but that path is a build output and is
+easy to leave blank — which is how an app ends up deployed and never started.
+
+`hostinger.json` in the repository root is the checked-in record of these
+values. Hostinger reads the panel, not that file; if the two ever disagree, the
+panel wins at runtime and `hostinger.json` is wrong — fix it in the same commit
+as the panel change.
+
+---
+
+## Environment variables
+
+hPanel → Node.js → Configuration → Environment Variables
 
 | Variable | Value | Required |
-|----------|-------|----------|
+| --- | --- | --- |
 | `NODE_ENV` | `production` | Yes |
-| `DATABASE_URL` | `file:./db/production.db` (or your MySQL string) | Yes |
-| `AUTH_SECRET` | Generate with `openssl rand -base64 48` | Yes |
+| `HOSTNAME` | `0.0.0.0` | Yes — anything else and the proxy cannot reach the app |
+| `PORT` / `APP_PORT` | `3000` | Yes |
 | `APP_URL` | `https://english.aloeducation.com` | Yes |
-| `APP_PORT` | `3000` | Yes |
-| `PORT` | `3000` | Yes |
-| `AI_ENABLED` | `false` | No (local rule engine works without) |
+| `DATABASE_URL` | `file:/ABSOLUTE/PATH/db/production.db` | Yes — **must be absolute** |
+| `APP_DATA_DIR` | `/ABSOLUTE/PATH` outside the release directory | Strongly recommended |
+| `AUTH_SECRET` | `openssl rand -base64 48` (32+ characters) | Yes |
+| `AI_ENABLED` | `false` | No — the local rule engine works without it |
 | `GROQ_API_KEY` | (optional) | No |
+| `UPLOAD_DIR` | (optional; defaults to `<APP_DATA_DIR>/upload`) | No |
+| `BACKUP_DIR` | (optional; defaults to `<APP_DATA_DIR>/db/backup`) | No |
 
-**Do not** rely on the tracked `.env` for production. Set every secret in the Hostinger panel.
+### Why `DATABASE_URL` must be absolute
 
-### 4. Build Commands
-Hostinger's Node.js app runs these automatically on each git push:
+The generated standalone server runs `process.chdir(__dirname)`, so at runtime
+the working directory is `<app>/.next/standalone`, **not** the repository root.
+A relative `file:./db/production.db` therefore resolves to
+`<app>/.next/standalone/db/production.db` — inside the build output, which every
+deploy replaces. The symptoms are a site that boots healthy and then reports an
+empty database, and a redeploy that appears to delete everything, while
+`prisma migrate deploy` run from the repository root writes to a *different*
+file.
+
+`src/lib/paths.ts` resolves relative paths against the application root instead
+of the working directory, creates the directory, rewrites
+`process.env.DATABASE_URL` to the absolute value it will actually use, logs it
+at startup, and warns loudly if it lands inside `.next/`. That is a safety net,
+not a substitute for configuring the panel correctly.
+
+### The tracked `.env`
+
+`.env` is committed on purpose. It holds **non-secret defaults only**, so a
+fresh checkout and a host build both boot even when the panel is only partly
+configured. Next.js never overwrites a value already present in `process.env`,
+so anything you set in the panel wins. Never put a real secret in it — it is in
+a public repository. Use `.env.local` for local secrets; it is git-ignored.
+
+---
+
+## First deploy
+
+After the first successful build, open the Hostinger terminal and run, from the
+repository root, with the same `DATABASE_URL` the app uses:
 
 ```bash
-npm install
-npx prisma generate
-npm run build
+npx prisma migrate deploy     # creates the schema — the ONLY safe provisioning command
+npm run prisma:seed           # admin user, exam types, settings AND the question bank
+npm run prisma:seed:rbac      # roles, permissions, teams
+npm run prisma:seed:exams     # the remaining exam sets (all-missing + expand)
+npm run content:validate      # asserts the bank is populated and every question is gradeable
 ```
 
-After the first deploy, open the Hostinger terminal (or SSH if enabled, but not required) and run:
+Run them in that order. `prisma:seed` is a chain — `prisma/seed.mjs` followed by
+`seed-questions.ts`, `seed-all-exams.ts` and `seed-gre-gmat-sat-act.ts` — so it is
+the step that actually puts questions in the database; `node prisma/seed.mjs` on
+its own leaves the bank empty. `content:validate` is the check for that: it exits
+non-zero on an empty bank rather than passing every other assertion vacuously,
+which is what used to happen. A first deploy that skips it can come up healthy,
+serving an exam platform with no exams in it.
+
+Never use `prisma migrate dev`, `db push` or `migrate reset` against
+production. `migrate deploy` is non-interactive and only applies migrations that
+have not run yet; the others rewrite schema or drop data.
+
+### Listening audio
+
+Listening questions need MP3s that are generated, not committed:
 
 ```bash
-cd ~/public_html
-npx prisma migrate deploy
-node prisma/seed.mjs
+npm run audio:install-deps    # pip install edge-tts
+npm run audio:generate        # writes public/audio/listening/*.mp3, updates audioUrl
 ```
 
-This creates the database tables, admin user, exam types, and seeds the question bank.
-
-### 5. Generate Listening Audio
-Once the application is built and the database is seeded, generate audio assets:
+`public/` is copied into `.next/standalone` **during the build**, so audio
+generated after a build is not served by the running app. Either generate before
+building, or re-run the copy step afterwards:
 
 ```bash
-npm install -g edge-tts  # or: pip install edge-tts
-node scripts/generate-listening-audio.mjs
+node scripts/finalize-standalone.mjs
 ```
 
-This uses the free Microsoft Edge TTS (edge-tts) to generate MP3 files from the original listening scripts, and saves them into `public/audio/listening/` while updating each question's `audioUrl`. This step is idempotent — existing files are not regenerated.
+Then restart the app from the panel. The generator is idempotent — existing
+files are not regenerated.
 
-### 6. Start the Application
-The Hostinger Node.js service runs the start command from `package.json`:
+---
 
-```bash
-NODE_ENV=production node .next/standalone/server.js
-```
-
-Restart the app from the Hostinger panel once all environment variables are set.
-
-### 7. Verify
+## Verify a release
 
 ```bash
 curl https://english.aloeducation.com/api/health
 ```
 
-Expected response: `{"status":"healthy",...}`
+Expected: `{"status":"healthy","version":"1.0.0","checks":{"database":"connected","examTypes":20}}`
 
-Then visit https://english.aloeducation.com, register/login, start a practice test.
+Then check, in this order — each of these has failed silently before:
 
-## Build & Deploy Commands Reference
+1. **The home page renders with styles.** An unstyled page means the stylesheet
+   never reached `.next/standalone/.next/static`.
+2. **`/login` loads** and you can sign in.
+3. **A practice test starts** and submits — this exercises the attempt engine,
+   not just the marketing pages.
+4. **The deploy log shows the resolved data paths.** `src/lib/env.ts` prints
+   them on boot:
+
+   ```
+   [env] data root: /home/<user>/alo-data
+   [env] database:  file:/home/<user>/alo-data/db/production.db
+   [env] uploads:   /home/<user>/alo-data/upload
+   [env] backups:   /home/<user>/alo-data/db/backup
+   ```
+
+   If `database` points anywhere under `.next/`, stop and fix `DATABASE_URL`.
+
+`.github/workflows/deploy.yml` also probes `/api/health` on every push to
+`main`. On a push that probe is informational — Hostinger is usually still
+building — so it cannot fail the commit. Run it manually
+(Actions → *Deployment readiness (Hostinger)* → Run workflow) to assert that
+production is healthy right now.
+
+### Verifying a commit before it reaches `main`
+
+```bash
+npm install
+npm run verify        # files, schema/migration parity, lint, types, artifact,
+                      # and a live boot of the built server
+```
+
+`scripts/smoke-standalone.mjs` — which `verify` and CI both run — boots the real
+artifact with `node server.js` and asserts it serves a styled page, a second
+route, `/logo.svg` and a `/api/health` document. A build that produces files is
+not the same as a deploy that works.
+
+---
+
+## Build command reference
 
 | Command | Purpose |
-|---------|---------|
+| --- | --- |
 | `npm install` | Install dependencies |
-| `npm run db:generate` | Generate Prisma client |
-| `npm run build` | Production build (Next.js standalone) |
-| `npm run db:migrate` | Apply database migrations |
-| `node prisma/seed.mjs` | Seed admin + exam types |
-| `node prisma/seed-all-missing-exams.ts` | Seed question banks for all exams |
+| `npm run prebuild` | Generate the Prisma client if it is missing (runs automatically) |
+| `npm run build` | Production build + assemble `.next/standalone` |
+| `npm start` | Start the production server (`node server.js`) |
+| `npm run db:migrate` | `prisma migrate deploy` — apply migrations |
+| `npm run db:seed` | Seed admin + exam types only (`prisma/seed.mjs`); **no questions** |
+| `npm run prisma:seed` | Seed admin + exam types **and the question bank** (the full chain) |
+| `npm run prisma:seed:rbac` | Seed roles, permissions, teams |
+| `npm run prisma:seed:exams` | Seed the remaining exam sets |
+| `npm run db:seed:questions` | Seed IELTS questions only |
 | `npm run audio:generate` | Generate listening audio MP3s |
-| `npm run content:validate` | Validate no ungradeable questions |
-| `npm start` | Start the production server |
+| `npm run content:validate` | Assert the bank is not empty and no question is ungradeable |
+| `npm run inventories` | Regenerate the four root inventory CSVs from source |
+| `npm run verify` | Every pre-deployment gate, including a live artifact boot |
+| `node scripts/finalize-standalone.mjs` | Re-copy `public/` and `.next/static` into the artifact |
+
+---
+
+## Troubleshooting
+
+**`TurbopackInternalError: [project]/src/app/globals.css … node process exited
+before we could connect to it with exit status: 0`**
+
+The build ran with Turbopack. Turbopack runs PostCSS in a `node` worker that must
+connect back over `127.0.0.1`, which the host's build container blocks. The
+`build` script must contain `next build --webpack`; `scripts/check-manifest.mjs`
+fails CI if it does not. See
+[`docs/ADR-0001-build-with-webpack.md`](./docs/ADR-0001-build-with-webpack.md).
+Do **not** downgrade `@tailwindcss/postcss` — the CSS file in the error is where
+the failure surfaces, not what causes it.
+
+**`@prisma/client did not initialize yet. Please run "prisma generate"`**
+
+The client was never generated. `npm run build` does this in `prebuild`; if it
+still fails, the host could not reach `https://binaries.prisma.sh` to download
+the query engine. `scripts/ensure-prisma-client.mjs` prints the cause.
+
+**Site is up but the database is empty / every deploy loses data**
+
+`DATABASE_URL` is relative. See "Why `DATABASE_URL` must be absolute" above.
+
+**Deploy succeeds but the app never starts**
+
+The panel's entry file is blank or points at a path that no longer exists. Set
+it to `server.js`, or set the start command to `npm start`.
+
+**Page renders without any styling**
+
+`.next/static` was not copied into the standalone output. `npm run build` does
+this via `scripts/finalize-standalone.mjs`; re-run that script and restart.
+
+**`PrismaClient is unable to run in this browser environment`**
+
+The query engine was not traced into `.next/standalone/node_modules`.
+`scripts/finalize-standalone.mjs` detects this and repairs it; if it still
+happens, check that step's output in the build log.
+
+---
 
 ## Rollback
-If a deploy fails, in Hostinger Node.js panel → Rollback to previous deployment, or redeploy the previous commit via the Git deployment history.
 
-## What NOT to Do
-- Do NOT set up VPS, SSH, or PM2.
-- Do NOT introduce a second deployment workflow (GitHub Actions deploys to VPS, etc.).
-- Do NOT commit real secrets into `.env`.
-- Do NOT reset production database — use `prisma migrate deploy`, not `db push` or `migrate reset`.
-- Do NOT run seed scripts that delete existing user data.
+Hostinger Node.js panel → Rollback to the previous deployment, or redeploy a
+previous commit from the Git deployment history. Migrations are additive and
+`migrate deploy` never re-runs an applied migration, so rolling the code back
+does not require rolling the database back.
+
+---
+
+## What NOT to do
+
+- Do **not** set up a VPS, SSH or a Node process manager. Hostinger is the only
+  production path; `scripts/check-manifest.mjs` fails CI if a workflow
+  reintroduces one.
+- Do **not** add a second deployment workflow. Two authoritative pipelines means
+  neither is authoritative.
+- Do **not** commit real secrets to `.env`.
+- Do **not** remove `--webpack` from the build script.
+- Do **not** use a relative `DATABASE_URL` in the panel.
+- Do **not** reset the production database — `prisma migrate deploy`, never
+  `db push` or `migrate reset`.
+- Do **not** run seed scripts that delete existing user data.

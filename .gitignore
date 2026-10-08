@@ -1,6 +1,16 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ═══════════════════════════════════════════════════════════════════════
+# .gitignore — ALO English Test Platform
+#
+# Rule of thumb: the repository contains what a deploy needs, and nothing
+# else. The host clones this on every push, so every byte here is a byte the
+# build has to fetch before it can start.
+#
+# If a path is listed here but is also tracked in the index, that is a bug —
+# `git ls-files -i -c --exclude-standard` must come back empty except for the
+# one deliberate exception noted under "Environment" below.
+# ═══════════════════════════════════════════════════════════════════════
 
-# dependencies
+# ─── Dependencies ──────────────────────────────────────────────────────
 node_modules
 /.pnp
 .pnp.*
@@ -10,89 +20,103 @@ node_modules
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# ─── Testing ───────────────────────────────────────────────────────────
 /coverage
 
-# next.js
+# ─── Next.js build output ──────────────────────────────────────────────
 /.next/
 /out/
-
-# production
 /build
+/dist/
 
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files — keep .env.example, ignore real .env
-.env
+# ─── Environment ───────────────────────────────────────────────────────
+# Real environment files are never committed.
+#
+# DELIBERATE EXCEPTION: the root `.env` IS tracked. It contains non-secret
+# defaults only, so a fresh checkout and a host build both boot even when the
+# panel is only partly configured. Every production secret is set in the host's
+# environment panel, and Next.js never overwrites a value already present in
+# process.env — so panel values always win over this file. If you put a real
+# secret in `.env`, you have committed it to a public repository.
 .env.local
 .env.*.local
 !.env.example
 
-# vercel
-.vercel
+# ─── Databases ─────────────────────────────────────────────────────────
+# Provisioned on the host by `prisma migrate deploy`. A database in git means
+# dev accounts and a stale migration state shipping to production.
+*.db
+*.db-journal
+*.sqlite
+/db/*
+!/db/.gitkeep
 
-# typescript
+# ─── Runtime data ──────────────────────────────────────────────────────
+# Created on the host at runtime. Must live outside the release directory —
+# see APP_DATA_DIR in .env.example.
+/upload/*
+!/upload/.gitkeep
+/download/*
+!/download/.gitkeep
+/logs/
+
+# ─── Logs ──────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dev.log
+dev.out.log
+server.log
+
+# ─── Release archives ──────────────────────────────────────────────────
+*.tar.gz
+*.zip
+
+# ─── Legacy sibling projects ───────────────────────────────────────────
+# Archived codebases that are not part of this deployment. The CI artifact
+# excludes them too (.github/workflows/ci.yml → "Create source archive").
+/english-aloeducation/
+/tool-results/
+/worklog.md
+
+# cpanel-production/ IS deployed: /api/deliverable and /api/deliverables serve
+# from it for SUPER_ADMIN. Its build output and logs are not — those routes
+# skip both directories when walking the tree.
+/cpanel-production/dist/
+/cpanel-production/logs/
+
+# ─── Superseded delivery guides ────────────────────────────────────────
+# These describe a VPS/nginx/systemd delivery that was retired. The
+# authoritative guide is HOSTINGER_DEPLOYMENT.md. They remain in git history.
+/FINAL-DELIVERY-GUIDE.md
+/PRODUCTION-DEPLOYMENT-GUIDE.md
+/FINAL-PRODUCTION-PACKAGE.zip
+/english-aloeducation-web-crm-production.tar.gz
+/SHA256SUMS.txt
+
+# ─── Tooling / editor / OS ─────────────────────────────────────────────
+.vercel
 *.tsbuildinfo
 next-env.d.ts
 local-*
 .claude
 .z-ai-config
-*.log
-dev.log
-dev.out.log
-test
-prompt
-
-server.log
-
-# Skills directory (internal tooling, not part of app)
+/test
+/prompt
 /skills/
-
-# Production artifacts
-/dist/
-*.tar.gz
-*.zip
-
-# Database files (generated at deploy time)
-*.db
-*.db-journal
-/db/
-
-# Uploads (user-generated at runtime)
-/upload/
-/download/
-
-# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# OS
+.DS_Store
 Thumbs.db
+*.pem
 
-# Logs
-logs/
-*.log
-
-# Separate project directories (not part of this deployment)
-/cpanel-production/
-/english-aloeducation/
-/tool-results/
-/worklog.md
-FINAL-PRODUCTION-PACKAGE.zip
-FINAL-DELIVERY-GUIDE.md
-PRODUCTION-DEPLOYMENT-GUIDE.md
-english-aloeducation-web-crm-production.tar.gz
-
-# Keep these directories (don't ignore)
+# ─── Kept on purpose ───────────────────────────────────────────────────
 !mini-services/
 !examples/
+
+# Runtime PID files from .zscripts/dev.sh
+*.pid

@@ -15,7 +15,7 @@
 # Every command prints WHAT/WHY/EXPECTED before running.
 # ═══════════════════════════════════════════════════════════════════════
 
-.PHONY: help install dev build start lint typecheck test verify deploy rollback backup restore health db-setup db-seed db-reset clean archive
+.PHONY: help install dev build start lint typecheck test verify preflight smoke inventories deploy rollback backup restore health db-setup db-seed db-reset clean archive
 
 # Default shell — fail fast on errors.
 SHELL := /usr/bin/env bash
@@ -31,7 +31,7 @@ help: ## Show all available commands
 	@echo ""
 
 # ─── Setup ─────────────────────────────────────────────────────────────
-install: ## Install dependencies (bun install --frozen-lockfile)
+install: ## Install dependencies (bun for dev and CI; the host uses npm install)
 	@echo "▸ Installing dependencies…"
 	bun install --frozen-lockfile
 	@echo "✓ Dependencies installed"
@@ -66,7 +66,7 @@ test: ## Run smoke tests
 	bun test tests/
 	@echo "✓ Tests pass"
 
-verify: ## Run the full verification gate (25 checks)
+verify: ## Run the full verification gate (files, schema, lint, types, artifact, live boot)
 	@echo "▸ Running verification gate…"
 	bash scripts/verify.sh
 
@@ -87,8 +87,24 @@ db-reset: ## Reset the database (DESTRUCTIVE)
 	bun run db:reset
 
 # ─── Deployment ────────────────────────────────────────────────────────
-deploy: ## Deploy to the server (run scripts/install.sh)
-	@echo "▸ Starting staged deployment…"
+preflight: ## Dependency-free gates: manifest + schema/migration parity + inventories
+	@echo "▸ Repository preflight…"
+	node scripts/check-manifest.mjs
+	node scripts/check-schema-migrations.mjs
+	node scripts/generate-inventories.mjs --check
+	@echo "✓ Preflight clean"
+
+smoke: ## Boot the built artifact and assert it serves traffic (needs `make build` first)
+	@echo "▸ Booting .next/standalone and probing it…"
+	node scripts/smoke-standalone.mjs
+
+inventories: ## Regenerate the four root inventory CSVs from source
+	@echo "▸ Regenerating inventories…"
+	node scripts/generate-inventories.mjs
+
+deploy: ## OPTIONAL self-managed VPS release (scripts/install.sh). NOT production — see HOSTINGER_DEPLOYMENT.md
+	@echo "⚠ This is the optional self-managed path. Production deploys automatically from main on Hostinger."
+	@echo "  Read HOSTINGER_DEPLOYMENT.md before running this against the production domain."
 	bash scripts/install.sh
 
 rollback: ## Roll back to the previous release
@@ -133,7 +149,7 @@ archive: ## Create the source archive + checksum
 	@cat dist/alo-english-source.tar.gz.sha256
 
 # ─── All-in-one ────────────────────────────────────────────────────────
-ci: lint typecheck test build ## Run all CI checks locally
+ci: preflight lint typecheck test build smoke ## Run all CI checks locally
 	@echo "✓ All CI checks passed"
 
 precommit: lint typecheck ## Pre-commit hook (lint + typecheck)

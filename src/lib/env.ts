@@ -5,9 +5,16 @@
  * Web Apps, variables like PORT, APP_URL are injected by the platform - we
  * provide safe defaults so the app boots without hard failures and then
  * logs what is missing.
+ *
+ * Data paths (DATABASE_URL, UPLOAD_DIR, BACKUP_DIR) are normalized to absolute
+ * paths here, because the generated standalone server chdir's into
+ * `.next/standalone` and a relative path would otherwise resolve inside the
+ * build output. See src/lib/paths.ts.
  */
 
 import { randomBytes } from 'node:crypto';
+import { isAbsolute } from 'node:path';
+import { getBackupDir, getDataRoot, getUploadDir, resolveDatabaseUrl } from './paths';
 
 type EnvVar = {
   key: string;
@@ -22,17 +29,26 @@ const ENV_SCHEMA: EnvVar[] = [
   { key: 'APP_URL', required: false, default: 'https://english.aloeducation.com', description: 'Public application URL' },
   { key: 'APP_PORT', required: false, default: '3000', description: 'Application port (3000)' },
   { key: 'PORT', required: false, description: 'Application port (set by Hostinger)' },
-  { key: 'DATABASE_URL', required: true, description: 'Database connection string (SQLite file:path or MySQL mysql://...)' },
+  { key: 'DATABASE_URL', required: true, description: 'Database connection string (SQLite file:/absolute/path or MySQL mysql://...)' },
   { key: 'AUTH_SECRET', required: false, default: '', description: '32+ char session signing secret (auto-generated if missing in dev)' },
   { key: 'NEXTAUTH_URL', required: false, description: 'NextAuth base URL' },
   { key: 'GROQ_API_KEY', required: false, description: 'Optional Groq AI key' },
-  { key: 'UPLOAD_DIR', required: false, default: './upload', description: 'Upload directory' },
-  { key: 'BACKUP_DIR', required: false, default: './db/backup', description: 'Backup directory' },
+  { key: 'APP_DATA_DIR', required: false, description: 'Absolute directory for data that must survive a redeploy (defaults to the app root)' },
+  // UPLOAD_DIR / BACKUP_DIR have no literal default: they are resolved by
+  // src/lib/paths.ts so they land under the data root rather than under
+  // .next/standalone (see the note at the top of this file).
+  { key: 'UPLOAD_DIR', required: false, description: 'Upload directory (defaults to <data root>/upload)' },
+  { key: 'BACKUP_DIR', required: false, description: 'Backup directory (defaults to <data root>/db/backup)' },
 ];
 
 function validateEnv(): Record<string, string> {
   const errors: string[] = [];
   const env: Record<string, string> = {};
+
+  // Captured before normalization so we can tell the operator whether the host
+  // panel gave us a relative path (which is the configuration that silently
+  // loses the database on a redeploy).
+  const configuredDatabaseUrl = process.env.DATABASE_URL ?? '';
 
   for (const spec of ENV_SCHEMA) {
     let value = process.env[spec.key] ?? '';
@@ -47,6 +63,33 @@ function validateEnv(): Record<string, string> {
     if (value && spec.validate && !spec.validate(value)) {
       errors.push(`  - ${spec.key} has invalid value - ${spec.description}`);
     }
+  }
+
+  // ─── Normalize data paths ───────────────────────────────────────────────
+  // The generated standalone server runs `process.chdir(__dirname)`, so
+  // `process.cwd()` at runtime is `<app>/.next/standalone`. A relative
+  // DATABASE_URL would open a database inside the build output — a directory
+  // the deploy pipeline replaces on every push. Resolve everything to an
+  // absolute path under the data root before Prisma is constructed.
+  const resolvedDatabaseUrl = resolveDatabaseUrl(configuredDatabaseUrl);
+  if (resolvedDatabaseUrl) env.DATABASE_URL = resolvedDatabaseUrl;
+  env.UPLOAD_DIR = getUploadDir();
+  env.BACKUP_DIR = getBackupDir();
+  process.env.UPLOAD_DIR = env.UPLOAD_DIR;
+  process.env.BACKUP_DIR = env.BACKUP_DIR;
+
+  const sqliteSpecifier = configuredDatabaseUrl.startsWith('file:')
+    ? configuredDatabaseUrl.slice('file:'.length).split('?')[0]
+    : '';
+  if (sqliteSpecifier && sqliteSpecifier !== ':memory:' && !isAbsolute(sqliteSpecifier)) {
+    errors.push(
+      `  - DATABASE_URL is a relative path ("${configuredDatabaseUrl}"). It was resolved to ` +
+        `"${env.DATABASE_URL}" for this run, but set an absolute path in the host panel so the ` +
+        `database is unaffected by where the server process is started.`,
+    );
+  }
+  if (env.APP_DATA_DIR && !isAbsolute(env.APP_DATA_DIR)) {
+    errors.push(`  - APP_DATA_DIR must be an absolute path (got "${env.APP_DATA_DIR}")`);
   }
 
   // Auto-generate AUTH_SECRET if not set and we're not in production, or warn.
@@ -86,6 +129,16 @@ function validateEnv(): Record<string, string> {
     errors.forEach((e) => console.warn(e));
     console.warn('');
   }
+
+  // One line so a deploy log always shows where this release keeps its data.
+  // When a production site reports an empty database, this is the first thing
+  // to compare against the host panel's configuration.
+  console.log(
+    `[env] data root: ${getDataRoot()}\n` +
+      `[env] database:  ${env.DATABASE_URL || '(unset)'}\n` +
+      `[env] uploads:   ${env.UPLOAD_DIR}\n` +
+      `[env] backups:   ${env.BACKUP_DIR}`,
+  );
 
   return env;
 }

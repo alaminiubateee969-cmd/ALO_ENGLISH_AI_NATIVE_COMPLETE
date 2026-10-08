@@ -1,52 +1,32 @@
-Method,Path,Auth,Description
-GET/POST,/admin/settings,varies,API route
-GET/POST,/admin/stats,varies,API route
-GET/POST,/agents/status,varies,API route
-GET/POST,/attempts,varies,API route
-GET/POST,/attempts/start,varies,API route
-GET/POST,/attempts/submit,varies,API route
-GET/POST,/auth/login,varies,API route
-GET/POST,/auth/logout,varies,API route
-GET/POST,/auth/me,varies,API route
-GET/POST,/auth/register,varies,API route
-GET/POST,/crm/applications/[id],varies,API route
-GET/POST,/crm/applications,varies,API route
-GET/POST,/crm/appointments/[id],varies,API route
-GET/POST,/crm/appointments,varies,API route
-GET/POST,/crm/branches/[id],varies,API route
-GET/POST,/crm/branches,varies,API route
-GET/POST,/crm/commissions/[id],varies,API route
-GET/POST,/crm/commissions,varies,API route
-GET/POST,/crm/countries/[id],varies,API route
-GET/POST,/crm/countries,varies,API route
-GET/POST,/crm/courses/[id],varies,API route
-GET/POST,/crm/courses,varies,API route
-GET/POST,/crm/departments/[id],varies,API route
-GET/POST,/crm/departments,varies,API route
-GET/POST,/crm/documents/[id],varies,API route
-GET/POST,/crm/documents,varies,API route
-GET/POST,/crm/leads/[id],varies,API route
-GET/POST,/crm/leads,varies,API route
-GET/POST,/crm/messages/[id],varies,API route
-GET/POST,/crm/messages,varies,API route
-GET/POST,/crm/notifications/[id],varies,API route
-GET/POST,/crm/notifications,varies,API route
-GET/POST,/crm/partners/[id],varies,API route
-GET/POST,/crm/partners,varies,API route
-GET/POST,/crm/scholarships/[id],varies,API route
-GET/POST,/crm/scholarships,varies,API route
-GET/POST,/crm/students/[id],varies,API route
-GET/POST,/crm/students,varies,API route
-GET/POST,/crm/tasks/[id],varies,API route
-GET/POST,/crm/tasks,varies,API route
-GET/POST,/crm/universities/[id],varies,API route
-GET/POST,/crm/universities,varies,API route
-GET/POST,/crm/users/[id],varies,API route
-GET/POST,/crm/users,varies,API route
-GET/POST,/deliverable,varies,API route
-GET/POST,/deliverables,varies,API route
-GET/POST,/exam-types,varies,API route
-GET/POST,/health,varies,API route
-GET/POST,/lead,varies,API route
-GET/POST,/practice-sets,varies,API route
-GET/POST,,varies,API route
+/admin/dashboard,protected (proxy redirect),static shell + client,src/app/admin/dashboard/page.tsx
+/admin/exam-center,protected (proxy redirect),static shell + client,src/app/admin/exam-center/page.tsx
+/admin/learning,protected (proxy redirect),static shell + client,src/app/admin/learning/page.tsx
+/ask-handbook,public (proxy allowlist),static shell + client,src/app/ask-handbook/page.tsx
+/book-consultation,public (proxy allowlist),static (prerendered),src/app/book-consultation/page.tsx
+/contact,public (proxy allowlist),static (prerendered),src/app/contact/page.tsx
+/cookie-policy,public (proxy allowlist),static (prerendered),src/app/cookie-policy/page.tsx
+/course-finder,public (proxy allowlist),static (prerendered),src/app/course-finder/page.tsx
+/destinations,public (proxy allowlist),static (prerendered),src/app/destinations/page.tsx
+/employee/dashboard,protected (proxy redirect),static shell + client,src/app/employee/dashboard/page.tsx
+/events,public (proxy allowlist),static (prerendered),src/app/events/page.tsx
+/exam-prep,protected (proxy redirect),static shell + client,src/app/exam-prep/page.tsx
+/forgot-password,public (proxy allowlist),static (prerendered),src/app/forgot-password/page.tsx
+/language-prep,public (proxy allowlist),static (prerendered),src/app/language-prep/page.tsx
+/live-exam,protected (proxy redirect),static shell + client,src/app/live-exam/page.tsx
+/login,public (proxy allowlist),static (prerendered),src/app/login/page.tsx
+/page.tsx,protected (proxy redirect),static (prerendered),src/app/page.tsx
+/partner/dashboard,protected (proxy redirect),static shell + client,src/app/partner/dashboard/page.tsx
+/portals,public (proxy allowlist),static (prerendered),src/app/portals/page.tsx
+/practice-test,protected (proxy redirect),static shell + client,src/app/practice-test/page.tsx
+/privacy-policy,public (proxy allowlist),static (prerendered),src/app/privacy-policy/page.tsx
+/register,public (proxy allowlist),static (prerendered),src/app/register/page.tsx
+/reset-password,public (proxy allowlist),static (prerendered),src/app/reset-password/page.tsx
+/resources,public (proxy allowlist),static (prerendered),src/app/resources/page.tsx
+/scholarships,public (proxy allowlist),static (prerendered),src/app/scholarships/page.tsx
+/services,public (proxy allowlist),static (prerendered),src/app/services/page.tsx
+/student/dashboard,protected (proxy redirect),static shell + client,src/app/student/dashboard/page.tsx
+/student/exam-history,protected (proxy redirect),static shell + client,src/app/student/exam-history/page.tsx
+/super-admin/dashboard,protected (proxy redirect),static shell + client,src/app/super-admin/dashboard/page.tsx
+/terms,public (proxy allowlist),static (prerendered),src/app/terms/page.tsx
+/universities,public (proxy allowlist),static (prerendered),src/app/universities/page.tsx
+Path,Access,Rendering,Source
