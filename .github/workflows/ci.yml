@@ -76,11 +76,23 @@ jobs:
       # deploy`; using `db push` here builds the schema straight from
       # schema.prisma and hides any gap in prisma/migrations — which is exactly
       # how 17 tables went missing while CI stayed green.
-      - name: Provision test database
-        run: |
-          bunx prisma migrate deploy
-          bun run prisma:seed
-          bun run prisma:seed:rbac
+      #
+      # These are separate steps so a failure names the command that failed
+      # instead of hiding inside one three-line block.
+      - name: Provision test database (migrate deploy)
+        run: bunx prisma migrate deploy
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+
+      - name: Seed core data
+        run: bun run prisma:seed
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+          ADMIN_SEED_EMAIL: "ci-admin@test.local"
+          ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      - name: Seed RBAC
+        run: bun run prisma:seed:rbac
         env:
           DATABASE_URL: "file:./ci-test.db"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
