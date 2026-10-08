@@ -1,16 +1,16 @@
 Directory,Files,Bytes,Purpose
 .github,7,28031,CI and deployment-readiness workflows
 .zscripts,6,19291,
-(root),67,1069237,"Application config, entry point and top-level documentation"
+(root),67,1072437,"Application config, entry point and top-level documentation"
 cpanel-production,137,2531767,"Legacy PHP deliverables, served to SUPER_ADMIN by /api/deliverable*"
 db,1,159,Runtime database directory (contents git-ignored)
-docs,55,1193266,"Architecture decisions, audits and archived documentation"
+docs,56,1197266,"Architecture decisions, audits and archived documentation"
 download,1,159,Runtime downloads (contents git-ignored)
 examples,2,9846,"Reference examples, not part of the build"
 mini-services,4,11367,"Optional standalone sidecar services, not deployed by default"
 prisma,15,220070,"Schema, migrations and seed scripts — the only way to provision prod"
 public,32,3642787,"Static assets, copied into .next/standalone by the build"
-scripts,18,101318,"Build, verification, backup and seeding tooling"
+scripts,19,114867,"Build, verification, backup and seeding tooling"
 server-config,5,9917,"Optional self-managed deployment (systemd, Caddy, nginx)"
 src,1,4991,
 src/app,106,303174,"App Router: pages, layouts and API route handlers"
@@ -19,4 +19,4 @@ src/hooks,2,4373,Client hooks
 src/lib,43,561910,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
 tests,4,34591,bun test suites run by CI
 upload,1,159,Runtime uploads (contents git-ignored)
-TOTAL,606,10663901,Tracked content the host clones per deploy
+TOTAL,608,10684650,Tracked content the host clones per deploy
