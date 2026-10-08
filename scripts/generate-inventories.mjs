@@ -18,7 +18,7 @@
  *   DATABASE_MODEL_INVENTORY.csv   from prisma/schema.prisma
  *   API_INVENTORY.csv              from src/app/api/**\/*.ts route handlers
  *   ROUTE_INVENTORY.csv            from src/app/**\/page.tsx + src/proxy.ts
- *   FILE_MANIFEST.csv              from `git ls-files`, by directory
+ *   FILE_MANIFEST.csv              from `git ls-files`, file counts by directory
  *
  * Run:  node scripts/generate-inventories.mjs [--check]
  *   --check   regenerate in memory and exit 1 if any file differs from what is
@@ -284,6 +284,8 @@ const PURPOSE = {
   db: "Runtime database directory (contents git-ignored)",
   upload: "Runtime uploads (contents git-ignored)",
   download: "Runtime downloads (contents git-ignored)",
+  ".zscripts": "Local dev/build/start helpers for the optional self-managed path",
+  src: "TypeScript sources outside app/, components/, hooks/ and lib/",
   "(root)": "Application config, entry point and top-level documentation",
 };
 
@@ -313,19 +315,44 @@ function fileManifest() {
     groups.set(key, group);
   }
 
-  const rows = [["Directory", "Files", "Bytes", "Purpose"]];
+  // Only the file COUNT is committed, not the byte total. A byte column would
+  // make this gate fail on any edit to any file in the repository, which is
+  // noise: the drift worth catching is a directory gaining or losing files
+  // without the manifest following. The total is still computed and printed,
+  // because "how much does the host clone" is a useful number to see.
+  const rows = [["Directory", "Files", "Purpose"]];
   for (const [key, group] of [...groups].sort((a, b) => a[0].localeCompare(b[0]))) {
-    rows.push([key, group.files, group.bytes, PURPOSE[key] ?? ""]);
+    rows.push([key, group.files, PURPOSE[key] ?? ""]);
   }
 
   const totalFiles = tracked.length;
   const totalBytes = [...groups.values()].reduce((sum, g) => sum + g.bytes, 0);
-  rows.push(["TOTAL", totalFiles, totalBytes, "Tracked content the host clones per deploy"]);
+  rows.push(["TOTAL", totalFiles, "Tracked content the host clones per deploy"]);
 
-  return { file: "FILE_MANIFEST.csv", text: csv(rows), count: rows.length - 2 };
+  return {
+    file: "FILE_MANIFEST.csv",
+    text: csv(rows),
+    count: rows.length - 2,
+    note: `${totalFiles} tracked files, ${(totalBytes / 1048576).toFixed(1)} MB`,
+  };
 }
 
 // ─── Write ─────────────────────────────────────────────────────────────────
+
+const MAX_DIFF_LINES = 12;
+
+/** Cheap ordered line comparison: enough to show a reviewer what moved. */
+function diffLines(before, after) {
+  const a = before.split("\n");
+  const b = after.split("\n");
+  const out = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    if (a[i] === b[i]) continue;
+    if (a[i] !== undefined) out.push(`- ${a[i]}`);
+    if (b[i] !== undefined) out.push(`+ ${b[i]}`);
+  }
+  return out;
+}
 
 const inventories = [modelInventory(), apiInventory(), routeInventory(), fileManifest()];
 const drift = [];
@@ -338,6 +365,12 @@ for (const inventory of inventories) {
     if (current !== inventory.text) {
       drift.push(inventory.file);
       console.log(`::error ::${inventory.file} is stale — run: node scripts/generate-inventories.mjs`);
+      // Naming the file is not enough to act on from a CI annotation, so show
+      // what the source now says against what is committed.
+      console.log(`    committed → generated, first ${MAX_DIFF_LINES} differing lines:`);
+      for (const line of diffLines(current ?? "", inventory.text).slice(0, MAX_DIFF_LINES)) {
+        console.log(`      ${line}`);
+      }
     } else {
       console.log(`  ✓ ${inventory.file} up to date (${inventory.count} rows)`);
     }
@@ -346,7 +379,7 @@ for (const inventory of inventories) {
 
   writeFileSync(path, inventory.text);
   const verb = current === null ? "created" : current === inventory.text ? "unchanged" : "updated";
-  console.log(`  ${verb} ${inventory.file} (${inventory.count} rows)`);
+  console.log(`  ${verb} ${inventory.file} (${inventory.count} rows${inventory.note ? `, ${inventory.note}` : ""})`);
 }
 
 if (CHECK_ONLY && drift.length > 0) {

@@ -147,6 +147,21 @@ below is about the pipeline between a push to `main` and a working site.
   explaining what each got wrong. `HOSTINGER_DEPLOYMENT.md` is now the only
   production guide at the root, alongside `DEPLOYMENT.md`, which already says it
   is the optional self-managed path.
+- **`HOSTINGER_DEPLOYMENT.md` told operators to seed a question bank with a
+  command that does not seed questions.** It said `node prisma/seed.mjs` and then
+  `npm run prisma:seed:exams  # question bank`. After `prisma:seed:exams` became
+  `seed-all-missing-exams` + `seed-expand-exams`, the questions live in the
+  `prisma:seed` chain (`seed.mjs` → `seed-questions` → `seed-all-exams` →
+  `seed-gre-gmat-sat-act`). A first deploy following the old instructions comes up
+  healthy and serves an exam platform with no exams in it. The first-deploy
+  sequence and the command table now match `package.json`, and end with
+  `npm run content:validate`, which fails on an empty bank.
+- `FILE_MANIFEST.csv` records file **counts** per directory, not byte totals. A
+  byte column makes the drift gate fail on any edit to any file, which is noise;
+  the drift worth catching is a directory gaining or losing files without the
+  manifest following. The total is still printed for humans. A stale inventory now
+  also prints the differing lines instead of only naming the file, so a CI failure
+  is actionable from the annotation alone.
 - `PROJECT-INDEX.md` is flagged as partly stale at the top and points at the
   authoritative deployment guide and the generated inventories. Rewriting the
   hand-written index was not attempted; the generated CSVs supersede its counts.

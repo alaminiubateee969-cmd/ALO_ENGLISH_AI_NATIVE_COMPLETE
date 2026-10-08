@@ -126,10 +126,19 @@ repository root, with the same `DATABASE_URL` the app uses:
 
 ```bash
 npx prisma migrate deploy     # creates the schema — the ONLY safe provisioning command
-node prisma/seed.mjs          # admin user, exam types, settings
+npm run prisma:seed           # admin user, exam types, settings AND the question bank
 npm run prisma:seed:rbac      # roles, permissions, teams
-npm run prisma:seed:exams     # question bank
+npm run prisma:seed:exams     # the remaining exam sets (all-missing + expand)
+npm run content:validate      # asserts the bank is populated and every question is gradeable
 ```
+
+Run them in that order. `prisma:seed` is a chain — `prisma/seed.mjs` followed by
+`seed-questions.ts`, `seed-all-exams.ts` and `seed-gre-gmat-sat-act.ts` — so it is
+the step that actually puts questions in the database; `node prisma/seed.mjs` on
+its own leaves the bank empty. `content:validate` is the check for that: it exits
+non-zero on an empty bank rather than passing every other assertion vacuously,
+which is what used to happen. A first deploy that skips it can come up healthy,
+serving an exam platform with no exams in it.
 
 Never use `prisma migrate dev`, `db push` or `migrate reset` against
 production. `migrate deploy` is non-interactive and only applies migrations that
@@ -214,11 +223,14 @@ not the same as a deploy that works.
 | `npm run build` | Production build + assemble `.next/standalone` |
 | `npm start` | Start the production server (`node server.js`) |
 | `npm run db:migrate` | `prisma migrate deploy` — apply migrations |
-| `npm run db:seed` | Seed admin + exam types |
+| `npm run db:seed` | Seed admin + exam types only (`prisma/seed.mjs`); **no questions** |
+| `npm run prisma:seed` | Seed admin + exam types **and the question bank** (the full chain) |
 | `npm run prisma:seed:rbac` | Seed roles, permissions, teams |
-| `npm run prisma:seed:exams` | Seed the question bank |
+| `npm run prisma:seed:exams` | Seed the remaining exam sets |
+| `npm run db:seed:questions` | Seed IELTS questions only |
 | `npm run audio:generate` | Generate listening audio MP3s |
-| `npm run content:validate` | Assert no ungradeable questions |
+| `npm run content:validate` | Assert the bank is not empty and no question is ungradeable |
+| `npm run inventories` | Regenerate the four root inventory CSVs from source |
 | `npm run verify` | Every pre-deployment gate, including a live artifact boot |
 | `node scripts/finalize-standalone.mjs` | Re-copy `public/` and `.next/static` into the artifact |
 
