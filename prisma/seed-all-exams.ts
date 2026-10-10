@@ -1,8 +1,11 @@
 /**
- * prisma/seed-all-exams.ts — Seed practice sets + questions for TOEFL, PTE, Duolingo
- * IELTS already seeded by seed-ielts-questions.ts
+ * LEGACY SAMPLE-SEED SCRIPT — synthetic short-form fixtures for TOEFL, PTE,
+ * and Duolingo. Not official/licensed content or full-length exam banks. Guarded
+ * for explicitly opted-in disposable test/sample databases only.
  */
 
+import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
+assertSafeSampleSeedTarget();
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -18,8 +21,8 @@ async function main() {
     const toeflSet = await prisma.practiceSet.create({
       data: {
         examTypeId: toefl.id,
-        title: 'TOEFL iBT — Full Practice Test',
-        description: 'Complete TOEFL iBT practice test: Reading, Listening, Speaking, Writing. AI-scored.',
+        title: 'TOEFL iBT — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, full-length test, and not AI-scored.',
         durationMin: 116,
         isActive: true,
       },
@@ -122,8 +125,8 @@ async function main() {
     const pteSet = await prisma.practiceSet.create({
       data: {
         examTypeId: pte.id,
-        title: 'PTE Academic — Full Practice Test',
-        description: 'Complete PTE Academic practice test with AI scoring.',
+        title: 'PTE Academic — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, full-length test, and not AI-scored.',
         durationMin: 120,
         isActive: true,
       },
@@ -195,8 +198,8 @@ async function main() {
     const duoSet = await prisma.practiceSet.create({
       data: {
         examTypeId: duolingo.id,
-        title: 'Duolingo English Test — Full Practice',
-        description: 'Complete Duolingo English Test practice with adaptive-style questions.',
+        title: 'Duolingo English Test — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, full-length adaptive test.',
         durationMin: 60,
         isActive: true,
       },

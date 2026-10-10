@@ -167,21 +167,22 @@ model Student {
 }
 
 model Partner {
-  id            String    @id @default(cuid())
-  userId        String?   @unique
+  id              String    @id @default(cuid())
+  userId          String?   @unique
+  referralCode    String?   @unique
   organizationName String
-  contactName   String
-  email         String?
-  phone         String?
-  address       String?
-  status        String    @default("ACTIVE")
-  commissionRate Float    @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  contactName     String
+  email           String?
+  phone           String?
+  address         String?
+  status          String    @default("ACTIVE")
+  commissionRate  Float     @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  user      User?      @relation("PartnerUser", fields: [userId], references: [id])
-  leads     Lead[]
-  students  Student[]
+  user        User?        @relation("PartnerUser", fields: [userId], references: [id])
+  leads       Lead[]
+  students    Student[]
   commissions Commission[]
 
   @@index([status])
@@ -569,7 +570,8 @@ model Score {
   reading      Float?
   writing      Float?
   speaking     Float?
-  confidence   Float    @default(0.0)
+  /// Null means no calibrated confidence assessment was performed.
+  confidence   Float?
   providerUsed String   @default("local_rule_engine")
   fallbackUsed Boolean  @default(false)
   createdAt    DateTime @default(now())
@@ -602,9 +604,33 @@ model Question {
 
   practiceSet   PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
   attemptQuestions AttemptQuestion[]
+  audioAsset     QuestionAudioAsset?
 
   @@index([practiceSetId])
   @@index([section])
+}
+
+/// Durable state for generated/validated listening media. A READY row means
+/// the file was checked and the matching Question.audioUrl was persisted.
+model QuestionAudioAsset {
+  id          String   @id @default(cuid())
+  questionId  String   @unique
+  status      String   @default("PENDING") // PENDING|GENERATING|READY|FAILED
+  location    String?
+  mimeType    String?
+  byteSize    Int?
+  sha256      String?
+  voice       String?
+  attempts    Int      @default(0)
+  lastError   String?
+  generatedAt DateTime?
+  verifiedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }
 
 // ═══ Free Quota + Payment ═════════════════════════════════════════════

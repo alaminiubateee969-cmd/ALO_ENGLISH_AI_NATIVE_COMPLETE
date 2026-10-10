@@ -22,6 +22,7 @@ import {
   persistSelection,
   loadFrozenQuestionIds,
   QuestionShortageError,
+  ListeningAudioNotReadyError,
 } from "../src/lib/exam/selection";
 import { loadAttemptAnswers, loadAttemptQuestions } from "../src/lib/exam/questions";
 import { computeClock, deadlineFor } from "../src/lib/exam/timer";
@@ -47,17 +48,37 @@ beforeAll(async () => {
   practiceSetId = practiceSet.id;
 
   for (let i = 0; i < 6; i += 1) {
+    const section = i < 3 ? "READING" : "LISTENING";
+    const audioUrl = section === "LISTENING" ? `/public/audio/listening/${RUN}-${i}.mp3` : null;
     const created = await db.question.create({
       data: {
         practiceSetId,
-        section: i < 3 ? "READING" : "LISTENING",
+        section,
         type: "MULTIPLE_CHOICE",
         prompt: `Engine test question ${i + 1}`,
         options: JSON.stringify(["a", "b", "c", "d"]),
         correctIndex: 1,
         order: i,
+        ...(audioUrl ? { audioUrl } : {}),
       },
     });
+    // Selection refuses a gradeable Listening item unless a matching READY,
+    // verified asset exists, so the fixtures carry one exactly as the audio
+    // pipeline would leave it.
+    if (audioUrl) {
+      await db.questionAudioAsset.create({
+        data: {
+          questionId: created.id,
+          status: "READY",
+          location: audioUrl,
+          mimeType: "audio/mpeg",
+          byteSize: 1024,
+          sha256: `fixture-${i}`,
+          generatedAt: new Date(),
+          verifiedAt: new Date(),
+        },
+      });
+    }
     questionIds.push(created.id);
   }
 
@@ -210,5 +231,70 @@ describe("Attempt engine — answers, resume and ownership", () => {
     const clock = computeClock(stored!);
     expect(clock.remainingSec).toBeGreaterThan(0);
     expect(clock.remainingSec).toBeLessThanOrEqual(30 * 60);
+  });
+});
+
+describe("Attempt engine — listening media gate against a real database", () => {
+  let setId: string;
+  let questionId: string;
+
+  beforeAll(async () => {
+    const set = await db.practiceSet.create({
+      data: { examTypeId, title: `Engine Listening Gate ${RUN}`, durationMin: 10 },
+    });
+    setId = set.id;
+
+    const question = await db.question.create({
+      data: {
+        practiceSetId: setId,
+        section: "LISTENING",
+        type: "MULTIPLE_CHOICE",
+        prompt: "Listening item without verified media",
+        options: JSON.stringify(["a", "b", "c", "d"]),
+        correctIndex: 0,
+        order: 0,
+        audioUrl: `/public/audio/listening/${RUN}-gate.mp3`,
+      },
+    });
+    questionId = question.id;
+
+    // Recorded as generated but never verified: the gate must still refuse it.
+    await db.questionAudioAsset.create({
+      data: {
+        questionId,
+        status: "GENERATING",
+        location: `/public/audio/listening/${RUN}-gate.mp3`,
+        mimeType: "audio/mpeg",
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await db.questionAudioAsset.deleteMany({ where: { questionId } });
+    await db.question.deleteMany({ where: { practiceSetId: setId } });
+    await db.practiceSet.delete({ where: { id: setId } });
+  });
+
+  test("a listening item without a READY verified asset blocks selection", async () => {
+    let thrown: ListeningAudioNotReadyError | null = null;
+    try {
+      await selectQuestions({ db, userId: userA.id, practiceSetId: setId });
+    } catch (err) {
+      thrown = err as ListeningAudioNotReadyError;
+    }
+    expect(thrown).not.toBeNull();
+    expect(thrown?.code).toBe("LISTENING_AUDIO_NOT_READY");
+    expect(thrown?.questionCount).toBe(1);
+  });
+
+  test("the same item becomes selectable once the asset is verified", async () => {
+    await db.questionAudioAsset.update({
+      where: { questionId },
+      data: { status: "READY", verifiedAt: new Date() },
+    });
+
+    const selection = await selectQuestions({ db, userId: userA.id, practiceSetId: setId });
+    expect(selection.questionIds).toEqual([questionId]);
+    expect(selection.ungradeableCount).toBe(0);
   });
 });

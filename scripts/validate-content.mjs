@@ -1,34 +1,28 @@
 /**
  * scripts/validate-content.mjs
  *
- * Build-time content validator. Fails the build if any selectable question is
- * ungradeable, which prevents fake/broken questions from reaching production.
+ * Database-backed content audit invoked by CI and postbuild. CI treats a
+ * non-zero result as a release failure; postbuild logs the issue without
+ * stopping the site build. It does not check official-format lengths, source
+ * licensing, or whether a referenced audio file actually plays.
  *
- * Validation rules:
- *   1. Every objective MULTIPLE_CHOICE / TRUE_FALSE(_NOT_GIVEN) / READING_MCQ /
- *      READ_AND_SELECT / LISTEN_AND_SELECT must have options AND correctIndex.
- *   2. Every FILL_BLANK / SHORT_ANSWER / SENTENCE_COMPLETION / SUMMARY_COMPLETION /
- *      WRITE_FROM_DICTATION / COMPLETE_THE_SENTENCE must have correctAnswer.
- *   3. Every MATCHING / LABELING must have either correctIndices (array) or
- *      correctIndex (single match).
- *   4. Every LISTENING question that is selectable (objective) must have either
- *      audioUrl set OR passage (script) present so audio can be generated.
- *   5. Subjective types (ESSAY, SPEAKING, CHART_DESCRIPTION, WRITING_TASK1,
- *      WRITING_TASK2) are excluded from objective grading.
+ * Checks:
+ *   1. Active objective multiple-choice questions have a usable index/key.
+ *   2. Active fill-blank / short-answer tasks have a correct answer.
+ *   3. Active matching / labeling tasks have valid answer indices.
+ *   4. Missing LISTENING audioUrl is a warning only (not a release gate here).
+ *   5. Subjective questions are excluded from objective scoring.
  *
- * Exit code 0 if all selectable questions are gradeable; non-zero otherwise.
+ * Missing DATABASE_URL is BLOCKED (non-zero), never reported as an empty-bank
+ * success. CI must supply a disposable database explicitly.
  */
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+// This validator checks database rows only. It does not statically parse seed
+// scripts, and it cannot establish content licensing, exam-format fidelity, or
+// audio playback. CI supplies a disposable migrated database; local runs must
+// provide an explicitly chosen safe DATABASE_URL or receive a blocked result.
+// Runtime question selection independently excludes ungradeable objective rows.
 
-// When run as part of `next build` (postbuild), the standalone output has not
-// yet been finalised. We can't require Prisma here, so we inspect the seeded
-// question bank source directly so that a bad seed is caught before deployment.
-//
-// At runtime the API also enforces gradeability (see selection.ts / grading.ts).
-
-const ROOT = process.cwd();
 const errors = [];
 const warnings = [];
 
@@ -50,46 +44,74 @@ function isObjective(t) {
   return INDEX_TYPES.has(u) || TEXT_TYPES.has(u) || SET_TYPES.has(u);
 }
 
-// Run a runtime DB validation if DATABASE_URL is set; otherwise exit 0 with
-// a notice (CI / local dev without a DB).
+function parseJsonArray(value) {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function hasUsableAnswerKey(q, type) {
+  if (INDEX_TYPES.has(type)) {
+    const options = parseJsonArray(q.options);
+    const hasIndex = Number.isInteger(q.correctIndex) && q.correctIndex >= 0;
+    const hasTfTextKey = ['TRUE_FALSE', 'TRUE_FALSE_NOT_GIVEN'].includes(type)
+      && typeof q.correctAnswer === 'string'
+      && q.correctAnswer.trim().length > 0;
+    if (hasIndex) {
+      const isTrueFalseType = ['TRUE_FALSE', 'TRUE_FALSE_NOT_GIVEN'].includes(type);
+      const defaultOptionCount = type === 'TRUE_FALSE' ? 2 : 3;
+      const optionCount = options?.length ? options.length : (isTrueFalseType ? defaultOptionCount : 0);
+      return optionCount > q.correctIndex;
+    }
+    return hasTfTextKey;
+  }
+  if (TEXT_TYPES.has(type)) return typeof q.correctAnswer === 'string' && q.correctAnswer.trim().length > 0;
+  if (SET_TYPES.has(type)) {
+    const parsed = parseJsonArray(q.correctIndices);
+    const arrayKey = parsed && parsed.length > 0 && parsed.every((value) => Number.isInteger(value) && value >= 0);
+    const indexKey = Number.isInteger(q.correctIndex) && q.correctIndex >= 0;
+    return Boolean(arrayKey || indexKey);
+  }
+  return false;
+}
+
+// Run only against an explicitly configured database. Missing DATABASE_URL is
+// a blocked validation, not a successful empty-bank check.
 async function validateDb() {
   if (!process.env.DATABASE_URL) {
-    console.log('  ℹ DATABASE_URL not set — skipping database content validation.');
+    console.error('  ✗ BLOCKED: DATABASE_URL is not set; no content validation was performed.');
+    process.exitCode = 2;
     return;
   }
+  let prisma;
   try {
     const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    prisma = new PrismaClient();
     const questions = await prisma.question.findMany({
       select: { id: true, section: true, type: true, correctIndex: true, correctAnswer: true, correctIndices: true, options: true, audioUrl: true, practiceSet: { select: { isActive: true } } },
     });
-    await prisma.$disconnect();
 
     let objectiveTotal = 0;
     let ungradeable = 0;
+    let unsupportedTypes = 0;
     let listeningWithoutAudio = 0;
 
     for (const q of questions) {
       if (!q.practiceSet?.isActive) continue;
       const t = q.type.toUpperCase().replace(/-/g, '_');
       if (SUBJECTIVE_TYPES.has(t)) continue;
-      if (!isObjective(t)) continue;
+      if (!isObjective(t)) {
+        unsupportedTypes++;
+        errors.push(`  ✗ Question ${q.id} (${q.section}/${q.type}) has an unsupported question type`);
+        continue;
+      }
       objectiveTotal++;
 
-      let gradeable = true;
-      if (INDEX_TYPES.has(t)) {
-        if (q.correctIndex === null || q.correctIndex === undefined) {
-          // Fall back to correctAnswer for TFNG?
-          const hasTextAnswer = !!q.correctAnswer;
-          if (!hasTextAnswer) gradeable = false;
-        }
-      } else if (TEXT_TYPES.has(t)) {
-        if (!q.correctAnswer) gradeable = false;
-      } else if (SET_TYPES.has(t)) {
-        const hasIdx = q.correctIndex !== null && q.correctIndex !== undefined;
-        const hasArr = q.correctIndices && String(q.correctIndices).length > 2;
-        if (!hasIdx && !hasArr) gradeable = false;
-      }
+      const gradeable = hasUsableAnswerKey(q, t);
       if (!gradeable) {
         ungradeable++;
         errors.push(`  ✗ Question ${q.id} (${q.section}/${q.type}) is not gradeable`);
@@ -100,7 +122,7 @@ async function validateDb() {
       }
     }
 
-    console.log(`  Content validation: ${questions.length} total questions, ${objectiveTotal} objective gradeable, ${ungradeable} ungradeable.`);
+    console.log(`  Content validation: ${questions.length} total questions, ${objectiveTotal} active objective questions, ${ungradeable} ungradeable, ${unsupportedTypes} unsupported types.`);
     if (questions.length === 0) {
       // An empty bank passes every other check vacuously, so say so loudly.
       // This is what happened when `prisma:seed` was reduced to a single seed
@@ -109,8 +131,8 @@ async function validateDb() {
       console.error('\n  ✗ The question bank is EMPTY — the seed chain did not populate questions.');
       console.error('    Expected `prisma:seed` to run the question seeds as well as the core seed.');
       process.exitCode = 1;
-    } else if (ungradeable > 0) {
-      console.error('\n  UNGRADEABLE QUESTIONS:');
+    } else if (ungradeable > 0 || unsupportedTypes > 0) {
+      console.error('\n  CONTENT TYPE/ANSWER-KEY ERRORS:');
       errors.slice(0, 20).forEach((e) => console.error(e));
       process.exitCode = 1;
     } else {
@@ -120,8 +142,13 @@ async function validateDb() {
       console.log(`  ℹ ${listeningWithoutAudio} listening questions lack audio — run npm run audio:generate on a host with internet to synthesise them.`);
     }
   } catch (err) {
-    // Prisma client may not be generated at postbuild time — non-fatal.
-    console.log(`  ℹ Could not run DB content validation: ${err.message}. Run npm run content:validate after prisma generate.`);
+    console.error(`  ✗ Database content validation failed: ${err.message}. Run npm run content:validate after prisma generate and verify database connectivity.`);
+    process.exitCode = 1;
+  } finally {
+    if (prisma) await prisma.$disconnect().catch((err) => {
+      console.error(`  ✗ Prisma disconnect failed: ${err.message}`);
+      process.exitCode = 1;
+    });
   }
 }
 

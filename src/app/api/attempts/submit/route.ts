@@ -9,7 +9,8 @@
  *      per section (listening and reading are scored separately)
  *   4. the attempt is claimed with an atomic `updateMany` guard, which is what
  *      actually prevents double submission and score manipulation
- *   5. the AI agents evaluate writing/speaking and persist the Score row
+ *   5. only objective listening/reading evidence contributes to a numeric
+ *      practice indicator; writing feedback is non-scored and speaking remains unscored
  *
  * If the deadline has passed the attempt is still submitted (with whatever was
  * autosaved) — an expired exam is never left open.
@@ -21,7 +22,6 @@ import { ok, badRequest, notFound, forbidden, conflict } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
 import { audit, getClientIp } from "@/lib/audit";
 import { conductExam } from "@/lib/agents/ExamConductorAgent";
-import { ExamOrchestrator } from "@/lib/ai/learning/ExamOrchestrator";
 import { computeClock } from "@/lib/exam/timer";
 import { loadAttemptAnswers } from "@/lib/exam/questions";
 import { gradeObjective, isSubjective, type GradableQuestion } from "@/lib/exam/grading";
@@ -121,7 +121,6 @@ export async function POST(req: Request): Promise<Response> {
         .join("\n\n") || "";
 
     const writingText = collect("WRITING");
-    const speakingText = collect("SPEAKING");
 
     // ── Atomically claim the attempt. This is the real double-submit guard:
     // ── concurrent requests race on this single conditional update.
@@ -138,11 +137,10 @@ export async function POST(req: Request): Promise<Response> {
         attemptId,
         {
           writing: writingText,
-          speaking: speakingText,
-          readingCorrect: listening.correct === 0 && reading.correct === 0 ? graded.correctTotal : reading.correct,
-          readingTotal: reading.total || 40,
+          readingCorrect: reading.correct,
+          readingTotal: reading.total,
           listeningCorrect: listening.correct,
-          listeningTotal: listening.total || 40,
+          listeningTotal: listening.total,
         },
         { alreadyClaimed: true }
       );
@@ -163,15 +161,13 @@ export async function POST(req: Request): Promise<Response> {
         },
       });
 
-      await audit("SCORE_GENERATED", {
-        userId: user.id,
-        resource: "score:" + attemptId,
-        metadata: { provider: result.providerUsed, fallback: result.fallbackUsed, confidence: result.confidence },
-      });
-
-      ExamOrchestrator.onExamSubmitted(attemptId).catch((err) => {
-        console.error("[submit] Learning loop trigger failed:", err);
-      });
+      if (result.status === "SCORED") {
+        await audit("SCORE_GENERATED", {
+          userId: user.id,
+          resource: "score:" + attemptId,
+          metadata: { provider: result.providerUsed, fallback: result.fallbackUsed },
+        });
+      }
 
       return ok(
         {
@@ -186,7 +182,7 @@ export async function POST(req: Request): Promise<Response> {
         "Exam evaluated"
       );
     } catch (err) {
-      // Release the claim so a transient AI failure does not lock the attempt.
+      // Release the claim so a transient evaluation failure does not lock the attempt.
       await db.attempt
         .update({ where: { id: attemptId }, data: { status: "IN_PROGRESS", submittedAt: null } })
         .catch(() => {});

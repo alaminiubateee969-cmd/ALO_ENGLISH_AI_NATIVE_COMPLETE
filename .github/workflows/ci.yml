@@ -146,110 +146,46 @@ jobs:
         env:
           DATABASE_URL: "file:./ci-test.db"
 
-      # Every suite runs against the database provisioned above, including the
-      # database-backed RBAC and attempt-engine tests. No suite is skipped.
-      #
-      # Suites are separate steps so a red build names the exact file. Each
-      # records its own exit code; the gate step below fails the job if any
-      # code is non-zero, so continue-on-error buys diagnosability only and
-      # can never produce a green build.
-      - name: Tests — smoke (no database)
+      # Run every discovered test file (including the database-backed suites).
+      # This step deliberately runs after a content-gate failure so the job
+      # reports independent test/build evidence instead of silently skipping it.
+      - name: Tests — all suites
+        if: always()
         continue-on-error: true
         run: |
           set +e
-          bun test tests/smoke.test.ts --timeout 30000 2>&1 | tee smoke.log
+          bun test tests/ --timeout 30000 2>&1 | tee tests.log
           code=${PIPESTATUS[0]}
-          grep -E "^\(fail\)" smoke.log | head -15 | sed 's/^/::error ::smoke /'
-          echo "smoke=$code" >> test-results.txt
-
-      - name: Tests — exam engine (no database)
-        continue-on-error: true
-        run: |
-          set +e
-          bun test tests/exam-engine.test.ts --timeout 30000 2>&1 | tee engine.log
-          code=${PIPESTATUS[0]}
-          grep -E "^\(fail\)" engine.log | head -15 | sed 's/^/::error ::engine /'
-          echo "engine=$code" >> test-results.txt
-
-      - name: Tests — RBAC (database)
-        continue-on-error: true
-        run: |
-          set +e
-          bun test tests/rbac.test.ts --timeout 30000 2>&1 | tee rbac.log
-          code=${PIPESTATUS[0]}
-          grep -E "^\(fail\)" rbac.log | head -15 | sed 's/^/::error ::rbac /'
-          echo "rbac=$code" >> test-results.txt
+          grep -E "^\(fail\)" tests.log | head -30 | sed 's/^/::error ::tests /'
+          echo "all=$code" >> test-results.txt
         env:
           DATABASE_URL: "file:./ci-test.db"
 
-      - name: Tests — attempt engine (database)
-        continue-on-error: true
-        run: |
-          set +e
-          bun test tests/exam-attempt.test.ts --timeout 30000 2>&1 | tee attempt.log
-          code=${PIPESTATUS[0]}
-          grep -E "^\(fail\)" attempt.log | head -15 | sed 's/^/::error ::attempt /'
-          echo "attempt=$code" >> test-results.txt
-        env:
-          DATABASE_URL: "file:./ci-test.db"
-
-      # The gate compares what ran against what was supposed to run. Three
-      # failure shapes are all reported explicitly:
-      #   - the ledger is absent, meaning an earlier step failed or was skipped
-      #     and no suite ran at all (this used to crash on `cat` and hide the
-      #     real cause behind "No such file or directory"),
-      #   - a suite is missing from the ledger, meaning it never executed,
-      #   - a suite recorded a non-zero exit code.
-      # A suite that silently did not run can therefore never look green.
+      # A single invocation discovers every tests/*.test.ts file, so adding a
+      # new suite cannot be silently omitted from a manually maintained list.
       - name: Verify every suite passed
         if: always()
-        env:
-          EXPECTED_SUITES: "smoke engine rbac attempt"
         run: |
           if [ ! -f test-results.txt ]; then
-            echo "::error ::no test suite ran: test-results.txt was never created. An earlier step failed or was skipped — see the first failing step above."
+            echo "::error ::no test suite ran: test-results.txt was never created. An earlier setup step failed or was skipped."
             exit 1
           fi
-
-          echo "Recorded results:"
           cat test-results.txt
-
-          status=0
-          ran=0
-          for suite in $EXPECTED_SUITES; do
-            line=$(grep -E "^${suite}=" test-results.txt | tail -1 || true)
-            if [ -z "$line" ]; then
-              echo "::error ::test suite did not run: $suite"
-              status=1
-            elif [ "$line" != "${suite}=0" ]; then
-              echo "::error ::test suite failed: ${suite} (exit ${line#${suite}=})"
-              status=1
-            else
-              ran=$((ran + 1))
-            fi
-          done
-
-          # Anything recorded that is not in the expected list means the suite
-          # list above is stale — fail rather than ignore untracked results.
-          while IFS='=' read -r name code; do
-            [ -z "$name" ] && continue
-            case " $EXPECTED_SUITES " in
-              *" $name "*) ;;
-              *) echo "::error ::unexpected suite in ledger: $name (expected: $EXPECTED_SUITES)"
-                 status=1 ;;
-            esac
-          done < test-results.txt
-
-          [ "$status" -eq 0 ] || exit 1
-          echo "All test suites passed ($ran/$ran green)."
+          if ! grep -qx 'all=0' test-results.txt; then
+            echo "::error ::the all-suites test command failed or did not finish successfully"
+            exit 1
+          fi
+          echo "All discovered test files passed."
 
       - name: Build
+        if: always()
         run: bun run build
         env:
           DATABASE_URL: "file::memory:?cache=shared"
           AUTH_SECRET: "ci-test-secret-not-for-production-use-32chars"
 
       - name: Verify build output
+        if: always()
         run: |
           test -f .next/standalone/server.js || { echo "Build output missing"; exit 1; }
           echo "✓ Build output verified"

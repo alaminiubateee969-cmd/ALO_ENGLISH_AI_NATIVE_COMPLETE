@@ -106,16 +106,17 @@ export function AloLeadCapture() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, source: "aloeducation.com" }) });
+      const referralCode = new URLSearchParams(window.location.search).get("ref") || undefined;
+      const res = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, source: "aloeducation.com", referralCode }) });
       const data = await res.json();
-      if (data.ok) {
-        toast({ title: "Consultation request received!", description: "An ALO Education advisor will contact you within 24 hours." });
+      if (res.ok && data.success) {
+        toast({ title: "Consultation request received!", description: "An ALO Education advisor will contact you." });
         setForm({ name: "", email: "", phone: "", exam: "", country: "", intake: "", message: "" });
       } else {
-        toast({ title: "Saved locally", description: "Your request was saved and will be synced." });
+        toast({ title: "Request could not be sent", description: data.message || "Please check your details and try again.", variant: "destructive" });
       }
     } catch {
-      toast({ title: "Saved locally", description: "Your request was saved and will be synced." });
+      toast({ title: "Network error", description: "Your request was not submitted. Please try again.", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }

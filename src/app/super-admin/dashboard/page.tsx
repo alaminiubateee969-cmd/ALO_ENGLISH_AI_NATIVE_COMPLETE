@@ -21,7 +21,7 @@ function SuperAdminDashboardContent() {
   }>("/api/admin/stats");
 
   const { data: agents } = useApi<{
-    stats: { total: number; ready: number; aiConfigured: boolean; aiProvider: string; byDept: Record<string, number> };
+    stats: { total: number; ready: number; readinessStatus: string; byDept: Record<string, number> };
   }>("/api/agents/status");
 
   const { data: health } = useApi<{
@@ -51,10 +51,10 @@ function SuperAdminDashboardContent() {
 
           {/* AI Agents */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-            <DashboardCard title="AI Agents" value={agents?.stats?.ready ?? 0} desc="Ready" icon={Bot} />
-            <DashboardCard title="AI Provider" value={agents?.stats?.aiProvider || "local"} desc={agents?.stats?.aiConfigured ? "Configured" : "Using local engine"} icon={Activity} />
+            <DashboardCard title="Agents marked ready" value={agents?.stats?.ready ?? 0} desc="Readiness not verified" icon={Bot} />
+            <DashboardCard title="Registered workflows" value={agents?.stats?.total ?? 0} desc="Static inventory only" icon={Activity} />
             <DashboardCard title="Exam Types" value={stats?.content?.examTypes ?? 0} desc="Active" icon={BookOpen} />
-            <DashboardCard title="Scores" value={stats?.activity?.totalScores ?? 0} desc="AI-evaluated" icon={Award} />
+            <DashboardCard title="Practice score rows" value={stats?.activity?.totalScores ?? 0} desc="Stored; scoring is not validated" icon={Award} />
           </div>
 
           {/* System Health */}

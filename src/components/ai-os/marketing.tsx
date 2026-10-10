@@ -1,235 +1,341 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Megaphone, Sparkles, Copy, Trash2, Calendar, TrendingUp, Facebook,
-  Instagram, Linkedin, Twitter, Mail, FileText, Layout, Package, Newspaper,
+  ArrowLeft, Copy, Download, Facebook, FileText, Instagram, Layout,
+  Linkedin, Mail, Megaphone, Newspaper, Package, Save, Sparkles,
+  Trash2, Twitter, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  DEFAULT_MARKETING_FACTS,
+  generateMarketingDraft,
+  MARKETING_CONTENT_TYPES,
+  type MarketingBrief,
+  type MarketingContentType,
+} from "@/lib/marketing-content";
 import type { ModuleId } from "./module-registry";
 
 type Nav = { navigate: (id: ModuleId) => void };
+type CampaignDraft = {
+  id: string;
+  title: string;
+  type: MarketingContentType;
+  brief: MarketingBrief;
+  content: string;
+  updatedAt: string;
+};
 
-const CONTENT_TYPES = [
-  { name: "Facebook Post", icon: Facebook, color: "#1877F2", charLimit: 5000 },
-  { name: "Instagram Caption", icon: Instagram, color: "#E4405F", charLimit: 2200 },
-  { name: "LinkedIn Post", icon: Linkedin, color: "#0A66C2", charLimit: 3000 },
-  { name: "X Post", icon: Twitter, color: "#1DA1F2", charLimit: 280 },
-  { name: "Blog Article", icon: FileText, color: "#6366F1", charLimit: 5000 },
-  { name: "Email Newsletter", icon: Mail, color: "#E8501A", charLimit: 5000 },
-  { name: "Landing Page", icon: Layout, color: "#16A34A", charLimit: 5000 },
-  { name: "Product Description", icon: Package, color: "#F59E0B", charLimit: 1500 },
-  { name: "Press Release", icon: Newspaper, color: "#0EA5E9", charLimit: 5000 },
-];
+const STORAGE_KEY = "alo.marketing.drafts.v1";
+const CHANNEL_ICONS: Record<MarketingContentType, LucideIcon> = {
+  "Facebook Post": Facebook,
+  "Instagram Caption": Instagram,
+  "LinkedIn Post": Linkedin,
+  "X Post": Twitter,
+  "Blog Article": FileText,
+  "Email Newsletter": Mail,
+  "Landing Page": Layout,
+  "Product Description": Package,
+  "Press Release": Newspaper,
+};
 
-const SAMPLE_CAMPAIGNS = [
-  { name: "Summer Course Launch", type: "Multi-platform", posts: 12, reach: "24.5K", status: "Active" },
-  { name: "AI Tutor Promotion", type: "Instagram + FB", posts: 8, reach: "18.2K", status: "Active" },
-  { name: "Back-to-School Email", type: "Email Newsletter", posts: 3, reach: "9.8K", status: "Scheduled" },
-  { name: "Research Webinar", type: "LinkedIn + X", posts: 5, reach: "6.4K", status: "Draft" },
-];
-
-function generateContent(type: string, product: string): string {
-  const templates: Record<string, string> = {
-    "Facebook Post": `📚 Big news! ${product} is here — and it's going to change how you learn.\n\n✅ AI-powered personalization\n✅ 6 languages supported\n✅ Bite-sized lessons\n✅ Free trial available\n\nTry it today 👉 link in bio\n#Education #AI #Learning`,
-    "Instagram Caption": `✨ Meet ${product} — your new AI study buddy ✨\n\nWhether you're learning English, Math, or AI itself, this app adapts to YOU. 🎯\n\nTap the link in bio to start free 🚀\n\n#AI #EdTech #StudySmart #Learning #EdTechTools #StudentLife #Motivation`,
-    "LinkedIn Post": `I'm thrilled to announce the launch of ${product}.\n\nAfter 18 months of R&D with educators across 4 countries, we've built an AI tutor that adapts to each learner's pace, language, and goals.\n\nKey results from beta:\n📈 32% improvement in test scores\n🌍 6 languages supported\n⏱️ 4.2 hours saved per student weekly\n\nThis is just the beginning. We'd love your feedback.\n\n#EdTech #AI #Education #Innovation #ProductLaunch`,
-    "X Post": `🚀 Just launched: ${product}\n\nAI-powered learning in 6 languages. Free to start.\n\nTry it → [link]\n\n#AI #EdTech`,
-    "Blog Article": `# Why ${product} Is the Future of Personalized Learning\n\nEducation has always been one-size-fits-all. Not anymore.\n\n## The Problem\nTraditional classrooms can't adapt to every student. Some fall behind; others get bored.\n\n## Our Solution\n${product} uses adaptive AI to meet each learner exactly where they are — adjusting difficulty, language, and pacing in real time.\n\n## What Early Users Say\n"My daughter finally enjoys math," reports one parent. "She asks for her AI tutor before bed."\n\n## Try It Free\nSign up today and get 14 days on us.\n\n[Read more →]`,
-    "Email Newsletter": `Subject: 🎉 ${product} is live — your free trial inside\n\nHi [First Name],\n\nAfter months of anticipation, ${product} is finally here.\n\nHere's what's new this week:\n• 🎯 Personalized AI tutor for every subject\n• 🌍 Available in 6 languages\n• 📊 Progress tracking with weekly reports\n\nAs a subscriber, you get 14 days free — no card required.\n\n[Start your free trial →]\n\nHappy learning,\nThe ${product} Team`,
-    "Landing Page": `# ${product}\n## Learn smarter, not harder.\n\n**AI-powered personalized learning in 6 languages.**\n\n[Start Free Trial]  [Watch Demo]\n\n### Why choose us?\n- ✅ Adaptive AI tutor\n- ✅ Real-time feedback\n- ✅ Multi-language support\n- ✅ Track progress easily\n\n> "My child went from struggling to top of the class in 3 months." — Parent\n\n### Ready to begin?\n[Get Started Free →]`,
-    "Product Description": `**${product}** — Your AI-Powered Learning Companion\n\nUnlock personalized education with ${product}, the intelligent tutor that adapts to your pace, language, and learning style. Perfect for K-12 students, adult learners, and educators alike.\n\n• Adaptive curriculum in 6 languages\n• Real-time feedback & analytics\n• Available 24/7 on any device\n• Parent & teacher dashboards\n\n*Subscription starts at $9.99/month. 14-day free trial.*`,
-    "Press Release": `**FOR IMMEDIATE RELEASE**\n\n**${product} Launches to Revolutionize AI-Powered Education**\n\n*CITY, DATE* — Today, ALO Labs announced the launch of ${product}, an AI-driven personalized learning platform serving students across 6 languages.\n\n"${product} represents our commitment to making world-class education accessible to everyone, regardless of language or geography," said [CEO Name], CEO of ALO Labs.\n\nThe platform features adaptive AI tutors, real-time analytics, and a comprehensive curriculum spanning 8 subjects.\n\nFor more information, visit [website] or contact press@alolabs.com.\n\n###\n\n**Media Contact:**\nName · email@example.com · +1-XXX-XXX-XXXX`,
-  };
-  return templates[type] || `Generated content for ${product}...`;
+async function copyText(value: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const input = document.createElement("textarea");
+  input.value = value;
+  input.setAttribute("readonly", "");
+  input.style.position = "fixed";
+  input.style.opacity = "0";
+  document.body.appendChild(input);
+  input.select();
+  const copied = document.execCommand("copy");
+  input.remove();
+  if (!copied) throw new Error("Clipboard access is unavailable");
 }
 
 export default function Marketing({ navigate }: Nav) {
-  const [type, setType] = useState(CONTENT_TYPES[0]);
-  const [product, setProduct] = useState("");
-  const [generating, setGenerating] = useState(false);
+  const [type, setType] = useState<MarketingContentType>(MARKETING_CONTENT_TYPES[0].id);
+  const [offer, setOffer] = useState("ALO English practice");
+  const [audience, setAudience] = useState("Students preparing for IELTS, PTE, TOEFL or Duolingo");
+  const [facts, setFacts] = useState(DEFAULT_MARKETING_FACTS);
+  const [tone, setTone] = useState("clear and encouraging");
+  const [callToAction, setCallToAction] = useState("Explore practice tests");
+  const [url, setUrl] = useState("https://english.aloeducation.com/practice-test");
   const [content, setContent] = useState("");
+  const [drafts, setDrafts] = useState<CampaignDraft[]>([]);
   const [copied, setCopied] = useState(false);
-  const [campaigns, setCampaigns] = useState(SAMPLE_CAMPAIGNS);
+  const [notice, setNotice] = useState("");
 
-  const generate = () => {
-    if (!product.trim()) return;
-    setGenerating(true);
-    setTimeout(() => {
-      setContent(generateContent(type.name, product));
-      setGenerating(false);
-    }, 1200);
-  };
+  const selectedType = useMemo(
+    () => MARKETING_CONTENT_TYPES.find((item) => item.id === type) ?? MARKETING_CONTENT_TYPES[0],
+    [type],
+  );
 
-  const copy = () => {
-    navigator.clipboard?.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDrafts() {
+      // Defer the browser read until after hydration so server and first client
+      // renders remain identical.
+      await Promise.resolve();
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        if (!cancelled && raw) {
+          const parsed: unknown = JSON.parse(raw);
+          if (Array.isArray(parsed)) setDrafts(parsed as CampaignDraft[]);
+        }
+      } catch {
+        if (!cancelled) setNotice("Saved drafts could not be read from this browser.");
+      }
+    }
+    void loadDrafts();
+    return () => { cancelled = true; };
+  }, []);
+
+  function updateSavedDrafts(next: CampaignDraft[]) {
+    setDrafts(next);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      setNotice("This browser could not save your latest draft. Download it to keep a copy.");
+    }
+  }
+
+  const currentBrief: MarketingBrief = { type, offer, audience, facts, tone, callToAction, url };
+
+  function generate() {
+    if (!offer.trim()) {
+      setNotice("Add an offer or topic before creating a draft.");
+      return;
+    }
+    setContent(generateMarketingDraft(currentBrief));
+    setNotice("Template draft created. Review all details before publishing.");
+  }
+
+  function saveDraft() {
+    if (!content.trim()) return;
+    const now = new Date();
+    const draft: CampaignDraft = {
+      id: `${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      title: `${offer.trim()} · ${selectedType.label}`,
+      type,
+      brief: currentBrief,
+      content,
+      updatedAt: now.toISOString(),
+    };
+    updateSavedDrafts([draft, ...drafts].slice(0, 50));
+    setNotice("Draft saved in this browser only.");
+  }
+
+  async function handleCopy() {
+    if (!content) return;
+    try {
+      await copyText(content);
+      setCopied(true);
+      setNotice("Copy is ready to paste.");
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setNotice("Copy failed. Select the text in the preview and copy it manually.");
+    }
+  }
+
+  function downloadDraft() {
+    if (!content) return;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = `${offer.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "alo-campaign"}-${type.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.txt`;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    setNotice("Draft downloaded as a text file.");
+  }
+
+  function restoreDraft(draft: CampaignDraft) {
+    setType(draft.type);
+    setOffer(draft.brief.offer);
+    setAudience(draft.brief.audience);
+    setFacts(draft.brief.facts);
+    setTone(draft.brief.tone);
+    setCallToAction(draft.brief.callToAction);
+    setUrl(draft.brief.url || "");
+    setContent(draft.content);
+    setNotice("Draft loaded. Edit it before publishing.");
+  }
+
+  function deleteDraft(id: string) {
+    updateSavedDrafts(drafts.filter((draft) => draft.id !== id));
+    setNotice("Draft deleted from this browser.");
+  }
+
+  const overLimit = content.length > selectedType.charLimit;
 
   return (
-    <div className="min-h-screen bg-[#0F172A] p-6 text-white">
+    <main className="min-h-screen bg-[#0B1220] px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-[#E8501A]">
-            <Megaphone className="size-6" />
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#E8501A]">
+              <Megaphone className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-200">ALO English</p>
+              <h1 className="text-2xl font-bold sm:text-3xl">Marketing Studio</h1>
+              <p className="text-sm text-white/60">Grounded campaign drafts, channel by channel.</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold sm:text-3xl">AI Marketing Center</h1>
-            <p className="text-white/60">Posts, captions, emails, campaigns & press releases</p>
-          </div>
+          <Button type="button" variant="outline" onClick={() => navigate("home")} className="min-h-11 border-white/20 bg-white/5 text-white hover:bg-white/10">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            AI OS home
+          </Button>
         </div>
 
-        {/* Content Type Selector */}
-        <div>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/60">Content Type</h2>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
-            {CONTENT_TYPES.map((t) => {
-              const Icon = t.icon;
-              const active = type.name === t.name;
+        <div className="rounded-xl border border-sky-300/20 bg-sky-300/5 px-4 py-3 text-sm leading-6 text-sky-100">
+          This studio creates editable, template-based drafts in your browser; it does not publish posts or call an AI model. Add only claims you can verify. Drafts are stored on this device.
+        </div>
+
+        <section aria-labelledby="channel-title">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h2 id="channel-title" className="text-sm font-semibold uppercase tracking-wider text-white/70">Choose a format</h2>
+              <p className="mt-1 text-xs text-white/45">Length guidance is a draft target; check the platform before posting.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9">
+            {MARKETING_CONTENT_TYPES.map((item) => {
+              const Icon = CHANNEL_ICONS[item.id];
+              const active = item.id === type;
               return (
                 <button
-                  key={t.name}
-                  onClick={() => setType(t)}
-                  className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition ${
-                    active ? "border-[#E8501A] bg-[#E8501A]/10" : "border-white/10 bg-white/5 hover:bg-white/10"
-                  }`}
+                  key={item.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setType(item.id)}
+                  className={`flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 ${active ? "border-[#E8501A] bg-[#E8501A]/15" : "border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10"}`}
                 >
-                  <Icon className="size-5" style={{ color: t.color }} />
-                  <span className="text-[10px] font-medium leading-tight">{t.name}</span>
+                  <Icon className="h-4 w-4 text-orange-300" aria-hidden="true" />
+                  <span className="mt-2 text-xs font-semibold leading-4">{item.label}</span>
                 </button>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Input */}
-          <Card className="border-white/10 bg-white/5 text-white">
+        <div className="grid items-start gap-6 xl:grid-cols-2">
+          <Card className="border-white/10 bg-white/[0.04] text-white shadow-none">
             <CardHeader>
-              <CardTitle>Content Generator</CardTitle>
-              <CardDescription className="text-white/60">{type.name} · max {type.charLimit} characters</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Product / Topic</Label>
-                <Input
-                  className="border-white/10 bg-white/5"
-                  placeholder="e.g. ALO English Tutor App"
-                  value={product}
-                  onChange={(e) => setProduct(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Additional Context (optional)</Label>
-                <Textarea
-                  className="border-white/10 bg-white/5"
-                  placeholder="Target audience, key features, tone..."
-                />
-              </div>
-              <Button className="w-full bg-[#E8501A] hover:bg-[#E8501A]/90" onClick={generate} disabled={generating || !product.trim()}>
-                <Sparkles /> {generating ? "Generating..." : `Generate ${type.name}`}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Output */}
-          <Card className="border-white/10 bg-white/5 text-white">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Generated Content</CardTitle>
-                {content && (
-                  <Button size="sm" variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10" onClick={copy}>
-                    {copied ? "Copied!" : <><Copy /> Copy</>}
-                  </Button>
-                )}
-              </div>
+              <CardTitle>Campaign brief</CardTitle>
+              <CardDescription className="text-white/60">{selectedType.label} · recommended draft length up to {selectedType.charLimit.toLocaleString()} characters</CardDescription>
             </CardHeader>
             <CardContent>
-              {content ? (
-                <div className="rounded-lg border border-white/10 bg-[#0F172A] p-4">
-                  <pre className="whitespace-pre-wrap text-sm text-white/80">{content}</pre>
-                  <div className="mt-3 flex items-center justify-between text-xs text-white/40">
-                    <span>{content.length} characters</span>
-                    <span>{content.length > type.charLimit ? "⚠ exceeds limit" : "✓ within limit"}</span>
+              <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); generate(); }}>
+                <div className="space-y-2">
+                  <Label htmlFor="marketing-offer">Offer or topic</Label>
+                  <Input id="marketing-offer" value={offer} onChange={(event) => setOffer(event.target.value)} maxLength={160} placeholder="What are you promoting?" className="border-white/15 bg-white/5 text-white placeholder:text-white/40" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="marketing-audience">Audience</Label>
+                  <Input id="marketing-audience" value={audience} onChange={(event) => setAudience(event.target.value)} maxLength={180} placeholder="Who is this for?" className="border-white/15 bg-white/5 text-white placeholder:text-white/40" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="marketing-facts">Verified facts to include</Label>
+                  <Textarea id="marketing-facts" value={facts} onChange={(event) => setFacts(event.target.value)} maxLength={1600} rows={4} placeholder="Only enter approved, verifiable details." className="border-white/15 bg-white/5 text-white placeholder:text-white/40" />
+                  <p className="text-xs text-white/45">Separate facts with new lines. The template will not invent metrics or testimonials.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="marketing-tone">Tone</Label>
+                    <Input id="marketing-tone" value={tone} onChange={(event) => setTone(event.target.value)} maxLength={80} className="border-white/15 bg-white/5 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="marketing-cta">Call to action</Label>
+                    <Input id="marketing-cta" value={callToAction} onChange={(event) => setCallToAction(event.target.value)} maxLength={100} className="border-white/15 bg-white/5 text-white" />
                   </div>
                 </div>
-              ) : (
-                <div className="flex aspect-video flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-white/20 text-white/40">
-                  <Megaphone className="size-12" />
-                  <p>Generated content will appear here</p>
+                <div className="space-y-2">
+                  <Label htmlFor="marketing-url">Destination URL (optional)</Label>
+                  <Input id="marketing-url" type="url" value={url} onChange={(event) => setUrl(event.target.value)} maxLength={300} placeholder="https://…" className="border-white/15 bg-white/5 text-white placeholder:text-white/40" />
                 </div>
-              )}
+                <Button type="submit" className="min-h-11 w-full bg-[#E8501A] font-semibold text-white hover:bg-[#cf4114]">
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  Build template draft
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-white/10 bg-white/[0.04] text-white shadow-none">
+            <CardHeader>
+              <CardTitle>Draft preview</CardTitle>
+              <CardDescription className="text-white/60">Edit the copy here, then copy, download or save it.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea
+                aria-label="Editable marketing draft"
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+                placeholder="Your draft will appear here. Generate one from the brief or open a saved draft."
+                rows={18}
+                className="min-h-[360px] resize-y border-white/15 bg-black/20 font-mono text-sm leading-6 text-white placeholder:text-white/35"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className={overLimit ? "font-semibold text-amber-300" : "text-white/55"} aria-live="polite">
+                  {content.length.toLocaleString()} / {selectedType.charLimit.toLocaleString()} characters{overLimit ? ` · ${ (content.length - selectedType.charLimit).toLocaleString()} over guidance` : ""}
+                </span>
+                {overLimit && <span className="text-amber-200">Trim before posting if the destination requires it.</span>}
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <Button type="button" onClick={handleCopy} disabled={!content} className="min-h-11 bg-[#0057B8] text-white hover:bg-[#004a9e]">
+                  <Copy className="h-4 w-4" aria-hidden="true" />{copied ? "Copied" : "Copy"}
+                </Button>
+                <Button type="button" variant="outline" onClick={downloadDraft} disabled={!content} className="min-h-11 border-white/20 bg-transparent text-white hover:bg-white/10">
+                  <Download className="h-4 w-4" aria-hidden="true" />Download .txt
+                </Button>
+                <Button type="button" variant="outline" onClick={saveDraft} disabled={!content} className="col-span-2 min-h-11 border-white/20 bg-transparent text-white hover:bg-white/10 sm:col-span-1">
+                  <Save className="h-4 w-4" aria-hidden="true" />Save draft
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Campaign Manager */}
-        <Card className="border-white/10 bg-white/5 text-white">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Campaign Manager</CardTitle>
-                <CardDescription className="text-white/60">{campaigns.length} campaigns · {campaigns.filter((c) => c.status === "Active").length} active</CardDescription>
-              </div>
-              <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" onClick={() => setCampaigns((c) => [{ name: "New Campaign", type: "Multi-platform", posts: 0, reach: "0", status: "Draft" }, ...c])}>
-                <Sparkles /> New Campaign
-              </Button>
+        <section aria-labelledby="saved-drafts-title" className="space-y-3">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <h2 id="saved-drafts-title" className="text-lg font-bold">Saved drafts</h2>
+              <p className="text-xs text-white/50">Private to this browser · no scheduling or publishing connection is configured.</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {campaigns.map((c, i) => (
-                <div key={i} className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#E8501A] to-[#6366F1]">
-                    <Megaphone className="size-5" />
+            <span className="text-xs text-white/50">{drafts.length} / 50</span>
+          </div>
+          {drafts.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-8 text-center text-sm text-white/50">No drafts saved yet.</div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {drafts.map((draft) => (
+                <article key={draft.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="truncate font-semibold text-white">{draft.title}</p>
+                  <p className="mt-1 text-xs text-white/50">{new Date(draft.updatedAt).toLocaleString()}</p>
+                  <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-xs leading-5 text-white/65">{draft.content}</p>
+                  <div className="mt-3 flex gap-2">
+                    <Button type="button" size="sm" onClick={() => restoreDraft(draft)} className="min-h-9 bg-white/10 text-white hover:bg-white/20">Open</Button>
+                    <Button type="button" size="sm" variant="ghost" aria-label={`Delete ${draft.title}`} onClick={() => deleteDraft(draft.id)} className="min-h-9 text-white/70 hover:bg-red-500/15 hover:text-red-200">
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />Delete
+                    </Button>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{c.name}</p>
-                    <p className="text-xs text-white/50">{c.type} · {c.posts} posts</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="flex items-center gap-1 text-sm font-medium"><TrendingUp className="size-3.5 text-[#16A34A]" /> {c.reach}</p>
-                    <p className="text-xs text-white/50">reach</p>
-                  </div>
-                  <Badge
-                    className={
-                      c.status === "Active"
-                        ? "bg-[#16A34A]/20 text-[#86efac]"
-                        : c.status === "Scheduled"
-                        ? "bg-[#F59E0B]/20 text-[#fcd34d]"
-                        : "bg-white/10 text-white/60"
-                    }
-                  >
-                    {c.status}
-                  </Badge>
-                  <Button size="icon" variant="ghost" onClick={() => setCampaigns((p) => p.filter((_, idx) => idx !== i))}>
-                    <Trash2 className="size-4 text-red-400" />
-                  </Button>
-                </div>
+                </article>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </section>
 
-        <div className="rounded-xl border border-white/10 bg-gradient-to-r from-[#E8501A]/10 to-[#6366F1]/10 p-6">
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <h3 className="font-semibold">Schedule your campaign across platforms</h3>
-              <p className="text-sm text-white/60">Auto-publish to 13+ social platforms in one click.</p>
-            </div>
-            <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={() => navigate("social")}>
-              Open Social Automation
-            </Button>
-          </div>
-        </div>
+        <p aria-live="polite" role="status" className="min-h-5 text-sm text-white/60">{notice}</p>
       </div>
-    </div>
+    </main>
   );
 }

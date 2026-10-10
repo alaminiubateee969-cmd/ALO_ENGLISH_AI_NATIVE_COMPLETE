@@ -107,7 +107,7 @@ export async function getCurrentUser() {
 
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, role: true, status: true },
+    select: { id: true, email: true, name: true, role: true, status: true, branchId: true },
   });
 
   if (!user || user.status !== 'ACTIVE') return null;

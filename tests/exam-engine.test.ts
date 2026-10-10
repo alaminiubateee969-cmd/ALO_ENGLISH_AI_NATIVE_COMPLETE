@@ -18,7 +18,10 @@ import {
   type GradableQuestion,
 } from "../src/lib/exam/grading";
 import { computeClock, deadlineFor, resolveExpiry } from "../src/lib/exam/timer";
-import { QuestionShortageError } from "../src/lib/exam/selection";
+import { calculatePracticeIndicators } from "../src/lib/exam/indicators";
+import { hasReadyListeningAudio, ListeningAudioNotReadyError, QuestionShortageError, selectQuestions } from "../src/lib/exam/selection";
+import { toStudentQuestion } from "../src/lib/exam/questions";
+import { ExaminerStateMachine } from "../src/lib/ai/examiner/ExaminerStateMachine";
 
 const q = (over: Partial<GradableQuestion> & { id: string }): GradableQuestion => ({
   section: "READING",
@@ -91,7 +94,7 @@ describe("Grading — objective questions", () => {
     expect(result.correctTotal).toBe(0);
   });
 
-  test("essay and speaking are routed to the AI evaluator, not scored here", () => {
+  test("essay and speaking are not scored by the objective answer engine", () => {
     expect(isSubjective({ type: "ESSAY" })).toBe(true);
     expect(isSubjective({ type: "SPEAKING" })).toBe(true);
     expect(isObjective({ type: "ESSAY" })).toBe(false);
@@ -105,6 +108,38 @@ describe("Grading — objective questions", () => {
 
   test("normaliseText collapses whitespace, case and trailing punctuation", () => {
     expect(normaliseText("  Hello   World. ")).toBe("hello world");
+  });
+});
+
+describe("Practice indicators — objective evidence only", () => {
+  test("converts answer accuracy to a generic indicator and leaves subjective sections null", () => {
+    expect(calculatePracticeIndicators({
+      listeningCorrect: 3,
+      listeningTotal: 4,
+      readingCorrect: 1,
+      readingTotal: 2,
+    })).toEqual({
+      overall: 5.7,
+      listening: 6.8,
+      reading: 4.5,
+      writing: null,
+      speaking: null,
+    });
+  });
+
+  test("creates no zero score when objective evidence is absent", () => {
+    expect(calculatePracticeIndicators({
+      listeningCorrect: 0,
+      listeningTotal: 0,
+      readingCorrect: 0,
+      readingTotal: 0,
+    })).toEqual({
+      overall: null,
+      listening: null,
+      reading: null,
+      writing: null,
+      speaking: null,
+    });
   });
 });
 
@@ -146,7 +181,102 @@ describe("Timer — server authoritative", () => {
   });
 });
 
+describe("Session-only speaking-practice timing", () => {
+  const stateMachine = new ExaminerStateMachine();
+
+  test("timing is advisory and no estimated official exam duration is exposed", () => {
+    expect(stateMachine.getInstructionForState("part2_instructions")).toContain("not an official exam timer");
+    expect(stateMachine.getInstructionForState("part2_preparation")).toContain("does not enforce a timer");
+    expect(stateMachine).not.toHaveProperty("getEstimatedDuration");
+  });
+
+  test("introduction avoids requesting identifying details", () => {
+    const instruction = stateMachine.getInstructionForState("introduction");
+    expect(instruction).toContain("do not ask for a full name");
+    expect(instruction).toContain("sensitive personal details");
+  });
+});
+
+describe("Question API safety", () => {
+  test("listening transcripts are withheld while reading passages remain available", () => {
+    const listening = toStudentQuestion({
+      id: "l1",
+      section: "LISTENING",
+      type: "MULTIPLE_CHOICE",
+      passage: "This is the hidden listening transcript.",
+      options: null,
+    });
+    const reading = toStudentQuestion({
+      id: "r1",
+      section: "READING",
+      type: "MULTIPLE_CHOICE",
+      passage: "This is the reading passage students must read.",
+      options: null,
+    });
+
+    expect(listening.passage).toBeNull();
+    expect(reading.passage).toBe("This is the reading passage students must read.");
+    expect(Object.keys(listening)).not.toContain("correctAnswer");
+    expect(Object.keys(listening)).not.toContain("correctIndex");
+  });
+});
+
+describe("Listening media gates", () => {
+  test("only a matching READY asset with verification metadata is eligible", () => {
+    expect(hasReadyListeningAudio({ section: "READING", audioUrl: null })).toBe(true);
+    expect(hasReadyListeningAudio({ section: "LISTENING", audioUrl: null })).toBe(false);
+    expect(hasReadyListeningAudio({
+      section: "LISTENING",
+      audioUrl: "/audio/listening/q1.mp3",
+      audioAsset: { status: "PENDING", location: "/audio/listening/q1.mp3", verifiedAt: new Date() },
+    })).toBe(false);
+    expect(hasReadyListeningAudio({
+      section: "LISTENING",
+      audioUrl: "/audio/listening/q1.mp3",
+      audioAsset: { status: "READY", location: "/audio/listening/other.mp3", verifiedAt: new Date() },
+    })).toBe(false);
+    expect(hasReadyListeningAudio({
+      section: "LISTENING",
+      audioUrl: "/audio/listening/q1.mp3",
+      audioAsset: { status: "READY", location: "/audio/listening/q1.mp3", verifiedAt: new Date() },
+    })).toBe(true);
+  });
+
+  test("a gradeable listening question without ready media blocks attempt selection", async () => {
+    const fakeDb = {
+      question: {
+        findMany: async () => [{
+          id: "listen-1",
+          section: "LISTENING",
+          type: "MULTIPLE_CHOICE",
+          audioUrl: null,
+          audioAsset: null,
+          correctAnswer: null,
+          correctIndex: 0,
+          correctIndices: null,
+        }],
+      },
+      attemptQuestion: { findMany: async () => [] },
+    };
+    await expect(selectQuestions({ db: fakeDb as never, userId: "user-1", practiceSetId: "set-1" })).rejects.toMatchObject({
+      code: "LISTENING_AUDIO_NOT_READY",
+      questionCount: 1,
+    });
+  });
+});
+
 describe("Selection — shortage is a controlled condition", () => {
+  test("an empty or ungradeable bank cannot start a blank attempt", async () => {
+    const fakeDb = {
+      question: { findMany: async () => [] },
+      attemptQuestion: { findMany: async () => [] },
+    };
+    await expect(selectQuestions({ db: fakeDb as never, userId: "user-1", practiceSetId: "set-1" })).rejects.toMatchObject({
+      code: "QUESTION_BANK_SHORTAGE",
+      shortage: { requiredCount: 1, poolSize: 0, reason: "BANK_TOO_SMALL" },
+    });
+  });
+
   test("QuestionShortageError carries machine-readable detail", () => {
     const err = new QuestionShortageError({
       requiredCount: 40,
@@ -163,12 +293,18 @@ describe("Selection — shortage is a controlled condition", () => {
 });
 
 describe("Selection — ungradeable questions are never served", () => {
-  test("an objective question with no key is rejected", () => {
+  test("an objective question with no usable key is rejected", () => {
     expect(hasAnswerKey({ type: "MULTIPLE_CHOICE", correctIndex: null })).toBe(false);
+    expect(hasAnswerKey({ type: "MULTIPLE_CHOICE", correctIndex: null, correctAnswer: "legacy text key" })).toBe(false);
     expect(hasAnswerKey({ type: "TRUE_FALSE_NOT_GIVEN", correctIndex: null })).toBe(false);
     expect(hasAnswerKey({ type: "FILL_BLANK", correctAnswer: null })).toBe(false);
     expect(hasAnswerKey({ type: "FILL_BLANK", correctAnswer: "   " })).toBe(false);
-    expect(hasAnswerKey({ type: "MATCHING", correctIndices: null })).toBe(false);
+    expect(hasAnswerKey({ type: "MATCHING", correctIndices: "not-json" })).toBe(false);
+  });
+
+  test("legacy true-false text keys and single-item matching keys remain gradeable", () => {
+    expect(hasAnswerKey({ type: "TRUE_FALSE_NOT_GIVEN", correctIndex: null, correctAnswer: "Not Given" })).toBe(true);
+    expect(hasAnswerKey({ type: "MATCHING", correctIndex: 1, correctIndices: null })).toBe(true);
   });
 
   test("a keyed objective question is accepted", () => {
@@ -177,8 +313,12 @@ describe("Selection — ungradeable questions are never served", () => {
     expect(hasAnswerKey({ type: "MATCHING", correctIndices: "[1,2]" })).toBe(true);
   });
 
-  test("subjective questions are always served (an evaluator marks them)", () => {
+  test("subjective questions are retained for separate review", () => {
     expect(hasAnswerKey({ type: "ESSAY" })).toBe(true);
     expect(hasAnswerKey({ type: "SPEAKING" })).toBe(true);
+  });
+
+  test("unknown question types fail closed", () => {
+    expect(hasAnswerKey({ type: "UNSUPPORTED_TASK" })).toBe(false);
   });
 });

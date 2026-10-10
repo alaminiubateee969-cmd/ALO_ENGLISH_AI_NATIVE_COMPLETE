@@ -3,25 +3,19 @@
 /**
  * src/app/live-exam/page.tsx
  *
- * Real-Time Live Voice AI Examiner — the flagship feature.
+ * Session-only conversational speaking practice.
  *
- * This page conducts a REAL conversational AI speaking exam:
- *   1. Student clicks "Start Exam" → examiner greets (TTS voice)
- *   2. Student clicks "Record" → speaks into microphone (MediaRecorder)
- *   3. Audio uploaded → ASR transcribes speech → text sent to LLM
- *   4. LLM generates examiner's next response → TTS synthesizes voice
- *   5. Examiner speaks (audio playback + avatar speaking animation)
- *   6. State machine advances: Introduction → Part 1 → Part 2 → Part 3 → Closing
- *   7. On completion → scores recorded → redirect to results
+ * This page records audio in the browser, sends it to the configured speech
+ * recognition service for a transcript, and requests a conversational reply.
+ * It does not create a persisted exam attempt or produce a speaking score.
+ *   1. Student starts a practice conversation with synthetic voice.
+ *   2. Browser captures a short audio clip and submits it for transcription.
+ *   3. The transcript is sent to a configured conversational response service.
+ *   4. The response is played using generated or browser speech.
+ *   5. Turns and recording URLs exist only in the current browser session.
  *
- * Uses:
- *   - /api/speaking/transcribe   (STT via z-ai-web-dev-sdk)
- *   - /api/speaking/examiner-respond (LLM + TTS)
- *   - /api/speaking/examiner-voice (TTS only)
- *   - /api/examiners (get examiner persona)
- *   - ExaminerStateMachine (turn-taking)
- *   - ConversationMemory (context)
- *   - FollowUpEngine (context-aware questions)
+ * This is not a scored test. Provider processing and retention are governed
+ * by the configured service; learners should not submit sensitive information.
  */
 
 import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
@@ -51,15 +45,15 @@ const isMicSupported = () => SpeakingRecorder.isSupported();
 const isMicSupportedOnServer = () => true;
 
 const STATE_LABELS: Record<string, string> = {
-  introduction: "Introduction",
-  part1_questions: "Part 1: Interview",
-  part2_instructions: "Part 2: Cue Card",
-  part2_preparation: "Part 2: Preparation",
-  part2_long_turn: "Part 2: Long Turn",
-  part2_followup: "Part 2: Follow-up",
-  part3_discussion: "Part 3: Discussion",
-  closing: "Closing",
-  completed: "Completed",
+  introduction: "Speaking practice: Introduction",
+  part1_questions: "Speaking practice: Conversation",
+  part2_instructions: "Speaking practice: Topic prompt",
+  part2_preparation: "Speaking practice: Preparation",
+  part2_long_turn: "Speaking practice: Longer response",
+  part2_followup: "Speaking practice: Follow-up",
+  part3_discussion: "Speaking practice: Broader discussion",
+  closing: "Speaking practice: Closing",
+  completed: "Conversation complete",
 };
 
 export default function LiveExamPage() {
@@ -72,7 +66,7 @@ export default function LiveExamPage() {
   const [error, setError] = useState<string>("");
   const recorderRef = useRef<SpeakingRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingUrlsRef = useRef<string[]>([]);
 
   // Microphone support is a browser capability, so it is read through
   // useSyncExternalStore: the server snapshot stays optimistic (true) to keep
@@ -174,6 +168,8 @@ export default function LiveExamPage() {
   const startExam = useCallback(async () => {
     setError("");
     setPhase("greeting");
+    recordingUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    recordingUrlsRef.current = [];
     setTurns([]);
 
     try {
@@ -222,43 +218,19 @@ export default function LiveExamPage() {
     }
   }, [examiner]);
 
-  // ─── Start recording student speech ──────────────────────────────────
-  const startRecording = useCallback(async () => {
-    setError("");
-    setPhase("recording");
+  const processRecording = useCallback(async (recording: RecordingResult) => {
+    recordingUrlsRef.current.push(recording.url);
+    const studentTurn: Turn = {
+      role: "student",
+      text: "[Transcribing...]",
+      timestamp: new Date().toISOString(),
+      audioUrl: recording.url,
+    };
+    setTurns((prev) => [...prev, studentTurn]);
+    setPhase("transcribing");
 
     try {
-      const recorder = new SpeakingRecorder({ maxDurationMs: 120000, minDurationMs: 3000 });
-      recorderRef.current = recorder;
-      await recorder.startRecording();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Microphone access failed");
-      setPhase("awaiting-student");
-    }
-  }, []);
-
-  // ─── Stop recording and process student speech ───────────────────────
-  const stopRecording = useCallback(async () => {
-    const recorder = recorderRef.current;
-    if (!recorder) return;
-
-    try {
-      const recording: RecordingResult = await recorder.stopRecording();
-
-      // Create a student turn with the audio for immediate feedback
-      const studentTurn: Turn = {
-        role: "student",
-        text: "[Transcribing...]",
-        timestamp: new Date().toISOString(),
-        audioUrl: recording.url,
-      };
-      setTurns((prev) => [...prev, studentTurn]);
-      setPhase("transcribing");
-
-      // Convert blob to base64 for STT API
       const audioBase64 = await blobToBase64(recording.blob);
-
-      // Call STT API
       const sttResponse = await fetch("/api/speaking/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -267,32 +239,65 @@ export default function LiveExamPage() {
 
       if (!sttResponse.ok) throw new Error("Transcription failed");
       const sttData = await sttResponse.json();
-
       if (!sttData.success) throw new Error(sttData.message || "Transcription failed");
 
-      const transcript = sttData.data.transcript || "";
-
-      // Update student turn with transcript
-      setTurns((prev) =>
-        prev.map((t, i) =>
-          i === prev.length - 1 ? { ...t, text: transcript || "[No speech detected]" } : t
-        )
-      );
+      const transcript = typeof sttData.data?.transcript === "string" ? sttData.data.transcript : "";
+      setTurns((prev) => prev.map((turn, index) =>
+        index === prev.length - 1 ? { ...turn, text: transcript || "[No speech detected]" } : turn
+      ));
 
       if (!transcript || transcript.length < 5) {
-        // If no speech detected, ask examiner to repeat
         setError("I couldn't hear you clearly. Please try speaking again.");
         setPhase("awaiting-student");
         return;
       }
 
-      // Get examiner response
       await getExaminerResponse(transcript);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Recording processing failed");
       setPhase("awaiting-student");
     }
-  }, [turns]);
+  }, [getExaminerResponse]);
+
+  // ─── Start recording student speech ──────────────────────────────────
+  const startRecording = useCallback(async () => {
+    setError("");
+    setPhase("recording");
+
+    try {
+      const recorder = new SpeakingRecorder({
+        maxDurationMs: 120_000,
+        minDurationMs: 3_000,
+        onMaxDuration: (recording) => {
+          setError("The 2-minute recording limit was reached; the captured audio is being transcribed.");
+          void processRecording(recording);
+        },
+        onError: (message) => {
+          setError(message);
+          setPhase("awaiting-student");
+        },
+      });
+      recorderRef.current = recorder;
+      await recorder.startRecording();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Microphone access failed");
+      setPhase("awaiting-student");
+    }
+  }, [processRecording]);
+
+  // ─── Stop recording and process student speech ───────────────────────
+  const stopRecording = useCallback(async () => {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+
+    try {
+      const recording = await recorder.stopRecording();
+      await processRecording(recording);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Recording processing failed");
+      setPhase("awaiting-student");
+    }
+  }, [processRecording]);
 
   // ─── Cleanup on unmount ───────────────────────────────────────────────
   useEffect(() => {
@@ -300,9 +305,8 @@ export default function LiveExamPage() {
       if (recorderRef.current) {
         recorderRef.current.cancelRecording();
       }
-      if (recordingStreamRef.current) {
-        recordingStreamRef.current.getTracks().forEach((t) => t.stop());
-      }
+      recordingUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      recordingUrlsRef.current = [];
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -327,10 +331,10 @@ export default function LiveExamPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Live AI Speaking Examiner
+              Speaking Conversation Practice
             </h1>
             <p className="mt-1 text-sm text-slate-600">
-              Real-time conversational AI English speaking test with voice
+              Session-only conversation practice. No saved attempt, official score, or acoustic pronunciation evaluation is produced.
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={() => router.back()}>
@@ -369,7 +373,7 @@ export default function LiveExamPage() {
         {phase === "not-started" && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Choose Your AI Examiner</CardTitle>
+              <CardTitle>Choose a conversation practice guide</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -426,7 +430,7 @@ export default function LiveExamPage() {
 
                 {/* State progress */}
                 <div className="mt-6 w-full">
-                  <p className="mb-2 text-xs font-medium text-slate-500">Test Progress</p>
+                  <p className="mb-2 text-xs font-medium text-slate-500">Conversation flow</p>
                   <div className="flex flex-col gap-1">
                     {Object.entries(STATE_LABELS).map(([key, label]) => {
                       const stateOrder = Object.keys(STATE_LABELS);
@@ -582,18 +586,13 @@ export default function LiveExamPage() {
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
                           <CheckCircle2 className="h-8 w-8 text-emerald-600" />
                         </div>
-                        <p className="text-lg font-bold text-slate-900">Speaking Test Complete!</p>
-                        <p className="text-center text-sm text-slate-600">
-                          Your conversation has been recorded for evaluation. You can now close this page or return to the dashboard.
+                        <p className="text-lg font-bold text-slate-900">Conversation practice complete</p>
+                        <p className="max-w-xl text-center text-sm text-slate-600">
+                          This session was not saved as an exam attempt and no score was generated. Audio was sent to the configured speech-recognition service; data retention depends on that provider. Do not use this practice flow for sensitive recordings.
                         </p>
-                        <div className="flex gap-2">
-                          <Button onClick={() => router.push("/student/exam-history")} variant="outline">
-                            View History
-                          </Button>
-                          <Button onClick={() => router.push("/student/dashboard")}>
-                            Go to Dashboard
-                          </Button>
-                        </div>
+                        <Button onClick={() => router.push("/student/dashboard")}>
+                          Return to dashboard
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -611,7 +610,7 @@ export default function LiveExamPage() {
               onClick={startExam}
               className="h-14 gap-2 bg-rose-500 px-8 text-base hover:bg-rose-600"
             >
-              <Play className="h-5 w-5" /> Start Live Speaking Test
+              <Play className="h-5 w-5" /> Start conversation practice
             </Button>
           </div>
         )}

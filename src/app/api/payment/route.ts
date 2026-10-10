@@ -1,117 +1,70 @@
 /**
- * POST /api/payment — Purchase additional mock test attempts.
+ * Payment endpoints for additional practice attempts.
  *
- * Students get 3 free tests. After that, they must pay for more.
- * This endpoint creates a payment record (manual/stripe).
- *
- * Pricing: $2.00 per additional attempt.
+ * GET reports persisted quota and payment records. POST is intentionally
+ * blocked: this deployment has no verified provider checkout/webhook flow, so
+ * creating a PENDING row would not constitute a payment and must not reserve
+ * or grant attempts.
  */
 
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
-import { ok, badRequest } from "@/lib/responses";
+import { ok, serviceUnavailable } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
-import { audit, getClientIp } from "@/lib/audit";
-import { z } from "zod";
+import { freeAttemptLimitForRole, quotaSummary, reconcileAttemptsUsed } from "@/lib/exam/quota";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request): Promise<Response> {
+export async function POST(): Promise<Response> {
   return withErrorHandler(async () => {
-    const user = await requireAuth();
-
-    const body = await req.json().catch(() => null);
-    if (!body) return badRequest("Invalid JSON body");
-
-    const schema = z.object({
-      attempts: z.number().int().min(1).max(50),
-      method: z.string().optional(),
-    });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return badRequest(parsed.error.issues[0]?.message || "Validation failed");
-    }
-
-    const { attempts, method } = parsed.data;
-    const pricePerAttempt = 2.00;
-    const amount = attempts * pricePerAttempt;
-
-    // Create payment record
-    const payment = await db.payment.create({
-      data: {
-        userId: user.id,
-        amount,
-        currency: "USD",
-        status: "PENDING",
-        method: method || "MANUAL",
-        attemptsPaid: attempts,
-      },
-    });
-
-    await audit("PAYMENT_CREATE" as any, {
-      userId: user.id,
-      resource: "payment:" + payment.id,
-      ipAddress: getClientIp(req),
-      metadata: { attempts, amount, currency: "USD" },
-    });
-
-    return ok({
-      payment: {
-        id: payment.id,
-        amount,
-        currency: "USD",
-        attempts,
-        status: "PENDING",
-        pricePerAttempt,
-      },
-      message: `Payment of $${amount} for ${attempts} additional test attempt(s). Complete payment to activate.`,
-    }, "Payment initiated");
+    await requireAuth();
+    return serviceUnavailable(
+      "Online attempt purchases are unavailable. No payment or attempt credit was created; a payment provider and verified webhook are required.",
+    );
   });
 }
 
-/**
- * GET /api/payment — View payment history + quota status.
- */
 export async function GET(): Promise<Response> {
   return withErrorHandler(async () => {
     const user = await requireAuth();
+    const [quota, payments, completedAttempts, paidAggregate] = await Promise.all([
+      db.freeQuota.findUnique({ where: { userId: user.id } }),
+      db.payment.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, amount: true, currency: true, status: true, attemptsPaid: true, createdAt: true },
+      }),
+      db.attempt.count({
+        where: { userId: user.id, status: { in: ["SUBMITTED", "SCORED"] } },
+      }),
+      db.payment.aggregate({
+        where: { userId: user.id, status: "COMPLETED" },
+        _sum: { attemptsPaid: true },
+      }),
+    ]);
 
-    const quota = await db.freeQuota.findUnique({ where: { userId: user.id } });
-    const payments = await db.payment.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
+    const freeLimit = quota?.attemptsLimit ?? freeAttemptLimitForRole(user.role);
+    const attemptsUsed = reconcileAttemptsUsed(quota?.attemptsUsed ?? 0, completedAttempts);
+    const summary = quotaSummary({
+      attemptsUsed,
+      attemptsLimit: freeLimit,
+      paidAttempts: paidAggregate._sum.attemptsPaid ?? 0,
     });
 
-    const completedAttempts = await db.attempt.count({
-      where: { userId: user.id, status: "SUBMITTED" },
-    });
-
-    const paidAttempts = payments
-      .filter((p) => p.status === "COMPLETED")
-      .reduce((sum, p) => sum + p.attemptsPaid, 0);
-
-    const freeLimit = quota?.attemptsLimit || 3;
-    const totalAllowed = freeLimit + paidAttempts;
-    const remaining = Math.max(0, totalAllowed - completedAttempts);
-
-    return ok({
-      quota: {
-        freeLimit,
-        attemptsUsed: completedAttempts,
-        paidAttempts,
-        totalAllowed,
-        remaining,
-        needsPayment: remaining === 0,
+    return ok(
+      {
+        quota: summary,
+        payments: payments.map((payment) => ({
+          id: payment.id,
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          attempts: payment.attemptsPaid,
+          date: payment.createdAt,
+        })),
       },
-      payments: payments.map((p) => ({
-        id: p.id,
-        amount: p.amount,
-        currency: p.currency,
-        status: p.status,
-        attempts: p.attemptsPaid,
-        date: p.createdAt,
-      })),
-    }, "Payment history retrieved");
+      "Payment history retrieved",
+    );
   });
 }

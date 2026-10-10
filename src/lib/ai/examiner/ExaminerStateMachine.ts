@@ -1,14 +1,14 @@
 /**
  * src/lib/ai/examiner/ExaminerStateMachine.ts
  *
- * Robust IELTS Speaking Test state machine.
+ * Three-part conversational speaking-practice flow inspired by common
+ * interview formats. It is not an official or standardized exam and produces
+ * no score.
  *
- * The test has 3 parts:
- *   Part 1 — Introduction & Interview (4-5 min): examiner asks general questions
- *            about familiar topics (home, family, work, studies, hobbies)
- *   Part 2 — Long Turn (3-4 min): cue card topic, 1 min prep, 2 min speech,
- *            1 follow-up question
- *   Part 3 — Discussion (4-5 min): abstract discussion questions linked to Part 2
+ * The practice conversation has 3 parts:
+ *   Part 1 — Introduction and familiar-topic questions
+ *   Part 2 — Original practice topic card and a longer response
+ *   Part 3 — Follow-up discussion questions
  *
  * States flow:
  *   introduction → part1_questions → part2_instructions → part2_preparation →
@@ -103,22 +103,22 @@ export class ExaminerStateMachine {
   getInstructionForState(state: ExaminerState): string {
     const instructions: Record<ExaminerState, string> = {
       introduction:
-        "Introduce yourself as the AI examiner (use your persona name). Ask the student to introduce themselves — name, where they're from, and what they do (work or study).",
+        "Introduce yourself as an AI speaking-practice guide, not an official examiner. Invite the student to share a nickname or a familiar topic they are comfortable with; do not ask for a full name, precise location, or sensitive personal details.",
       part1_questions:
         "Ask 2-3 general questions about familiar topics based on their introduction (hometown, hobbies, daily routine, studies/work). Listen to their answers and ask natural follow-ups.",
       part2_instructions:
-        "Explain Part 2: Give the student a cue card topic. Say they have 1 minute to prepare and should speak for up to 2 minutes. Topic: Describe a memorable journey you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable.",
+        "Offer an original practice prompt about a memorable journey. Explain that the suggested timing is flexible practice guidance, not an official exam timer: they may take about 1 minute to prepare and speak for up to 2 minutes. Prompt: Describe a memorable journey you have taken. You may mention where you went, who you went with, what you did there, and why it was memorable.",
       part2_preparation:
-        "Tell the student to take 1 minute to prepare. Ask if they're ready to start speaking.",
+        "Invite the student to take about 1 minute to prepare if helpful; make clear that the app does not enforce a timer. Ask if they're ready to begin.",
       part2_long_turn:
-        "Listen to their long turn speech. If they stop early, gently encourage them to continue or elaborate. If they've spoken enough, ask one brief follow-up about the same topic.",
+        "Listen to the student's response. If they pause, gently invite them to continue or elaborate without judging accent or pronunciation. Offer one brief follow-up when they are ready.",
       part2_followup:
-        "Ask one follow-up question related to their Part 2 topic (e.g., 'Would you like to go there again?' or 'Do you prefer travelling alone or with others?').",
+        "Ask one follow-up question about the practice topic (e.g., 'Would you like to go there again?' or 'Do you prefer travelling alone or with others?').",
       part3_discussion:
-        "Ask abstract discussion questions related to travel and journeys (e.g., 'How has travel changed in your country?', 'Do you think technology makes travel easier?', 'What are the benefits of travelling abroad?'). Ask 2-3 questions.",
+        "Ask broader discussion questions related to travel and journeys (e.g., 'How has travel changed in your country?', 'Do you think technology makes travel easier?', 'What are the benefits of travelling abroad?'). Ask 2-3 questions.",
       closing:
-        "Thank the student for their participation. Tell them the speaking test is complete and their results will be available shortly. Say goodbye.",
-      completed: "The test is complete.",
+        "Thank the student for their participation and say goodbye. Make clear that this session is practice-only and does not generate a saved or numeric result.",
+      completed: "The conversation is complete.",
     };
     return instructions[state];
   }
@@ -129,18 +129,18 @@ export class ExaminerStateMachine {
   getFallback(state: ExaminerState): string {
     const fallbacks: Record<ExaminerState, string> = {
       introduction:
-        "Hello, I'm your AI speaking examiner. Welcome to the speaking test. Could you introduce yourself — tell me your name, where you're from, and what you do?",
+        "Hello, I'm your AI speaking-practice guide, not an official examiner. Let's have a short English conversation. Share a nickname or a familiar topic if you'd like — please don't share sensitive personal details.",
       part1_questions: "That's interesting. Can you tell me more about that?",
       part2_instructions:
-        "Now let's move to Part 2. I'll give you a topic. You have 1 minute to prepare, then speak for up to 2 minutes. Your topic is: Describe a memorable journey you have taken. Say where you went, who you went with, what you did, and why it was memorable.",
+        "Here's an original practice prompt: Describe a memorable journey you have taken. You may take about a minute to prepare and speak for up to two minutes; those are flexible practice suggestions, not an official exam timer. You could say where you went, who you went with, what you did, and why it was memorable.",
       part2_preparation:
-        "Take a minute to prepare your thoughts. Let me know when you're ready to begin speaking.",
+        "Take a moment to prepare your thoughts; the app does not enforce a timer. Let me know when you're ready to begin speaking.",
       part2_long_turn: "Thank you. Can you tell me a bit more about that experience?",
       part2_followup:
         "That was very interesting. Would you like to take a similar journey again in the future?",
       part3_discussion: "How do you think travel has changed in your country in recent years?",
       closing:
-        "Thank you very much for your participation today. That concludes the speaking test. Your results will be available shortly. Goodbye!",
+        "Thank you for practising with me. This session does not generate a saved or numeric result. Goodbye!",
       completed: "The test is complete.",
     };
     return fallbacks[state];
@@ -154,13 +154,6 @@ export class ExaminerStateMachine {
       return "Describe a memorable journey you have taken";
     }
     return undefined;
-  }
-
-  /**
-   * Get the total estimated duration for the test in minutes.
-   */
-  getEstimatedDuration(): number {
-    return 11; // Part 1: 4-5, Part 2: 3-4, Part 3: 4-5
   }
 
   /**
@@ -185,15 +178,15 @@ export class ExaminerStateMachine {
    */
   getStateLabel(state: ExaminerState): string {
     const labels: Record<ExaminerState, string> = {
-      introduction: "Introduction",
-      part1_questions: "Part 1: Interview",
-      part2_instructions: "Part 2: Cue Card",
-      part2_preparation: "Part 2: Preparation",
-      part2_long_turn: "Part 2: Long Turn",
-      part2_followup: "Part 2: Follow-up",
-      part3_discussion: "Part 3: Discussion",
-      closing: "Closing",
-      completed: "Completed",
+      introduction: "Speaking practice: Introduction",
+      part1_questions: "Speaking practice: Conversation",
+      part2_instructions: "Speaking practice: Topic prompt",
+      part2_preparation: "Speaking practice: Preparation",
+      part2_long_turn: "Speaking practice: Longer response",
+      part2_followup: "Speaking practice: Follow-up",
+      part3_discussion: "Speaking practice: Broader discussion",
+      closing: "Speaking practice: Closing",
+      completed: "Conversation complete",
     };
     return labels[state];
   }

@@ -1,13 +1,12 @@
 /**
- * prisma/seed-all-missing-exams.ts
- *
- * Seeds real-format questions for all 11 missing exam types:
- *   IELTS-G, IELTS-UKVI, OET, LanguageCert, Linguaskill, OIETC,
- *   TOEIC, Cambridge English, LSAT, MCAT, Visa Interview
- *
- * Each question follows the EXACT format of the real official exam.
+ * LEGACY SAMPLE-SEED SCRIPT — synthetic short-form practice fixtures for
+ * several exam types. Content is not authorized, official, full-length, or
+ * validated against current specifications. Guarded to disposable test/sample
+ * databases only; never part of the production seed chain.
  */
 
+import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
+assertSafeSampleSeedTarget();
 import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 
@@ -26,6 +25,8 @@ type Q = {
 };
 
 async function seedExam(examCode: string, setTitle: string, setDescription: string, durationMin: number, questions: Q[]) {
+  const sampleTitle = `${setTitle} — Synthetic Sample (not full-length)`;
+  const sampleDescription = `${setDescription}. Development fixture only; not official, licensed, or full-length exam content.`;
   const examType = await db.examType.findUnique({ where: { code: examCode } });
   if (!examType) {
     console.log(`⚠️  Exam type ${examCode} not found — skipping`);
@@ -33,7 +34,7 @@ async function seedExam(examCode: string, setTitle: string, setDescription: stri
   }
 
   // Check if practice set already exists
-  const existing = await db.practiceSet.findFirst({ where: { examTypeId: examType.id, title: setTitle } });
+  const existing = await db.practiceSet.findFirst({ where: { examTypeId: examType.id, title: sampleTitle } });
   if (existing) {
     const qCount = await db.question.count({ where: { practiceSetId: existing.id } });
     if (qCount > 0) {
@@ -44,8 +45,8 @@ async function seedExam(examCode: string, setTitle: string, setDescription: stri
 
   const practiceSet = existing || await db.practiceSet.create({
     data: {
-      title: setTitle,
-      description: setDescription,
+      title: sampleTitle,
+      description: sampleDescription,
       durationMin,
       examTypeId: examType.id,
     },
@@ -507,7 +508,7 @@ async function main() {
   await seedExam("OET", "OET — Healthcare English Practice", "Occupational English Test for healthcare professionals", 120, OET_QUESTIONS);
   await seedExam("LANGUAGECERT", "LanguageCert — ESOL Practice", "LanguageCert International ESOL practice test", 150, LANGUAGECERT_QUESTIONS);
   await seedExam("LINGUASKILL", "Cambridge Linguaskill — Practice Test", "Adaptive English assessment for work/study", 90, LINGUASKILL_QUESTIONS);
-  await seedExam("OIETC", "OIETC / Oxford ELLT — Practice", "Oxford International English Language Test", 120, OIETC_QUESTIONS);
+  await seedExam("OIETC", "OIETC — Practice sample (product identity pending)", "Legacy synthetic sample only; official product identity and format are unverified.", 120, OIETC_QUESTIONS);
   await seedExam("TOEIC", "TOEIC — Listening & Reading Practice", "Workplace English proficiency assessment", 120, TOEIC_QUESTIONS);
   await seedExam("CAMBRIDGE", "Cambridge B2 First — Practice Test", "Cambridge English: First (FCE) practice", 180, CAMBRIDGE_QUESTIONS);
   await seedExam("LSAT", "LSAT — Law School Admission Practice", "Logical reasoning, reading comprehension, writing", 150, LSAT_QUESTIONS);

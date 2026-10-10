@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Clock, Flag, ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 /** Key used to survive a page refresh within the same browser tab session. */
@@ -24,10 +23,8 @@ type Question = {
 type ExamType = { id: string; code: string; name: string };
 type PracticeSet = { id: string; title: string; description?: string; durationMin: number; examType: { code: string; name: string } };
 
-const SECTIONS = ["LISTENING", "READING", "WRITING", "SPEAKING"];
 
 export default function PracticeTestPage() {
-  const router = useRouter();
   const [examTypes, setExamTypes] = useState<ExamType[]>([]);
   const [selectedExam, setSelectedExam] = useState("");
   const [practiceSets, setPracticeSets] = useState<PracticeSet[]>([]);
@@ -70,10 +67,98 @@ export default function PracticeTestPage() {
   useEffect(() => {
     fetch("/api/exam-types")
       .then((r) => r.json())
-      .then((data) => { if (data.success) setExamTypes(data.data.examTypes); })
+      .then((data) => {
+        if (!data.success) return;
+        const availableTypes: ExamType[] = data.data.examTypes;
+        setExamTypes(availableTypes);
+        const requestedCode = new URLSearchParams(window.location.search).get("examType");
+        const requestedType = requestedCode
+          ? availableTypes.find((examType) => examType.code.toLowerCase() === requestedCode.toLowerCase())
+          : undefined;
+        if (requestedType) setSelectedExam(requestedType.id);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Recover an in-progress attempt from this tab or the authenticated API.
+  // The API fallback also handles a lost start response or cleared sessionStorage.
+  useEffect(() => {
+    if (loading) return;
+    let cancelled = false;
+
+    const restoreAttempt = async () => {
+      const storedAttemptId = window.sessionStorage.getItem(ATTEMPT_STORAGE_KEY);
+      setResuming(true);
+      try {
+        const endpoint = storedAttemptId
+          ? `/api/attempts/${encodeURIComponent(storedAttemptId)}`
+          : "/api/attempts/active";
+        const response = await fetch(endpoint, { cache: "no-store" });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload?.success) {
+          if (storedAttemptId && (response.status === 403 || response.status === 404)) {
+            window.sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
+          }
+          return;
+        }
+
+        const restored = payload.data;
+        const restoredAttempt = restored?.attempt;
+        if (!restoredAttempt?.id) {
+          if (storedAttemptId) window.sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
+          return;
+        }
+        if (restoredAttempt.status !== "IN_PROGRESS") {
+          window.sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
+          return;
+        }
+
+        const restoredQuestions: Question[] = Array.isArray(restored.questions) ? restored.questions : [];
+        if (restoredQuestions.length === 0) {
+          setError("This saved attempt has no frozen questions. It cannot be resumed; contact support before starting another attempt.");
+          return;
+        }
+
+        const set = restoredAttempt.practiceSet;
+        const restoredAnswers = Object.fromEntries(
+          Object.entries(restored.answers ?? {}).map(([questionId, answer]) => [
+            questionId,
+            typeof answer === "string" ? answer : String(answer ?? ""),
+          ]),
+        ) as Record<string, string>;
+        if (cancelled) return;
+
+        setAttemptId(restoredAttempt.id);
+        window.sessionStorage.setItem(ATTEMPT_STORAGE_KEY, restoredAttempt.id);
+        setActiveSet({
+          id: set.id,
+          title: set.title,
+          durationMin: set.durationMin,
+          examType: set.examType,
+        });
+        setQuestions(restoredQuestions);
+        setAnswers(restoredAnswers);
+        answersRef.current = restoredAnswers;
+        setSaveStatus(Object.fromEntries(Object.keys(restoredAnswers).map((questionId) => [questionId, "saved"])) as Record<string, "saved">);
+        setCurrentSection(0);
+        setCurrentQuestion(0);
+        setExpiresAt(restored.clock.expiresAt);
+        setTimeLeft(restored.clock.remainingSec);
+        skewRef.current = new Date(restored.clock.serverNow).getTime() - Date.now();
+        setTestStarted(true);
+        const matchingExam = examTypes.find((examType) => examType.code === set.examType.code);
+        if (matchingExam) setSelectedExam(matchingExam.id);
+      } catch {
+        if (!cancelled) setError("Could not restore the saved attempt. Check your connection and reload to retry.");
+      } finally {
+        if (!cancelled) setResuming(false);
+      }
+    };
+
+    void restoreAttempt();
+    return () => { cancelled = true; };
+  }, [loading, examTypes]);
 
   // Fetch practice sets when exam selected
   useEffect(() => {
@@ -279,10 +364,15 @@ export default function PracticeTestPage() {
     return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   }
 
-  // Get questions for current section
+  // Keep section navigation data-driven: academic exam sections such as
+  // VERBAL or QUANTITATIVE must not disappear behind a fixed four-skill list.
+  const sections = useMemo(
+    () => Array.from(new Set(questions.map((question) => question.section))),
+    [questions]
+  );
   const sectionQuestions = useMemo(
-    () => questions.filter((q) => q.section === SECTIONS[currentSection]),
-    [questions, currentSection]
+    () => questions.filter((question) => question.section === sections[currentSection]),
+    [questions, sections, currentSection]
   );
   const currentQ = sectionQuestions[currentQuestion];
 
@@ -301,76 +391,61 @@ export default function PracticeTestPage() {
     return (
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="rounded-2xl border border-slate-200 bg-white p-8">
-          <h1 className="text-3xl font-bold text-green-700 mb-2">Test Complete — AI Evaluation</h1>
-          <p className="text-slate-500 mb-6">Your test has been evaluated by AI agents</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            {result.status === "SCORED" ? "Practice feedback ready" : "Attempt submitted — no numeric result"}
+          </h1>
+          <p className="text-slate-600 mb-6">
+            Listening and reading indicators reflect answer accuracy only. Writing suggestions are non-scored and unvalidated. Speaking is not scored because this attempt does not attach a recording for acoustic assessment.
+          </p>
 
           {/* Overall Score */}
           <div className="mb-8 grid gap-4 md:grid-cols-4">
             <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-6 text-center">
-              <p className="text-sm font-medium text-slate-500">Overall Band</p>
-              <p className="text-5xl font-bold text-blue-700">{result.overall}</p>
+              <p className="text-sm font-medium text-slate-500">Practice indicator (0–9)</p>
+              <p className="text-5xl font-bold text-blue-700">{result.overall ?? "—"}</p>
             </div>
             <div className="rounded-xl border border-slate-200 p-6 text-center">
-              <p className="text-sm font-medium text-slate-500">Confidence</p>
-              <p className="text-3xl font-bold text-slate-700">{Math.round(result.confidence * 100)}%</p>
-              <p className="text-xs text-slate-400">{result.confidenceLevel}</p>
+              <p className="text-sm font-medium text-slate-500">Calibration</p>
+              <p className="text-lg font-bold text-slate-700">Not validated</p>
+              <p className="text-xs text-slate-400">No confidence percentage shown</p>
             </div>
             <div className="rounded-xl border border-slate-200 p-6 text-center">
-              <p className="text-sm font-medium text-slate-500">Provider</p>
+              <p className="text-sm font-medium text-slate-500">Scoring method</p>
               <p className="text-lg font-bold text-slate-700">{result.providerUsed}</p>
             </div>
             <div className="rounded-xl border border-slate-200 p-6 text-center">
-              <p className="text-sm font-medium text-slate-500">Review</p>
-              <p className="text-lg font-bold text-slate-700 capitalize">{result.reviewRecommendation}</p>
+              <p className="text-sm font-medium text-slate-500">Human review</p>
+              <p className="text-lg font-bold text-slate-700">Not performed</p>
             </div>
           </div>
 
-          {/* Section Scores */}
-          <h2 className="text-xl font-bold mb-4">Section Scores</h2>
+          {/* Section results */}
+          <h2 className="text-xl font-bold mb-4">Objective practice indicators (0–9; not official scores)</h2>
           <div className="mb-8 grid gap-4 md:grid-cols-4">
-            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Listening</p><p className="text-3xl font-bold">{result.listening}</p></div>
-            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Reading</p><p className="text-3xl font-bold">{result.reading}</p></div>
-            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Writing</p><p className="text-3xl font-bold">{result.writing}</p></div>
-            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Speaking</p><p className="text-3xl font-bold">{result.speaking}</p></div>
+            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Listening</p><p className="text-3xl font-bold">{result.listening ?? "—"}</p></div>
+            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Reading</p><p className="text-3xl font-bold">{result.reading ?? "—"}</p></div>
+            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Writing</p><p className="text-lg font-semibold">Feedback only</p></div>
+            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Speaking</p><p className="text-lg font-semibold">Not scored</p></div>
           </div>
 
-          {/* Writing Feedback */}
-          {result.writingEvaluation && (
+          {/* Writing guidance only; no heuristic/model band is exposed. */}
+          {result.writingFeedback && (
             <div className="mb-6 rounded-xl border p-6">
-              <h3 className="font-semibold mb-2">Writing Feedback (AI Agent)</h3>
-              <p className="text-sm text-slate-600 mb-2">Word count: {result.writingEvaluation.wordCount} / Target: {result.writingEvaluation.targetWordCount}</p>
-              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Task Achievement</p><p className="font-bold">{result.writingEvaluation.taskAchievement}</p></div>
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Coherence</p><p className="font-bold">{result.writingEvaluation.coherence}</p></div>
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Lexical</p><p className="font-bold">{result.writingEvaluation.lexical}</p></div>
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Grammar</p><p className="font-bold">{result.writingEvaluation.grammar}</p></div>
-              </div>
+              <h3 className="font-semibold mb-2">Writing suggestions (not a score)</h3>
+              <p className="text-sm text-slate-600 mb-3">Response word count: {result.writingFeedback.wordCount}. Suggestions are generic and have not been validated against an exam-specific rubric.</p>
               <ul className="text-sm text-slate-600 space-y-1">
-                {result.writingEvaluation.improvementPlan?.map((tip: string, i: number) => (
+                {result.writingFeedback.improvementPlan?.map((tip: string, i: number) => (
                   <li key={i}>• {tip}</li>
                 ))}
               </ul>
+              <p className="mt-3 text-xs text-slate-400">{result.writingFeedback.disclaimer}</p>
             </div>
           )}
 
-          {/* Speaking Feedback */}
-          {result.speakingEvaluation && (
-            <div className="mb-6 rounded-xl border p-6">
-              <h3 className="font-semibold mb-2">Speaking Feedback (AI Agent)</h3>
-              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Fluency</p><p className="font-bold">{result.speakingEvaluation.fluency}</p></div>
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Pronunciation</p><p className="font-bold">{result.speakingEvaluation.pronunciation}</p></div>
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Grammar</p><p className="font-bold">{result.speakingEvaluation.grammar}</p></div>
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Lexical</p><p className="font-bold">{result.speakingEvaluation.lexical}</p></div>
-                <div className="rounded border p-2 text-center"><p className="text-xs text-slate-400">Coherence</p><p className="font-bold">{result.speakingEvaluation.coherence}</p></div>
-              </div>
-              <ul className="text-sm text-slate-600 space-y-1">
-                {result.speakingEvaluation.improvementTips?.map((tip: string, i: number) => (
-                  <li key={i}>• {tip}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <h3 className="font-semibold text-amber-900">Speaking is not scored</h3>
+            <p className="mt-1 text-sm text-amber-800">This practice attempt does not attach a recording for acoustic assessment. Typing a transcript cannot measure spoken fluency or pronunciation, so no speaking score is produced.</p>
+          </div>
 
           <p className="text-xs text-slate-400 mb-4">{result.disclosureText}</p>
           <button onClick={reset} className="rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700">
@@ -419,7 +494,7 @@ export default function PracticeTestPage() {
           <div className="flex-1">
             {/* Section tabs */}
             <div className="mb-4 flex gap-2">
-              {SECTIONS.map((section, i) => {
+              {sections.map((section, i) => {
                 const sectionCount = questions.filter((q) => q.section === section).length;
                 const sectionAnswered = questions.filter((q) => q.section === section && answers[q.id]).length;
                 return (
@@ -595,7 +670,7 @@ export default function PracticeTestPage() {
                 >
                   Next <ArrowRight className="h-4 w-4" />
                 </button>
-              ) : currentSection < SECTIONS.length - 1 ? (
+              ) : currentSection < sections.length - 1 ? (
                 <button
                   onClick={() => { setCurrentSection((s) => s + 1); setCurrentQuestion(0); }}
                   className="flex items-center gap-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
@@ -608,7 +683,7 @@ export default function PracticeTestPage() {
                   disabled={submitting}
                   className="flex items-center gap-1 rounded-md bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
                 >
-                  <Check className="h-4 w-4" /> {submitting ? "AI evaluating..." : "Submit Test"}
+                  <Check className="h-4 w-4" /> {submitting ? "Submitting..." : "Submit attempt"}
                 </button>
               )}
             </div>

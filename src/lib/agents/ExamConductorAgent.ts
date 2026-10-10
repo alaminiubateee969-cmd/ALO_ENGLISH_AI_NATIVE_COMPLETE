@@ -1,51 +1,49 @@
 /**
  * src/lib/agents/ExamConductorAgent.ts
  *
- * AGENT-CONDUCT-01 — Orchestrates the full exam lifecycle:
- *   start → answer → submit → evaluate → report
+ * AGENT-CONDUCT-01 — persists objective listening/reading practice indicators
+ * and optional non-scored writing guidance for a submitted attempt.
  *
- * This agent coordinates the Writing, Speaking, and Interview evaluation
- * agents, aggregates scores, and produces the final Smart Score Report.
- *
- * No-Human Practice Exam Mode: all 32 CBT exams run start→report without
- * human staff. Confidence-based escalation is OPTIONAL (never blocks).
+ * Writing feedback is exposed without heuristic/LLM band numbers. Speaking is
+ * not scored here: an attempt must include a securely associated recording and
+ * a validated acoustic evaluation before any speaking score can be reported.
  */
 
 import { db } from '@/lib/db';
-import { evaluateWriting, WritingEvaluation } from './WritingEvaluationAgent';
-import { evaluateSpeaking, SpeakingEvaluation } from './SpeakingEvaluationAgent';
-import { evaluateInterview, InterviewEvaluation } from './InterviewSimulationAgent';
+import { evaluateWriting, type WritingEvaluation } from './WritingEvaluationAgent';
+import { calculatePracticeIndicators } from '@/lib/exam/indicators';
+
+type WritingFeedback = Pick<
+  WritingEvaluation,
+  'wordCount' | 'improvementPlan' | 'providerUsed' | 'disclaimer'
+>;
 
 export type ExamResult = {
   attemptId: string;
   status: 'SUBMITTED' | 'SCORED';
-  overall: number;
-  listening: number;
-  reading: number;
-  writing: number;
-  speaking: number;
-  confidence: number;
-  confidenceLevel: 'high' | 'medium' | 'low';
-  providerUsed: string;
-  fallbackUsed: boolean;
-  reviewRecommendation: 'none' | 'optional' | 'recommended';
-  writingEvaluation?: WritingEvaluation;
-  speakingEvaluation?: SpeakingEvaluation;
-  interviewEvaluation?: InterviewEvaluation;
+  overall: number | null;
+  listening: number | null;
+  reading: number | null;
+  writing: null;
+  speaking: null;
+  /** Null: evaluator confidence is not calibrated against human ratings. */
+  confidence: null;
+  confidenceLevel: 'not_calibrated';
+  providerUsed: 'deterministic_objective' | 'none';
+  fallbackUsed: false;
+  reviewRecommendation: 'unavailable';
+  writingFeedback?: WritingFeedback;
   disclosureText: string;
 };
 
 const PRACTICE_DISCLAIMER =
-  'This report was generated automatically by the ALO Evaluation System. ' +
-  'It is a practice indicator, not an official exam score. ' +
-  'Not affiliated with any official test publisher.';
+  'Listening and reading values are generic practice indicators calculated from answer accuracy, not official exam scores or publisher-equivalent results. ' +
+  'Writing feedback is non-scored and has not been validated against human ratings. ' +
+  'Speaking is not scored: this attempt does not provide a securely linked recording or validated acoustic assessment, so pronunciation and spoken fluency are not inferred from transcript text.';
 
 /**
- * Conduct the full exam evaluation pipeline.
- *
- * @param attemptId  The attempt to evaluate.
- * @param answers    The student's answers (writing text, speaking transcript, etc.).
- * @returns          The complete exam result with all evaluations.
+ * Conduct the supported, evidence-based part of the exam submission pipeline.
+ * Writing feedback is qualitative only; speaking remains unscored.
  */
 export async function conductExam(
   attemptId: string,
@@ -57,7 +55,6 @@ export async function conductExam(
    */
   opts: { alreadyClaimed?: boolean } = {}
 ): Promise<ExamResult> {
-  // Fetch the attempt + practice set.
   const attempt = await db.attempt.findUnique({
     where: { id: attemptId },
     include: {
@@ -72,125 +69,102 @@ export async function conductExam(
     throw new Error('Attempt already submitted');
   }
 
-  // Extract answer components.
-  const writingText = (answers.writing as string) || (answers.essay as string) || '';
-  const speakingTranscript = (answers.speaking as string) || (answers.transcript as string) || '';
-  const interviewResponses = (answers.interviewResponses as { question: string; answer: string }[]) || [];
-  const readingCorrect = (answers.readingCorrect as number) || 0;
-  const readingTotal = (answers.readingTotal as number) || 40;
-  const listeningCorrect = (answers.listeningCorrect as number) || 0;
-  const listeningTotal = (answers.listeningTotal as number) || 40;
+  const writingValue = answers.writing ?? answers.essay;
+  const writingText = typeof writingValue === 'string' ? writingValue : '';
+  const readingCorrect = typeof answers.readingCorrect === 'number' ? answers.readingCorrect : 0;
+  const readingTotal = typeof answers.readingTotal === 'number' ? Math.max(0, answers.readingTotal) : 0;
+  const listeningCorrect = typeof answers.listeningCorrect === 'number' ? answers.listeningCorrect : 0;
+  const listeningTotal = typeof answers.listeningTotal === 'number' ? Math.max(0, answers.listeningTotal) : 0;
 
-  // Run evaluation agents in parallel.
-  const [writingEval, speakingEval, interviewEval] = await Promise.all([
-    writingText.length > 20 ? evaluateWriting(writingText) : null,
-    speakingTranscript.length > 20 ? evaluateSpeaking(speakingTranscript) : null,
-    interviewResponses.length > 0 ? evaluateInterview(interviewResponses) : null,
-  ]);
+  // The writing agent may provide useful suggestions, but its heuristic/model
+  // numbers are intentionally not persisted, returned, or included in overall.
+  const writingEval = writingText.length > 20 ? await evaluateWriting(writingText) : null;
+  const writingFeedback: WritingFeedback | undefined = writingEval
+    ? {
+        wordCount: writingEval.wordCount,
+        improvementPlan: writingEval.improvementPlan,
+        providerUsed: writingEval.providerUsed,
+        disclaimer: writingEval.disclaimer,
+      }
+    : undefined;
 
-  // Calculate section scores (0-9 band).
-  const writing = writingEval?.estimatedBand ?? scoreFromCorrect(0, 1); // default if no writing
-  const speaking = speakingEval?.estimatedBand ?? scoreFromCorrect(0, 1);
-  const reading = scoreFromCorrect(readingCorrect, readingTotal);
-  const listening = scoreFromCorrect(listeningCorrect, listeningTotal);
+  const indicators = calculatePracticeIndicators({
+    listeningCorrect,
+    listeningTotal,
+    readingCorrect,
+    readingTotal,
+  });
+  const { overall, listening, reading } = indicators;
+  const providerUsed: ExamResult['providerUsed'] = overall === null
+    ? 'none'
+    : 'deterministic_objective';
 
-  // Aggregate.
-  const overall = round1((listening + reading + writing + speaking) / 4);
+  if (overall === null) {
+    // Keep the submitted attempt, but do not create a fabricated all-zero Score
+    // row when this exam has no objective section supported by the scorer.
+    if (!opts.alreadyClaimed) {
+      await db.attempt.update({
+        where: { id: attemptId },
+        data: { status: 'SUBMITTED', submittedAt: new Date() },
+      });
+    }
+    return {
+      attemptId,
+      status: 'SUBMITTED',
+      overall: null,
+      listening,
+      reading,
+      writing: null,
+      speaking: null,
+      confidence: null,
+      confidenceLevel: 'not_calibrated',
+      providerUsed,
+      fallbackUsed: false,
+      reviewRecommendation: 'unavailable',
+      ...(writingFeedback ? { writingFeedback } : {}),
+      disclosureText: `${PRACTICE_DISCLAIMER} No numeric result was created because this attempt had no listening or reading answers supported by the current scorer.`,
+    };
+  }
 
-  // Confidence: average of agent confidences, or computed from sections.
-  const confidences: number[] = [];
-  if (writingEval) confidences.push(writingEval.confidenceScore);
-  if (speakingEval) confidences.push(speakingEval.confidenceScore);
-  if (interviewEval) confidences.push(interviewEval.confidenceScore);
-  const confidence = confidences.length > 0
-    ? round2(confidences.reduce((a, b) => a + b, 0) / confidences.length)
-    : round2((listening + reading + writing + speaking) / 36); // fallback
+  // Persist only objective section values. Subjective sections remain null until
+  // a task-specific rubric and evidence are available and independently tested.
+  const scoreData = {
+    attemptId,
+    userId: attempt.userId,
+    overall,
+    listening,
+    reading,
+    writing: null,
+    speaking: null,
+    providerUsed,
+    fallbackUsed: false,
+  };
+  if (opts.alreadyClaimed) {
+    await db.score.create({ data: scoreData });
+  } else {
+    await db.$transaction([
+      db.attempt.update({
+        where: { id: attemptId },
+        data: { status: 'SUBMITTED', submittedAt: new Date() },
+      }),
+      db.score.create({ data: scoreData }),
+    ]);
+  }
 
-  const confidenceLevel = confidenceLevelFromScore(confidence);
-
-  // Provider: prefer the highest-tier provider used.
-  const providers = [
-    writingEval?.providerUsed,
-    speakingEval?.providerUsed,
-    interviewEval?.providerUsed,
-  ].filter(Boolean);
-  const providerUsed = providers.includes('groq')
-    ? 'groq'
-    : providers.includes('local_rule_engine')
-      ? 'local_rule_engine'
-      : 'local_rule_engine';
-  const fallbackUsed = [writingEval?.fallbackUsed, speakingEval?.fallbackUsed, interviewEval?.fallbackUsed].some(Boolean);
-
-  // Review recommendation (never blocks the report).
-  const reviewRecommendation: 'none' | 'optional' | 'recommended' =
-    confidenceLevel === 'low' ? 'recommended' :
-    confidenceLevel === 'medium' ? 'optional' : 'none';
-
-  // Mark attempt as submitted + create score.
-  const [, score] = await db.$transaction([
-    db.attempt.update({
-      where: { id: attemptId },
-      data: { status: 'SUBMITTED', submittedAt: new Date() },
-    }),
-    db.score.create({
-      data: {
-        attemptId,
-        userId: attempt.userId,
-        overall,
-        listening,
-        reading,
-        writing,
-        speaking,
-        confidence,
-        providerUsed,
-        fallbackUsed,
-      },
-    }),
-  ]);
-
-  const result: ExamResult = {
+  return {
     attemptId,
     status: 'SCORED',
     overall,
     listening,
     reading,
-    writing,
-    speaking,
-    confidence,
-    confidenceLevel,
+    writing: null,
+    speaking: null,
+    confidence: null,
+    confidenceLevel: 'not_calibrated',
     providerUsed,
-    fallbackUsed,
-    reviewRecommendation,
-    writingEvaluation: writingEval ?? undefined,
-    speakingEvaluation: speakingEval ?? undefined,
-    interviewEvaluation: interviewEval ?? undefined,
+    fallbackUsed: false,
+    reviewRecommendation: 'unavailable',
+    ...(writingFeedback ? { writingFeedback } : {}),
     disclosureText: PRACTICE_DISCLAIMER,
   };
-
-  return result;
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────────
-
-/** Convert a correct/total ratio to a 0-9 band score. */
-function scoreFromCorrect(correct: number, total: number): number {
-  if (total === 0) return 0;
-  const ratio = correct / total;
-  return round1(ratio * 9.0);
-}
-
-function round1(v: number): number {
-  return Math.round(v * 10) / 10;
-}
-
-function round2(v: number): number {
-  return Math.round(v * 100) / 100;
-}
-
-function confidenceLevelFromScore(score: number): 'high' | 'medium' | 'low' {
-  const low = parseFloat(process.env.LOW_CONFIDENCE_THRESHOLD || '0.45');
-  const med = parseFloat(process.env.MEDIUM_CONFIDENCE_THRESHOLD || '0.70');
-  if (score >= med) return 'high';
-  if (score >= low) return 'medium';
-  return 'low';
 }

@@ -13,7 +13,7 @@ const NAV = [
 ];
 
 function ExamCenterContent() {
-  const { data: examTypes, loading: etLoading } = useApi<{ examTypes: Array<{ id: string; code: string; name: string; category: string; practiceSetCount: number }> }>("/api/exam-types");
+  const { data: examTypes, loading: etLoading } = useApi<{ examTypes: Array<{ id: string; code: string; name: string; category: string; practiceSetCount: number; questionCount: number; available: boolean }> }>("/api/exam-types");
   const { data: stats, loading: statsLoading } = useApi<{ users: { total: number }; activity: { totalAttempts: number; totalScores: number; completionRate: number } }>("/api/admin/stats");
 
   return (
@@ -26,7 +26,7 @@ function ExamCenterContent() {
       {/* Exam Statistics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <DashboardCard title="Exam Types" value={examTypes?.examTypes?.length ?? 0} desc="Available" icon={BookOpen} />
-        <DashboardCard title="Practice Sets" value={examTypes?.examTypes?.reduce((acc: number, et: any) => acc + et.practiceSetCount, 0) ?? 0} desc="Active" icon={FileText} />
+        <DashboardCard title="Active Questions" value={examTypes?.examTypes?.reduce((acc, et) => acc + et.questionCount, 0) ?? 0} desc="In active practice sets" icon={FileText} />
         <DashboardCard title="Total Attempts" value={stats?.activity?.totalAttempts ?? 0} desc="All students" icon={Users} />
         <DashboardCard title="Completion Rate" value={`${stats?.activity?.completionRate ?? 0}%`} desc="Submitted" icon={TrendingUp} />
       </div>
@@ -37,27 +37,22 @@ function ExamCenterContent() {
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">Loading exam types...</div>
       ) : (
         <DashboardTable
-          headers={["Code", "Name", "Category", "Practice Sets", "Action"]}
+          headers={["Code", "Name", "Category", "Active Sets", "Active Questions", "Content State"]}
           rows={(examTypes?.examTypes || []).map((et) => [
             <span key={et.id} className="font-mono text-sm font-bold">{et.code}</span>,
             et.name,
             <span key={et.id + "c"} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{et.category}</span>,
             <strong key={et.id + "p"}>{et.practiceSetCount}</strong>,
-            <a key={et.id + "a"} href={`/practice-test`} className="text-blue-600 hover:underline">View Tests →</a>,
+            <strong key={et.id + "q"}>{et.questionCount}</strong>,
+            <span key={et.id + "a"} className={`rounded-full px-2 py-0.5 text-xs ${et.available ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
+              {et.available ? "Questions exist; depth/quality not verified" : "No active questions"}
+            </span>,
           ])}
         />
       )}
 
-      {/* Question Bank Info */}
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
-        <h3 className="font-semibold mb-2">Question Bank</h3>
-        <p className="text-sm text-slate-500 mb-3">Questions are managed via the database and seeded through scripts. Currently 139 questions across 4 practice sets.</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border p-3"><p className="text-xs text-slate-400">IELTS</p><p className="text-lg font-bold">93 questions</p></div>
-          <div className="rounded-lg border p-3"><p className="text-xs text-slate-400">TOEFL</p><p className="text-lg font-bold">22 questions</p></div>
-          <div className="rounded-lg border p-3"><p className="text-xs text-slate-400">PTE</p><p className="text-lg font-bold">12 questions</p></div>
-          <div className="rounded-lg border p-3"><p className="text-xs text-slate-400">Duolingo</p><p className="text-lg font-bold">12 questions</p></div>
-        </div>
+      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        Counts above are live database counts for active practice sets only. A non-zero count does not establish a full-length bank, current specification alignment, audio playback, or scoring validity.
       </div>
 
       {/* API Endpoints */}
@@ -68,12 +63,12 @@ function ExamCenterContent() {
           rows={[
             ["/api/exam-types", "GET", "Public", "List exam types"],
             ["/api/practice-sets", "GET", "Public", "List practice sets"],
-            ["/api/questions", "GET", "Public", "Fetch questions for a set"],
+            ["/api/questions", "GET", "Authenticated", "Fetch redacted questions for an owned, quota-gated attempt"],
             ["/api/attempts/start", "POST", "STUDENT", "Start exam attempt"],
-            ["/api/attempts/submit", "POST", "STUDENT", "Submit + AI evaluate"],
+            ["/api/attempts/submit", "POST", "STUDENT", "Submit; objective indicators + non-scored writing suggestions"],
             ["/api/attempts", "GET", "STUDENT", "View attempt history"],
             ["/api/admin/stats", "GET", "ADMIN", "Platform statistics"],
-            ["/api/agents/status", "GET", "Public", "AI agent status"],
+            ["/api/agents/status", "GET", "ADMIN/SUPER_ADMIN", "Static agent registration inventory; readiness is not verified"],
           ]}
         />
       </div>

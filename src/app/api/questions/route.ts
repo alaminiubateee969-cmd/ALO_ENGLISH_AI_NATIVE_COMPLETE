@@ -1,14 +1,15 @@
 /**
- * GET /api/questions?practiceSetId=xxx — Fetch questions for a practice set.
+ * GET /api/questions?attemptId=xxx — Fetch the frozen, redacted questions for
+ * an attempt owned by the authenticated caller.
  *
- * Returns questions grouped by section. Does NOT include correct answers
- * (security: students shouldn't see answers before submitting).
+ * There is deliberately no practiceSetId bypass: reading a set's question
+ * bank requires a quota-gated attempt created by /api/attempts/start.
  */
 
 import { db } from "@/lib/db";
 import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
-import { SAFE_QUESTION_SELECT, loadAttemptQuestions, withDefaultOptions } from "@/lib/exam/questions";
+import { loadAttemptQuestions } from "@/lib/exam/questions";
 import { requireAuth } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -16,51 +17,23 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
-    // Phase 1: Require auth — students must be logged in to fetch questions
     const user = await requireAuth();
+    const attemptId = new URL(req.url).searchParams.get("attemptId");
+    if (!attemptId) return badRequest("attemptId is required");
 
-    const url = new URL(req.url);
-    const practiceSetId = url.searchParams.get("practiceSetId");
-    const attemptId = url.searchParams.get("attemptId");
-
-    // Resume path: serve the question set frozen on the attempt. Guarantees a
-    // refresh (or a different device) replays the exact same exam.
-    if (attemptId) {
-      const attempt = await db.attempt.findUnique({
-        where: { id: attemptId },
-        select: { userId: true, practiceSetId: true },
-      });
-      if (!attempt) return notFound("Attempt not found");
-      if (attempt.userId !== user.id) return forbidden("You can only open your own attempt");
-
-      const questions = await loadAttemptQuestions(db, attemptId);
-      const bySection = questions.reduce((acc, q) => {
-        if (!acc[q.section]) acc[q.section] = [];
-        acc[q.section].push(q);
-        return acc;
-      }, {} as Record<string, typeof questions>);
-
-      return ok({ questions, bySection, total: questions.length, frozen: true }, "Questions retrieved");
-    }
-
-    if (!practiceSetId) {
-      return badRequest("practiceSetId (or attemptId) is required");
-    }
-
-    const rawQuestions = await db.question.findMany({
-      where: { practiceSetId },
-      orderBy: { order: "asc" },
-      select: SAFE_QUESTION_SELECT,
+    const attempt = await db.attempt.findUnique({
+      where: { id: attemptId },
+      select: { userId: true },
     });
-    const questions = rawQuestions.map((q) => withDefaultOptions(q));
+    if (!attempt) return notFound("Attempt not found");
+    if (attempt.userId !== user.id) return forbidden("You can only open your own attempt");
 
-    // Group by section
-    const bySection = questions.reduce((acc, q) => {
-      if (!acc[q.section]) acc[q.section] = [];
-      acc[q.section].push(q);
+    const questions = await loadAttemptQuestions(db, attemptId);
+    const bySection = questions.reduce((acc, question) => {
+      (acc[question.section] ??= []).push(question);
       return acc;
     }, {} as Record<string, typeof questions>);
 
-    return ok({ questions, bySection, total: questions.length }, "Questions retrieved");
+    return ok({ questions, bySection, total: questions.length, frozen: true }, "Questions retrieved");
   });
 }

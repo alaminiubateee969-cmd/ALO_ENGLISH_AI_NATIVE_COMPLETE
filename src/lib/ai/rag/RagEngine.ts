@@ -3,8 +3,8 @@
  *
  * RAG (Retrieval-Augmented Generation) Engine — ExamCite-style.
  *
- * Allows students to ask questions about study materials and get
- * AI-generated answers grounded in the source content (no hallucinations).
+ * Allows users to ask about public study materials. Retrieved context is sent
+ * to a configured model; the answer can still be incomplete or hallucinated.
  *
  * Used by:
  *   /api/rag/ask — ask a question
@@ -19,7 +19,6 @@ export type RagAnswer = {
   answer: string;
   citedFrom: string | null;
   materialTitle: string | null;
-  confidence: "high" | "medium" | "low";
   chunksUsed: number;
 };
 
@@ -54,7 +53,6 @@ export class RagEngine {
         answer: "I don't have study material covering that topic yet. Please try asking about IELTS, TOEFL, PTE, grammar, vocabulary, or upload relevant study material.",
         citedFrom: null,
         materialTitle: null,
-        confidence: "low",
         chunksUsed: 0,
       };
     }
@@ -65,7 +63,6 @@ export class RagEngine {
       answer: answer.text,
       citedFrom: context.chunks[0]?.substring(0, 200) + "...",
       materialTitle: context.materialTitle,
-      confidence: answer.confidence,
       chunksUsed: context.chunks.length,
     };
   }
@@ -130,7 +127,7 @@ export class RagEngine {
     question: string,
     contextChunks: string[],
     materialTitle: string | null
-  ): Promise<{ text: string; confidence: "high" | "medium" | "low" }> {
+  ): Promise<{ text: string }> {
     const zai = await getZAI();
     const context = contextChunks.join("\n\n---\n\n");
 
@@ -158,16 +155,10 @@ ${context}`;
       });
 
       const text = completion.choices[0]?.message?.content || "I couldn't generate an answer. Please try rephrasing your question.";
-      const confidence: "high" | "medium" | "low" =
-        contextChunks.length >= 3 ? "high" : contextChunks.length >= 1 ? "medium" : "low";
-
-      return { text, confidence };
+      return { text };
     } catch (err) {
       console.error("[RagEngine] LLM failed:", err);
-      return {
-        text: "I'm having trouble generating an answer right now. Please try again later.",
-        confidence: "low",
-      };
+      return { text: "I'm having trouble generating an answer right now. Please try again later." };
     }
   }
 
