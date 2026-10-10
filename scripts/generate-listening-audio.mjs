@@ -127,7 +127,7 @@ async function main() {
       const ok = await generateAudio(q.id, q.passage || '', outPath);
       if (ok && existsSync(outPath)) {
         const stat = existsSync(outPath);
-        const size = stat ? (await import('node:fs/promises')).stat(outPath).then(s => s.size).catch(() => 0) : 0;
+        const size = stat ? await (await import('node:fs/promises')).stat(outPath).then(s => s.size).catch(() => 0) : 0;
         if (size > 1000) {
           await prisma.question.update({
             where: { id: q.id },
