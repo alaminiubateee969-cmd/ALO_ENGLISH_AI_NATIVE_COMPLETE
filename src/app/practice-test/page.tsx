@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Flag, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Clock, Flag, ArrowLeft, ArrowRight, Check, Volume2, Play, Pause } from "lucide-react";
 
 type Question = {
   id: string;
@@ -10,6 +10,7 @@ type Question = {
   type: string;
   prompt: string;
   passage?: string | null;
+  audioUrl?: string | null;
   options?: string | null;
   wordLimit?: number | null;
   points: number;
@@ -331,12 +332,40 @@ export default function PracticeTestPage() {
               })}
             </div>
 
-            {/* Passage (if reading/listening) */}
-            {currentQ.passage && (
-              <div className="mb-4 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <p className="mb-2 font-semibold text-slate-700">
-                  {currentQ.section === "LISTENING" ? "Audio Transcript:" : "Reading Passage:"}
+            {/* Audio player for LISTENING section — plays REAL audio */}
+            {currentQ.section === "LISTENING" && currentQ.audioUrl && (
+              <div className="mb-4 rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Volume2 className="h-5 w-5 text-blue-600" />
+                  <p className="font-semibold text-blue-900">Listening Audio — Click to play</p>
+                </div>
+                <audio
+                  controls
+                  className="w-full"
+                  src={currentQ.audioUrl}
+                >
+                  Your browser does not support audio playback.
+                </audio>
+                <p className="mt-2 text-xs text-blue-600">
+                  📢 This is a real audio recording. Listen carefully — you can play it up to 2 times (like the real exam).
                 </p>
+              </div>
+            )}
+
+            {/* Fallback: show transcript if no audio yet (for questions still being processed) */}
+            {currentQ.section === "LISTENING" && !currentQ.audioUrl && currentQ.passage && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="mb-2 font-semibold text-amber-800">
+                  ⚠️ Audio not yet generated — showing transcript:
+                </p>
+                <p className="whitespace-pre-line text-sm text-slate-600">{currentQ.passage}</p>
+              </div>
+            )}
+
+            {/* Passage (reading only — NOT shown for listening) */}
+            {currentQ.passage && currentQ.section === "READING" && (
+              <div className="mb-4 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <p className="mb-2 font-semibold text-slate-700">Reading Passage:</p>
                 <p className="whitespace-pre-line">{currentQ.passage}</p>
               </div>
             )}

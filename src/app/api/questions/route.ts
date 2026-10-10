@@ -34,6 +34,7 @@ export async function GET(req: Request): Promise<Response> {
         type: true,
         prompt: true,
         passage: true,
+        audioUrl: true,
         options: true,
         wordLimit: true,
         points: true,

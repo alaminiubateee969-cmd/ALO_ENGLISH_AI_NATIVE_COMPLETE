@@ -24,6 +24,7 @@
     "prisma:seed": "bun run prisma/seed.ts && bun run prisma/seed-questions.ts && bun run prisma/seed-all-exams.ts && bun run prisma/seed-gre-gmat-sat-act.ts",
     "prisma:seed:rbac": "bun run prisma/seed-rbac.ts",
     "prisma:seed:exams": "bun run prisma/seed-all-missing-exams.ts && bun run prisma/seed-expand-exams.ts",
+    "generate:audio": "bun run scripts/generate-listening-audio.ts",
     "verify": "bash scripts/verify.sh",
     "backup": "bash scripts/backup.sh",
     "restore": "bash scripts/restore.sh",
