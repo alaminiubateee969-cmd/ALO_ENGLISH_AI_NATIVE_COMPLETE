@@ -1,22 +1,12 @@
 /**
- * prisma/seed-expand-exams.ts
- *
- * Expands the under-counted exams to full-length real mock tests matching
- * official exam formats:
- *
- *   IELTS General Training: 40 reading + 2 writing + 3 speaking = 45 questions
- *   IELTS UKVI: 20 listening + 20 reading + 1 writing + 1 speaking = 42 questions
- *   OET: 24 listening + 24 reading + 1 writing + 2 speaking = 51 questions
- *   Cambridge B2 First: 30 reading + 2 writing + 8 listening + 4 speaking = 44 questions
- *   LanguageCert: 20 reading + 2 writing + 10 listening + 3 speaking = 35 questions
- *   Linguaskill: 20 reading + 2 writing + 10 listening + 3 speaking = 35 questions
- *   OIETC: 20 reading + 2 writing + 10 listening + 3 speaking = 35 questions
- *   TOEIC: 50 listening + 50 reading = 100 questions
- *   LSAT: 24 reading + 1 writing = 25 questions
- *   MCAT: 20 reading + 1 writing = 21 questions
- *   Visa Interview: 10 speaking + 1 writing = 11 questions
+ * LEGACY SYNTHETIC SAMPLE SCRIPT. Earlier comments claimed full-length counts
+ * and official-format alignment; those claims were not verified and are
+ * withdrawn. This script is guarded to explicitly opted-in disposable
+ * test/sample databases and must not create production exam content.
  */
 
+import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
+assertSafeSampleSeedTarget();
 import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 

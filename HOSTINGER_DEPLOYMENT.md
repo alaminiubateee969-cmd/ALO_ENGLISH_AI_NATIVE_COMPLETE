@@ -109,40 +109,38 @@ of the working directory, creates the directory, rewrites
 at startup, and warns loudly if it lands inside `.next/`. That is a safety net,
 not a substitute for configuring the panel correctly.
 
-### The tracked `.env`
+### Environment files and secret handling
 
-`.env` is committed on purpose. It holds **non-secret defaults only**, so a
-fresh checkout and a host build both boot even when the panel is only partly
-configured. Next.js never overwrites a value already present in `process.env`,
-so anything you set in the panel wins. Never put a real secret in it — it is in
-a public repository. Use `.env.local` for local secrets; it is git-ignored.
+The previously tracked `.env` is removed from the Git index by this change and
+kept only in the local workspace; its contents were not read during the audit.
+Because it existed in repository history, treat any value that was ever a real
+credential as potentially exposed and rotate it through the relevant provider.
+Git history has not been rewritten. `.env` and `.env.*` are now ignored, with
+`.env.example` exempted for placeholders. Production secrets belong in the
+hosting panel, not Git.
 
 ---
 
 ## First deploy
 
-After the first successful build, open the Hostinger terminal and run, from the
-repository root, with the same `DATABASE_URL` the app uses:
+No production provisioning or deployment has been performed as part of this
+audit. Before any production migration, take and verify a restorable backup,
+review the exact pending migration set, and obtain operator approval. Never use
+`prisma migrate dev`, `db push` or `migrate reset` against production.
 
-```bash
-npx prisma migrate deploy     # creates the schema — the ONLY safe provisioning command
-npm run prisma:seed           # admin user, exam types, settings AND the question bank
-npm run prisma:seed:rbac      # roles, permissions, teams
-npm run prisma:seed:exams     # the remaining exam sets (all-missing + expand)
-npm run content:validate      # asserts the bank is populated and every question is gradeable
-```
+The core `npm run prisma:seed` now runs only `prisma/seed.mjs` (admin, exam-type
+metadata, settings, and the admin quota). It deliberately does **not** populate
+questions. The legacy short-form synthetic question seed scripts are excluded
+from the production seed chain and guarded so they refuse to run unless an
+explicit opt-in targets a clearly named disposable test/sample SQLite file.
+They are not authorized exam content and must not be used in production.
 
-Run them in that order. `prisma:seed` is a chain — `prisma/seed.mjs` followed by
-`seed-questions.ts`, `seed-all-exams.ts` and `seed-gre-gmat-sat-act.ts` — so it is
-the step that actually puts questions in the database; `node prisma/seed.mjs` on
-its own leaves the bank empty. `content:validate` is the check for that: it exits
-non-zero on an empty bank rather than passing every other assertion vacuously,
-which is what used to happen. A first deploy that skips it can come up healthy,
-serving an exam platform with no exams in it.
-
-Never use `prisma migrate dev`, `db push` or `migrate reset` against
-production. `migrate deploy` is non-interactive and only applies migrations that
-have not run yet; the others rewrite schema or drop data.
+Run `npm run content:validate` only against an explicitly selected disposable
+database when validating fixtures. It blocks when `DATABASE_URL` is absent,
+checks answer-key shape/non-empty content, and only warns for missing audio;
+it does not prove official-format coverage, content rights, or browser playback.
+An empty question bank is therefore an explicit release blocker, not something
+to fill with synthetic samples.
 
 ### Listening audio
 
@@ -224,12 +222,11 @@ not the same as a deploy that works.
 | `npm start` | Start the production server (`node server.js`) |
 | `npm run db:migrate` | `prisma migrate deploy` — apply migrations |
 | `npm run db:seed` | Seed admin + exam types only (`prisma/seed.mjs`); **no questions** |
-| `npm run prisma:seed` | Seed admin + exam types **and the question bank** (the full chain) |
+| `npm run prisma:seed` | Same core metadata seed; no synthetic question bank |
 | `npm run prisma:seed:rbac` | Seed roles, permissions, teams |
-| `npm run prisma:seed:exams` | Seed the remaining exam sets |
-| `npm run db:seed:questions` | Seed IELTS questions only |
-| `npm run audio:generate` | Generate listening audio MP3s |
-| `npm run content:validate` | Assert the bank is not empty and no question is ungradeable |
+| Legacy question seed scripts | Refuse by default; explicit opt-in allowed only for a named disposable test/sample SQLite target |
+| `npm run audio:generate` | Generate candidate listening MP3s; not proof of rights, quality, or browser playback |
+| `npm run content:validate` | Check answer-key shape and empty bank; audio absence is a warning, not a full media audit |
 | `npm run inventories` | Regenerate the four root inventory CSVs from source |
 | `npm run verify` | Every pre-deployment gate, including a live artifact boot |
 | `node scripts/finalize-standalone.mjs` | Re-copy `public/` and `.next/static` into the artifact |

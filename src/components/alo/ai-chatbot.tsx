@@ -17,28 +17,28 @@ const QUICK_PROMPTS = [
 
 function botReply(userText: string): string {
   const t = userText.toLowerCase();
-  if (t.includes("start") && t.includes("mock")) return "To start a mock test: 1) Login or register, 2) Go to Practice Tests, 3) Choose Quick Practice or Full Mock, 4) Select your exam type, 5) Click Start. Your answers autosave and you'll get a Smart Score Report when you submit.";
-  if (t.includes("free") && (t.includes("quota") || t.includes("mock"))) return "ALO Education registered students receive 3 free mock tests total. New visitors receive 1 free mock test. This quota is shared across all 32 exams and enforced on our backend — refreshing the browser won't reset it.";
-  if (t.includes("score") && t.includes("calcul")) return "Your estimated score is calculated by the ALO Estimated Score Engine based on correct answers (for objective questions) and rubric-based evaluation (for writing/speaking). Scores are practice estimates only — not official exam results.";
-  if (t.includes("certificate") || t.includes("cert")) return "After each completed mock test, the ALO Certify system auto-generates a practice completion certificate with a unique verification hash. You can download it as PDF from your dashboard. It includes a practice-only disclaimer.";
-  if (t.includes("exam") && t.includes("available")) return "We support 32 computer-based exams across 5 categories: English Proficiency (IELTS, PTE, TOEFL, Duolingo, OIETC, OET, LanguageCert, Linguaskill, ALO Placement), Study Abroad (SAT, ACT, GRE, GMAT, LSAT, MCAT), University Internal, Visa & Interview, and ALO Internal.";
-  if (t.includes("ielts")) return "We offer IELTS-style practice tests for Academic, General Training, and UKVI. Each covers Listening, Reading, Writing (Task 1 + Task 2), and Speaking (Part 1, 2, 3). Practice estimate only — not an official IELTS score.";
-  if (t.includes("pte")) return "PTE-style practice covers all 20 question types including Read Aloud, Repeat Sentence, Describe Image, Summarize Written Text, Essay, Fill Blanks, Reorder Paragraphs, and Write From Dictation.";
-  if (t.includes("speaking")) return "Speaking practice uses the ALO Practice Examiner (a digital evaluation session). You'll see a cue card, get preparation time, record your answer via microphone, and receive scores for fluency, pronunciation, grammar, lexical resource, coherence, and confidence.";
-  if (t.includes("writing")) return "Writing evaluation uses Automated Practice Feedback. Submit your essay and get estimated scores for task achievement, coherence, vocabulary, and grammar — plus an improvement plan. Practice estimate only.";
-  if (t.includes("refund")) return "Refund policy: Free mock tests are non-refundable (no charge). Paid mock tests may be refunded within 7 days if no attempt was started. Voucher purchases are non-refundable once used. Contact support@aloeducation.com for refund requests.";
-  if (t.includes("privacy") || t.includes("data")) return "Your data is protected under our Privacy Policy. We sync your exam activity to ALO Web_CRM so your counselor can guide you. We never share private data publicly. You can download or delete your data from Settings.";
-  if (t.includes("human") || t.includes("examiner") || t.includes("real")) return "Some practice tests, scoring, feedback, and interview simulations may be supported by automated digital evaluation tools. This is a practice platform only, not an official exam result. We never claim a real human examiner — the ALO Practice Examiner is a digital evaluation session.";
+  if (t.includes("start") && t.includes("mock")) return "Sign in and open Practice Tests. You can start a session only if an active practice set is available for your account. Content counts and official-format coverage are not verified, so do not treat a session as a full official mock.";
+  if (t.includes("free") && (t.includes("quota") || t.includes("mock"))) return "Attempt limits are configured by the platform and may depend on your account role. Check the quota shown in your account. Online purchases are currently unavailable; this help widget cannot grant or change attempts.";
+  if (t.includes("score") && t.includes("calcul")) return "Supported listening and reading indicators are a simple accuracy-based practice measure. Writing may receive generic text suggestions; speaking is not numerically scored. No publisher-equivalent rubric, calibrated confidence, or official result is provided.";
+  if (t.includes("certificate") || t.includes("cert")) return "I cannot verify a certificate-generation or download feature in the current application. Please contact ALO Education directly before relying on any certificate claim.";
+  if (t.includes("exam") && t.includes("available")) return "The database schema includes multiple exam-type records, but active question-bank counts and full-length readiness have not been verified. Check the current catalog in the app; listed metadata does not guarantee a playable exam.";
+  if (t.includes("ielts")) return "IELTS-related catalog and legacy sample content exist in the code, but active database counts, licensed-content provenance, audio playback, and official-length coverage are not verified. ALO practice is not an official IELTS result.";
+  if (t.includes("pte")) return "PTE-related catalog entries exist, but the available task types, active question count, and official-format coverage have not been verified. Do not rely on this app as a full PTE simulation.";
+  if (t.includes("speaking")) return "Speaking chat and transcription code exists, but provider availability is unverified. Transcript text cannot measure pronunciation, fluency, pauses, or accent, and the platform deliberately returns no numeric speaking score.";
+  if (t.includes("writing")) return "The current local writing helper can return generic revision suggestions and word count. It does not apply a validated exam rubric or produce a numeric writing score.";
+  if (t.includes("refund")) return "The application has no verified merchant checkout, webhook, or refund flow; online purchases are unavailable. Please ask ALO Education for the current written refund policy before making payment outside this app.";
+  if (t.includes("privacy") || t.includes("data")) return "Please review the privacy notice and contact ALO Education for data-access or deletion requests. I cannot verify live CRM synchronization, retention, or download/delete workflows from this help widget.";
+  if (t.includes("human") || t.includes("examiner") || t.includes("real")) return "This help widget is a set of scripted replies, not a human or AI examiner. Provider-backed conversation features require configuration and have not been verified here; no official examiner result is produced.";
   if (t.includes("hello") || t.includes("hi") || t.includes("hey")) return "Hello! I'm the ALO Support Assistant. I can help with mock tests, free quota, scores, certificates, exams, and policies. What would you like to know?";
   if (t.includes("thank")) return "You're welcome! If you need more help, you can also book a free counseling session with an ALO Education advisor. Good luck with your practice!";
   if (t.includes("book") || t.includes("counsel")) return "You can book a free counseling session by scrolling to the 'Book Free Consultation' section on the homepage, or from your student dashboard. An ALO Education advisor will contact you within 24 hours.";
-  return "I'm the ALO Support Assistant. I can help with: mock tests, free quota, scoring, certificates, available exams, speaking/writing practice, privacy, refunds, and more. Try one of the quick questions below, or ask me anything!";
+  return "This is a scripted help widget; its replies are not live support or official exam guidance. Try a suggested topic, then confirm account, payment, privacy, and test-format details with ALO Education or the relevant official exam provider.";
 }
 
 export function AiChatbot() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "bot", text: "Hi! I'm the ALO Support Assistant. I can help with mock tests, free quota, scores, certificates, exams, and policies. How can I help you today?", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
+    { role: "bot", text: "Hello. This is a scripted help widget, not a live support agent or exam evaluator. Choose a topic and verify important details with ALO Education or the relevant official provider.", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -71,7 +71,6 @@ export function AiChatbot() {
           aria-label="Open chat"
         >
           <MessageSquare className="h-6 w-6" />
-          <span className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-alo-blue text-[10px] font-bold text-white">AI</span>
         </button>
       )}
 
@@ -83,8 +82,8 @@ export function AiChatbot() {
             <div className="flex items-center gap-2">
               <div className="grid h-8 w-8 place-items-center rounded-full bg-alo-orange text-white"><Sparkles className="h-4 w-4" /></div>
               <div>
-                <div className="text-sm font-bold text-white">ALO Support Assistant</div>
-                <div className="flex items-center gap-1 text-[10px] text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Online now</div>
+                <div className="text-sm font-bold text-white">ALO Help Widget</div>
+                <div className="text-[10px] text-slate-300">Scripted replies · not live support</div>
               </div>
             </div>
             <button onClick={() => setOpen(false)} className="grid h-7 w-7 place-items-center rounded-lg bg-white/10 text-white hover:bg-white/20"><X className="h-4 w-4" /></button>
@@ -140,7 +139,7 @@ export function AiChatbot() {
             </div>
             <div className="mt-1.5 flex items-center justify-center gap-1 text-[9px] text-alo-faint">
               <ShieldCheck className="h-3 w-3" />
-              ALO Support Assistant · Practice platform only · Not official exam guidance
+              Scripted help text · Verify details with official sources
             </div>
           </div>
         </div>

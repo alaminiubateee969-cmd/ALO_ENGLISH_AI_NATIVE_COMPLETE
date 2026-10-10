@@ -43,6 +43,22 @@ export function withDefaultOptions<Q extends { type: string; options: string | n
 }
 
 /**
+ * Listening `passage` fields contain the source transcript used by TTS. They
+ * are authoring/scoring data, not student-facing exam content: returning them
+ * during an active attempt reveals the audio script. Reading passages remain
+ * available because they are part of the actual reading task.
+ */
+export function redactListeningTranscript<Q extends { section: string; passage?: string | null }>(q: Q): Q {
+  if (q.section.toUpperCase() !== "LISTENING" || q.passage == null) return q;
+  return { ...q, passage: null };
+}
+
+/** Apply defaults and exam-time transcript redaction to a student question. */
+export function toStudentQuestion<Q extends { section: string; type: string; options: string | null; passage?: string | null }>(q: Q) {
+  return redactListeningTranscript(withDefaultOptions(q));
+}
+
+/**
  * Load the frozen question set for an attempt, in the exact order it was
  * served, without any correct-answer fields.
  */
@@ -57,7 +73,7 @@ export async function loadAttemptQuestions(db: Db, attemptId: string) {
     },
   });
 
-  return rows.map((r) => withDefaultOptions(r.question));
+  return rows.map((r) => toStudentQuestion(r.question));
 }
 
 /** Load every persisted answer for an attempt as a plain map. */

@@ -3,7 +3,8 @@
  * prisma/seed.mjs — Node-compatible seed entry point.
  *
  * Creates the admin user, exam types, and core settings. Idempotent.
- * Run with: DATABASE_URL=file:./db/production.db node prisma/seed.mjs
+ * ADMIN_SEED_PASSWORD must be supplied through a secret manager and is never logged.
+ * Run with: DATABASE_URL=file:./db/production.db ADMIN_SEED_PASSWORD=... node prisma/seed.mjs
  */
 import { PrismaClient } from '@prisma/client';
 // bcryptjs is CommonJS and does not expose its functions as detectable ESM
@@ -12,7 +13,6 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const { hashSync } = bcrypt;
-import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -26,13 +26,13 @@ const EXAM_TYPES = [
   { code: 'OET', name: 'OET (Healthcare)', category: 'Professional' },
   { code: 'LANGUAGECERT', name: 'LanguageCert', category: 'English Proficiency' },
   { code: 'LINGUASKILL', name: 'Cambridge Linguaskill', category: 'English Proficiency' },
-  { code: 'OIETC', name: 'OIETC / Oxford ELLT', category: 'English Proficiency' },
+  { code: 'OIETC', name: 'OIETC — product identity pending verification', category: 'English Proficiency' },
   { code: 'TOEIC', name: 'TOEIC', category: 'English Proficiency' },
   { code: 'CAMBRIDGE', name: 'Cambridge English', category: 'English Proficiency' },
   { code: 'SAT', name: 'Digital SAT', category: 'Academic' },
   { code: 'ACT', name: 'ACT', category: 'Academic' },
   { code: 'GRE', name: 'GRE General Test', category: 'Academic' },
-  { code: 'GMAT', name: 'GMAT Focus', category: 'Academic' },
+  { code: 'GMAT', name: 'GMAT Exam', category: 'Academic' },
   { code: 'LSAT', name: 'LSAT', category: 'Academic' },
   { code: 'MCAT', name: 'MCAT', category: 'Academic' },
   { code: 'VISA-INTERVIEW', name: 'Visa Interview Practice', category: 'Visa & Interview' },
@@ -43,7 +43,10 @@ async function main() {
   console.log('Seeding database...');
 
   const adminEmail = process.env.ADMIN_SEED_EMAIL || 'admin@aloeducation.com';
-  const adminPassword = process.env.ADMIN_SEED_PASSWORD || randomBytes(16).toString('hex');
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+  if (!adminPassword || adminPassword.length < 12) {
+    throw new Error('Set ADMIN_SEED_PASSWORD (at least 12 characters) through the secret manager before seeding.');
+  }
 
   await prisma.user.upsert({
     where: { email: adminEmail },
@@ -57,15 +60,6 @@ async function main() {
     },
   });
 
-  if (!process.env.ADMIN_SEED_PASSWORD) {
-    console.log('');
-    console.log('======================================================');
-    console.log('  ADMIN CREDENTIALS (save immediately, shown once):');
-    console.log(`  Email:    ${adminEmail}`);
-    console.log(`  Password: ${adminPassword}`);
-    console.log('======================================================');
-    console.log('');
-  }
 
   for (const et of EXAM_TYPES) {
     await prisma.examType.upsert({
@@ -88,13 +82,6 @@ async function main() {
     await prisma.setting.upsert({ where: { key: s.key }, update: { value: s.value }, create: s });
   }
   console.log(`  ${settings.length} settings seeded`);
-
-  // Ensure a free tier quota row exists for the admin.
-  await prisma.freeQuota.upsert({
-    where: { userId: (await prisma.user.findUnique({ where: { email: adminEmail } })).id },
-    update: {},
-    create: { userId: (await prisma.user.findUnique({ where: { email: adminEmail } })).id, attemptsUsed: 0, attemptsLimit: 999, isAloStudent: true },
-  }).catch(() => {});
 
   console.log('Seed complete.');
 }

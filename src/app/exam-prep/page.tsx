@@ -3,18 +3,15 @@
 /**
  * src/app/exam-prep/page.tsx
  *
- * Exam Preparation Center — shows all 20 exam types with:
- *   - Real exam format details
- *   - Number of practice questions available
- *   - Links to start practice tests
- *   - Links to AI handbook for each exam
- *   - Study tips and materials
+ * Exam Preparation Center — lists the active exam types and practice-bank
+ * counts returned by the database. Provider information is linked where an
+ * official source was checked; local content and score equivalence remain
+ * separate release gates.
  */
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { BookOpen, Clock, FileText, Mic, PenLine, Headphones, ArrowRight, Sparkles } from "lucide-react";
 
 type ExamType = {
@@ -24,6 +21,7 @@ type ExamType = {
   category: string;
   questionCount: number;
   practiceSetCount: number;
+  available: boolean;
 };
 
 type StudyMaterial = {
@@ -33,151 +31,123 @@ type StudyMaterial = {
   category: string;
 };
 
-const EXAM_INFO: Record<string, {
-  duration: string;
-  sections: string[];
-  scoring: string;
-  tips: string[];
+type ExamInfo = {
+  format?: string;
+  sections?: string[];
+  scoring?: string;
+  note?: string;
+  sourceUrl?: string;
   icon: typeof BookOpen;
-}> = {
+};
+
+/**
+ * Current provider information is shown only for entries with an official
+ * source link. These are summaries, not a claim that the local practice bank
+ * or its scoring reproduces an official exam.
+ */
+const EXAM_INFO: Record<string, ExamInfo> = {
   "IELTS-A": {
-    duration: "2h 44m",
+    format: "About 2 hours 45 minutes; Speaking is 11–14 minutes",
     sections: ["Listening", "Reading", "Writing", "Speaking"],
-    scoring: "0-9 band",
-    tips: ["Read questions before listening", "Skim reading passages first", "Use formal language in writing", "Elaborate in speaking"],
+    scoring: "Band scale 0–9",
+    note: "Academic version. Local questions and scores are not provider-certified.",
+    sourceUrl: "https://ielts.org/organisations/ielts-for-organisations/test-types/ielts-academic-test/academic-test-format-in-detail",
     icon: Headphones,
   },
   "IELTS-G": {
-    duration: "2h 44m",
-    sections: ["Listening", "Reading", "Writing (Letter + Essay)", "Speaking"],
-    scoring: "0-9 band",
-    tips: ["Include all bullet points in letter", "Use appropriate tone", "General topics for Task 2"],
+    format: "About 2 hours 45 minutes; Speaking is 11–14 minutes",
+    sections: ["Listening", "Reading", "Writing", "Speaking"],
+    scoring: "Band scale 0–9",
+    note: "General Training version. Local questions and scores are not provider-certified.",
+    sourceUrl: "https://ielts.org/organisations/ielts-for-organisations/test-types/ielts-academic-test/academic-test-format-in-detail",
     icon: PenLine,
   },
-  "IELTS-UKVI": {
-    duration: "1h (Life Skills)",
-    sections: ["Speaking", "Listening"],
-    scoring: "Pass/Fail",
-    tips: ["16-18 min assessment", "Speaking with examiner + 1 candidate", "A1/A2/B1 levels"],
-    icon: Mic,
-  },
   "TOEFL-iBT": {
-    duration: "3 hours",
-    sections: ["Reading", "Listening", "Speaking", "Writing"],
-    scoring: "0-120",
-    tips: ["Take notes during listening", "Use transition words in speaking", "Focus on lecture vs reading contrast in integrated writing"],
+    format: "2026 adaptive format; approximately 1 hour",
+    sections: ["Reading", "Listening", "Writing", "Speaking"],
+    scoring: "1–6 reporting scale; comparable 0–120 during the transition period",
+    note: "Task counts and timing vary with the adaptive format. Local practice results are not TOEFL scores.",
+    sourceUrl: "https://www.ets.org/toefl/test-takers/ibt/about/content.html",
     icon: Headphones,
   },
   "PTE-A": {
-    duration: "2 hours",
+    format: "Speaking & Writing portion: approximately 76–84 minutes",
     sections: ["Speaking & Writing", "Reading", "Listening"],
-    scoring: "10-90",
-    tips: ["Fully machine-scored — speak clearly", "Use templates for describe image", "Type exactly for write from dictation"],
+    scoring: "PTE score scale 10–90",
+    note: "The Speaking & Writing portion has nine task types; local practice results are not PTE scores.",
+    sourceUrl: "https://www.pearsonpte.com/pte-academic/test-format/speaking-writing/",
     icon: Mic,
   },
   "DUOLINGO": {
-    duration: "1 hour",
+    format: "Approximately 1 hour; adaptive",
     sections: ["Literacy", "Comprehension", "Conversation", "Production"],
-    scoring: "10-160",
-    tips: ["Adaptive test — difficulty changes", "Quiet room with good lighting", "Don't look away from screen", "Write at least 50 words"],
+    scoring: "10–160, with skill and integrated subscores",
+    note: "The local practice engine does not reproduce the adaptive DET or its certified score.",
+    sourceUrl: "https://blog.englishtest.duolingo.com/how-is-the-duolingo-english-test-scored/",
     icon: Sparkles,
   },
   "OET": {
-    duration: "2h 50m",
     sections: ["Listening", "Reading", "Writing", "Speaking"],
-    scoring: "A-E (Grade B = 350+)",
-    tips: ["Healthcare-specific scenarios", "Write referral/discharge letters", "Speaking role-plays with interlocutor", "Use medical terminology"],
+    scoring: "Component results use a 0–500 scale and letter grades",
+    note: "Four sub-tests; Speaking may be scheduled separately under specified conditions.",
+    sourceUrl: "https://oet.com/test-regulations",
     icon: BookOpen,
   },
   "LANGUAGECERT": {
-    duration: "2h 30m",
-    sections: ["Reading", "Writing", "Listening", "Speaking"],
-    scoring: "A1-C2 (CEFR)",
-    tips: ["Similar to IELTS format", "CEFR-aligned scoring", "Computer-based or paper-based"],
+    sections: ["Written examination", "Spoken examination"],
+    note: "Written and spoken exams may be taken separately and lead to independent certificates.",
+    sourceUrl: "https://www.languagecert.org/en/about-us/faq/international-esol-faq",
     icon: FileText,
-  },
-  "LINGUASKILL": {
-    duration: "1h 30m",
-    sections: ["Reading", "Listening", "Writing", "Speaking"],
-    scoring: "A1-C2 (CEFR)",
-    tips: ["Adaptive test", "Results within 48 hours", "Business or General English versions"],
-    icon: Sparkles,
-  },
-  "OIETC": {
-    duration: "2 hours",
-    sections: ["Reading", "Writing", "Listening", "Speaking"],
-    scoring: "B1-C1 (CEFR)",
-    tips: ["Online proctored", "Accepted by UK universities", "Similar to IELTS Academic"],
-    icon: FileText,
-  },
-  "TOEIC": {
-    duration: "2 hours",
-    sections: ["Listening", "Reading"],
-    scoring: "10-990",
-    tips: ["Business English focus", "Time management is critical", "Learn business vocabulary", "Don't spend >30 sec on Part 5"],
-    icon: Headphones,
-  },
-  "CAMBRIDGE": {
-    duration: "3h 30m",
-    sections: ["Reading & Use of English", "Writing", "Listening", "Speaking"],
-    scoring: "140-210 (B2 First)",
-    tips: ["Learn collocations and phrasal verbs", "Plan before writing", "Use speculative language in speaking"],
-    icon: BookOpen,
   },
   "GRE": {
-    duration: "3h 45m",
-    sections: ["Analytical Writing", "Verbal Reasoning", "Quantitative Reasoning"],
-    scoring: "260-340",
-    tips: ["Practice timed essays", "Build vocabulary for sentence equivalence", "Review math fundamentals"],
+    format: "About 1 hour 58 minutes; current format began September 22, 2023",
+    sections: ["Analytical Writing (one Issue task)", "Verbal Reasoning", "Quantitative Reasoning"],
+    scoring: "Verbal and Quantitative 130–170; Analytical Writing 0–6",
+    note: "Local practice results are not GRE scores; do not infer equivalence from a generic percentage.",
+    sourceUrl: "https://www.ets.org/gre/test-takers/general-test/prepare/test-structure.html",
     icon: PenLine,
   },
-  "GMAT": {
-    duration: "2h 15m (Focus)",
-    sections: ["Quantitative", "Verbal", "Data Insights"],
-    scoring: "205-805",
-    tips: ["Data Sufficiency strategy", "Critical Reasoning logic", "Time management is key"],
-    icon: FileText,
-  },
   "SAT": {
-    duration: "2h 14m (Digital)",
-    sections: ["Reading & Writing", "Math"],
-    scoring: "400-1600",
-    tips: ["Digital adaptive format", "Calculator allowed for math", "Shorter passages with 1 question each"],
+    format: "2 hours 14 minutes; two adaptive modules per section",
+    sections: ["Reading and Writing", "Math"],
+    scoring: "400–1600",
+    note: "Digital SAT multistage-adaptive format. Local practice results are not SAT scores.",
+    sourceUrl: "https://satsuite.collegeboard.org/sat/whats-on-the-test/structure",
     icon: FileText,
   },
   "ACT": {
-    duration: "2h 55m",
-    sections: ["English", "Math", "Reading", "Science"],
-    scoring: "1-36",
-    tips: ["Science section tests reasoning, not facts", "Pace yourself — 36 sec per English question", "Read questions before science passages"],
+    format: "Enhanced test; Science and Writing are optional",
+    sections: ["English", "Math", "Reading", "Optional Science", "Optional Writing"],
+    note: "Since September 2025, the Composite averages English, Math, and Reading. Local results are not ACT scores.",
+    sourceUrl: "https://www.act.org/content/dam/act/unsecured/documents/ACT-UserHandbook.pdf",
     icon: BookOpen,
   },
   "LSAT": {
-    duration: "3h 30m",
-    sections: ["Reading Comprehension", "Logical Reasoning", "Writing Sample"],
-    scoring: "120-180",
-    tips: ["Practice logical fallacies", "Identify argument structure", "Writing sample is unscored but required"],
+    sections: ["Two scored Logical Reasoning sections", "One scored Reading Comprehension section", "One unscored variable section"],
+    scoring: "120–180; Argumentative Writing is separate and unscored",
+    note: "The current multiple-choice test no longer includes Logic Games / Analytical Reasoning.",
+    sourceUrl: "https://www.lsac.org/lsat/frequently-asked-questions-about-lsat",
     icon: PenLine,
   },
-  "MCAT": {
-    duration: "7h 30m (with breaks)",
-    sections: ["Chemical & Physical", "Critical Analysis", "Biological & Biochemical", "Psychological & Social"],
-    scoring: "472-528",
-    tips: ["Content-heavy — start prep 3-6 months early", "Practice CARS daily", "Review AAMC official materials"],
-    icon: BookOpen,
+  "TOEIC": {
+    sections: ["Listening and Reading; other TOEIC tests are separate"],
+    note: "This catalog code does not identify which TOEIC version is configured. Check the official test page before relying on timing or score details.",
+    icon: Headphones,
+  },
+  "GMAT": {
+    format: "2 hours 15 minutes; three 45-minute sections, order is flexible",
+    sections: ["Quantitative Reasoning", "Verbal Reasoning", "Data Insights"],
+    scoring: "205–805; each section contributes equally",
+    note: "Current GMAC format. Local practice results are not GMAT scores.",
+    sourceUrl: "https://www.mba.com/exams-and-exam-prep/gmat-exam/what-is-the-gmat-exam-and-what-should-you-know",
+    icon: FileText,
   },
   "VISA-INTERVIEW": {
-    duration: "5-10 min interview",
-    sections: ["Speaking", "Writing (SOP)"],
-    scoring: "Pass/Fail",
-    tips: ["Show strong ties to home country", "Be confident and honest", "Have documents organized", "Dress professionally"],
+    note: "Interview preparation, not a standardized English proficiency score. Follow the official authority’s current instructions; no outcome is guaranteed.",
     icon: Mic,
   },
   "ALO-PLACEMENT": {
-    duration: "1h 15m",
-    sections: ["Grammar", "Vocabulary", "Reading", "Listening", "Writing"],
-    scoring: "CEFR A1-C2",
-    tips: ["Internal placement test", "Determines your English level", "Used for course placement"],
+    note: "Internal placement format. The current deployment’s sections and placement rubric have not been independently verified.",
     icon: FileText,
   },
 };
@@ -227,7 +197,7 @@ export default function ExamPrepPage() {
             Exam Preparation Center
           </h1>
           <p className="mt-2 text-slate-600 max-w-2xl mx-auto">
-            Real exam-aligned practice for 20 exam types. Study materials, practice tests, and AI-powered handbook for every exam.
+            Browse exam types and question counts from the active database. A question count does not establish a full-length test, official content alignment, validated scoring, or working media.
           </p>
         </div>
 
@@ -236,13 +206,13 @@ export default function ExamPrepPage() {
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-3xl font-bold text-blue-600">{examTypes.length}</p>
-              <p className="text-xs text-slate-500">Exam Types</p>
+              <p className="text-xs text-slate-500">Active Exam Types</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-3xl font-bold text-purple-600">{examTypes.reduce((s, e) => s + e.questionCount, 0)}</p>
-              <p className="text-xs text-slate-500">Practice Questions</p>
+              <p className="text-xs text-slate-500">Active Question Rows</p>
             </CardContent>
           </Card>
           <Card>
@@ -253,8 +223,8 @@ export default function ExamPrepPage() {
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-amber-600">24/7</p>
-              <p className="text-xs text-slate-500">AI Handbook</p>
+              <p className="text-3xl font-bold text-amber-600">{examTypes.reduce((sum, exam) => sum + exam.practiceSetCount, 0)}</p>
+              <p className="text-xs text-slate-500">Active Practice Sets</p>
             </CardContent>
           </Card>
         </div>
@@ -266,16 +236,16 @@ export default function ExamPrepPage() {
               <Sparkles className="h-7 w-7" />
             </div>
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="text-lg font-bold text-slate-900">AI Study Handbook — Free, No Sign-Up</h3>
+              <h3 className="text-lg font-bold text-slate-900">Study Guidance</h3>
               <p className="text-sm text-slate-600">
-                Ask any question about any exam format, scoring, tips, or preparation strategy. Get instant AI answers grounded in official study materials.
+                Guidance responses depend on the content and services configured for this deployment. Verify exam rules, format, and scoring with the official provider.
               </p>
             </div>
             <a
               href="/ask-handbook"
               className="shrink-0 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-600"
             >
-              Ask AI Handbook →
+              Open study guidance →
             </a>
           </CardContent>
         </Card>
@@ -306,7 +276,7 @@ export default function ExamPrepPage() {
               const info = EXAM_INFO[exam.code];
               const Icon = info?.icon || FileText;
               const categoryColor = CATEGORY_COLORS[exam.category] || "bg-slate-50 text-slate-700 ring-slate-200";
-              const hasQuestions = exam.questionCount > 0;
+              const hasQuestions = exam.available && exam.questionCount > 0;
 
               return (
                 <Card key={exam.id} className={`flex flex-col overflow-hidden transition hover:shadow-lg ${!hasQuestions ? "opacity-60" : ""}`}>
@@ -327,46 +297,40 @@ export default function ExamPrepPage() {
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col gap-3">
                     {/* Exam details */}
-                    {info && (
-                      <div className="space-y-1.5 text-xs text-slate-600">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 text-slate-400" />
-                          <span>{info.duration}</span>
+                    <div className="space-y-1.5 text-xs text-slate-600">
+                      {info?.format && (
+                        <div className="flex items-start gap-1.5">
+                          <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          <span>{info.format}</span>
                         </div>
+                      )}
+                      {info?.sections?.length ? (
                         <div className="flex items-start gap-1.5">
                           <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
                           <span>{info.sections.join(" · ")}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className="text-[10px]">{info.scoring}</Badge>
-                        </div>
-                      </div>
-                    )}
+                      ) : null}
+                      {info?.scoring && <Badge variant="outline" className="text-[10px]">{info.scoring}</Badge>}
+                      {info?.note && <p className="leading-5 text-slate-500">{info.note}</p>}
+                      {info?.sourceUrl ? (
+                        <a href={info.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-8 items-center font-medium text-blue-700 underline underline-offset-2">
+                          Official information <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        <p className="leading-5 text-amber-700">Current official format source not verified in this catalog.</p>
+                      )}
+                    </div>
 
                     {/* Question count */}
                     <div className="flex items-center gap-2 text-xs">
                       {hasQuestions ? (
                         <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
-                          {exam.questionCount} questions
+                          {exam.questionCount} active questions · depth not verified
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-amber-600">Coming soon</Badge>
+                        <Badge variant="secondary" className="text-amber-600">No active questions</Badge>
                       )}
                     </div>
-
-                    {/* Tips */}
-                    {info && info.tips.length > 0 && (
-                      <div className="rounded-md bg-slate-50 p-2.5">
-                        <p className="mb-1 text-[10px] font-semibold uppercase text-slate-500">Study Tips</p>
-                        <ul className="space-y-0.5 text-xs text-slate-600">
-                          {info.tips.slice(0, 3).map((tip, i) => (
-                            <li key={i} className="flex gap-1">
-                              <span className="text-blue-500">•</span> {tip}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
 
                     {/* Actions */}
                     <div className="mt-auto flex gap-2 pt-2">

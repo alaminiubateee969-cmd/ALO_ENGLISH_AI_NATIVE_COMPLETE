@@ -184,12 +184,21 @@ export function hasAnswerKey(q: {
 }): boolean {
   const type = q.type.toUpperCase();
 
-  if (INDEX_TYPES.has(type)) return q.correctIndex !== null && q.correctIndex !== undefined;
+  if (INDEX_TYPES.has(type)) {
+    if (q.correctIndex !== null && q.correctIndex !== undefined) return true;
+    return (type === "TRUE_FALSE" || type === "TRUE_FALSE_NOT_GIVEN")
+      && typeof q.correctAnswer === "string"
+      && q.correctAnswer.trim().length > 0;
+  }
   if (TEXT_TYPES.has(type)) return typeof q.correctAnswer === "string" && q.correctAnswer.trim().length > 0;
-  if (SET_TYPES.has(type)) return typeof q.correctIndices === "string" && q.correctIndices.trim().length > 0;
+  if (SET_TYPES.has(type)) {
+    if (typeof q.correctIndices === "string" && parseIndices(q.correctIndices).length > 0) return true;
+    return q.correctIndex !== null && q.correctIndex !== undefined;
+  }
 
-  // Subjective work (essay, speaking) is marked by an evaluator, not a key.
-  return true;
+  // Subjective work is deliberately retained for separate human review; an
+  // unknown type fails closed so it cannot silently produce an unscored item.
+  return SUBJECTIVE_TYPES.has(type);
 }
 
 /**

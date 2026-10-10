@@ -8,8 +8,10 @@
  *      @@unique([attemptId, questionId]) constraint as a backstop).
  *   2. Questions the student has already seen on this practice set are
  *      excluded while enough fresh questions remain.
- *   3. A short bank is never hidden: the result carries `shortage` metadata
- *      and the set is reported so admin tooling can surface it.
+ *   3. If an internal caller specifies a required count and the bank cannot
+ *      meet it, selection fails rather than silently shortening the session.
+ *      The public start route serves the complete gradeable set; this is not
+ *      evidence that the set matches an official exam's length or blueprint.
  *   4. The selected IDs are persisted to AttemptQuestion, so a refresh or a
  *      different device replays the exact same set.
  *
@@ -19,7 +21,7 @@
 
 import { hasAnswerKey } from "./grading";
 
-type Db = typeof import("@/lib/db").db;
+type Db = Pick<typeof import("@/lib/db").db, "question" | "attemptQuestion">;
 
 export type ShortageInfo = {
   requiredCount: number;
@@ -40,7 +42,7 @@ export type SelectionResult = {
   shortage: ShortageInfo | null;
 };
 
-/** Thrown only when the bank physically cannot supply one full sitting. */
+/** Thrown when the bank cannot supply the server-selected session count. */
 export class QuestionShortageError extends Error {
   readonly code = "QUESTION_BANK_SHORTAGE";
   readonly shortage: ShortageInfo;
@@ -55,11 +57,35 @@ export class QuestionShortageError extends Error {
   }
 }
 
+export class ListeningAudioNotReadyError extends Error {
+  readonly code = "LISTENING_AUDIO_NOT_READY";
+
+  constructor(readonly questionCount: number) {
+    super(`${questionCount} gradeable listening question(s) do not have a matching READY audio asset.`);
+    this.name = "ListeningAudioNotReadyError";
+  }
+}
+
+export function hasReadyListeningAudio(question: {
+  section: string;
+  audioUrl?: string | null;
+  audioAsset?: { status?: string | null; location?: string | null; verifiedAt?: Date | null } | null;
+}): boolean {
+  if (question.section.toUpperCase() !== "LISTENING") return true;
+  const audioUrl = question.audioUrl?.trim();
+  return Boolean(
+    audioUrl &&
+    question.audioAsset?.status === "READY" &&
+    question.audioAsset.location === audioUrl &&
+    question.audioAsset.verifiedAt,
+  );
+}
+
 type SelectionArgs = {
   db: Db;
   userId: string;
   practiceSetId: string;
-  /** How many questions to serve. Defaults to the whole set. */
+  /** Internal policy count. Defaults to the whole gradeable set (not an official-length assertion). */
   count?: number;
   /** Ignore questions used in the student's previous attempts on this set. */
   excludePreviouslySeen?: boolean;
@@ -81,7 +107,10 @@ export async function selectQuestions({
     orderBy: [{ order: "asc" }, { id: "asc" }],
     select: {
       id: true,
+      section: true,
       type: true,
+      audioUrl: true,
+      audioAsset: { select: { status: true, location: true, verifiedAt: true } },
       correctAnswer: true,
       correctIndex: true,
       correctIndices: true,
@@ -92,6 +121,10 @@ export async function selectQuestions({
   // never be served. Skipping it here is what keeps an attempt gradeable.
   const ungradeable = pool.filter((q) => !hasAnswerKey(q));
   const gradeable = pool.filter((q) => hasAnswerKey(q));
+  const listeningAudioUnavailable = gradeable.filter((q) => !hasReadyListeningAudio(q));
+  if (listeningAudioUnavailable.length > 0) {
+    throw new ListeningAudioNotReadyError(listeningAudioUnavailable.length);
+  }
   if (ungradeable.length > 0) {
     console.warn(
       `[selection] ${ungradeable.length} question(s) without an answer key were excluded: ` +
@@ -103,7 +136,10 @@ export async function selectQuestions({
   // Deliberately NOT clamped to the pool size: asking for more questions
   // than the bank holds is a real shortage and must surface as one, not be
   // quietly downgraded to a shorter paper.
-  const requiredCount = count ?? poolIds.length;
+  // An empty gradeable pool must fail closed instead of creating a blank
+  // attempt. A normal (unspecified) sitting requires every gradeable item, or
+  // at least one item when the pool is empty so the shortage is explicit.
+  const requiredCount = count ?? Math.max(1, poolIds.length);
 
   let seenIds = new Set<string>();
   if (excludePreviouslySeen) {
@@ -116,9 +152,9 @@ export async function selectQuestions({
 
   const eligibleIds = poolIds.filter((id) => !seenIds.has(id));
 
-  // Case 2 — the bank cannot even supply one full sitting. Never downgraded
-  // to "here are the few questions we have": that would produce a paper the
-  // scoring rules cannot interpret.
+  // Case 2 — the bank cannot supply the server-selected session count. Never
+  // downgrade it to a shorter set; official-format length remains a separate
+  // content-validation/release requirement.
   if (poolIds.length < requiredCount) {
     throw new QuestionShortageError({
       requiredCount,

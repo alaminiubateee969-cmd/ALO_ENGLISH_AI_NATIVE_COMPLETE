@@ -71,7 +71,19 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         clock: computeClock(attempt),
         questions,
         answers,
-        score: attempt.score,
+        score: attempt.score?.providerUsed === "deterministic_objective"
+          ? {
+              overall: attempt.score.overall,
+              listening: attempt.score.listening,
+              reading: attempt.score.reading,
+              writing: null,
+              speaking: null,
+              confidence: null,
+              confidenceCalibrated: false,
+              providerUsed: attempt.score.providerUsed,
+              isOfficialScore: false,
+            }
+          : null,
       },
       "Attempt loaded"
     );

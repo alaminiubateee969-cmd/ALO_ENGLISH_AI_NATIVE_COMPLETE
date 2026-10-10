@@ -21,18 +21,26 @@ export function DashboardShell({
   const router = useRouter();
   const [user, setUser] = useState<{ name?: string; email: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) setUser(data.data.user);
-        else router.push("/login");
+        if (!data.success) {
+          router.replace("/login");
+          return;
+        }
+        if (data.data.user.role !== role) {
+          setAccessDenied(true);
+          return;
+        }
+        setUser(data.data.user);
       })
-      .catch(() => router.push("/login"))
+      .catch(() => router.replace("/login"))
       .finally(() => setLoading(false));
-  }, [router]);
+  }, [router, role]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -47,6 +55,19 @@ export function DashboardShell({
     );
   }
 
+  if (accessDenied) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <div className="max-w-md rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-slate-900">Access denied</h1>
+          <p className="mt-2 text-sm text-slate-600">This dashboard is restricted to {role} accounts.</p>
+          <Link href="/" className="mt-4 inline-flex min-h-11 items-center font-medium text-blue-700 underline underline-offset-2">
+            Return to the home page
+          </Link>
+        </div>
+      </main>
+    );
+  }
   if (!user) return null;
 
   return (

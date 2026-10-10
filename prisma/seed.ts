@@ -2,9 +2,9 @@
  * prisma/seed.ts — Database seed script.
  *
  * Creates:
- *   - 1 admin user (password from ADMIN_SEED_PASSWORD env, or a random one printed to stdout)
+ *   - 1 admin user (password supplied through ADMIN_SEED_PASSWORD; never printed)
  *   - Core settings
- *   - 32 exam types (exam-aligned practice, not official content)
+ *   - 20 exam-type metadata rows (not an assertion of active content or official-format coverage)
  *
  * Usage:  bun run prisma/seed.ts
  * Idempotent: safe to re-run (upserts by unique key).
@@ -12,7 +12,6 @@
 
 import { PrismaClient } from '@prisma/client'
 import { hashSync } from 'bcryptjs'
-import { randomBytes } from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -26,7 +25,7 @@ const EXAM_TYPES = [
   { code: 'OET', name: 'OET (Healthcare)', category: 'Professional' },
   { code: 'LANGUAGECERT', name: 'LanguageCert', category: 'English Proficiency' },
   { code: 'LINGUASKILL', name: 'Cambridge Linguaskill', category: 'English Proficiency' },
-  { code: 'OIETC', name: 'OIETC / Oxford ELLT', category: 'English Proficiency' },
+  { code: 'OIETC', name: 'OIETC — product identity pending verification', category: 'English Proficiency' },
   { code: 'TOEIC', name: 'TOEIC', category: 'English Proficiency' },
   { code: 'CAMBRIDGE', name: 'Cambridge English', category: 'English Proficiency' },
   { code: 'SAT', name: 'Digital SAT', category: 'Academic' },
@@ -44,7 +43,10 @@ async function main() {
 
   // --- Admin user ---
   const adminEmail = process.env.ADMIN_SEED_EMAIL || 'admin@aloeducation.com'
-  const adminPassword = process.env.ADMIN_SEED_PASSWORD || randomBytes(16).toString('hex')
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD
+  if (!adminPassword || adminPassword.length < 12) {
+    throw new Error('Set ADMIN_SEED_PASSWORD (at least 12 characters) through the secret manager before seeding.')
+  }
 
   await prisma.user.upsert({
     where: { email: adminEmail },
@@ -58,15 +60,6 @@ async function main() {
     },
   })
 
-  if (!process.env.ADMIN_SEED_PASSWORD) {
-    console.log('')
-    console.log('══════════════════════════════════════════════════════')
-    console.log('  ADMIN CREDENTIALS (save immediately, shown once):')
-    console.log(`  Email:    ${adminEmail}`)
-    console.log(`  Password: ${adminPassword}`)
-    console.log('══════════════════════════════════════════════════════')
-    console.log('')
-  }
 
   // --- Exam types ---
   for (const et of EXAM_TYPES) {

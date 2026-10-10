@@ -1,10 +1,12 @@
 /**
- * prisma/seed-questions.ts — Seed real practice questions into the database.
- *
- * Creates practice sets with actual questions for IELTS, PTE, TOEFL, and Duolingo.
- * Questions include: multiple choice, true/false, fill-blank, short answer, essay, speaking.
+ * LEGACY SAMPLE-SEED SCRIPT — creates a small synthetic question bank for local
+ * fixture/testing use only. It is not licensed, officially authored, or
+ * validated against current full-length exam blueprints. A guard limits it to
+ * an explicitly opted-in disposable test/sample SQLite database.
  */
 
+import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
+assertSafeSampleSeedTarget();
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -26,12 +28,15 @@ async function main() {
   // ═══ IELTS Practice Set ═══════════════════════════════════════════════
   const ieltsSet = await prisma.practiceSet.upsert({
     where: { id: 'ielts-practice-1' },
-    update: {},
+    update: {
+      title: 'IELTS Academic — Synthetic Sample Set (not full-length)',
+      description: 'Short development fixture only; not an official, licensed, or full-length IELTS test.',
+    },
     create: {
       id: 'ielts-practice-1',
       examTypeId: ielts.id,
-      title: 'IELTS Academic — Full Practice Test 1',
-      description: 'Complete IELTS practice test with Listening, Reading, Writing and Speaking sections.',
+      title: 'IELTS Academic — Synthetic Sample Set (not full-length)',
+      description: 'Short development fixture only; not an official, licensed, or full-length IELTS test.',
       durationMin: 165,
       isActive: true,
     },
@@ -161,12 +166,15 @@ async function main() {
   if (pte) {
     const pteSet = await prisma.practiceSet.upsert({
       where: { id: 'pte-practice-1' },
-      update: {},
+      update: {
+        title: 'PTE Academic — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, or full-length PTE Academic test.',
+      },
       create: {
         id: 'pte-practice-1',
         examTypeId: pte.id,
-        title: 'PTE Academic — Practice Test 1',
-        description: 'Complete PTE practice test covering all sections.',
+        title: 'PTE Academic — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, or full-length PTE Academic test.',
         durationMin: 120,
         isActive: true,
       },
@@ -208,12 +216,15 @@ async function main() {
   if (toefl) {
     const toeflSet = await prisma.practiceSet.upsert({
       where: { id: 'toefl-practice-1' },
-      update: {},
+      update: {
+        title: 'TOEFL iBT — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, or full-length TOEFL iBT test.',
+      },
       create: {
         id: 'toefl-practice-1',
         examTypeId: toefl.id,
-        title: 'TOEFL iBT — Practice Test 1',
-        description: 'Complete TOEFL iBT practice test.',
+        title: 'TOEFL iBT — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, or full-length TOEFL iBT test.',
         durationMin: 120,
         isActive: true,
       },
@@ -254,12 +265,15 @@ async function main() {
   if (duolingo) {
     const duoSet = await prisma.practiceSet.upsert({
       where: { id: 'duolingo-practice-1' },
-      update: {},
+      update: {
+        title: 'Duolingo English Test — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, or full-length Duolingo English Test.',
+      },
       create: {
         id: 'duolingo-practice-1',
         examTypeId: duolingo.id,
-        title: 'Duolingo English Test — Practice 1',
-        description: 'Complete Duolingo English Test practice.',
+        title: 'Duolingo English Test — Synthetic Sample Set (not full-length)',
+        description: 'Short development fixture only; not an official, licensed, or full-length Duolingo English Test.',
         durationMin: 60,
         isActive: true,
       },

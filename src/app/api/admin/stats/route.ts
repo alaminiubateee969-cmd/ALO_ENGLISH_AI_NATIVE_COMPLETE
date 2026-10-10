@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<Response> {
   return withErrorHandler(async () => {
-    await requireRole('ADMIN');
+    await requireRole('ADMIN', 'SUPER_ADMIN');
 
     const [
       totalUsers,

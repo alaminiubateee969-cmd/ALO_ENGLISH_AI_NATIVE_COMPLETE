@@ -1,24 +1,13 @@
 /**
- * scripts/generate-daily-questions.ts — Cron job for daily question generation.
+ * Deprecated daily question-generation entry point.
  *
- * Run this script daily to generate fresh questions for each exam type.
- * Uses the QuestionGeneratorAgent (AGENT-QGEN-01).
- *
- * Usage:
- *   bun run scripts/generate-daily-questions.ts
- *
- * Cron (run at 2 AM daily):
- *   0 2 * * * cd /opt/alo-english/current && bun run scripts/generate-daily-questions.ts >> shared/logs/daily-questions.log 2>&1
+ * Automatic generation was disabled because the previous script wrote
+ * hard-coded template content into live practice sets without a review gate.
+ * It intentionally performs no database writes.
  */
 
-import { generateAllDailyQuestions } from '../src/lib/agents/QuestionGeneratorAgent';
-
-async function main() {
-  await generateAllDailyQuestions();
-  process.exit(0);
-}
-
-main().catch((e) => {
-  console.error('❌ Daily question generation failed:', e);
-  process.exit(1);
-});
+console.error(
+  'BLOCKED: automatic daily question generation is disabled. No content was created. ' +
+  'Use authorized source material and the reviewed admin content workflow.',
+);
+process.exitCode = 1;

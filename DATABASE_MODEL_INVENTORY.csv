@@ -5,7 +5,7 @@ Department,Authentication & RBAC,5,2,id (@id),-
 PasswordReset,Authentication & RBAC,6,1,id (@id); token (@unique),@@index(userId); @@index(token)
 Lead,"CRM Core: Leads, Students, Partners",17,6,id (@id),@@index(status); @@index(counselorId); @@index(branchId); @@index(source)
 Student,"CRM Core: Leads, Students, Partners",18,9,id (@id); userId (@unique); leadId (@unique),@@index(counselorId); @@index(status)
-Partner,"CRM Core: Leads, Students, Partners",11,4,id (@id); userId (@unique),@@index(status)
+Partner,"CRM Core: Leads, Students, Partners",12,4,id (@id); userId (@unique); referralCode (@unique),@@index(status)
 Commission,"CRM Core: Leads, Students, Partners",7,2,id (@id),@@index(partnerId); @@index(status)
 Country,Education Catalog,6,1,id (@id); name (@unique); code (@unique),-
 University,Education Catalog,11,3,id (@id),@@index(countryId); @@index(isPublished)
@@ -26,7 +26,8 @@ Attempt,Exam Platform,11,5,id (@id),"@@index(userId); @@index(status); @@index(u
 AttemptQuestion,Exam Platform,6,2,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId); @@index(questionId)
 AttemptAnswer,Exam Platform,6,1,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId)
 Score,Exam Platform,12,2,id (@id); attemptId (@unique),@@index(userId)
-Question,Exam Questions,16,2,id (@id),@@index(practiceSetId); @@index(section)
+Question,Exam Questions,16,3,id (@id),@@index(practiceSetId); @@index(section)
+QuestionAudioAsset,Exam Questions,14,1,id (@id); questionId (@unique),@@index(status)
 FreeQuota,Free Quota + Payment,7,0,id (@id); userId (@unique),@@index(userId)
 Payment,Free Quota + Payment,10,0,id (@id),@@index(userId); @@index(status)
 DailyQuestionSet,Free Quota + Payment,6,0,"id (@id); @@unique(examTypeCode,date)","@@index(examTypeCode,date)"

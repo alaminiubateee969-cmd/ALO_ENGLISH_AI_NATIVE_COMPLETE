@@ -54,8 +54,8 @@ function AdminDashboardContent() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
             <DashboardCard title="Exam Types" value={stats?.content?.examTypes ?? 0} desc="Active exam types" icon={BookOpen} />
             <DashboardCard title="Practice Sets" value={stats?.content?.practiceSets ?? 0} desc="Available sets" icon={FileText} />
-            <DashboardCard title="Scores Generated" value={stats?.activity?.totalScores ?? 0} desc="AI-evaluated" icon={Award} />
-            <DashboardCard title="AI Agents" value={agents?.stats?.ready ?? 0} desc={`Provider: ${agents?.stats?.aiProvider || "local"}`} icon={TrendingUp} />
+            <DashboardCard title="Practice score rows" value={stats?.activity?.totalScores ?? 0} desc="Stored; scoring is not validated" icon={Award} />
+            <DashboardCard title="Agents marked ready" value={agents?.stats?.ready ?? 0} desc="Static registry; no runtime verification" icon={TrendingUp} />
           </div>
 
           {/* CRM Entity Links */}

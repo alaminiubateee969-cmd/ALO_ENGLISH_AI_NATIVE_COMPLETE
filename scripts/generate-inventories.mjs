@@ -18,7 +18,7 @@
  *   DATABASE_MODEL_INVENTORY.csv   from prisma/schema.prisma
  *   API_INVENTORY.csv              from src/app/api/**\/*.ts route handlers
  *   ROUTE_INVENTORY.csv            from src/app/**\/page.tsx + src/proxy.ts
- *   FILE_MANIFEST.csv              from `git ls-files`, file counts by directory
+ *   FILE_MANIFEST.csv              from tracked plus non-ignored worktree files
  *
  * Run:  node scripts/generate-inventories.mjs [--check]
  *   --check   regenerate in memory and exit 1 if any file differs from what is
@@ -164,19 +164,35 @@ function routePath(file) {
 }
 
 function authLevel(source, path) {
-  const role = source.match(/requireRole\(\s*["']([A-Z_]+)["']/);
-  if (role) return `role:${role[1]}`;
+  // This route deliberately exposes its read method while restricting writes.
+  // A path-only label would otherwise hide that access-control split.
+  if (path === "/api/rag/materials") return "mixed: GET public; POST ADMIN+SUPER_ADMIN";
+
+  const directRoleCalls = [...source.matchAll(/requireRole\(([^)]*)\)/g)];
+  if (directRoleCalls.length) {
+    const roles = [...directRoleCalls[0][1].matchAll(/["']([A-Z_]+)["']/g)].map((m) => m[1]);
+    if (roles.length) return `role:${[...new Set(roles)].join("+")}`;
+  }
   if (/requireRoles?\(/.test(source)) return "role:multiple";
+  const crudRole = source.match(/\broleName\s*:\s*["']([A-Z_]+)["']/);
+  if (crudRole && /create(?:List|Create|GetById|Update|Delete)Handler\s*\(/.test(source)) {
+    const extra = crudRole[1] === "ADMIN" ? "+SUPER_ADMIN" : "";
+    return `role:${crudRole[1]}${extra} (shared CRUD helper)`;
+  }
+  if (/requirePermission\(/.test(source)) return "permission-based";
+  if (/requireSession\(/.test(source)) return "authenticated (RBAC session)";
   if (/requireAuth\(/.test(source)) return "authenticated";
   if (/requireSuperAdmin|SUPER_ADMIN/.test(source)) return "role:SUPER_ADMIN";
-  // src/proxy.ts publishes an allowlist of routes that need no session.
-  return isPublicApi(path) ? "public (proxy allowlist)" : "none declared";
+  // The source allowlist documents intended public paths; it is not enforced
+  // by the proxy. Treat this label as an inventory hint, not an access-control
+  // guarantee.
+  return isPublicApi(path) ? "public intended (allowlist; verify handler)" : "none declared";
 }
 
 /**
- * src/proxy.ts declares which API paths need no session, as a list of RegExp
- * literals. They are read out of the source rather than copied here, so this
- * inventory cannot drift from the middleware that actually enforces it.
+ * src/proxy.ts contains a list of regexes documenting intended public API
+ * paths. They are read from source rather than copied here. The proxy does not
+ * enforce authentication; route-handler checks remain the access-control layer.
  */
 const PUBLIC_API_PATTERNS = [];
 try {
@@ -206,7 +222,8 @@ function apiInventory() {
   for (const file of files) {
     const source = readFileSync(file, "utf8");
     const methods = HTTP_METHODS.filter((m) =>
-      new RegExp(`export\\s+(?:async\\s+)?function\\s+${m}\\b`).test(source),
+      new RegExp(`export\\s+(?:async\\s+)?function\\s+${m}\\b`).test(source) ||
+      new RegExp(`export\\s+const\\s+${m}\\s*=`).test(source),
     );
     const runtime = (source.match(/export\s+const\s+runtime\s*=\s*["'](\w+)["']/) || [, "nodejs"])[1];
     const path = routePath(file);
@@ -219,11 +236,12 @@ function apiInventory() {
     ]);
   }
 
+  const header = rows.shift();
   rows.sort((a, b) => String(a[0]).localeCompare(String(b[0])));
   return {
     file: "API_INVENTORY.csv",
-    text: csv([rows[0], ...rows.slice(1)]),
-    count: rows.length - 1,
+    text: csv([header, ...rows]),
+    count: rows.length,
   };
 }
 
@@ -250,7 +268,7 @@ function routeInventory() {
 
     rows.push([
       path,
-      publicPages.has(path) ? "public (proxy allowlist)" : "protected (proxy redirect)",
+      publicPages.has(path) ? "public (page allowlist)" : "not public allowlisted; page guard required",
       rendering,
       file.slice(ROOT.length + 1),
     ]);
@@ -294,9 +312,14 @@ function fileManifest() {
     .toString()
     .split("\0")
     .filter(Boolean);
+  const untracked = execFileSync("git", ["ls-files", "--others", "--exclude-standard", "-z"], { cwd: ROOT, maxBuffer: 64e6 })
+    .toString()
+    .split("\0")
+    .filter(Boolean);
+  const files = [...new Set([...tracked, ...untracked])].sort();
 
   const groups = new Map();
-  for (const rel of tracked) {
+  for (const rel of files) {
     const parts = rel.split("/");
     let key;
     if (parts.length === 1) key = "(root)";
@@ -325,9 +348,9 @@ function fileManifest() {
     rows.push([key, group.files, PURPOSE[key] ?? ""]);
   }
 
-  const totalFiles = tracked.length;
+  const totalFiles = files.length;
   const totalBytes = [...groups.values()].reduce((sum, g) => sum + g.bytes, 0);
-  rows.push(["TOTAL", totalFiles, "Tracked content the host clones per deploy"]);
+  rows.push(["TOTAL", totalFiles, "Tracked and intended worktree content for a deploy"]);
 
   return {
     file: "FILE_MANIFEST.csv",

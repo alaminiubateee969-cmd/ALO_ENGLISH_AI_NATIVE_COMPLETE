@@ -6,7 +6,7 @@ import { FileText, MessageSquare, Calendar, BookOpen, GraduationCap, Award, Tren
 
 const NAV = [
   { label: "Dashboard", href: "/student/dashboard" },
-  { label: "Live AI Examiner", href: "/live-exam" },
+  { label: "Speaking conversation practice", href: "/live-exam" },
   { label: "Course Finder", href: "/course-finder" },
   { label: "Scholarships", href: "/scholarships" },
   { label: "Practice Tests", href: "/practice-test" },
@@ -23,7 +23,7 @@ function StudentDashboardContent() {
       status: string;
       startedAt: string;
       examType: { code: string; name: string };
-      score: { overall: number; confidence: number; providerUsed: string } | null;
+      score: { overall: number; confidence: null; confidenceCalibrated: false; providerUsed: string; isOfficialScore: false } | null;
     }>;
     pagination: { total: number };
   }>("/api/attempts?limit=5");
@@ -43,9 +43,9 @@ function StudentDashboardContent() {
               <Mic className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Live AI Speaking Examiner</h3>
+              <h3 className="text-lg font-bold text-slate-900">Speaking Conversation Practice</h3>
               <p className="text-sm text-slate-600">
-                Real-time conversational AI voice test — speak into your microphone, the AI examiner listens, transcribes, and responds with voice. Bengali-accent-aware evaluation.
+                Speak with a conversational practice agent. Audio is sent to the configured speech-recognition service for transcription; this page does not save a test attempt, produce an exam score, or measure pronunciation acoustically.
               </p>
             </div>
           </div>
@@ -53,7 +53,7 @@ function StudentDashboardContent() {
             href="/live-exam"
             className="shrink-0 rounded-lg bg-rose-500 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-md transition hover:bg-rose-600"
           >
-            Start Live Voice Test →
+            Start conversation practice →
           </a>
         </div>
       </div>
@@ -63,7 +63,7 @@ function StudentDashboardContent() {
         <h3 className="font-semibold mb-3">Quick Actions</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <a href="/live-exam" className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-4 hover:bg-rose-100">
-            <Mic className="h-5 w-5 text-rose-600" /> Live Voice Examiner
+            <Mic className="h-5 w-5 text-rose-600" /> Speaking Conversation Practice
           </a>
           <a href="/course-finder" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
             <BookOpen className="h-5 w-5 text-blue-600" /> Find a Course
@@ -88,15 +88,15 @@ function StudentDashboardContent() {
           </div>
         ) : attemptsData && attemptsData.attempts && attemptsData.attempts.length > 0 ? (
           <DashboardTable
-            headers={["Exam", "Status", "Started", "Score", "Confidence", "Provider"]}
+            headers={["Exam", "Status", "Started", "Practice indicator", "Calibration", "Method"]}
             rows={attemptsData.attempts.map((a) => [
               a.examType?.name || "—",
               <span key="s" className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.status === "SUBMITTED" ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"}`}>
                 {a.status}
               </span>,
               new Date(a.startedAt).toLocaleDateString(),
-              a.score ? <strong key="sc">{a.score.overall}</strong> : "—",
-              a.score ? `${Math.round(a.score.confidence * 100)}%` : "—",
+              a.score ? <strong key="sc">{a.score.overall} / 9</strong> : "No numeric result",
+              a.score ? "Not validated" : "—",
               a.score?.providerUsed || "—",
             ])}
           />

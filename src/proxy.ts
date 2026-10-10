@@ -5,10 +5,10 @@
  * and the exported function must be named `proxy` (not `middleware`).
  * (Verified: Next.js 16.1.3 source code checks `middlewareModule.proxy || middlewareModule.middleware`)
  *
- * This proxy:
- *   1. Applies security headers to every response
- *   2. Protects /app/* and /api/* routes (redirects unauthenticated users)
- *   3. Allows explicitly public routes
+ * This proxy applies security headers. It does not authenticate users or
+ * redirect protected routes; every API handler must enforce auth/authorization,
+ * and page-level checks are presentation only. The route lists below document
+ * the intended public surface and are consumed by the inventory generator.
  *
  * Public routes (no auth required):
  *   /, /login, /register, /forgot-password, /reset-password
@@ -17,7 +17,7 @@
  *   /contact, /book-consultation, /ask-handbook
  *   /privacy-policy, /terms, /cookie-policy, /portals
  *   /api/auth/*, /api/health, /api/lead, /api/rag/ask, /api/rag/materials (GET)
- *   /api/exam-types, /api/practice-sets, /api/examiners, /api/agents/status
+ *   /api/exam-types, /api/practice-sets, /api/examiners
  *   /_next/*, /favicon.ico, /public/*
  */
 
@@ -58,30 +58,11 @@ const PUBLIC_API_PATTERNS = [
   /^\/api\/exam-types$/,
   /^\/api\/practice-sets$/,
   /^\/api\/examiners$/,
-  /^\/api\/agents\/status$/,
 ];
-
-function isPublicRoute(pathname: string): boolean {
-  // Public pages
-  if (PUBLIC_PAGES.has(pathname)) return true;
-
-  // Public API patterns
-  for (const pattern of PUBLIC_API_PATTERNS) {
-    if (pattern.test(pathname)) return true;
-  }
-
-  // Static assets
-  if (pathname.startsWith('/_next/') || pathname.startsWith('/favicon') || pathname.includes('/public/')) {
-    return true;
-  }
-
-  return false;
-}
 
 // ─── Proxy Handler ────────────────────────────────────────────────────────
 
-export function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export function proxy(_req: NextRequest) {
   const res = NextResponse.next();
 
   // ─── Security Headers ──────────────────────────────────────────────────
@@ -89,7 +70,8 @@ export function proxy(req: NextRequest) {
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.headers.set('X-DNS-Prefetch-Control', 'off');
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
+  // Microphone access is required only by the same-origin speaking practice routes.
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), interest-cohort=()');
 
   // HSTS only in production (behind HTTPS proxy)
   if (process.env.NODE_ENV === 'production') {
@@ -117,15 +99,8 @@ export function proxy(req: NextRequest) {
     );
   }
 
-  // ─── Route Protection ──────────────────────────────────────────────────
-  // Only protect API routes at proxy level (pages are protected client-side)
-  // API routes that are public will return 401 if not authenticated — but
-  // we let the route handler decide (it has the full session logic).
-  //
-  // For page routes, we let the client-side redirect handle it (the dashboard
-  // pages check auth and redirect to /login). This avoids edge-runtime DB
-  // access limitations.
-
+  // Authentication and role/ownership checks are enforced by route handlers;
+  // this edge proxy intentionally does not make access-control decisions.
   return res;
 }
 

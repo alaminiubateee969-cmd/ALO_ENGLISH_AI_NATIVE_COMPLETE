@@ -1,8 +1,11 @@
 /**
- * prisma/seed-gre-gmat-sat-act.ts
- * Seeds questions for GRE, GMAT, SAT, ACT, ALO Placement
+ * LEGACY SAMPLE-SEED SCRIPT — synthetic short-form development fixtures for
+ * GRE, GMAT, SAT, ACT, and ALO placement. Not licensed, full-length, or
+ * validated as official exam material. Guarded to disposable test/sample DBs.
  */
 
+import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
+assertSafeSampleSeedTarget();
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -13,7 +16,7 @@ async function main() {
   const gre = await prisma.examType.findUnique({ where: { code: 'GRE' } });
   if (gre) {
     const greSet = await prisma.practiceSet.create({
-      data: { examTypeId: gre.id, title: 'GRE General — Full Practice Test', description: 'Verbal Reasoning + Quantitative Reasoning + Analytical Writing', durationMin: 198, isActive: true },
+      data: { examTypeId: gre.id, title: 'GRE General — Synthetic Sample Set (not full-length)', description: 'Development fixture only; not an official, licensed, or full-length GRE test.', durationMin: 198, isActive: true },
     });
 
     // Verbal Reasoning
@@ -87,7 +90,7 @@ async function main() {
   const gmat = await prisma.examType.findUnique({ where: { code: 'GMAT' } });
   if (gmat) {
     const gmatSet = await prisma.practiceSet.create({
-      data: { examTypeId: gmat.id, title: 'GMAT Focus — Full Practice Test', description: 'Quantitative + Verbal + Data Insights', durationMin: 135, isActive: true },
+      data: { examTypeId: gmat.id, title: 'GMAT — Synthetic Sample Set (not full-length)', description: 'Development fixture only; not an official, licensed, or full-length GMAT test.', durationMin: 135, isActive: true },
     });
 
     const gmatQs = [
@@ -132,7 +135,7 @@ async function main() {
   const sat = await prisma.examType.findUnique({ where: { code: 'SAT' } });
   if (sat) {
     const satSet = await prisma.practiceSet.create({
-      data: { examTypeId: sat.id, title: 'Digital SAT — Full Practice Test', description: 'Reading/Writing + Math (2 modules each)', durationMin: 134, isActive: true },
+      data: { examTypeId: sat.id, title: 'Digital SAT — Synthetic Sample Set (not full-length)', description: 'Development fixture only; not an official, licensed, full-length, or adaptive SAT test.', durationMin: 134, isActive: true },
     });
 
     const satQs = [
@@ -177,7 +180,7 @@ async function main() {
   const act = await prisma.examType.findUnique({ where: { code: 'ACT' } });
   if (act) {
     const actSet = await prisma.practiceSet.create({
-      data: { examTypeId: act.id, title: 'ACT — Full Practice Test', description: 'English + Math + Reading + Science', durationMin: 175, isActive: true },
+      data: { examTypeId: act.id, title: 'ACT — Synthetic Sample Set (not full-length)', description: 'Development fixture only; not an official, licensed, full-length ACT test.', durationMin: 175, isActive: true },
     });
 
     const actQs = [
@@ -219,7 +222,7 @@ async function main() {
   const alo = await prisma.examType.findUnique({ where: { code: 'ALO-PLACEMENT' } });
   if (alo) {
     const aloSet = await prisma.practiceSet.create({
-      data: { examTypeId: alo.id, title: 'ALO English Placement Test', description: 'Grammar + Vocabulary + Reading + Listening + Writing. CEFR level assessment.', durationMin: 75, isActive: true },
+      data: { examTypeId: alo.id, title: 'ALO English Placement — Synthetic Sample Set', description: 'Internal development fixture only; not a validated CEFR assessment or placement result.', durationMin: 75, isActive: true },
     });
 
     const aloQs = [

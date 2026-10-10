@@ -120,3 +120,7 @@ Thumbs.db
 
 # Runtime PID files from .zscripts/dev.sh
 *.pid
+
+.env
+.env.*
+!.env.example

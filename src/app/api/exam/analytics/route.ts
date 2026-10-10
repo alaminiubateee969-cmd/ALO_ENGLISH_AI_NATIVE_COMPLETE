@@ -1,5 +1,8 @@
 /**
- * GET /api/exam/analytics — Exam analytics for admin.
+ * GET /api/exam/analytics — Admin-only content counts and objective-indicator analytics.
+ *
+ * Only score rows written by the current deterministic objective scorer are
+ * included. Historical subjective or unvalidated score rows are excluded.
  */
 
 import { db } from "@/lib/db";
@@ -12,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
   return withErrorHandler(async () => {
-    await requireRole("ADMIN" as any, "SUPER_ADMIN" as any);
+    await requireRole("ADMIN", "SUPER_ADMIN");
 
     const examTypes = await db.examType.findMany({
       where: { isActive: true },
@@ -24,42 +27,62 @@ export async function GET(): Promise<Response> {
       practiceSetCount: number;
       questionCount: number;
       attemptCount: number;
-      completedCount: number;
+      submittedCount: number;
       completionRate: number;
-      averageScore: number;
-      bestScore: number;
+      objectiveIndicatorCount: number;
+      averageObjectiveIndicator: number | null;
+      bestObjectiveIndicator: number | null;
+      scoreDisclosure: string;
     }> = [];
+    for (const examType of examTypes) {
+      const practiceSetIds = examType.practiceSets.map((set) => set.id);
+      const [questionCount, attemptCount, submittedCount, indicators] = await Promise.all([
+        practiceSetIds.length > 0
+          ? db.question.count({ where: { practiceSetId: { in: practiceSetIds } } })
+          : Promise.resolve(0),
+        practiceSetIds.length > 0
+          ? db.attempt.count({ where: { practiceSetId: { in: practiceSetIds } } })
+          : Promise.resolve(0),
+        practiceSetIds.length > 0
+          ? db.attempt.count({
+              where: {
+                practiceSetId: { in: practiceSetIds },
+                status: { in: ["SUBMITTED", "SCORED"] },
+              },
+            })
+          : Promise.resolve(0),
+        practiceSetIds.length > 0
+          ? db.score.findMany({
+              where: {
+                providerUsed: "deterministic_objective",
+                attempt: { practiceSetId: { in: practiceSetIds } },
+              },
+              select: { overall: true },
+            })
+          : Promise.resolve([]),
+      ]);
 
-    for (const et of examTypes) {
-      const practiceSetIds = et.practiceSets.map((ps) => ps.id);
-      const questionCount = await db.question.count({
-        where: { practiceSetId: { in: practiceSetIds } },
-      });
-      const attemptCount = practiceSetIds.length > 0
-        ? await db.attempt.count({ where: { practiceSetId: { in: practiceSetIds } } })
-        : 0;
-      const completed = practiceSetIds.length > 0
-        ? await db.score.findMany({ where: { attempt: { practiceSetId: { in: practiceSetIds } } } })
-        : [];
-      const avgScore = completed.length > 0
-        ? completed.reduce((sum, s) => sum + s.overall, 0) / completed.length
-        : 0;
-      const bestScore = completed.length > 0
-        ? Math.max(...completed.map((s) => s.overall))
-        : 0;
+      const averageObjectiveIndicator = indicators.length > 0
+        ? Math.round((indicators.reduce((sum, score) => sum + score.overall, 0) / indicators.length) * 10) / 10
+        : null;
+      const bestObjectiveIndicator = indicators.length > 0
+        ? Math.round(Math.max(...indicators.map((score) => score.overall)) * 10) / 10
+        : null;
 
       analytics.push({
-        examType: { id: et.id, code: et.code, name: et.name },
-        practiceSetCount: et.practiceSets.length,
+        examType: { id: examType.id, code: examType.code, name: examType.name },
+        practiceSetCount: examType.practiceSets.length,
         questionCount,
         attemptCount,
-        completedCount: completed.length,
-        completionRate: attemptCount > 0 ? Math.round((completed.length / attemptCount) * 100) : 0,
-        averageScore: Math.round(avgScore * 10) / 10,
-        bestScore: Math.round(bestScore * 10) / 10,
+        submittedCount,
+        completionRate: attemptCount > 0 ? Math.round((submittedCount / attemptCount) * 100) : 0,
+        objectiveIndicatorCount: indicators.length,
+        averageObjectiveIndicator,
+        bestObjectiveIndicator,
+        scoreDisclosure: "Generic answer-accuracy indicators only; not official or publisher-equivalent scores.",
       });
     }
 
-    return ok({ analytics }, "Exam analytics retrieved");
+    return ok({ analytics }, "Objective practice analytics retrieved");
   });
 }

@@ -1,12 +1,12 @@
 /**
  * src/lib/ai/examiner/ExaminerEngine.ts
  *
- * Real-time Voice AI Examiner Engine — conducts a live, conversational
- * IELTS-style speaking test with:
- *   - Speech-to-Text (z-ai-web-dev-sdk ASR) for the student's spoken answers
- *   - LLM (z-ai-web-dev-sdk chat completions) for context-aware examiner replies
- *   - Text-to-Speech (z-ai-web-dev-sdk TTS) for the examiner's voice
- *   - Bengali-accent-aware examiner personas (from AIExaminers.ts)
+ * Session-only conversational speaking practice with:
+ *   - Speech-to-Text (configured ASR provider) for the student's spoken answers
+ *   - LLM chat completions for context-aware practice-guide replies
+ *   - Text-to-Speech for the generated practice-guide voice
+ *   - Inclusive fictional personas; no acoustic scoring, accent classification,
+ *     persisted exam result, or official test claim
  *
  * Used by:
  *   /api/speaking/transcribe   -> transcribeStudentSpeech()
@@ -50,30 +50,24 @@ async function getZAI() {
   return zaiInstance;
 }
 
-// ─── System Prompt (Bengali-accent-aware) ──────────────────────────────────
+// ─── System Prompt (inclusive conversation practice) ───────────────────────
 function buildSystemPrompt(examiner: AIExaminer): string {
-  return `You are ${examiner.name}, ${examiner.title} at ALO Education. You are conducting an IELTS-style AI English Speaking Test.
+  return `You are ${examiner.name}, an AI conversation practice guide for ALO Education. You are not a human or official examiner, and this is not a scored or official test.
 
 YOUR PERSONALITY: ${examiner.personality}
 
-ACCENT AWARENESS: ${examiner.accentAwareness}
-You understand that Bengali (Bangladeshi) English speakers have natural accent patterns:
-- v/w confusion (very -> wery) — do NOT penalize
-- th/t or th/d (think -> tink, this -> dis) — do NOT penalize
-- Article dropping (Bengali has no articles) — do NOT penalize
-- Present continuous for habitual actions — do NOT penalize
-Focus on COMMUNICATION and CONTENT, not accent perfection.
+FAIRNESS: ${examiner.accentAwareness}
+Focus on the learner's intended meaning and the conversation. Never diagnose pronunciation, accent, intelligibility, or spoken fluency from transcript text. Do not assign or promise a score or result.
 
 STRICT RULES:
 1. Ask only ONE question at a time.
-2. Listen carefully to the student's answer.
-3. Ask context-aware follow-up questions based on what they said.
-4. Be warm, professional, and encouraging.
-5. NEVER claim to be a human or official examiner — you are an AI practice examiner.
-6. Keep your responses SHORT (1-3 sentences) so the conversation feels natural and real-time.
-7. If the student's answer is unclear or very short, gently ask them to elaborate.
+2. Respond to the student's answer and ask a relevant follow-up when appropriate.
+3. Be warm, professional, and encouraging.
+4. Keep your responses SHORT (1-3 sentences) so the conversation feels natural.
+5. If the student's answer is unclear or very short, gently ask them to elaborate without making assumptions about accent.
+6. Explain that the session is practice only if asked about results.
 
-Return ONLY valid JSON: {"text": "your examiner response"}`;
+Return ONLY valid JSON: {"text": "your practice-guide response"}`;
 }
 
 // ─── Examiner Response Generation (LLM) ───────────────────────────────────
@@ -225,7 +219,7 @@ export async function generateExaminerVoice(
  */
 export async function transcribeStudentSpeech(
   audioBase64: string
-): Promise<{ transcript: string; confidence: number }> {
+): Promise<{ transcript: string; confidence: number | null }> {
   const zai = await getZAI();
 
   try {
@@ -237,12 +231,14 @@ export async function transcribeStudentSpeech(
     });
 
     const transcript = response.text || response.transcript || "";
-    const confidence = typeof response.confidence === "number" ? response.confidence : 0.85;
+    const confidence = typeof response.confidence === "number" && Number.isFinite(response.confidence)
+      ? response.confidence
+      : null;
 
     return { transcript, confidence };
   } catch (err) {
     console.error("[ExaminerEngine] ASR failed:", err);
-    return { transcript: "", confidence: 0 };
+    return { transcript: "", confidence: null };
   }
 }
 

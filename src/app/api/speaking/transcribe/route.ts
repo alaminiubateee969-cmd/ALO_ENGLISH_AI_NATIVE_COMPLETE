@@ -1,23 +1,44 @@
 import { transcribeStudentSpeech } from "@/lib/ai/examiner/ExaminerEngine";
 import { requireAuth } from "@/lib/auth";
-import { ok, badRequest } from "@/lib/responses";
+import { rateLimit } from "@/lib/rate-limit";
+import { badRequest, ok, payloadTooLarge, rateLimited } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
+import { RequestBodyTooLargeError, readJsonWithLimit } from "@/lib/http/read-json-with-limit";
+import { inspectBase64Audio, MAX_SPEECH_AUDIO_BYTES } from "@/lib/audio/base64";
 import { z } from "zod";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export async function POST(req: Request) {
+const MAX_AUDIO_BASE64_CHARS = Math.ceil(MAX_SPEECH_AUDIO_BYTES / 3) * 4;
+const MAX_JSON_BYTES = 14 * 1024 * 1024;
+
+export async function POST(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
     const user = await requireAuth();
-    const body = await req.json().catch(() => null);
-    if (!body) return badRequest("Invalid JSON");
-    const schema = z.object({ audioBase64: z.string().min(100) });
+    if (!rateLimit(`speech-transcribe:${user.id}`, 30, 60 * 60).allowed) {
+      return rateLimited("Speech transcription limit reached. Try again later.");
+    }
+
+    let body: unknown;
+    try {
+      body = await readJsonWithLimit(req, MAX_JSON_BYTES);
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) return payloadTooLarge("Audio request exceeds the 10 MB decoded limit");
+      return badRequest("Invalid JSON body");
+    }
+
+    const schema = z.object({ audioBase64: z.string().min(100).max(MAX_AUDIO_BASE64_CHARS + 128) });
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid");
-    const { audioBase64 } = parsed.data;
-    const result = await transcribeStudentSpeech(audioBase64);
-    return ok({ transcript: result.transcript, confidence: result.confidence }, "Speech transcribed");
+    if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid audio request");
+
+    const audio = inspectBase64Audio(parsed.data.audioBase64);
+    if (!audio) return badRequest("Audio must be valid Base64 and no larger than 10 MB");
+
+    // Audio is transmitted to the configured ASR provider for this request; it
+    // is not persisted as an attempt recording by this endpoint.
+    const result = await transcribeStudentSpeech(audio.payload);
+    return ok({ transcript: result.transcript, confidence: result.confidence, confidenceCalibrated: false }, "Speech transcription completed");
   });
 }
