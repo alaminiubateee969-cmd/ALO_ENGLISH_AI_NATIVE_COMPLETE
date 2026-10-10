@@ -29,7 +29,11 @@
 | Listening media generation/verification | NOT VERIFIED | No generator or remote verifier run; local public listening file count is zero. |
 | Production health/deployment | NOT VERIFIED | No live probe or deployment record from this branch. |
 
-The GitHub checks reported for PR #10 belong to a separate branch/commit and do not validate this working branch. The CI workflow was updated to discover all test files in one command and continue tests/build diagnostics after a content-gate failure; no GitHub run has verified that workflow change.
+PR #10's checks belong to a different branch/commit and say nothing about this one. **This branch now has its own CI evidence.** CI job `114205904736` on PR #11 (commit `d66a246`) reported: package manifest, schema/migration parity, inventory drift, install, `Generate Prisma client`, `Lint`, `Typecheck`, `Provision test database (migrate deploy)`, `Seed core data`, `Seed RBAC`, `Tests — all suites`, `Verify every suite passed`, `Build`, and `Verify build output` all **success**. The only failing step was `Validate question content`, which is the intended fail-closed gate: it reported "The question bank is EMPTY — the seed chain did not populate questions" and "0 total questions, 0 active objective questions, 0 ungradeable, 0 unsupported types". `Host-parity build` and `Script syntax validation` also passed.
+
+An earlier run of this branch (CI job `114204008968` on PR #11 (commit `063db4e`)) failed the test gate and its annotations named two real defects, since fixed: `tests/seed-sample-guard.test.ts` deleted the runner's `DATABASE_URL` in a shared process, and `tests/exam-attempt.test.ts` created LISTENING fixtures the new READY-media gate correctly refused.
+
+A green CI run is still not deployment evidence: no migration was applied to any shared database, no artifact was booted, and no live health check was made.
 
 ## Git and secret handling
 

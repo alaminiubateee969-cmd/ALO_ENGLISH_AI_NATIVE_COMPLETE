@@ -6,8 +6,9 @@
 
 ## Counts and evidence boundary
 
-- `DATABASE_URL` is unset in the process environment; `db/` contains only `.gitkeep`. No database was opened or queried. A local `.env` file exists but was not read.
-- **Actual database counts:** NOT VERIFIED for exam types, practice sets, questions by exam/section, attempts, or scores.
+- No production or developer database was opened in this workspace; `db/` contains only `.gitkeep` and the local `.env` was not read.
+- **Measured count from a freshly seeded CI database:** CI job `114205904736` (PR #11, commit `d66a246`) migrated a disposable SQLite DB and ran the repository's own seed chain, then reported "The question bank is EMPTY — the seed chain did not populate questions" with "0 total questions, 0 active objective questions, 0 ungradeable, 0 unsupported types". So the shipped seed chain produces **zero questions**.
+- **Actual production database counts:** still NOT VERIFIED for exam types, practice sets, questions by exam/section, attempts, or scores.
 - **Static sample declarations:** the legacy, now-guarded `prisma/seed-questions.ts` declares 20 IELTS Academic sample question records (5 Listening, 10 Reading, 2 Writing, 3 Speaking), 6 PTE records, 5 TOEFL records, and 5 Duolingo records. Those declarations are synthetic fixtures, not database counts, official-length coverage, licensed content, or proof the scripts ran.
 - Other legacy seed scripts separately declare overlapping/alternate sample sets. They are not aggregated here because they are not a single validated bank and are not part of the default production seed.
 - The earlier `seed-ielts-questions.ts`/`seed-expand-exams.ts` comments claimed full/mock counts and official-format alignment. Those claims are withdrawn in the source; they were not verified against the database or current official specifications.

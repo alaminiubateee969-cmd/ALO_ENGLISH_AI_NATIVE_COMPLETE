@@ -79,7 +79,8 @@ Unused prototype components under `src/components/alo/portals.tsx`, `src/compone
 
 - **PASS:** Static schema/migration parity, generated-inventory checks, `git diff --check`, and the 98 tests that completed in the latest all-tests run (including six pure CRM scope tests).
 - **PASS:** After `npm ci --ignore-scripts`, `npm run lint` exits 0 with no findings.
-- **BLOCKED:** `npx tsc --noEmit` returns 10 errors, all `TS2305 … '"@prisma/client"' has no exported member 'PrismaClient'`, because the client is not generated; no other type error was reported. The latest Bun run reported 100 tests across 13 files: `exam-attempt` and `rbac` errored before their tests ran (`Cannot find module '.prisma/client/default'`). `prisma generate --no-engine` fails fetching `binaries.prisma.sh`, a host outside this sandbox's egress allowlist.
+- **PASS in CI:** CI job `114205904736` (PR #11, commit `d66a246`) passed `Generate Prisma client`, `Lint`, `Typecheck`, `Provision test database (migrate deploy)`, `Seed core data`, `Seed RBAC`, `Tests — all suites`, `Verify every suite passed`, `Build`, and `Verify build output`. `tests/rbac.test.ts` and `tests/exam-attempt.test.ts` therefore ran against a real migrated database for the first time on this branch.
+- **BLOCKED locally:** `npx tsc --noEmit` returns 10 errors, all `TS2305 … '"@prisma/client"' has no exported member 'PrismaClient'`, and `exam-attempt`/`rbac` error with `Cannot find module '.prisma/client/default'` — both solely because `prisma generate --no-engine` cannot reach `binaries.prisma.sh`, a host outside this sandbox's egress allowlist.
 - **NOT VERIFIED:** Production secrets, headers, database access isolation, email reset, MFA, CSRF, deployed rate limits, privacy retention, audio/recording lifecycle, and penetration testing.
 
 No deployment, production data review, or secret inspection was performed. See `PRODUCTION_DEPLOYMENT_REPORT.md` for the exact local execution results and release blockers.
