@@ -30,10 +30,16 @@ const EMPTY_FORM: FormValues = {
   message: "",
 };
 
-export function LeadCaptureForm({ variant }: { variant: FormVariant }) {
+export function LeadCaptureForm({
+  variant,
+  initialValues,
+}: {
+  variant: FormVariant;
+  initialValues?: Partial<Pick<FormValues, "country" | "message">>;
+}) {
   const consultation = variant === "consultation";
   const prefix = consultation ? "consultation" : "contact";
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState<FormValues>(() => ({ ...EMPTY_FORM, ...initialValues }));
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
@@ -129,7 +135,7 @@ export function LeadCaptureForm({ variant }: { variant: FormVariant }) {
             <label htmlFor={`${prefix}-country`} className="mb-1 block text-sm font-medium">Preferred country</label>
             <select id={`${prefix}-country`} value={form.country} onChange={(event) => update("country", event.target.value)} className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
               <option value="">Select a country</option>
-              {["UK", "Canada", "Australia", "USA", "Ireland", "New Zealand", "Dubai", "Other"].map((country) => <option key={country} value={country}>{country}</option>)}
+              {["United Kingdom", "Canada", "Australia", "United States", "Ireland", "New Zealand", "United Arab Emirates", "Other"].map((country) => <option key={country} value={country}>{country}</option>)}
             </select>
           </div>
           <div>

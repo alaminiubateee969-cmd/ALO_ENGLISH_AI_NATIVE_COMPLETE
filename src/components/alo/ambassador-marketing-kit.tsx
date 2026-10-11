@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Check, Copy, Download, ExternalLink, Link2, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Check, Copy, Download, ExternalLink, FileText, Image as ImageIcon, Link2, LoaderCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export function AmbassadorMarketingKit() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedAssetId, setCopiedAssetId] = useState<MarketingAssetId | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -85,6 +87,21 @@ export function AmbassadorMarketingKit() {
     }
   }, [origin, partner]);
 
+  const referralCode = partner?.referralCode ?? "";
+  const generatedAssets = useMemo(() => {
+    const files = new Map<MarketingAssetId, ReturnType<typeof buildMarketingKitAsset>>();
+    if (!referralCode || !origin) return files;
+
+    for (const asset of AMBASSADOR_MARKETING_ASSETS) {
+      try {
+        files.set(asset.id, buildMarketingKitAsset(asset.id, origin, referralCode));
+      } catch {
+        // The download action reports a helpful error if an asset cannot be built.
+      }
+    }
+    return files;
+  }, [origin, referralCode]);
+
   async function handleCopyLink() {
     if (!referralUrl) return;
     try {
@@ -94,6 +111,19 @@ export function AmbassadorMarketingKit() {
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
       setNotice("Could not copy automatically. Select the link and copy it manually.");
+    }
+  }
+
+  async function handleCopyAsset(id: MarketingAssetId) {
+    const file = generatedAssets.get(id);
+    if (!file || file.mimeType.startsWith("image/svg+xml")) return;
+    try {
+      await copyToClipboard(file.content);
+      setCopiedAssetId(id);
+      setNotice(`${file.filename} copied to the clipboard.`);
+      window.setTimeout(() => setCopiedAssetId((current) => current === id ? null : current), 1800);
+    } catch {
+      setNotice("Could not copy automatically. Open or download the text file and copy it manually.");
     }
   }
 
@@ -171,31 +201,72 @@ export function AmbassadorMarketingKit() {
           </Card>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {AMBASSADOR_MARKETING_ASSETS.map((asset) => (
-              <Card key={asset.id} className="flex h-full flex-col border-slate-200 shadow-none transition-colors hover:border-alo-blue/40">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-alo-soft-blue text-alo-blue">
-                      <Download className="h-5 w-5" aria-hidden="true" />
+            {AMBASSADOR_MARKETING_ASSETS.map((asset) => {
+              const file = generatedAssets.get(asset.id);
+              const isVisual = file?.mimeType.startsWith("image/svg+xml") ?? false;
+              return (
+                <Card key={asset.id} className="flex h-full flex-col border-slate-200 shadow-none transition-colors hover:border-alo-blue/40">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="grid h-10 w-10 place-items-center rounded-xl bg-alo-soft-blue text-alo-blue">
+                        {isVisual ? <ImageIcon className="h-5 w-5" aria-hidden="true" /> : <FileText className="h-5 w-5" aria-hidden="true" />}
+                      </div>
+                      <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">{asset.format}</span>
                     </div>
-                    <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">{asset.format}</span>
-                  </div>
-                  <CardTitle className="pt-2 text-base text-alo-navy">{asset.title}</CardTitle>
-                  <CardDescription className="min-h-10 text-xs leading-5">{asset.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="mt-auto">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleDownload(asset.id)}
-                    className="min-h-11 w-full rounded-xl border-alo-blue/30 text-alo-blue hover:bg-alo-soft-blue"
-                  >
-                    <Download className="h-4 w-4" aria-hidden="true" />
-                    Download {asset.format.split(" · ")[0]}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                    <CardTitle className="pt-2 text-base text-alo-navy">{asset.title}</CardTitle>
+                    <CardDescription className="min-h-10 text-xs leading-5">{asset.description}</CardDescription>
+                  </CardHeader>
+
+                  {file ? (
+                    isVisual ? (
+                      <div className="mx-6 mb-4 flex h-44 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
+                        <Image
+                          src={`data:${file.mimeType},${encodeURIComponent(file.content)}`}
+                          alt={`${asset.title} preview with your tracked referral code`}
+                          width={320}
+                          height={180}
+                          unoptimized
+                          className="max-h-full w-auto max-w-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <pre aria-label={`${asset.title} text preview`} className="mx-6 mb-4 max-h-44 min-h-36 overflow-hidden whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-[10px] leading-4 text-slate-600">
+                        {file.content.slice(0, 420)}{file.content.length > 420 ? "…" : ""}
+                      </pre>
+                    )
+                  ) : (
+                    <div className="mx-6 mb-4 grid h-36 place-items-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-xs text-slate-500">
+                      Preview unavailable
+                    </div>
+                  )}
+
+                  <CardContent className="mt-auto">
+                    <div className={file && !isVisual ? "grid grid-cols-2 gap-2" : "grid grid-cols-1"}>
+                      {file && !isVisual ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => void handleCopyAsset(asset.id)}
+                          className="min-h-11 rounded-xl border-slate-200 text-alo-navy hover:bg-slate-50"
+                        >
+                          {copiedAssetId === asset.id ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                          {copiedAssetId === asset.id ? "Copied" : "Copy text"}
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleDownload(asset.id)}
+                        className="min-h-11 rounded-xl border-alo-blue/30 text-alo-blue hover:bg-alo-soft-blue"
+                      >
+                        <Download className="h-4 w-4" aria-hidden="true" />
+                        Download
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <div className="flex gap-3 rounded-2xl border border-alo-blue/20 bg-alo-soft-blue p-4 text-xs leading-5 text-alo-navy">
