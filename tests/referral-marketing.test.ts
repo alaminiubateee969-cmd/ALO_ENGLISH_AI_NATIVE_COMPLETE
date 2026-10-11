@@ -25,6 +25,8 @@ describe("Ambassador marketing assets", () => {
       expect(file.content.length).toBeGreaterThan(100);
       expect(file.content).toContain("ALO-AB12CD34");
       expect(file.content).toContain("https://english.example.test/register?ref=ALO-AB12CD34");
+      expect(file.content).not.toContain("Original practice for exam preparation");
+      expect(file.content.toLowerCase()).not.toContain("original practice questions");
     }
   });
 
@@ -34,6 +36,7 @@ describe("Ambassador marketing assets", () => {
     expect(file.content.startsWith("<svg ")).toBe(true);
     expect(file.content).toContain("<title id=\"title\">ALO English square social graphic</title>");
     expect(file.content).toContain("?ref=ALO-AB12CD34");
+    expect(file.content).not.toContain("original exam-aligned");
     expect(() => buildMarketingKitAsset("poster", "https://english.example.test", "<script>" )).toThrow();
   });
 
@@ -41,7 +44,9 @@ describe("Ambassador marketing assets", () => {
     const file = buildMarketingKitAsset("caption-pack", "https://english.example.test", "ALO-AB12CD34");
     expect(file.content).toContain("বাংলা");
     expect(file.content).toContain("Do not promise admissions");
-    expect(file.content).toContain("Practice scores are estimates");
+    expect(file.content).toContain("not official results");
+    expect(file.content).toContain("currently available");
+    expect(file.content).not.toContain("original exam-aligned");
   });
 });
 

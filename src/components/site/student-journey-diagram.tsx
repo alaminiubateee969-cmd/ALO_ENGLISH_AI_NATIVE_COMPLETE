@@ -8,7 +8,7 @@ const STEPS = [
   },
   {
     title: "Practise a section",
-    description: "Work through original practice questions at a pace that suits you.",
+    description: "Work through practice materials currently available for the test you selected.",
   },
   {
     title: "Review feedback",
@@ -26,7 +26,7 @@ export function StudentJourneyDiagram() {
     <section aria-labelledby="practice-journey-title" className="border-y border-slate-200 bg-[#F5F8FC] py-16 lg:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto mb-10 max-w-2xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#E8501A]">A clear route forward</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#C2410C]">A clear route forward</p>
           <h2 id="practice-journey-title" className="mt-3 text-3xl font-bold tracking-tight text-[#0B1F3A] sm:text-4xl">
             Turn practice into a plan
           </h2>
@@ -64,7 +64,7 @@ export function StudentJourneyDiagram() {
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/practice-test"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#E8501A] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#cc3f10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8501A] focus-visible:ring-offset-2"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#CC3F10] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#A8320D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8501A] focus-visible:ring-offset-2"
           >
             Start a practice test <ArrowRight className="size-4" aria-hidden="true" />
           </Link>

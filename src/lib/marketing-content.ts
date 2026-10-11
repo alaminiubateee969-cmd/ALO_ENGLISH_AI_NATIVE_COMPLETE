@@ -13,7 +13,7 @@ export const MARKETING_CONTENT_TYPES = [
 export type MarketingContentType = (typeof MARKETING_CONTENT_TYPES)[number]["id"];
 
 export const DEFAULT_MARKETING_FACTS =
-  "ALO English provides original exam-aligned practice for IELTS, PTE, TOEFL and Duolingo English Test. Practice scores and automated feedback are preparation aids, not official exam results.";
+  "Practice-set availability and coverage vary by exam and are shown in the active catalog. Any scores or automated feedback are study aids, not official exam results.";
 
 export type MarketingBrief = {
   type: MarketingContentType;
@@ -64,13 +64,13 @@ export function generateMarketingDraft(brief: MarketingBrief): string {
 
   switch (brief.type) {
     case "Facebook Post":
-      return `Preparing for IELTS, PTE, TOEFL or Duolingo?\n\n${offer} is here to support ${audience} with a ${tone} way to practise.\n\n${facts}\n\n${cta}\n\n#ALOEnglish #EnglishTestPrep`;
+      return `Preparing for an English test?\n\n${offer} is here to support ${audience} with a ${tone} way to prepare.\n\n${facts}\n\n${cta}\n\n#ALOEnglish #EnglishTestPrep`;
     case "Instagram Caption":
-      return `Your next practice session starts here 📚\n\n${offer} helps ${audience} prepare at their own pace.\n\n${facts.replaceAll("• ", "")}\n\n${cta}\n\n#ALOEnglish #IELTS #PTE #TOEFL #EnglishPractice`;
+      return `Your next practice session starts here 📚\n\n${offer} helps ${audience} explore preparation resources at their own pace.\n\n${facts.replaceAll("• ", "")}\n\n${cta}\n\n#ALOEnglish #EnglishTestPrep #EnglishPractice`;
     case "LinkedIn Post":
-      return `For ${audience}, consistent practice matters.\n\n${offer} is designed to make English-test preparation easier to navigate, with clear practice activities and feedback.\n\nWhat we can confirm:\n${facts}\n\n${cta}\n\n#Education #EnglishLearning #ALOEnglish`;
+      return `For ${audience}, consistent practice matters.\n\n${offer} can help you explore the preparation resources currently available and choose a clear next step.\n\nWhat we can confirm:\n${facts}\n\n${cta}\n\n#Education #EnglishLearning #ALOEnglish`;
     case "X Post":
-      return `${offer}: practice for IELTS, PTE, TOEFL and Duolingo. Original questions; practice estimates, not official scores. ${cta}`;
+      return `${offer}: explore English-test preparation and current practice options. Any estimates are for study, not official results. ${cta}`;
     case "Blog Article":
       return `# A practical way to plan English-test practice\n\nPreparing for an English test can feel more manageable when practice is organised around a clear goal. This guide is for ${audience}.\n\n## Start with the test you need\nChoose the exam that matches your application requirements, then practise the skills and question formats used by that test.\n\n## Build a steady routine\nSet a realistic study schedule, review your answers, and note the areas you want to practise next. Use feedback as a guide for study—not as a promise of an official result.\n\n## What ${offer} provides\n${facts}\n\n## Take the next step\n${cta}\n\n*Always check the official test provider for current test formats, policies and score requirements.*`;
     case "Email Newsletter":
