@@ -16,7 +16,7 @@ src,1,"TypeScript sources outside app/, components/, hooks/ and lib/"
 src/app,115,"App Router: pages, layouts and API route handlers"
 src/components,110,"React components (alo/, ai-os/, site/, ui/ shadcn primitives)"
 src/hooks,2,Client hooks
-src/lib,66,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
-tests,25,bun test suites run by CI
+src/lib,67,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
+tests,26,bun test suites run by CI
 upload,1,Runtime uploads (contents git-ignored)
-TOTAL,695,Tracked and intended worktree content for a deploy
+TOTAL,697,Tracked and intended worktree content for a deploy

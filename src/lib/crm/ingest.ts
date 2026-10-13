@@ -48,6 +48,13 @@ export type InboundMessage = {
   body: string;
   occurredAt?: Date | number | string | null;
   attachments?: InboundAttachment[];
+  /**
+   * Attachments the provider referenced that this deployment could not collect
+   * (no access token, an unreachable or refused media host, an oversized file).
+   * They are recorded as described rejections rather than dropped, so an
+   * operator can see that media exists and why it is missing.
+   */
+  prefetchRejected?: Array<{ fileName: string; code: string; reason: string }>;
   /** Whether the provider signature was verified before reaching this point. */
   signatureVerified: boolean;
   payload?: unknown;
@@ -206,7 +213,13 @@ export async function ingestInboundMessage(
     }
   }
 
-  if (!message.body?.trim() && (message.attachments?.length ?? 0) === 0) {
+  // A message with referenced-but-uncollected media is not empty: the sender
+  // did send something, and rejecting it would both lose the message and make
+  // the provider retry forever.
+  const carriesSomething =
+    Boolean(message.body?.trim()) || (message.attachments?.length ?? 0) > 0 || (message.prefetchRejected?.length ?? 0) > 0;
+
+  if (!carriesSomething) {
     await store.completeEvent({ eventKey, status: 'FAILED', error: 'empty message' });
     return { status: 'REJECTED', code: 'EMPTY_MESSAGE', reason: 'The event carried neither text nor attachments.' };
   }
@@ -287,12 +300,14 @@ export async function ingestInboundMessage(
       senderHandle: message.senderId,
       senderName: message.senderName ?? null,
       occurredAt: now,
-      attachmentCount: message.attachments?.length ?? 0,
+      attachmentCount: (message.attachments?.length ?? 0) + (message.prefetchRejected?.length ?? 0),
     });
 
     // ── 5. Attachments. Stored privately; never auto-verified. ───────────────
     const attachmentsStored: Array<{ documentId: string; storageKey: string; documentType: string; verificationStatus: 'PENDING_REVIEW' }> = [];
-    const attachmentsRejected: Array<{ fileName: string; code: string; reason: string }> = [];
+    const attachmentsRejected: Array<{ fileName: string; code: string; reason: string }> = [
+      ...(message.prefetchRejected ?? []),
+    ];
 
     if (studentId && message.attachments?.length) {
       const storeDocument = deps.storeDocumentOverride ?? store.storeDocument;

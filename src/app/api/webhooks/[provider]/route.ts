@@ -31,6 +31,7 @@ import { prismaIngestStore } from '@/lib/crm/prisma-store';
 import type { ProviderId } from '@/lib/crm/automation';
 import { verifyWebhookSignature } from '@/lib/crm/webhook-signature';
 import { normaliseProviderPayload, type ProviderPayload } from '@/lib/crm/provider-payload';
+import { collectInboundAttachments } from '@/lib/crm/media-fetcher';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -95,11 +96,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return NextResponse.json({ received: true, processed: false, reason: 'No inbound message in this event.' }, { status: 200 });
     }
 
-    // Media bytes are fetched by the provider adapter, which needs an access
-    // token. Until that is configured, the message is recorded and the
-    // attachment is reported as uncollected rather than dropped silently.
-    const attachments: InboundAttachment[] = [];
-    const uncollectedMedia = normalised.mediaRefs.map((media) => media.fileName);
+    // Media bytes are referenced by the webhook, never carried in it. They are
+    // fetched here with the provider's access token — see ./media-fetcher for
+    // what that client refuses to do. Without a token the message is still
+    // recorded, and every attachment is reported as uncollected rather than
+    // dropped silently. A fetch that fails never fails the message.
+    const collected = normalised.mediaRefs.length
+      ? await collectInboundAttachments(provider as ProviderId, normalised.mediaRefs)
+      : { attachments: [] as InboundAttachment[], rejected: [], uncollected: [] as string[] };
+
+    const attachments = collected.attachments;
+    const uncollectedMedia = collected.uncollected;
 
     const message: InboundMessage = {
       provider: provider as ProviderId,
@@ -113,6 +120,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       body: normalised.body,
       occurredAt: normalised.occurredAt,
       attachments,
+      prefetchRejected: collected.rejected,
       signatureVerified: true,
       payload,
     };
@@ -132,8 +140,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
         duplicate: outcome.status === 'DUPLICATE',
         needsReview: outcome.status === 'PROCESSED' ? outcome.needsReview : undefined,
         identityDecision: outcome.status === 'PROCESSED' ? outcome.identityDecision : undefined,
-        // Reported so an operator can see that media exists but was not stored.
+        // Reported so an operator can see that media exists but was not stored,
+        // and why. Attachments that did arrive are PENDING_REVIEW documents.
         uncollectedMedia: uncollectedMedia.length > 0 ? uncollectedMedia : undefined,
+        attachmentsStored: outcome.status === 'PROCESSED' ? outcome.attachmentsStored.length : undefined,
+        attachmentsRejected: outcome.status === 'PROCESSED' && outcome.attachmentsRejected.length > 0 ? outcome.attachmentsRejected : undefined,
       },
       { status: 200 },
     );

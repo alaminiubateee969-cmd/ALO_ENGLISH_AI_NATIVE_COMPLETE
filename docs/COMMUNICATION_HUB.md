@@ -67,8 +67,29 @@ provider → POST /api/webhooks/[provider]
   8. mark the event SUCCEEDED (or FAILED so a provider retry may reprocess it)
 ```
 
-Media bytes need an authenticated provider call (an access token), which is not configured yet, so an event carrying media is recorded and the uncollected
-attachment is named in the response. Nothing is dropped silently.
+## Fetching inbound media
+
+A webhook carries a *reference* to a file, never the bytes, so `src/lib/crm/media-fetcher.ts` makes the
+second authenticated call that turns `mediaRefs` into documents that reach storage. It is the only place
+the server follows a URL that arrived in a request, and it is written as a security boundary:
+
+- Only the provider may *resolve* a download URL (the Graph API call for WhatsApp). A URL is never taken
+  from the payload and fetched directly, so a caller cannot steer the request.
+- Even the resolved URL must be `https`, must be a recognised provider media host
+  (`facebook.com`, `fbcdn.net`, `fbsbx.com`, `instagram.com`), and must carry no credentials. Anything
+  else is refused — a spoofed response cannot point the server at link-local metadata or an internal host.
+- The body is read through a hard size ceiling rather than trusted to `Content-Length`, which a server may
+  state wrongly. The declared size is also checked first, so an oversized file is refused before it is
+  downloaded.
+- The type must already be one accepted for documents (pdf/jpg/png/webp/docx); anything else is refused
+  before storage is reached.
+- One message may carry at most 5 attachments, and download is sequential — providers rate-limit by account.
+- **No token, no fetch.** Without `WHATSAPP_ACCESS_TOKEN` / `META_PAGE_ACCESS_TOKEN` every attachment comes
+  back as a described `NOT_CONFIGURED` rejection and is named in `uncollectedMedia`. A fetch that fails
+  never fails the message: the message is recorded and the reason is reported.
+
+Because a media-only message that could not be collected is not an *empty* message, the pipeline records it
+(an operator can see the sender did send something) rather than rejecting it and inviting endless retries.
 
 ## Document storage
 
@@ -87,7 +108,7 @@ Failure paths were exercised, not assumed: no database → BLOCKED/2; corrupt ar
 
 ## Remaining work, in the order it should be built
 
-1. **Provider media fetcher** — download an inbound attachment with the provider's access token and pass the bytes to the pipeline. Until then attachments arrive with the message body only.
+1. ~~**Provider media fetcher**~~ — **done** (`src/lib/crm/media-fetcher.ts`, 25 tests). Remaining: set `WHATSAPP_ACCESS_TOKEN` and `META_PAGE_ACCESS_TOKEN` in host secret storage so media is collected rather than reported.
 2. **Outbound delivery adapter** — send via WhatsApp Cloud / Messenger / Instagram / SMS, write the send result and delivery receipts back, and honour `evaluateSendPolicy` before queueing anything.
 3. **Channel integrations** — WhatsApp Business (Meta) first, then Messenger/Instagram, then an SMS provider. Needs: business verification, phone-number id, approved templates, and the secrets above in host secret storage.
 4. **Consent capture in the UI** — the register must be filled by a real workflow (inbound keyword, form checkbox, staff entry), otherwise every marketing send is blocked by design.

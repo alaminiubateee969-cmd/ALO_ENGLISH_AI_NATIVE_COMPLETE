@@ -44,6 +44,8 @@ const ENV_SCHEMA: EnvVar[] = [
   { key: 'META_APP_SECRET', required: false, description: 'Meta app secret for Messenger and Instagram webhook verification' },
   { key: 'SMS_WEBHOOK_SECRET', required: false, description: 'Shared secret for SMS provider webhook verification' },
   { key: 'WHATSAPP_VERIFY_TOKEN', required: false, description: 'Token echoed during the WhatsApp subscription handshake' },
+  { key: 'WHATSAPP_ACCESS_TOKEN', required: false, description: 'Graph API token for downloading inbound WhatsApp media (empty = media is reported, not collected)' },
+  { key: 'META_PAGE_ACCESS_TOKEN', required: false, description: 'Page token for downloading inbound Messenger and Instagram media' },
 ];
 
 function validateEnv(): Record<string, string> {

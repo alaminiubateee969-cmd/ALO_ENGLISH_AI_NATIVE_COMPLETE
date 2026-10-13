@@ -440,3 +440,56 @@ describe('failure handling', () => {
     expect(memory.messages).toHaveLength(1);
   });
 });
+
+describe('media that the provider referenced but this deployment could not collect', () => {
+  test('a media-only message is still recorded, not rejected as empty', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(
+      inbound({
+        body: '',
+        prefetchRejected: [
+          { fileName: 'passport.pdf', code: 'NOT_CONFIGURED', reason: 'WHATSAPP_ACCESS_TOKEN is not configured, so inbound media was recorded but not collected.' },
+        ],
+      }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    // Rejecting this would lose a real message from a real student and make the
+    // provider retry forever, for a configuration gap on our side.
+    expect(result.status).toBe('PROCESSED');
+    if (result.status !== 'PROCESSED') return;
+    expect(memory.messages).toHaveLength(1);
+    expect(result.attachmentsStored).toHaveLength(0);
+    expect(result.attachmentsRejected).toHaveLength(1);
+    expect(result.attachmentsRejected[0].code).toBe('NOT_CONFIGURED');
+  });
+
+  test('a genuinely empty event is still rejected', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(inbound({ body: '   ' }), memory.store, { now: FIXED_NOW });
+    expect(result.status).toBe('REJECTED');
+    expect(result.status === 'REJECTED' && result.code).toBe('EMPTY_MESSAGE');
+  });
+
+  test('uncollected media and stored media are reported together, without confusion', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(
+      inbound({
+        body: 'Sending both',
+        attachments: [{ fileName: 'transcript.pdf', mimeType: 'application/pdf', content: Buffer.from('a real transcript') }],
+        prefetchRejected: [{ fileName: 'video.mp4', code: 'UNSUPPORTED_TYPE', reason: 'Media type video/mp4 is not an accepted document type.' }],
+      }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    expect(result.status).toBe('PROCESSED');
+    if (result.status !== 'PROCESSED') return;
+    expect(result.attachmentsStored).toHaveLength(1);
+    expect(result.attachmentsRejected.map((rejection) => rejection.code)).toEqual(['UNSUPPORTED_TYPE']);
+    // Both the stored and the uncollected attachment are counted: the number
+    // describes what the sender sent, not what we managed to keep.
+    expect(memory.documents).toHaveLength(1);
+  });
+});
