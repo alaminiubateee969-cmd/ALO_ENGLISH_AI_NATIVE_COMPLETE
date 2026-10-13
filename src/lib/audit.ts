@@ -69,6 +69,8 @@ export type AuditAction =
   | 'BRANCHES_DELETE'
   | 'DEPARTMENTS_DELETE'
   | 'DOCUMENTS_DELETE'
+  /** A document was read or an attempt to read it was refused. */
+  | 'DOCUMENTS_DOWNLOAD'
   | 'MESSAGES_DELETE'
   | 'TASKS_DELETE'
   | 'APPOINTMENTS_DELETE'

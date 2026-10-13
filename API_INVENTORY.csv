@@ -31,7 +31,8 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/departments,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/departments/route.ts
 /api/crm/departments/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/departments/[id]/route.ts
 /api/crm/documents,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/documents/route.ts
-/api/crm/documents/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/documents/[id]/route.ts
+/api/crm/documents/{id},GET PUT DELETE,none declared,nodejs,src/app/api/crm/documents/[id]/route.ts
+/api/crm/documents/{id}/download,GET,none declared,nodejs,src/app/api/crm/documents/[id]/download/route.ts
 /api/crm/leads,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/leads/route.ts
 /api/crm/leads/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/leads/[id]/route.ts
 /api/crm/messages,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/messages/route.ts
@@ -76,3 +77,4 @@ Path,Methods,Auth,Runtime,Source
 /api/speaking/examiner-respond,POST,authenticated,nodejs,src/app/api/speaking/examiner-respond/route.ts
 /api/speaking/examiner-voice,POST,authenticated,nodejs,src/app/api/speaking/examiner-voice/route.ts
 /api/speaking/transcribe,POST,authenticated,nodejs,src/app/api/speaking/transcribe/route.ts
+/api/webhooks/{provider},GET POST,public intended (allowlist; verify handler),nodejs,src/app/api/webhooks/[provider]/route.ts

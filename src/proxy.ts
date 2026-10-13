@@ -18,6 +18,10 @@
  *   /privacy-policy, /terms, /cookie-policy, /portals
  *   /api/auth/*, /api/health, /api/lead, /api/rag/ask, /api/rag/materials (GET)
  *   /api/exam-types, /api/practice-sets, /api/examiners
+ *   /api/webhooks/*  (public endpoint, but NOT unauthenticated: every request
+ *                     must carry a valid provider HMAC signature, checked in the
+ *                     route before any database work. See
+ *                     src/lib/crm/webhook-signature.ts and docs/COMMUNICATION_HUB.md.)
  *   /_next/*, /favicon.ico, /public/*
  */
 
@@ -63,6 +67,7 @@ const PUBLIC_API_PATTERNS = [
   /^\/api\/exam-types$/,
   /^\/api\/practice-sets$/,
   /^\/api\/examiners$/,
+  /^\/api\/webhooks\/.+/,      // signature-verified inbound providers (see route)
 ];
 
 // ─── Proxy Handler ────────────────────────────────────────────────────────

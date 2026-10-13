@@ -1,6 +1,6 @@
 # Communication Hub
 
-**Status:** identity, policy and schema layers implemented and tested. Channel integrations and the after-hours assistant are **not** implemented — they require provider credentials, business verification and approved templates.
+**Status:** ingestion, storage and retention layers implemented and tested. Outbound provider delivery and the after-hours assistant are **not** implemented — they require provider credentials, business verification and approved templates.
 **Gate:** `npm run content:provenance` and `npm run content:validate` remain the release gates for exam content; this document covers the CRM/communication side.
 **Schema:** migration `20261014120000_communication_hub` (7 new tables, 17 new columns)
 
@@ -13,6 +13,12 @@ This is the approved architecture for central student communication: WhatsApp, F
 | Student code `ALO-YYYY-NNNNNN` | `src/lib/crm/identity.ts` | `tests/communication-hub.test.ts` |
 | Identity matching (never merges on a name) | `src/lib/crm/identity.ts` | 8 tests, including the ambiguity cases |
 | Webhook idempotency keys | `src/lib/crm/automation.ts` | 8 tests, including replayed and re-serialised events |
+| Webhook signature verification (HMAC, constant-time) | `src/lib/crm/webhook-signature.ts` | refused when unconfigured or mismatched |
+| Inbound pipeline: verify → deduplicate → identify → record | `src/lib/crm/ingest.ts` | 14 tests driving the whole flow with an in-memory store |
+| Public webhook endpoint | `src/app/api/webhooks/[provider]/route.ts` | POST ingest + GET handshake, 503 when unconfigured |
+| Private document storage | `src/lib/crm/document-storage.ts` | 15 tests, including traversal and tamper attacks |
+| Authorized document access | `src/app/api/crm/documents/[id]/download/route.ts` | permission-checked, hash-verified, always audited |
+| Backup restore drill | `scripts/restore-drill.sh` (`npm run drill:restore`) | exercised end to end, including three failure paths |
 | Send policy: consent, channel window, cap, quiet hours | `src/lib/crm/messaging-policy.ts` | 12 tests |
 | Permission matrix (passport access, deletion, credentials) | `src/lib/crm/permissions.ts` | 12 tests |
 | Tables: sequences, channel accounts, conversations, document versions, assignment history, consent, automation events | `prisma/migrations/20261014120000_communication_hub/` | applied to a fresh SQLite database; schema/migration parity passes |
@@ -43,10 +49,47 @@ This is the approved architecture for central student communication: WhatsApp, F
 
 The CRM protects its own database and storage. It cannot recover a message or file that WhatsApp, Facebook or Instagram removes under their own retention policies. If an inbound file is not collected at delivery time, it is gone. This is why ingestion stores a private copy immediately rather than linking to a provider URL.
 
+## The inbound pipeline, step by step
+
+```
+provider → POST /api/webhooks/[provider]
+  1. read the raw body, enforce the size ceiling
+  2. verify the HMAC signature  → 401 if it fails (nothing is written)
+  3. normalise the provider payload (per-provider adapter)
+  4. derive the idempotency key → SUCCEEDED / DUPLICATE / PROCESSING short-circuit
+  5. resolve identity (student code → channel id → unique phone → unique email)
+        MATCHED → attach to the existing student
+        NEW     → allocate the next ALO-YYYY-NNNNNN and create the student
+        REVIEW  → create a NEW record flagged needsReview; never attach to the
+                  existing person, even when the name matches
+  6. create/reuse the conversation, append the message
+  7. write attachments to private storage as PENDING_REVIEW
+  8. mark the event SUCCEEDED (or FAILED so a provider retry may reprocess it)
+```
+
+Media bytes need an authenticated provider call (an access token), which is not configured yet, so an event carrying media is recorded and the uncollected
+attachment is named in the response. Nothing is dropped silently.
+
+## Document storage
+
+- Files are written under `UPLOAD_DIR` with mode `0600`, outside the web root, addressed as
+  `students/<studentId>/documents/<documentId>/v<version>.<ext>` — derived from ids, never from the uploaded file name.
+- A storage key is re-validated on every read: traversal, absolute paths, backslashes and null bytes are refused, and the resolved path must stay inside the upload root.
+- Every version is kept. Uploading a new passport does not remove the old one, and the previously verified file stays readable in history.
+- Reads go through `/api/crm/documents/[id]/download`, which applies the permission policy, verifies the recorded SHA-256 before serving, and audits the attempt whether it is allowed or denied.
+- `DELETE /api/crm/documents/[id]` is now a **soft delete**. It previously called the generic CRUD delete, which removed the row permanently — an admin could have destroyed a student's documents. It now sets `deletedAt` and records the action.
+
+## Backup and restore
+
+`npm run drill:restore` creates a backup, restores it into a scratch directory and verifies it: the archive extracts, the database opens, every schema model has a table, and every stored document hashes without error. It exits 2 (BLOCKED) when it could not run, which is deliberately distinct from a pass.
+
+Failure paths were exercised, not assumed: no database → BLOCKED/2; corrupt archive → FAIL/1; a database missing tables → FAIL/1 listing the missing tables.
+
 ## Remaining work, in the order it should be built
 
-1. **Ingestion adapter** — `POST /api/webhooks/[provider]`: verify the signature, derive the idempotency key, write `AutomationEvent`, resolve identity, then create conversation/message/document rows. Every step already has a tested pure function; the route is a thin adapter over them.
-2. **Document storage wiring** — private storage key, hash on write, authorized read route (`canReadStudentDocument`), and the backup/restore drill.
-3. **Channel integrations** — WhatsApp Business (Meta) first, then Messenger/Instagram, then an SMS provider. Needs: business verification, phone-number id, approved templates, and credentials in host secret storage.
+1. **Provider media fetcher** — download an inbound attachment with the provider's access token and pass the bytes to the pipeline. Until then attachments arrive with the message body only.
+2. **Outbound delivery adapter** — send via WhatsApp Cloud / Messenger / Instagram / SMS, write the send result and delivery receipts back, and honour `evaluateSendPolicy` before queueing anything.
+3. **Channel integrations** — WhatsApp Business (Meta) first, then Messenger/Instagram, then an SMS provider. Needs: business verification, phone-number id, approved templates, and the secrets above in host secret storage.
 4. **Consent capture in the UI** — the register must be filled by a real workflow (inbound keyword, form checkbox, staff entry), otherwise every marketing send is blocked by design.
-5. **After-hours assistant** — only after 1–4 are running, with `requiresHumanReview` gating every answer and no promises on admission, scholarship or visa.
+5. **Review queue UI** — conversations with `needsReview` and documents with `verificationStatus = PENDING_REVIEW` need one screen where a human resolves them.
+6. **After-hours assistant** — only after 1–5 are running, with `requiresHumanReview` gating every answer and no promises on admission, scholarship or visa.

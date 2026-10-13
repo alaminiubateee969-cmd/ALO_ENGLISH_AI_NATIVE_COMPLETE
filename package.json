@@ -36,6 +36,7 @@
     "verify": "bash scripts/verify.sh",
     "audit:rea": "bash scripts/audit-with-rea.sh",
     "backup": "bash scripts/backup.sh",
+    "drill:restore": "bash scripts/restore-drill.sh",
     "restore": "bash scripts/restore.sh",
     "healthcheck": "bash scripts/healthcheck.sh",
     "qa:questions": "bun run scripts/validate-question-bank.ts"
