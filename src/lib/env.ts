@@ -39,6 +39,7 @@ const ENV_SCHEMA: EnvVar[] = [
   // .next/standalone (see the note at the top of this file).
   { key: 'UPLOAD_DIR', required: false, description: 'Upload directory (defaults to <data root>/upload)' },
   { key: 'BACKUP_DIR', required: false, description: 'Backup directory (defaults to <data root>/db/backup)' },
+  { key: 'LANGUAGETOOL_URL', required: false, description: 'Optional self-hosted LanguageTool endpoint for writing-practice grammar feedback (empty = disabled)' },
 ];
 
 function validateEnv(): Record<string, string> {

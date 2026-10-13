@@ -1,0 +1,49 @@
+{
+  "_readme": [
+    "SHAPE REFERENCE ONLY — this file intentionally FAILS validation.",
+    "It uses TBD placeholders throughout, and the provenance gate rejects placeholders by design.",
+    "Copy it to prisma/question-provenance.json and replace every placeholder with real evidence.",
+    "Gate: npm run content:provenance  (add --database to also reconcile declared counts)",
+    "Docs: docs/QUESTION_BANK_PROVENANCE.md"
+  ],
+  "manifestVersion": 1,
+  "updatedAt": "2026-10-14",
+  "examTypes": [
+    {
+      "code": "IELTS-ACADEMIC",
+      "name": "IELTS Academic",
+      "contentOwner": "TBD",
+      "licence": {
+        "id": "TBD",
+        "name": "TBD",
+        "url": null,
+        "attributionRequired": false,
+        "attributionText": null
+      },
+      "permission": {
+        "evidenceReference": "TBD",
+        "grantedBy": "TBD",
+        "grantedOn": "2026-10-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": false,
+        "sourceUrl": "TBD",
+        "checkedOn": "2026-10-01",
+        "notes": "TBD"
+      },
+      "answerKeySource": "TBD",
+      "declaredCounts": {
+        "questionCount": 0,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "TBD",
+        "notes": "TBD"
+      },
+      "reviewedBy": "TBD",
+      "reviewedOn": "2026-10-01"
+    }
+  ]
+}

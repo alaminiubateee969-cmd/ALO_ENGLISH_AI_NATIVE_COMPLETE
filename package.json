@@ -30,6 +30,7 @@
     "audio:generate": "node scripts/generate-listening-audio.mjs",
     "audio:verify": "node scripts/verify-listening-audio.mjs",
     "content:validate": "node scripts/validate-content.mjs",
+    "content:provenance": "node scripts/validate-question-provenance.mjs",
     "inventories": "node scripts/generate-inventories.mjs",
     "inventories:check": "node scripts/generate-inventories.mjs --check",
     "verify": "bash scripts/verify.sh",

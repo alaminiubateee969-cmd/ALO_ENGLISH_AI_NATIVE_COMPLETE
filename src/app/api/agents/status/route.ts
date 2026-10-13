@@ -8,6 +8,7 @@
 
 import { requireRole } from '@/lib/auth';
 import { AI_AGENTS, getAgentStats } from '@/lib/agents/registry';
+import { MARKETING_SKILLS, getSkillStats } from '@/lib/agents/skills';
 import { ok } from '@/lib/responses';
 import { withErrorHandler } from '@/lib/responses';
 
@@ -32,6 +33,20 @@ export async function GET(): Promise<Response> {
           examScope: agent.examScope,
           publicLabel: agent.publicLabel,
         })),
+        // Reviewed skill packs (inputs, steps, guardrails, output sections).
+        // Registered metadata only — none of these has been executed against a
+        // provider, so they are reported separately from agent readiness.
+        skills: MARKETING_SKILLS.map((skill) => ({
+          id: skill.id,
+          name: skill.name,
+          owner: skill.owner,
+          purpose: skill.purpose,
+          canAutoExecute: skill.canAutoExecute,
+          status: skill.status,
+          guardrailCount: skill.guardrails.length,
+          stepCount: skill.steps.length,
+        })),
+        skillStats: getSkillStats(),
         readiness: {
           status: 'NOT_VERIFIED',
           basis: 'Static registrations only; provider health and controlled workflows were not executed by this endpoint.',

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, Copy, Download, Facebook, FileText, Instagram, Layout,
-  Linkedin, Mail, Megaphone, Newspaper, Package, Save, Sparkles,
+  Linkedin, Mail, Megaphone, Newspaper, Package, Save, ShieldAlert, Sparkles,
   Trash2, Twitter, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   type MarketingBrief,
   type MarketingContentType,
 } from "@/lib/marketing-content";
+import { findUnsafeClaims, MARKETING_SKILLS } from "@/lib/agents/skills";
 import type { ModuleId } from "./module-registry";
 
 type Nav = { navigate: (id: ModuleId) => void };
@@ -176,6 +177,10 @@ export default function Marketing({ navigate }: Nav) {
 
   const overLimit = content.length > selectedType.charLimit;
 
+  // Pure, synchronous claims check — no network call and no PII leaves the page.
+  const claimViolations = useMemo(() => findUnsafeClaims(content), [content]);
+
+
   return (
     <main className="min-h-screen bg-[#0B1220] px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -290,6 +295,52 @@ export default function Marketing({ navigate }: Nav) {
                 </span>
                 {overLimit && <span className="text-amber-200">Trim before posting if the destination requires it.</span>}
               </div>
+
+              {/* Safe-claims check — runs on every keystroke, no network call.
+                  Catches the two claims this platform must never publish:
+                  guaranteed outcomes and implied official status. */}
+              <div
+                className={
+                  claimViolations.length
+                    ? "rounded-lg border border-red-400/40 bg-red-500/10 p-3"
+                    : "rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3"
+                }
+                aria-live="polite"
+              >
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
+                  <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+                  Safe-claims check
+                </p>
+                {claimViolations.length === 0 ? (
+                  <p className="mt-2 text-xs leading-5 text-white/70">
+                    No prohibited claims detected. Outcome guarantees, invented statistics and implied official status are still your responsibility to keep out.
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-2 text-xs leading-5 text-white/80">
+                      {claimViolations.length} claim{claimViolations.length === 1 ? "" : "s"} need review before publishing:
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                      {claimViolations.slice(0, 4).map((violation) => (
+                        <li key={`${violation.ruleId}-${violation.index}`} className="text-xs leading-5 text-red-100">
+                          <span className="font-mono text-[11px] uppercase tracking-wide text-red-200">{violation.ruleId}</span>
+                          {" — "}
+                          {violation.description}
+                          <span className="mt-0.5 block font-mono text-[11px] text-white/60">“{violation.match}”</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {claimViolations.length > 4 && (
+                      <p className="mt-2 text-xs text-white/60">…and {claimViolations.length - 4} more. Search the draft for the terms above.</p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <p className="text-xs text-white/45">
+                Reviewed skill packs available to this workspace:{" "}
+                {MARKETING_SKILLS.map((skill) => skill.name).join(" · ")}
+              </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <Button type="button" onClick={handleCopy} disabled={!content} className="min-h-11 bg-[#0057B8] text-white hover:bg-[#004a9e]">
                   <Copy className="h-4 w-4" aria-hidden="true" />{copied ? "Copied" : "Copy"}

@@ -13,7 +13,7 @@
  * Public routes (no auth required):
  *   /, /login, /register, /forgot-password, /reset-password
  *   /destinations, /course-finder, /universities, /scholarships
- *   /services, /language-prep, /resources, /events
+ *   /services, /language-prep, /exam-prep, /resources, /events
  *   /contact, /book-consultation, /ask-handbook
  *   /privacy-policy, /terms, /cookie-policy, /portals
  *   /api/auth/*, /api/health, /api/lead, /api/rag/ask, /api/rag/materials (GET)
@@ -38,6 +38,11 @@ const PUBLIC_PAGES = new Set([
   '/scholarships',
   '/services',
   '/language-prep',
+  // "/exam-prep" is public content: it is linked from the site header, the
+  // footer and /resources, and it only reads the public exam-types API. It was
+  // missing from this list, which made it absent from ROUTE_INVENTORY.csv and
+  // caused tests/sitemap.test.ts to fail once the sitemap was generated.
+  '/exam-prep',
   '/resources',
   '/events',
   '/contact',
