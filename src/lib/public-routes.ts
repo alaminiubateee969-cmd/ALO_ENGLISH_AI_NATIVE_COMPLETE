@@ -38,6 +38,9 @@ export const INDEXABLE_PUBLIC_ROUTES: readonly PublicRoute[] = [
   { path: '/exam-prep', label: 'Exam preparation catalog', changeFrequency: 'weekly', priority: 0.9, lastModified: '2026-10-14' },
   { path: '/language-prep', label: 'Language test overview', changeFrequency: 'weekly', priority: 0.9, lastModified: '2026-10-14' },
   { path: '/resources', label: 'Resource hub', changeFrequency: 'weekly', priority: 0.8, lastModified: '2026-10-14' },
+  // Only the index is listed. Individual posts are discovered by crawling it, so a
+  // build never needs the database to write this file (see src/app/sitemap.ts).
+  { path: '/blog', label: 'Study guides', changeFrequency: 'weekly', priority: 0.7, lastModified: '2026-10-14' },
   { path: '/destinations', label: 'Destinations', changeFrequency: 'monthly', priority: 0.8, lastModified: '2026-10-14' },
   { path: '/universities', label: 'Universities', changeFrequency: 'monthly', priority: 0.7, lastModified: '2026-10-14' },
   { path: '/scholarships', label: 'Scholarships', changeFrequency: 'monthly', priority: 0.7, lastModified: '2026-10-14' },

@@ -2,6 +2,7 @@ Path,Methods,Auth,Runtime,Source
 /api,GET,none declared,nodejs,src/app/api/route.ts
 /api/admin/analytics,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/analytics/route.ts
 /api/admin/integrations,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/integrations/route.ts
+/api/admin/seo/audit,GET,role:ADMIN+SUPER_ADMIN+MARKETING_MANAGER,nodejs,src/app/api/admin/seo/audit/route.ts
 /api/admin/settings,GET POST,role:ADMIN,nodejs,src/app/api/admin/settings/route.ts
 /api/admin/stats,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/stats/route.ts
 /api/agents/status,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/agents/status/route.ts
@@ -19,6 +20,8 @@ Path,Methods,Auth,Runtime,Source
 /api/auth/me,GET,public intended (allowlist; verify handler),nodejs,src/app/api/auth/me/route.ts
 /api/auth/register,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/register/route.ts
 /api/auth/reset-password,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/reset-password/route.ts
+/api/blog/posts,GET POST,role:ADMIN+SUPER_ADMIN+MARKETING_MANAGER,nodejs,src/app/api/blog/posts/route.ts
+/api/blog/posts/{slug},GET PATCH,role:multiple,nodejs,src/app/api/blog/posts/[slug]/route.ts
 /api/crm/applications,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/route.ts
 /api/crm/applications/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/[id]/route.ts
 /api/crm/appointments,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/route.ts

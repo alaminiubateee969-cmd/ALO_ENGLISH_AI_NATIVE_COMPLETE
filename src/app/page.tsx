@@ -16,7 +16,9 @@ import {
 import { StudentJourneyDiagram } from "@/components/site/student-journey-diagram";
 
 export const metadata: Metadata = {
-  title: "ALO English — English Test Practice & Study-Abroad Guidance",
+  // Rendered with the layout template as "… — ALO Education", which is 16
+  // characters longer: see SITE_TITLE_SUFFIX and the SEO audit.
+  title: "ALO English — Test Practice & Study Abroad",
   description:
     "Explore English-test practice, skill-focused preparation and study-abroad guidance from ALO Education. Check the active practice catalog.",
   keywords: ["English test practice", "IELTS preparation", "PTE practice", "TOEFL preparation", "study abroad", "ALO English"],

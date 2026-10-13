@@ -26,7 +26,7 @@ import {
   keywordCoverage,
   type SeoPageInput,
 } from '../src/lib/seo/audit';
-import { BUSINESS_KEYWORDS, SEO_PAGE_METADATA, findSeoPage } from '../src/lib/seo/metadata';
+import { BUSINESS_KEYWORDS, SEO_PAGE_METADATA, SITE_TITLE_SUFFIX, findSeoPage } from '../src/lib/seo/metadata';
 
 const ROOT = join(import.meta.dir, '..');
 const sitemapPaths = INDEXABLE_PUBLIC_ROUTES.map((route) => route.path);
@@ -193,7 +193,11 @@ describe('keyword coverage', () => {
 });
 
 describe('the real pages', () => {
-  const report = auditSeo({ sitemapPaths, pages: SEO_PAGE_METADATA });
+  const report = auditSeo({
+    sitemapPaths,
+    pages: SEO_PAGE_METADATA,
+    titleTemplateSuffixLength: SITE_TITLE_SUFFIX.length,
+  });
 
   test('every indexable route is described here, and vice versa', () => {
     const described = new Set(SEO_PAGE_METADATA.map((page) => page.path));
@@ -256,6 +260,19 @@ describe('the real pages', () => {
       expect(['COVERED', 'NO_OWNER', 'NO_MENTION']).toContain(entry.gap);
       expect(entry.note.length).toBeGreaterThan(5);
     }
+  });
+
+  test('the title suffix here matches the one the layout actually applies', () => {
+    // Without this, changing the layout's template would silently make every title
+    // length in this table wrong.
+    const layout = readFileSync(join(ROOT, 'src/app/layout.tsx'), 'utf8');
+    const template = layout.match(/template:\s*"([^"]+)"/);
+    expect(template?.[1]).toBe(`%s${SITE_TITLE_SUFFIX}`);
+  });
+
+  test('every title fits inside the truncation limit once the site suffix is added', () => {
+    const tooLong = SEO_PAGE_METADATA.filter((page) => page.title.length + SITE_TITLE_SUFFIX.length > TITLE_MAX);
+    expect(tooLong.map((page) => page.path)).toEqual([]);
   });
 
   test('findSeoPage answers for a described page and is undefined otherwise', () => {

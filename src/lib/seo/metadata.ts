@@ -33,7 +33,7 @@ export type SeoPageMetadata = SeoPageInput & {
 export const SEO_PAGE_METADATA: readonly SeoPageMetadata[] = [
   {
     path: '/',
-    title: 'ALO English — English Test Practice & Study-Abroad Guidance',
+    title: 'ALO English — Test Practice & Study Abroad',
     description:
       'Explore English-test practice, skill-focused preparation and study-abroad guidance from ALO Education. Check the active practice catalog.',
     primaryKeyword: 'English test practice',
@@ -66,6 +66,16 @@ export const SEO_PAGE_METADATA: readonly SeoPageMetadata[] = [
     description: 'Browse ALO English practice, test-provider references, and study-abroad planning resources.',
     primaryKeyword: 'study and test preparation resources',
     supportingKeywords: ['practice roadmap', 'study resources'],
+    hasOpenGraph: true,
+    declaredIn: 'PAGE',
+  },
+  {
+    path: '/blog',
+    title: 'Study Abroad and English Test Guides',
+    description:
+      'Practical guides on English-test preparation, university applications and study-abroad planning, written by ALO Education counsellors.',
+    primaryKeyword: 'study abroad guides',
+    supportingKeywords: ['English test guides', 'application advice'],
     hasOpenGraph: true,
     declaredIn: 'PAGE',
   },
@@ -199,6 +209,14 @@ export const BUSINESS_KEYWORDS: readonly string[] = [
   'PTE practice test',
   'English test practice',
 ];
+
+/**
+ * The suffix the root layout appends to every page title (see the `title.template`
+ * in src/app/layout.tsx). It lives here as well so the audit can measure the title
+ * a search result actually shows; `tests/seo-audit.test.ts` reads the layout and
+ * fails if the two drift apart.
+ */
+export const SITE_TITLE_SUFFIX = ' — ALO Education';
 
 export function findSeoPage(path: string): SeoPageMetadata | undefined {
   return SEO_PAGE_METADATA.find((page) => page.path === path);

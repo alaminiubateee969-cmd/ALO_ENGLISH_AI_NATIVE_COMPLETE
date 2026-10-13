@@ -53,3 +53,4 @@ CommunicationConsent,Communication Hub,13,1,"id (@id); @@unique(studentId,channe
 MessageOutbox,Communication Hub,22,1,id (@id); sendKey (@unique),"@@index(status,nextAttemptAt); @@index(studentId,channel); @@index(status,scheduledFor)"
 AutomationEvent,Communication Hub,15,0,id (@id); idempotencyKey (@unique),@@index(kind); @@index(status); @@index(createdAt)
 AnalyticsCounter,Communication Hub,8,0,"id (@id); @@unique(day,event,path,label)",@@index(day); @@index(event); @@index(path)
+BlogPost,Communication Hub,12,0,id (@id); slug (@unique),"@@index(status,publishedAt)"

@@ -18,7 +18,6 @@
 
 import { describe, expect, test } from 'bun:test';
 import type { AssistantPlan } from '../src/lib/crm/assistant';
-import type { OutboundDraft } from '../src/lib/crm/outbound';
 
 const {
   ASSISTANT_DISCLOSURE,
@@ -235,7 +234,7 @@ describe('sending an assistant reply', () => {
   };
 
   test('a reply goes through the outbound funnel as a SERVICE message', async () => {
-    const drafts: OutboundDraft[] = [];
+    const drafts: Array<{ purpose: string; channel: string; body: string; createdBy?: string }> = [];
     const outcome = await runAfterHoursAssistant(conversation, {
       now: () => NIGHT,
       enabled: true,

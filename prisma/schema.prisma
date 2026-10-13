@@ -1191,3 +1191,30 @@ model AnalyticsCounter {
   @@index([event])
   @@index([path])
 }
+
+/// A published article.
+///
+/// Content marketing and nothing else. A post is written by a person, checked by
+/// the safe-claims rule set before it can be published, and carries no exam
+/// claim, no score promise and no student data of any kind. `styleIndex` records
+/// the machine-prose score at the moment of publishing, so a later reader can see
+/// what the reviewer actually saw.
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  body        String
+  /// Comma-separated slug tags. A join table would be purer and is unnecessary
+  /// at the scale this is used at.
+  tags        String    @default("")
+  status      String    @default("DRAFT") // DRAFT|PUBLISHED
+  publishedAt DateTime?
+  authorId    String?
+  styleIndex  Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, publishedAt])
+}
+

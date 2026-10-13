@@ -61,6 +61,15 @@ export type SeoAuditInput = {
   /** Paths that are meant to be indexed (src/lib/public-routes.ts). */
   sitemapPaths: readonly string[];
   pages: readonly SeoPageInput[];
+  /**
+   * Characters the root layout's title template appends, e.g. " — ALO Education".
+   *
+   * Without this the audit would judge the string a page declares, which is not
+   * what a search result shows: "Cookie Policy" renders as "Cookie Policy — ALO
+   * Education". Counting the suffix is the difference between reporting a stub
+   * title and reporting the truth.
+   */
+  titleTemplateSuffixLength?: number;
 };
 
 export type SeoAuditReport = {
@@ -105,6 +114,9 @@ export function auditSeo(input: SeoAuditInput): SeoAuditReport {
     const description = page.description?.trim() ?? '';
     const keyword = page.primaryKeyword?.trim() ?? '';
 
+    const suffixLength = input.titleTemplateSuffixLength ?? 0;
+    const renderedTitleLength = title.length + (title ? suffixLength : 0);
+
     if (!title) {
       findings.push({
         code: 'TITLE_MISSING',
@@ -114,21 +126,21 @@ export function auditSeo(input: SeoAuditInput): SeoAuditReport {
         fix: 'Add a title of 15–60 characters that names what the page offers.',
       });
     } else {
-      if (title.length > TITLE_MAX) {
+      if (renderedTitleLength > TITLE_MAX) {
         findings.push({
           code: 'TITLE_TOO_LONG',
           path: page.path,
           severity: 'WARNING',
-          message: `The title is ${title.length} characters; results truncate after about ${TITLE_MAX}.`,
+          message: `The rendered title is ${renderedTitleLength} characters (${title.length} plus the site suffix); results truncate after about ${TITLE_MAX}.`,
           fix: 'Shorten the title, or move the descriptive half into the description.',
         });
       }
-      if (title.length < TITLE_MIN) {
+      if (renderedTitleLength < TITLE_MIN) {
         findings.push({
           code: 'TITLE_TOO_SHORT',
           path: page.path,
           severity: 'WARNING',
-          message: `The title is only ${title.length} characters.`,
+          message: `The rendered title is only ${renderedTitleLength} characters.`,
           fix: 'Say what the page is: test, destination, service or guide.',
         });
       }
@@ -271,7 +283,7 @@ export function auditSeo(input: SeoAuditInput): SeoAuditReport {
   const pages = input.pages.map((page) => ({
     path: page.path,
     title: page.title,
-    titleLength: page.title?.length ?? 0,
+    titleLength: (page.title?.length ?? 0) + ((page.title?.length ?? 0) > 0 ? (input.titleTemplateSuffixLength ?? 0) : 0),
     descriptionLength: page.description?.length ?? 0,
     primaryKeyword: page.primaryKeyword,
     findings: findings.filter((finding) => finding.path === page.path).length,

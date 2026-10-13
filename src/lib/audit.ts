@@ -100,7 +100,10 @@ export type AuditAction =
   | 'USER_CREATED'
   | 'USER_UPDATED'
   | 'USER_DISABLED'
-  | 'USER_ENABLED';
+  | 'USER_ENABLED'
+  | 'BLOG_POST_CREATED'
+  | 'BLOG_POST_PUBLISHED'
+  | 'BLOG_POST_UPDATED';
 
 /**
  * Record an audit log entry.

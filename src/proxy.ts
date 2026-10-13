@@ -15,7 +15,7 @@
  *   /destinations, /course-finder, /universities, /scholarships
  *   /services, /language-prep, /exam-prep, /resources, /events
  *   /contact, /book-consultation, /ask-handbook
- *   /privacy-policy, /terms, /cookie-policy, /portals
+ *   /privacy-policy, /terms, /cookie-policy, /portals, /blog (and /blog/<slug>)
  *   /api/auth/*, /api/health, /api/lead, /api/rag/ask, /api/rag/materials (GET)
  *   /api/exam-types, /api/practice-sets, /api/examiners
  *   /api/webhooks/*  (public endpoint, but NOT unauthenticated: every request
@@ -56,6 +56,10 @@ const PUBLIC_PAGES = new Set([
   '/terms',
   '/cookie-policy',
   '/portals',
+  // The blog index is public. Individual posts live at /blog/<slug> and are
+  // reached by crawling the index; the proxy list is exact-match, so the prefix
+  // is documented in the header comment rather than here.
+  '/blog',
 ]);
 
 const PUBLIC_API_PATTERNS = [

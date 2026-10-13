@@ -7,6 +7,7 @@ import { Users, FileText, MessageSquare, TrendingUp } from "lucide-react";
 const NAV = [
   { label: "Dashboard", href: "/employee/dashboard" },
   { label: "Leads", href: "/api/crm/leads" },
+  { label: "Lead priority", href: "/api/crm/leads/priority" },
   { label: "Students", href: "/api/crm/students" },
   { label: "Applications", href: "/api/crm/applications" },
   { label: "Tasks", href: "/api/crm/tasks" },
