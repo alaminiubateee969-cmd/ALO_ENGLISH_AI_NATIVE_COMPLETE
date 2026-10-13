@@ -36,6 +36,8 @@ model User {
   subordinates User[]        @relation("Supervisor")
   leads        Lead[]        @relation("LeadCounselor")
   students     Student[]     @relation("StudentCounselor")
+  channelAccounts       ChannelAccount[]              @relation("ChannelAccountOwner")
+  assignedConversations Conversation[]                @relation("ConversationAssignee")
   studentProfile Student?    @relation("StudentUser")
   partnerProfile Partner?    @relation("PartnerUser")
   applications Application[] @relation("AppAssignee")
@@ -134,6 +136,11 @@ model Lead {
 
 model Student {
   id            String    @id @default(cuid())
+  // Human-readable identity, allocated server-side as ALO-YYYY-NNNNNN.
+  // Nullable so pre-existing rows survive the migration; every row created
+  // through the communication hub receives one, and the unique index is the
+  // duplicate guard (see src/lib/crm/student-id.ts).
+  studentCode   String?   @unique
   userId        String?   @unique
   leadId        String?   @unique
   name          String
@@ -161,9 +168,13 @@ model Student {
   commissions Commission[]
   tasks      Task[]
   messages   Message[]
+  conversations          Conversation[]
+  counselorAssignments   CounselorAssignmentHistory[]
+  communicationConsents  CommunicationConsent[]
 
   @@index([counselorId])
   @@index([status])
+  @@index([studentCode])
 }
 
 model Partner {
@@ -321,6 +332,23 @@ model Document {
   ocrConfidence Float?
   reviewedBy   String?
   reviewedAt   DateTime?
+  // ── Communication-hub fields ───────────────────────────────────────────
+  // Private storage key. Never a public URL: files are served through an
+  // authorized route that checks ownership and role.
+  storageKey        String?
+  // Verification is a human decision. OCR/PENDING is not verification, and an
+  // automatically received file starts at PENDING_REVIEW.
+  verificationStatus String  @default("PENDING_REVIEW") // PENDING_REVIEW|VERIFIED|REJECTED|EXPIRED
+  verifiedBy        String?
+  verifiedAt        DateTime?
+  sourceChannel     String?  // WHATSAPP|FACEBOOK|INSTAGRAM|SMS|EMAIL|PORTAL|STAFF_UPLOAD
+  conversationId    String?
+  currentVersion    Int      @default(1)
+  retentionClass    String   @default("STANDARD") // STANDARD|SENSITIVE|LEGAL_HOLD
+  // Soft delete only. Permanent deletion requires an approved legal/retention
+  // workflow; ordinary staff and marketers cannot remove a document at all.
+  deletedAt         DateTime?
+  versions          DocumentVersion[]
   createdAt    DateTime @default(now())
 
   student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -329,6 +357,8 @@ model Document {
   @@index([studentId])
   @@index([type])
   @@index([ocrStatus])
+  @@index([verificationStatus])
+  @@index([retentionClass])
 }
 
 // ═══ Communications ════════════════════════════════════════════════════
@@ -353,16 +383,31 @@ model Message {
   internalNote String?
   aiSummary    String?
   readAt       DateTime?
+  // ── Communication-hub fields ───────────────────────────────────────────
+  conversationId    String?
+  // Provider's own message id. Together with the channel it is unique, which
+  // is what makes replayed webhooks idempotent.
+  providerMessageId String?
+  // Deterministic key for this delivery attempt/event (see
+  // src/lib/crm/idempotency.ts). Unique: a repeat is detected, not re-stored.
+  idempotencyKey    String?  @unique
+  rawPayloadHash    String?  // hash of the normalised inbound payload, never the payload itself
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedReason      String?
   createdAt    DateTime @default(now())
 
   sender      User?     @relation("MessageSender", fields: [senderId], references: [id])
   lead        Lead?     @relation(fields: [leadId], references: [id])
   student     Student?  @relation(fields: [studentId], references: [id])
+  conversation Conversation? @relation(fields: [conversationId], references: [id])
 
   @@index([channel])
   @@index([leadId])
   @@index([studentId])
   @@index([createdAt])
+  @@index([conversationId])
+  @@unique([channel, providerMessageId])
 }
 
 // ═══ Tasks, Appointments, Timeline ════════════════════════════════════
@@ -895,4 +940,166 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
   @@index([token])
+}
+
+// ═══ Communication Hub ═════════════════════════════════════════════════
+//
+// Central messaging, identity, documents and automation state. Nothing here
+// stores credentials: ChannelAccount.credentialRef is a pointer into the
+// host's secret storage, never a token, password or OTP.
+// Architecture and rollout order: docs/COMMUNICATION_HUB.md
+
+/// Per-year counter for the human-readable student code (ALO-YYYY-NNNNNN).
+/// The row is the allocation lock: increments happen in a transaction so two
+/// concurrent inbound messages can never receive the same code.
+model StudentIdSequence {
+  year      Int      @id
+  lastValue Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// Registry of official, staff-owned communication accounts and their health.
+model ChannelAccount {
+  id                 String    @id @default(cuid())
+  kind               String    // WHATSAPP|FACEBOOK|INSTAGRAM|SMS|EMAIL|WEBCHAT
+  label              String    // official display name shown to students
+  externalId         String?   // provider phone-number id / page id / account id
+  ownerUserId        String?   // accountable staff member
+  branchId           String?
+  status             String    @default("DISCONNECTED") // CONNECTED|DISCONNECTED|ERROR|PENDING_VERIFICATION
+  lastWebhookAt      DateTime?
+  healthCheckedAt    DateTime?
+  lastError          String?
+  /// Pointer to the secret store entry. Never the secret itself.
+  credentialRef      String?
+  credentialRotatedAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  owner         User?          @relation("ChannelAccountOwner", fields: [ownerUserId], references: [id])
+  conversations Conversation[]
+
+  @@unique([kind, externalId])
+  @@index([status])
+  @@index([ownerUserId])
+}
+
+/// One thread with one student on one channel. Survives staff changes.
+model Conversation {
+  id               String    @id @default(cuid())
+  studentId        String?
+  leadId           String?
+  channelAccountId String?
+  channel          String    // WHATSAPP|FACEBOOK|INSTAGRAM|SMS|EMAIL|WEBCHAT|PORTAL
+  externalThreadId String?   // provider conversation id
+  subject          String?
+  status           String    @default("OPEN") // OPEN|PENDING_REVIEW|CLOSED|SPAM
+  /// Set when identity matching was ambiguous. The conversation is still
+  /// recorded, but it is not attached to a student until a human confirms.
+  needsReview      Boolean   @default(false)
+  reviewReason     String?
+  assignedUserId   String?
+  lastMessageAt    DateTime?
+  messageCount     Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  student        Student?        @relation(fields: [studentId], references: [id])
+  channelAccount ChannelAccount? @relation(fields: [channelAccountId], references: [id])
+  assignedUser   User?           @relation("ConversationAssignee", fields: [assignedUserId], references: [id])
+  messages       Message[]
+
+  @@unique([channel, externalThreadId])
+  @@index([studentId])
+  @@index([status])
+  @@index([needsReview])
+  @@index([lastMessageAt])
+}
+
+/// Immutable version history for a document. Replacing a file adds a version;
+/// the previously verified file stays in history.
+model DocumentVersion {
+  id               String    @id @default(cuid())
+  documentId       String
+  version          Int
+  storageKey       String
+  fileHash         String
+  fileSize         Int
+  mimeType         String
+  sourceChannel    String?
+  uploaderUserId   String?
+  reviewStatus     String    @default("PENDING_REVIEW") // PENDING_REVIEW|VERIFIED|REJECTED
+  reviewNote       String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  supersededAt     DateTime?
+  createdAt        DateTime  @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@index([reviewStatus])
+}
+
+/// Who held a student, when, and who handed it over.
+model CounselorAssignmentHistory {
+  id               String   @id @default(cuid())
+  studentId        String
+  fromUserId       String?
+  toUserId         String?
+  assignedByUserId String?
+  reason           String?
+  createdAt        DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([toUserId])
+  @@index([createdAt])
+}
+
+/// Central consent register. One row per student/channel/purpose, so withdrawing
+/// marketing consent on WhatsApp also stops SMS marketing for the same student.
+model CommunicationConsent {
+  id               String   @id @default(cuid())
+  studentId        String
+  channel          String   // WHATSAPP|SMS|EMAIL|FACEBOOK|INSTAGRAM
+  purpose          String   // MARKETING|SERVICE|FOLLOW_UP
+  status           String   @default("UNKNOWN") // GRANTED|DENIED|WITHDRAWN|UNKNOWN
+  source           String?  // FORM|INBOUND_MESSAGE|IMPORT|STAFF_ENTRY
+  evidence         String?  // message id, form reference, or import reference
+  recordedByUserId String?
+  recordedAt       DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, channel, purpose])
+  @@index([status])
+  @@index([purpose])
+}
+
+/// Every automation attempt: inbound webhooks, campaign sends, follow-ups and
+/// retries. idempotencyKey is unique, so a replayed webhook is recorded once.
+model AutomationEvent {
+  id                String    @id @default(cuid())
+  kind              String    // WEBHOOK_INBOUND|CAMPAIGN_SEND|FOLLOW_UP|RETRY|REMINDER
+  provider          String?   // whatsapp_cloud|meta_messenger|instagram|sms_provider|internal
+  idempotencyKey    String    @unique
+  status            String    @default("RECEIVED") // RECEIVED|PROCESSING|SUCCEEDED|FAILED|SKIPPED|DUPLICATE
+  signatureVerified Boolean   @default(false)
+  attempts          Int       @default(0)
+  lastError         String?
+  studentId         String?
+  conversationId    String?
+  payloadHash       String?
+  payloadSummary    String?
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([kind])
+  @@index([status])
+  @@index([createdAt])
 }
