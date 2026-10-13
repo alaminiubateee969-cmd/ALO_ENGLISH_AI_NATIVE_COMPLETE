@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { normaliseProviderPayload } from '../src/lib/crm/provider-payload';
+import { normaliseDeliveryReceipts, normaliseProviderPayload } from '../src/lib/crm/provider-payload';
 
 describe('WhatsApp Cloud', () => {
   const payload = {
@@ -123,5 +123,92 @@ describe('unknown providers', () => {
   test('an unrecognised provider is ignored rather than guessed at', () => {
     expect(normaliseProviderPayload('telegram', { from: 'x', body: 'y' })).toBeNull();
     expect(normaliseProviderPayload('', {})).toBeNull();
+  });
+});
+
+describe('delivery receipts', () => {
+  test('a WhatsApp status callback becomes a receipt', () => {
+    const receipts = normaliseDeliveryReceipts('whatsapp_cloud', {
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                statuses: [{ id: 'wamid.OUT1', status: 'delivered', timestamp: '1760421600' }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(receipts).toHaveLength(1);
+    expect(receipts[0]?.providerMessageId).toBe('wamid.OUT1');
+    expect(receipts[0]?.status).toBe('DELIVERED');
+    expect(receipts[0]?.occurredAt?.getTime()).toBe(1760421600 * 1000);
+  });
+
+  test('a failed status carries the provider error code and reason', () => {
+    const receipts = normaliseDeliveryReceipts('whatsapp_cloud', {
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                statuses: [{ id: 'wamid.OUT2', status: 'failed', errors: [{ code: 131026, title: 'Message undeliverable' }] }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(receipts[0]?.status).toBe('FAILED');
+    expect(receipts[0]?.errorCode).toBe('131026');
+    expect(receipts[0]?.errorReason).toBe('Message undeliverable');
+  });
+
+  test('several statuses in one event are all returned', () => {
+    const receipts = normaliseDeliveryReceipts('whatsapp_cloud', {
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                statuses: [
+                  { id: 'a', status: 'sent' },
+                  { id: 'b', status: 'read' },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    expect(receipts.map((receipt) => receipt.status)).toEqual(['SENT', 'READ']);
+  });
+
+  test('an unknown status word is ignored rather than guessed at', () => {
+    const receipts = normaliseDeliveryReceipts('whatsapp_cloud', {
+      entry: [{ changes: [{ value: { statuses: [{ id: 'a', status: 'deleted-by-provider' }] } }] }],
+    });
+    expect(receipts).toHaveLength(0);
+  });
+
+  test('an inbound message with no statuses produces no receipts', () => {
+    const receipts = normaliseDeliveryReceipts('whatsapp_cloud', {
+      entry: [{ changes: [{ value: { messages: [{ id: 'x', from: '8801', text: { body: 'hi' } }] } }] }],
+    });
+    expect(receipts).toHaveLength(0);
+  });
+
+  test('Messenger delivery ids become receipts; a bare watermark does not', () => {
+    expect(normaliseDeliveryReceipts('meta_messenger', { delivery: { mids: ['mid.1', 'mid.2'] } }).map((r) => r.providerMessageId)).toEqual(['mid.1', 'mid.2']);
+    expect(normaliseDeliveryReceipts('meta_messenger', { delivery: { watermark: 123 } })).toHaveLength(0);
+  });
+
+  test('an SMS provider callback is read', () => {
+    const receipts = normaliseDeliveryReceipts('sms_provider', { messageId: 'sms-9', status: 'undelivered' });
+    expect(receipts[0]?.status).toBe('FAILED');
   });
 });

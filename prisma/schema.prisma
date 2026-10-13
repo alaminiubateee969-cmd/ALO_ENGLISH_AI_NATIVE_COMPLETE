@@ -171,6 +171,7 @@ model Student {
   conversations          Conversation[]
   counselorAssignments   CounselorAssignmentHistory[]
   communicationConsents  CommunicationConsent[]
+  outboundMessages       MessageOutbox[]               @relation("StudentOutbox")
 
   @@index([counselorId])
   @@index([status])
@@ -1078,6 +1079,50 @@ model CommunicationConsent {
   @@unique([studentId, channel, purpose])
   @@index([status])
   @@index([purpose])
+}
+
+/// The outbound queue.
+///
+/// Every message this system intends to send has a row here before it has a
+/// provider message id, which is what makes three things possible at once:
+/// a send is claimed exactly once (sendKey is unique), a deferred send has a
+/// time to run at (nextAttemptAt), and a failure has a bounded number of
+/// attempts (attempts) before it is left for a human instead of retried
+/// forever.
+///
+/// Rows say WHY they are waiting: a deferral because of quiet hours is a
+/// different situation from a refusal because the student opted out, and an
+/// operator needs to tell them apart without guessing.
+model MessageOutbox {
+  id                String    @id @default(cuid())
+  /// Derived from channel, student, purpose, content and schedule. Unique.
+  sendKey           String    @unique
+  channel           String    // WHATSAPP|SMS|EMAIL|FACEBOOK|INSTAGRAM
+  purpose           String    // MARKETING|SERVICE|FOLLOW_UP
+  studentId         String
+  conversationId    String?
+  recipientHandle   String
+  body              String
+  isApprovedTemplate Boolean  @default(false)
+  templateName      String?
+  templateLanguage  String?
+  scheduledFor      DateTime
+  status            String    @default("PENDING") // PENDING|SENT|FAILED|SUPPRESSED|CANCELLED
+  attempts          Int       @default(0)
+  nextAttemptAt     DateTime?
+  lastDecisionCode  String?
+  lastError         String?
+  messageId         String?   // the Message row once one exists
+  providerMessageId String?
+  createdBy         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  student Student @relation("StudentOutbox", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([studentId, channel])
+  @@index([status, scheduledFor])
 }
 
 /// Every automation attempt: inbound webhooks, campaign sends, follow-ups and

@@ -26,12 +26,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { badRequest, serviceUnavailable, unauthorized, withErrorHandler } from '@/lib/responses';
+import { audit } from '@/lib/audit';
 import { ingestInboundMessage, type InboundAttachment, type InboundMessage } from '@/lib/crm/ingest';
 import { prismaIngestStore } from '@/lib/crm/prisma-store';
 import type { ProviderId } from '@/lib/crm/automation';
 import { verifyWebhookSignature } from '@/lib/crm/webhook-signature';
-import { normaliseProviderPayload, type ProviderPayload } from '@/lib/crm/provider-payload';
+import { normaliseDeliveryReceipts, normaliseProviderPayload, type ProviderPayload } from '@/lib/crm/provider-payload';
 import { collectInboundAttachments } from '@/lib/crm/media-fetcher';
+import { applyDeliveryReceipt } from '@/lib/crm/outbound';
+import { prismaReceiptStore } from '@/lib/crm/prisma-outbound-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -89,11 +92,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return badRequest('Webhook body is not valid JSON.');
     }
 
+    // Providers report delivery progress through the same endpoint, so this is
+    // read first: a status callback is not "an event we ignore", it is the only
+    // way a message we sent stops saying merely "sent" and starts reflecting
+    // what the student actually experienced.
+    const receipts = normaliseDeliveryReceipts(provider, payload);
+    const receiptResults = receipts.length
+      ? await Promise.all(receipts.map((receipt) => applyDeliveryReceipt(receipt, prismaReceiptStore)))
+      : [];
+
     const normalised = normaliseProviderPayload(provider, payload);
     if (!normalised) {
-      // Acknowledged and ignored: providers send status callbacks we do not
-      // consume, and returning an error would only trigger more retries.
-      return NextResponse.json({ received: true, processed: false, reason: 'No inbound message in this event.' }, { status: 200 });
+      // Acknowledged either way: an event with nothing we consume must return
+      // 200, or the provider retries forever.
+      return NextResponse.json(
+        {
+          received: true,
+          processed: false,
+          receipts: receiptResults.length > 0 ? receiptResults : undefined,
+          reason: receipts.length > 0 ? 'Delivery receipts applied.' : 'No inbound message in this event.',
+        },
+        { status: 200 },
+      );
     }
 
     // Media bytes are referenced by the webhook, never carried in it. They are
@@ -126,6 +146,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     };
 
     const outcome = await ingestInboundMessage(message, prismaIngestStore);
+
+    if (receiptResults.length > 0) {
+      // Same event carried both. Both are handled; neither is skipped.
+      await audit('MESSAGES_RECEIPT', {
+        resource: `Webhook:${provider}`,
+        metadata: { applied: receiptResults.filter((result) => result.status === 'APPLIED').length, seen: receiptResults.length },
+      });
+    }
 
     if (outcome.status === 'REJECTED') {
       return badRequest(outcome.reason);

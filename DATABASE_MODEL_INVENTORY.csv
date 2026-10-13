@@ -4,7 +4,7 @@ Branch,Authentication & RBAC,8,3,id (@id); name (@unique),-
 Department,Authentication & RBAC,5,2,id (@id),-
 PasswordReset,Authentication & RBAC,6,1,id (@id); token (@unique),@@index(userId); @@index(token)
 Lead,"CRM Core: Leads, Students, Partners",17,6,id (@id),@@index(status); @@index(counselorId); @@index(branchId); @@index(source)
-Student,"CRM Core: Leads, Students, Partners",19,12,id (@id); studentCode (@unique); userId (@unique); leadId (@unique),@@index(counselorId); @@index(status); @@index(studentCode)
+Student,"CRM Core: Leads, Students, Partners",19,13,id (@id); studentCode (@unique); userId (@unique); leadId (@unique),@@index(counselorId); @@index(status); @@index(studentCode)
 Partner,"CRM Core: Leads, Students, Partners",12,4,id (@id); userId (@unique); referralCode (@unique),@@index(status)
 Commission,"CRM Core: Leads, Students, Partners",7,2,id (@id),@@index(partnerId); @@index(status)
 Country,Education Catalog,6,1,id (@id); name (@unique); code (@unique),-
@@ -50,4 +50,5 @@ Conversation,Communication Hub,15,4,"id (@id); @@unique(channel,externalThreadId
 DocumentVersion,Communication Hub,15,1,"id (@id); @@unique(documentId,version)",@@index(documentId); @@index(reviewStatus)
 CounselorAssignmentHistory,Communication Hub,7,1,id (@id),@@index(studentId); @@index(toUserId); @@index(createdAt)
 CommunicationConsent,Communication Hub,10,1,"id (@id); @@unique(studentId,channel,purpose)",@@index(status); @@index(purpose)
+MessageOutbox,Communication Hub,22,1,id (@id); sendKey (@unique),"@@index(status,nextAttemptAt); @@index(studentId,channel); @@index(status,scheduledFor)"
 AutomationEvent,Communication Hub,15,0,id (@id); idempotencyKey (@unique),@@index(kind); @@index(status); @@index(createdAt)

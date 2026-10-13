@@ -2,7 +2,8 @@
 
 **Status:** ingestion, storage and retention layers implemented and tested. Outbound provider delivery and the after-hours assistant are **not** implemented — they require provider credentials, business verification and approved templates.
 **Gate:** `npm run content:provenance` and `npm run content:validate` remain the release gates for exam content; this document covers the CRM/communication side.
-**Schema:** migration `20261014120000_communication_hub` (7 new tables, 17 new columns)
+**Schema:** migrations `20261014120000_communication_hub` (7 new tables, 17 new columns) and
+`20261014140000_message_outbox` (the outbound queue)
 
 This is the approved architecture for central student communication: WhatsApp, Facebook, Instagram, SMS and email through one hub, with automatic student identity, permanent records, and a human in the loop wherever a mistake would be irreversible.
 
@@ -22,6 +23,7 @@ This is the approved architecture for central student communication: WhatsApp, F
 | Send policy: consent, channel window, cap, quiet hours | `src/lib/crm/messaging-policy.ts` | 12 tests |
 | Permission matrix (passport access, deletion, credentials) | `src/lib/crm/permissions.ts` | 12 tests |
 | Tables: sequences, channel accounts, conversations, document versions, assignment history, consent, automation events | `prisma/migrations/20261014120000_communication_hub/` | applied to a fresh SQLite database; schema/migration parity passes |
+| Outbound queue (`MessageOutbox`), send policy gate, retry backoff, delivery receipts | `prisma/migrations/20261014140000_message_outbox/`, `src/lib/crm/outbound.ts` | 46 tests; parity passes (55 tables) |
 
 ## Section-by-section status against the specification
 
@@ -100,6 +102,45 @@ Because a media-only message that could not be collected is not an *empty* messa
 - Reads go through `/api/crm/documents/[id]/download`, which applies the permission policy, verifies the recorded SHA-256 before serving, and audits the attempt whether it is allowed or denied.
 - `DELETE /api/crm/documents/[id]` is now a **soft delete**. It previously called the generic CRUD delete, which removed the row permanently — an admin could have destroyed a student's documents. It now sets `deletedAt` and records the action.
 
+## Outbound delivery
+
+Sending is a single funnel: `POST /api/crm/messages/send` is the only route that sends anything, so every
+outbound message — a counsellor's reply, a campaign, or a queued reminder — passes the same policy gate, the
+same exactly-once claim and the same audit trail.
+
+The order is the point: **policy → claim → credentials → network**. Any other order either messages someone
+who said stop, messages them twice, or attempts an unauthenticated send.
+
+1. **Policy.** `evaluateSendPolicy` is asked, never re-implemented. The answer becomes an action:
+   - `REFUSE` when waiting cannot help — an opt-out, missing consent for marketing, a closed WhatsApp window
+     (the fix is an approved template, not patience) — recorded with its reason;
+   - `DEFER` when it is only about *when* — quiet hours go to the next business window, the daily cap to the
+     next local day's window;
+   - `SEND` otherwise. Guards that run before policy: an empty body, a missing recipient handle (never
+     guessed), a body over the channel's ceiling (WhatsApp rejects >4096), and a channel with no provider.
+2. **Claim.** The send key is derived from channel, student, purpose, content and schedule, and is unique in
+   `MessageOutbox`. A second attempt at the same send returns `DUPLICATE` and touches no network. A `PENDING`
+   row that already has attempts is an attempt in flight and is refused too, so two workers cannot both send;
+   an attempt older than 10 minutes is treated as abandoned and may be re-claimed, because a stranded
+   message is worse than a rare duplicate.
+3. **Credentials.** No credential, no send: `describeReadiness()` names the variable to set and the send is
+   recorded as `NOT_CONFIGURED`. Tokens never appear in a response, a log line or the database.
+4. **Network.** Failures are classified, not guessed: 401/403 `AUTH_FAILED` (not retryable — retrying a wrong
+   credential is how an account gets suspended), 429 `RATE_LIMITED` and 5xx `HTTP_ERROR` (retryable), other
+   4xx `PROVIDER_REJECTED` (not retryable), network faults `NETWORK_ERROR` (retryable). Backoff is bounded
+   (5m → 30m → 2h → 12h), and after the last step the message stays `FAILED` for a human rather than
+   retrying forever.
+
+**Delivery receipts.** Providers report progress through the same webhook endpoint, so
+`POST /api/webhooks/[provider]` applies them instead of ignoring a payload with no inbound message. Receipts
+never move a message backwards: a stale `DELIVERED` for a message already `READ` is ignored and recorded, and
+a `FAILED` is applied unless the student had already read the message.
+
+**The queue is drained by a scheduler, not a timer.** `POST /api/crm/messages/queue/run` is called by the host
+scheduler holding `CRON_SECRET` (compared in constant time), or by an authenticated `ADMIN` for a manual run;
+with no secret configured, anonymous callers are refused outright. Every row it picks up is re-decided by the
+same policy gate, so a deferral can never become a way around a withdrawal of consent.
+
 ## Backup and restore
 
 `npm run drill:restore` creates a backup, restores it into a scratch directory and verifies it: the archive extracts, the database opens, every schema model has a table, and every stored document hashes without error. It exits 2 (BLOCKED) when it could not run, which is deliberately distinct from a pass.
@@ -109,7 +150,7 @@ Failure paths were exercised, not assumed: no database → BLOCKED/2; corrupt ar
 ## Remaining work, in the order it should be built
 
 1. ~~**Provider media fetcher**~~ — **done** (`src/lib/crm/media-fetcher.ts`, 25 tests). Remaining: set `WHATSAPP_ACCESS_TOKEN` and `META_PAGE_ACCESS_TOKEN` in host secret storage so media is collected rather than reported.
-2. **Outbound delivery adapter** — send via WhatsApp Cloud / Messenger / Instagram / SMS, write the send result and delivery receipts back, and honour `evaluateSendPolicy` before queueing anything.
+2. ~~**Outbound delivery adapter**~~ — **done** (`src/lib/crm/outbound.ts`, `outbound-providers.ts`, `outbox-runner.ts`, `prisma-outbound-store.ts`, 46 tests) together with the `MessageOutbox` queue, the send route and the receipt handling. Remaining: set the channel credentials *and* `CRON_SECRET`, and point the host scheduler at `/api/crm/messages/queue/run`, or deferred and retried messages will wait for a manual run.
 3. **Channel integrations** — WhatsApp Business (Meta) first, then Messenger/Instagram, then an SMS provider. Needs: business verification, phone-number id, approved templates, and the secrets above in host secret storage.
 4. **Consent capture in the UI** — the register must be filled by a real workflow (inbound keyword, form checkbox, staff entry), otherwise every marketing send is blocked by design.
 5. **Review queue UI** — conversations with `needsReview` and documents with `verificationStatus = PENDING_REVIEW` need one screen where a human resolves them.

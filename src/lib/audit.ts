@@ -71,6 +71,10 @@ export type AuditAction =
   | 'DOCUMENTS_DELETE'
   /** A document was read or an attempt to read it was refused. */
   | 'DOCUMENTS_DOWNLOAD'
+  /** An outbound message was queued, refused, deferred, sent or failed. */
+  | 'MESSAGES_SEND'
+  /** A delivery receipt from a provider was applied to a message. */
+  | 'MESSAGES_RECEIPT'
   | 'MESSAGES_DELETE'
   | 'TASKS_DELETE'
   | 'APPOINTMENTS_DELETE'

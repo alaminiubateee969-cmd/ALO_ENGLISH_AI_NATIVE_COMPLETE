@@ -86,6 +86,30 @@ export function canSendMarketing(role: CrmRole): AccessDecision {
     : { allowed: false, code: 'ROLE_NOT_PERMITTED', reason: `${role} may not send marketing messages.`, auditRequired: true };
 }
 
+/**
+ * Roles that may send a service or follow-up message to a student.
+ *
+ * Deliberately excludes PARTNER (they are not ALO staff and must not speak as
+ * the institute) and STUDENT (a student cannot message another student through
+ * the CRM). Marketing is a separate decision, above.
+ */
+export function canSendServiceMessage(role: CrmRole): AccessDecision {
+  const allowed: CrmRole[] = [
+    'COUNSELOR',
+    'APPLICATION_TEAM',
+    'VISA_OFFICER',
+    'FRONT_DESK',
+    'SUPPORT',
+    'BRANCH_MANAGER',
+    'MARKETING_MANAGER',
+    'ADMIN',
+    'SUPER_ADMIN',
+  ];
+  return allowed.includes(role)
+    ? { allowed: true, code: 'OK', reason: 'Role may reply to a student.', auditRequired: true }
+    : { allowed: false, code: 'ROLE_NOT_PERMITTED', reason: `${role} may not send messages to students.`, auditRequired: true };
+}
+
 /** Campaign reporting is the marketing manager's core surface. */
 export function canViewCampaignPerformance(role: CrmRole): AccessDecision {
   const allowed: CrmRole[] = ['MARKETING_MANAGER', 'ADMIN', 'SUPER_ADMIN', 'BRANCH_MANAGER'];

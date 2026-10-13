@@ -28,6 +28,13 @@ export type ProviderPayload = {
           image?: { id?: string; mime_type?: string; caption?: string; filename?: string };
           document?: { id?: string; mime_type?: string; filename?: string; caption?: string };
         }>;
+        /** Delivery progress for a message we sent. */
+        statuses?: Array<{
+          id?: string;
+          status?: string;
+          timestamp?: string;
+          errors?: Array<{ code?: number | string; title?: string; error_data?: { details?: string } }>;
+        }>;
       };
     }>;
   }>;
@@ -38,7 +45,13 @@ export type ProviderPayload = {
   threadId?: string;
   name?: string;
   timestamp?: string;
+  /** Generic SMS-provider delivery callback. */
+  status?: string;
+  /** Messenger delivery receipt: message ids the provider delivered. */
+  delivery?: { mids?: string[]; watermark?: number };
 };
+
+import type { DeliveryReceipt, DeliveryStatus } from './outbound';
 
 export type NormalisedInbound = {
   channel: string;
@@ -129,3 +142,87 @@ export function normaliseProviderPayload(provider: string, payload: ProviderPayl
   return null;
 }
 
+
+/* ───────────────────────────── delivery receipts ─────────────────────────── */
+
+/**
+ * Extract delivery receipts from a webhook payload.
+ *
+ * Providers report progress on a message we sent through the same webhook that
+ * carries inbound messages, so a status callback and an inbound message can
+ * arrive on the same endpoint. Reading this as "no inbound message, ignore it"
+ * would leave every outbound message stuck at whatever status we guessed when we
+ * sent it — the difference between "we think it went out" and "the student has
+ * read it" is the entire point of tracking.
+ *
+ * A payload may yield several receipts (WhatsApp batches statuses); an empty
+ * array means the event carried no delivery information, which is not an error.
+ */
+export function normaliseDeliveryReceipts(provider: string, payload: ProviderPayload): DeliveryReceipt[] {
+  const receipts: DeliveryReceipt[] = [];
+
+  if (provider === 'whatsapp_cloud') {
+    for (const entry of payload.entry ?? []) {
+      for (const change of entry.changes ?? []) {
+        for (const status of change.value?.statuses ?? []) {
+          const mapped = mapStatus(status.status);
+          if (!status.id || !mapped) continue;
+          const parts = status.timestamp ? Number(status.timestamp) * 1000 : null;
+          const error = status.errors?.[0];
+          receipts.push({
+            providerMessageId: status.id,
+            status: mapped,
+            occurredAt: parts && !Number.isNaN(parts) ? new Date(parts) : null,
+            errorCode: error?.code !== undefined ? String(error.code) : null,
+            errorReason: error?.title ?? error?.error_data?.details ?? null,
+          });
+        }
+      }
+    }
+    return receipts;
+  }
+
+  if (provider === 'meta_messenger' || provider === 'instagram') {
+    // Meta reports delivery as a watermark over a conversation, which cannot be
+    // attributed to one message; only the explicit message ids are usable.
+    for (const mid of payload.delivery?.mids ?? []) {
+      receipts.push({ providerMessageId: mid, status: 'DELIVERED', occurredAt: null });
+    }
+    return receipts;
+  }
+
+  if (provider === 'sms_provider') {
+    const mapped = mapStatus(payload.status);
+    if (payload.messageId && mapped) {
+      receipts.push({
+        providerMessageId: payload.messageId,
+        status: mapped,
+        occurredAt: payload.timestamp ? new Date(payload.timestamp) : null,
+      });
+    }
+    return receipts;
+  }
+
+  return receipts;
+}
+
+/** Provider vocabularies differ; these are the words they actually use. */
+function mapStatus(status: string | undefined): DeliveryStatus | null {
+  switch ((status ?? '').toLowerCase()) {
+    case 'sent':
+    case 'accepted':
+    case 'queued':
+      return 'SENT';
+    case 'delivered':
+    case 'delivery':
+      return 'DELIVERED';
+    case 'read':
+      return 'READ';
+    case 'failed':
+    case 'undelivered':
+    case 'rejected':
+      return 'FAILED';
+    default:
+      return null;
+  }
+}

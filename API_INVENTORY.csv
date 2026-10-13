@@ -37,6 +37,8 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/leads/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/leads/[id]/route.ts
 /api/crm/messages,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/messages/route.ts
 /api/crm/messages/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/messages/[id]/route.ts
+/api/crm/messages/queue/run,POST,role:SUPER_ADMIN,nodejs,src/app/api/crm/messages/queue/run/route.ts
+/api/crm/messages/send,POST,none declared,nodejs,src/app/api/crm/messages/send/route.ts
 /api/crm/notifications,GET POST,role:STUDENT (shared CRUD helper),nodejs,src/app/api/crm/notifications/route.ts
 /api/crm/notifications/{id},GET PUT DELETE,role:STUDENT (shared CRUD helper),nodejs,src/app/api/crm/notifications/[id]/route.ts
 /api/crm/partners,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/partners/route.ts

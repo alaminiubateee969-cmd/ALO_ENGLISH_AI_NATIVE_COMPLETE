@@ -45,7 +45,11 @@ const ENV_SCHEMA: EnvVar[] = [
   { key: 'SMS_WEBHOOK_SECRET', required: false, description: 'Shared secret for SMS provider webhook verification' },
   { key: 'WHATSAPP_VERIFY_TOKEN', required: false, description: 'Token echoed during the WhatsApp subscription handshake' },
   { key: 'WHATSAPP_ACCESS_TOKEN', required: false, description: 'Graph API token for downloading inbound WhatsApp media (empty = media is reported, not collected)' },
-  { key: 'META_PAGE_ACCESS_TOKEN', required: false, description: 'Page token for downloading inbound Messenger and Instagram media' },
+  { key: 'META_PAGE_ACCESS_TOKEN', required: false, description: 'Page token for downloading inbound Messenger and Instagram media, and for sending replies' },
+  { key: 'WHATSAPP_PHONE_NUMBER_ID', required: false, description: 'WhatsApp Cloud sender id used for outbound sends' },
+  { key: 'ALO_SMS_SEND_URL', required: false, description: 'HTTPS endpoint of the SMS provider send API' },
+  { key: 'ALO_SMS_ACCESS_TOKEN', required: false, description: 'Credential for the SMS provider send API' },
+  { key: 'CRON_SECRET', required: false, description: 'Shared secret the scheduler presents to POST /api/crm/messages/queue/run (unset = admins only)' },
 ];
 
 function validateEnv(): Record<string, string> {
