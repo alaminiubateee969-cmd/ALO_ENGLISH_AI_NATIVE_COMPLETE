@@ -157,6 +157,35 @@ export const INTEGRATIONS: readonly Integration[] = [
     implementedIn: 'src/lib/crm/outbound-providers.ts',
   },
   {
+    id: 'chatwoot',
+    name: 'Chatwoot',
+    category: 'COMMUNICATION',
+    purpose:
+      'An external shared support inbox (web, WhatsApp and email in one agent desk), when a deployment prefers a bought desk to the inbox built into this CRM.',
+    degrades:
+      'Nothing: the built-in CRM inbox, review queue and consent register carry on. This is an alternative, not a dependency.',
+    licence: 'SELF_HOSTED',
+    copying: 'EXTERNAL_SERVICE_ONLY',
+    projectUrl: 'https://github.com/chatwoot/chatwoot',
+    envKeys: ['CHATWOOT_API_URL', 'CHATWOOT_API_TOKEN'],
+    hasFirstPartyFallback: true,
+    implementedIn: 'src/app/api/crm/messages',
+  },
+  {
+    id: 'firecrawl',
+    name: 'Firecrawl',
+    category: 'CONTENT',
+    purpose:
+      'Structured retrieval of official visa, university and test-provider pages for internal research, so guidance is written from a current source rather than a memory.',
+    degrades:
+      'Official-source research is done by hand in a browser. No learner-facing feature depends on it, by design.',
+    licence: 'AGPL-3.0',
+    copying: 'EXTERNAL_SERVICE_ONLY',
+    projectUrl: 'https://github.com/firecrawl/firecrawl',
+    envKeys: ['FIRECRAWL_API_KEY'],
+    hasFirstPartyFallback: true,
+  },
+  {
     id: 'country-reference',
     name: 'Country and visa reference data',
     category: 'REFERENCE_DATA',
