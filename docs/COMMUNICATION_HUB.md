@@ -1,6 +1,6 @@
 # Communication Hub
 
-**Status:** ingestion, storage and retention layers implemented and tested. Outbound provider delivery and the after-hours assistant are **not** implemented — they require provider credentials, business verification and approved templates.
+**Status:** ingestion, storage, retention, outbound delivery and the after-hours assistant are implemented and tested. What remains before live traffic is configuration, not code: provider credentials, business verification and approved templates.
 **Gate:** `npm run content:provenance` and `npm run content:validate` remain the release gates for exam content; this document covers the CRM/communication side.
 **Schema:** migrations `20261014120000_communication_hub` (7 new tables, 17 new columns),
 `20261014140000_message_outbox` (the outbound queue) and `20261014160000_consent_lead_capture` (consent
@@ -28,6 +28,8 @@ This is the approved architecture for central student communication: WhatsApp, F
 | Consent register, capture workflows and promotion | `src/lib/crm/consent.ts`, `/api/crm/consent`, `/employee/consent` | 30 tests + 6 ingest tests |
 | Review queue (conversations, documents, flagged students) | `src/lib/crm/review-queue.ts`, `/api/crm/review-queue`, `/employee/review-queue` | 21 tests |
 | Consent captured on the public form | `prisma/migrations/20261014160000_consent_lead_capture/`, `/api/auth/register` | parity passes; rendered copy names the channels in words |
+| After-hours assistant (reviewed answers, human handoff, kill switch) | `src/lib/crm/assistant.ts`, `src/lib/crm/assistant-runner.ts`, `/api/crm/assistant/reply` | 43 tests, including the promise guard over the whole vocabulary |
+| Inbound provider media fetcher | `src/lib/crm/media-fetcher.ts` | 25 tests: SSRF refusal, size ceiling, token handling |
 
 ## Section-by-section status against the specification
 
@@ -204,6 +206,55 @@ ambiguous match, the documents that arrived with it, and the student record crea
 Resolving requires `canResolveReview`; reading requires only a signed-in staff account, because hiding a
 queue of unanswered students from the people who answer students is how a queue grows.
 
+## The after-hours assistant
+
+A student writing at 1am gets nothing today. The assistant exists to answer the
+small, factual questions outside office hours — when the office opens, where to
+start, what to bring, how practice tests work, how to stop hearing from us — and
+to leave everything else for a person in the morning.
+
+It is a planner plus a sender, and the split matters:
+
+- `src/lib/crm/assistant.ts` decides. It is pure: no database, no network, so
+  every rule below is testable and readable in one file.
+- `src/lib/crm/assistant-runner.ts` sends. It builds an ordinary outbound draft
+  and hands it to the same delivery path a counsellor's message takes.
+
+**What it will not do**, in the order the checks run:
+
+| Check | Outcome |
+| --- | --- |
+| `ASSISTANT_ENABLED` is not `true` | silent |
+| The message is empty | silent |
+| The student withdrew service consent or was denied it | silent |
+| The message touches admission, scholarship, visa, scores, fees, a complaint or legal/immigration documents | **handoff**, flagged for review |
+| It has already replied `ASSISTANT_MAX_REPLIES_PER_CONVERSATION` (2) times here | **handoff** |
+| The office is open | silent — a person is there, and a person answers |
+| No reviewed answer fits the question | **handoff** |
+| The draft would contain a promise, a guarantee, a currency amount or a band/score number | **handoff** |
+
+A handoff is a result, not a fallback: it sets `needsReview` on the conversation
+with the reason, which is what makes the left-over questions visible in
+`/employee/review-queue` instead of vanishing.
+
+**Why a fixed vocabulary rather than a language model.** Every answer it can send
+is in `CANNED_ANSWERS`, in the repository, reviewed like any other student-facing
+copy, and each one cites the page a student can check it on. A generated answer
+would be different every time, which means it could not be reviewed before it was
+sent — and the first unreviewed sentence about a visa is the one that matters.
+`containsForbiddenPromise` is run over the whole vocabulary as a test, so
+"guaranteed", "100%", "you will get", currency amounts and score numbers cannot
+enter it without failing CI.
+
+**The disclosure.** Every reply ends with `ASSISTANT_DISCLOSURE`: it says it is an
+automated message, that a counsellor will pick the question up if it needs one,
+and that the office is open 9:00–21:00 Dhaka. Staff can also ask what it would say
+without sending: `POST /api/crm/assistant/reply` with no `send` returns the plan,
+the draft and the sources; with `send: true` it sends through the funnel. Both
+paths are audited, and a sent reply is recorded with `createdBy:
+after-hours-assistant`, so "did a robot answer this student?" is a query, not a
+guess.
+
 ## Backup and restore
 
 `npm run drill:restore` creates a backup, restores it into a scratch directory and verifies it: the archive extracts, the database opens, every schema model has a table, and every stored document hashes without error. It exits 2 (BLOCKED) when it could not run, which is deliberately distinct from a pass.
@@ -217,4 +268,5 @@ Failure paths were exercised, not assumed: no database → BLOCKED/2; corrupt ar
 3. **Channel integrations** — WhatsApp Business (Meta) first, then Messenger/Instagram, then an SMS provider. Needs: business verification, phone-number id, approved templates, and the secrets above in host secret storage.
 4. ~~**Consent capture in the UI**~~ — **done**. Three capture workflows (inbound keyword, staff entry screen, registration form checkbox), the promotion of pre-student captures, and `canRecordConsent` on the write path. 30 tests.
 5. ~~**Review queue UI**~~ — **done**. `/employee/review-queue` over conversations, documents and flagged students, with oldest-first ordering, a required note for a dismissal, and no merge action anywhere. 21 tests.
-6. **After-hours assistant** — only after 1–5 are running, with `requiresHumanReview` gating every answer and no promises on admission, scholarship or visa.
+6. ~~**After-hours assistant**~~ — **done** (`src/lib/crm/assistant.ts`, `assistant-runner.ts`, 43 tests). It answers only outside office hours, only from a fixed reviewed set, always with the automated-message disclosure, at most twice per conversation, and it goes silent — not creative — on anything about admission, scholarship, visa, scores, fees, documents-in-legal-context or a complaint. Every reply travels the same outbound funnel as a counsellor's message (`purpose: SERVICE`), and a message it decided not to answer is flagged on the conversation for the review queue. Enable with `ASSISTANT_ENABLED="true"`; it is off by default, and with the channel credentials unset it cannot send at all.
+7. **The honest limits, restated.** Nothing in this hub converts a practice result into an official score, and the assistant in particular is built so that it *cannot* say anything about an outcome. Those two things are not configuration gaps that a later release closes; they are the reasons the module is shaped the way it is.

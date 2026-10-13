@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/components/site/site-header";
+import { AnalyticsBeacon } from "@/components/site/analytics-beacon";
 import { SiteFooter } from "@/components/site/site-footer";
 import type { Metadata } from "next";
 import { resolveSiteUrl } from "@/lib/public-routes";
@@ -56,6 +57,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <SiteHeader />
         <main id="main-content" className="flex-1">{children}</main>
+        {/* Counts page views as aggregate counters and stores nothing about the
+            visitor: no cookie, no session, no identifier. See
+            src/components/site/analytics-beacon.tsx and
+            src/lib/analytics/events.ts. Private areas are skipped. */}
+        <AnalyticsBeacon />
         <SiteFooter />
       </body>
     </html>

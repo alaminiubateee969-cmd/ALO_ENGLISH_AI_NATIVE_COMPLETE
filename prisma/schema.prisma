@@ -1162,3 +1162,32 @@ model AutomationEvent {
   @@index([status])
   @@index([createdAt])
 }
+
+/// Privacy-first analytics counters: one row per day, event, path and label,
+/// holding a count and nothing else.
+///
+/// There is deliberately no visitor, session, IP address or user-agent column
+/// here, and `path`/`label` are NOT NULL with an empty default rather than
+/// nullable: SQLite treats NULLs as distinct in a unique index, so nullable
+/// columns would allow a duplicate counter row and double-count every visit.
+/// The rules that keep personal data out of this table live in
+/// src/lib/analytics/events.ts, and they are enforced there rather than here so
+/// they can be tested without a database.
+model AnalyticsCounter {
+  id        String   @id @default(cuid())
+  /// Local day, YYYY-MM-DD.
+  day       String
+  event     String
+  /// Path with the query string removed; empty when the event has no page.
+  path      String   @default("")
+  /// Slug-shaped label; empty when the event carries none.
+  label     String   @default("")
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([day, event, path, label])
+  @@index([day])
+  @@index([event])
+  @@index([path])
+}

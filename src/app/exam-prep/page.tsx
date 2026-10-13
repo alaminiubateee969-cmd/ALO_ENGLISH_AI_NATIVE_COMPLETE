@@ -13,6 +13,63 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Clock, FileText, Mic, PenLine, Headphones, ArrowRight, Sparkles } from "lucide-react";
+import { ComparisonMatrix, TimelineRoadmap } from "@/components/diagrams";
+
+/**
+ * The path from choosing a test to sitting it. Deliberately no durations: how
+ * long preparation takes depends on the student's starting point, and a fixed
+ * "8 weeks" here becomes a promise the first counsellor has to walk back.
+ */
+const SITTING_PHASES = [
+  {
+    label: "Before the clock",
+    period: "Step one",
+    title: "Choose the test and read the provider's own description",
+    description:
+      "The right test is the one the receiving institution accepts. This page links the official source for each one; the summary above it is a summary, not a substitute.",
+    milestones: ["Confirm the institution accepts the test", "Check the format on the provider's site"],
+  },
+  {
+    label: "Practice",
+    period: "Step two",
+    title: "Work the section that scores lowest",
+    description:
+      "A baseline practice set tells you where you actually are. Then the effort goes to the weakest section, not the one that is pleasant to revise.",
+    milestones: [
+      "Sit a local practice set — server-timed, non-scored",
+      "Review the feedback and repeat the weak section",
+      "Draft writing and get language feedback, if the grammar service is configured",
+    ],
+  },
+  {
+    label: "Sitting",
+    period: "Step three",
+    title: "Book through the provider and sit the test",
+    description:
+      "Booking and sitting happen with the provider, under their rules. A counsellor helps pick a date the application can wait for.",
+    milestones: [
+      "Book at a date the application can wait for",
+      "Sit the test at the provider's centre or online",
+      "The official score is issued by the provider — and only by the provider",
+    ],
+  },
+] as const;
+
+/**
+ * Practice here versus an official sitting, on the only axis that matters to a
+ * reader: who controls what. Every cell is a fact about the two systems, not a
+ * claim about how close they are.
+ */
+const PRACTICE_VS_OFFICIAL_COLUMNS = ["ALO practice", "Official sitting"] as const;
+
+const PRACTICE_VS_OFFICIAL_ROWS: Array<{ label: string; description?: string; values: Array<"yes" | "no" | "varies"> }> = [
+  { label: "Who writes the questions", description: "The provider owns the real question bank", values: ["no", "yes"] },
+  { label: "Who controls the clock", description: "Server-side here; invigilated there", values: ["yes", "yes"] },
+  { label: "Who issues the score", values: ["no", "yes"] },
+  { label: "Usable in an application", description: "Only the provider's score is", values: ["no", "yes"] },
+  { label: "Automated language feedback on writing", description: "Depends on this deployment's grammar service", values: ["varies", "no"] },
+  { label: "Fee", description: "Practice sets are included; sitting fees are the provider's", values: ["varies", "yes"] },
+];
 
 type ExamType = {
   id: string;
@@ -355,6 +412,28 @@ export default function ExamPrepPage() {
             })}
           </div>
         )}
+
+        {/* Preparation diagrams: the path to a sitting, and who controls what in
+            a practice run compared with the real one. */}
+        <div className="mt-12 space-y-6">
+          <TimelineRoadmap
+            id="sitting-path"
+            tone="blue"
+            title="From choosing a test to sitting it"
+            description="Three phases between deciding and sitting. Durations are left out on purpose: readiness is a starting point, not a schedule."
+            caption="Phase one and three happen with the provider; the practice in phase two is what this platform actually runs."
+            phases={SITTING_PHASES.map((phase) => ({ ...phase, milestones: [...phase.milestones] }))}
+          />
+          <ComparisonMatrix
+            id="practice-vs-official"
+            tone="navy"
+            title="Practice here, versus the official sitting"
+            description="The same task, two systems. Each row says who controls it — which is the only comparison this platform can make honestly."
+            caption="Nothing in the left column is a score. See “What ALO practice results mean” above for what a result does and does not establish."
+            columns={[...PRACTICE_VS_OFFICIAL_COLUMNS]}
+            rows={PRACTICE_VS_OFFICIAL_ROWS.map((row) => ({ ...row, values: [...row.values] }))}
+          />
+        </div>
 
         {/* Study Materials Section */}
         <div className="mt-12">

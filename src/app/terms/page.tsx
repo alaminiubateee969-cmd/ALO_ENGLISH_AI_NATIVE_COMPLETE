@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Terms of Service" };
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "The terms that apply when you use ALO Education practice material, guidance and portals, including what practice results do and do not establish.",
+};
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 prose prose-slate">

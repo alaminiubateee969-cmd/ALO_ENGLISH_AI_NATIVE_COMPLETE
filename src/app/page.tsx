@@ -18,7 +18,7 @@ import { StudentJourneyDiagram } from "@/components/site/student-journey-diagram
 export const metadata: Metadata = {
   title: "ALO English — English Test Practice & Study-Abroad Guidance",
   description:
-    "Explore English-test practice, skill-focused preparation and study-abroad guidance from ALO Education. Check the active exam catalog for current practice-set availability.",
+    "Explore English-test practice, skill-focused preparation and study-abroad guidance from ALO Education. Check the active practice catalog.",
   keywords: ["English test practice", "IELTS preparation", "PTE practice", "TOEFL preparation", "study abroad", "ALO English"],
   openGraph: {
     title: "ALO English — Practice with purpose",

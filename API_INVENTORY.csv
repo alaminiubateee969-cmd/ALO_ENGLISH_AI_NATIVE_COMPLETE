@@ -1,8 +1,11 @@
 Path,Methods,Auth,Runtime,Source
 /api,GET,none declared,nodejs,src/app/api/route.ts
+/api/admin/analytics,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/analytics/route.ts
+/api/admin/integrations,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/integrations/route.ts
 /api/admin/settings,GET POST,role:ADMIN,nodejs,src/app/api/admin/settings/route.ts
 /api/admin/stats,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/stats/route.ts
 /api/agents/status,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/agents/status/route.ts
+/api/analytics/events,POST,public intended (allowlist; verify handler),nodejs,src/app/api/analytics/events/route.ts
 /api/attempts,GET,authenticated,nodejs,src/app/api/attempts/route.ts
 /api/attempts/{id},GET,authenticated,nodejs,src/app/api/attempts/[id]/route.ts
 /api/attempts/active,GET,authenticated,nodejs,src/app/api/attempts/active/route.ts
@@ -20,6 +23,7 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/applications/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/[id]/route.ts
 /api/crm/appointments,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/route.ts
 /api/crm/appointments/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/[id]/route.ts
+/api/crm/assistant/reply,POST,none declared,nodejs,src/app/api/crm/assistant/reply/route.ts
 /api/crm/branches,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/branches/route.ts
 /api/crm/branches/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/branches/[id]/route.ts
 /api/crm/commissions,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/commissions/route.ts
@@ -36,6 +40,7 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/documents/{id}/download,GET,none declared,nodejs,src/app/api/crm/documents/[id]/download/route.ts
 /api/crm/leads,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/leads/route.ts
 /api/crm/leads/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/leads/[id]/route.ts
+/api/crm/leads/priority,GET,role:COUNSELOR+BRANCH_MANAGER+ADMIN+SUPER_ADMIN,nodejs,src/app/api/crm/leads/priority/route.ts
 /api/crm/messages,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/messages/route.ts
 /api/crm/messages/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/messages/[id]/route.ts
 /api/crm/messages/queue/run,POST,role:SUPER_ADMIN,nodejs,src/app/api/crm/messages/queue/run/route.ts
@@ -63,6 +68,7 @@ Path,Methods,Auth,Runtime,Source
 /api/exam-types,GET,public intended (allowlist; verify handler),nodejs,src/app/api/exam-types/route.ts
 /api/exam/analytics,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/exam/analytics/route.ts
 /api/examiners,GET,public intended (allowlist; verify handler),nodejs,src/app/api/examiners/route.ts
+/api/grammar/check,POST,none declared,nodejs,src/app/api/grammar/check/route.ts
 /api/health,GET,public intended (allowlist; verify handler),nodejs,src/app/api/health/route.ts
 /api/lead,POST,public intended (allowlist; verify handler),nodejs,src/app/api/lead/route.ts
 /api/learning-memory,GET,authenticated,nodejs,src/app/api/learning-memory/route.ts

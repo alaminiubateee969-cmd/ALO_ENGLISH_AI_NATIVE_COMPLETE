@@ -26,7 +26,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { badRequest, serviceUnavailable, unauthorized, withErrorHandler } from '@/lib/responses';
+import { db } from '@/lib/db';
 import { audit } from '@/lib/audit';
+import { ASSISTANT_AUTHOR, runAfterHoursAssistant } from '@/lib/crm/assistant-runner';
+import { deliverOutbound } from '@/lib/crm/outbound';
+import { prismaOutboundStore } from '@/lib/crm/prisma-outbound-store';
+import { defaultAdapterFor } from '@/lib/crm/outbound-providers';
+import { normalizePhone } from '@/lib/crm/identity';
 import { ingestInboundMessage, type InboundAttachment, type InboundMessage } from '@/lib/crm/ingest';
 import { prismaIngestStore } from '@/lib/crm/prisma-store';
 import type { ProviderId } from '@/lib/crm/automation';
@@ -38,6 +44,54 @@ import { prismaReceiptStore } from '@/lib/crm/prisma-outbound-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+/**
+ * Run the after-hours assistant for one ingested message.
+ *
+ * Deliberately narrow: it needs a student (consent cannot be checked without
+ * one), it records nothing when the planner says silence, and a HANDOFF is
+ * recorded on the conversation as needing human review rather than being
+ * dropped — the whole value of the assistant is knowing what it did NOT answer.
+ */
+async function maybeRunAssistant(
+  normalised: { channel: string; externalThreadId: string | null; body: string },
+  outcome: Extract<Awaited<ReturnType<typeof ingestInboundMessage>>, { status: 'PROCESSED' }>,
+): Promise<{ status: string; code: string; reason: string } | null> {
+  if (!outcome.studentId) return null;
+
+  const [student, repliesThisConversation, serviceWithdrawn] = await Promise.all([
+    db.student.findUnique({ where: { id: outcome.studentId }, select: { phone: true, deletedAt: true } }),
+    db.messageOutbox.count({ where: { conversationId: outcome.conversationId, status: 'SENT', createdBy: ASSISTANT_AUTHOR } }),
+    db.communicationConsent
+      .count({ where: { studentId: outcome.studentId, purpose: 'SERVICE', status: { in: ['WITHDRAWN', 'DENIED'] } } })
+      .then((count) => count > 0),
+  ]);
+  if (!student || student.deletedAt) return null;
+
+  const result = await runAfterHoursAssistant(
+    {
+      conversationId: outcome.conversationId,
+      channel: normalised.channel,
+      studentId: outcome.studentId,
+      recipientHandle: normalizePhone(student.phone ?? '') || normalised.externalThreadId,
+      body: normalised.body,
+      repliesThisConversation,
+      serviceWithdrawn,
+    },
+    { deliver: (draft) => deliverOutbound(draft, { store: prismaOutboundStore, adapterFor: (adapterProvider) => defaultAdapterFor(adapterProvider) }) },
+  );
+
+  if (result.status === 'HANDOFF') {
+    // Recorded on the conversation so the review queue shows a question the
+    // assistant deliberately left for a person.
+    await db.conversation.update({
+      where: { id: outcome.conversationId },
+      data: { needsReview: true, reviewReason: `After-hours assistant did not answer: ${result.plan.reason}` },
+    });
+  }
+
+  return { status: result.status, code: result.plan.code, reason: result.plan.reason };
+}
 
 /** Body ceiling. A webhook carrying more is not a chat message. */
 const MAX_WEBHOOK_BYTES = 2 * 1024 * 1024;
@@ -147,6 +201,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
 
     const outcome = await ingestInboundMessage(message, prismaIngestStore);
 
+    // ── The after-hours assistant, if it is switched on. ────────────────────
+    // Off by default: enabling it takes a deliberate ASSISTANT_ENABLED=true, and
+    // even then it only answers outside office hours, from reviewed answers, with
+    // the disclosure attached — and it goes silent for anything that touches an
+    // admission, scholarship, visa or score outcome.
+    let assistant: { status: string; code: string; reason: string } | null = null;
+    if (outcome.status === 'PROCESSED' && process.env.ASSISTANT_ENABLED === 'true') {
+      assistant = await maybeRunAssistant(normalised, outcome);
+    }
+
     if (receiptResults.length > 0) {
       // Same event carried both. Both are handled; neither is skipped.
       await audit('MESSAGES_RECEIPT', {
@@ -171,6 +235,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
         // Reported so an operator can see that media exists but was not stored,
         // and why. Attachments that did arrive are PENDING_REVIEW documents.
         uncollectedMedia: uncollectedMedia.length > 0 ? uncollectedMedia : undefined,
+        assistant: assistant ?? undefined,
         attachmentsStored: outcome.status === 'PROCESSED' ? outcome.attachmentsStored.length : undefined,
         attachmentsRejected: outcome.status === 'PROCESSED' && outcome.attachmentsRejected.length > 0 ? outcome.attachmentsRejected : undefined,
       },

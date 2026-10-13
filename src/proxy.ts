@@ -68,6 +68,8 @@ const PUBLIC_API_PATTERNS = [
   /^\/api\/practice-sets$/,
   /^\/api\/examiners$/,
   /^\/api\/webhooks\/.+/,      // signature-verified inbound providers (see route)
+  /^\/api\/analytics\/events$/, // anonymous beacon; aggregate counters only, rate limited,
+                                 // and nothing about a visitor is stored (src/lib/analytics/events.ts)
 ];
 
 // ─── Proxy Handler ────────────────────────────────────────────────────────

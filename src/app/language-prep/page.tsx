@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, BookOpen, Headphones, Mic, PenLine, ShieldCheck } from "lucide-react";
+import { ComparisonMatrix, ProcessFlow } from "@/components/diagrams";
+import { WritingPractice } from "@/components/alo/writing-practice";
 
 export const metadata: Metadata = {
   title: "English Test Preparation",
@@ -45,6 +47,66 @@ const TESTS = [
     icon: Mic,
   },
 ] as const;
+
+/**
+ * How preparation actually runs here, in order. Every step is something the
+ * platform can really do today — no step depends on a feature that is still a
+ * promise, and the loop closes back onto weak areas rather than "finish".
+ */
+const PREPARATION_STEPS = [
+  { label: "Check the format", detail: "Read the provider's own description linked on this page", code: "01" },
+  { label: "Sit a practice set", detail: "The server picks the questions and owns the clock", code: "02" },
+  { label: "Read the feedback", detail: "Non-scored guidance on what to fix next", code: "03" },
+  { label: "Write and check", detail: "Draft an answer, get language feedback, revise it yourself", code: "04" },
+  { label: "Talk to a counsellor", detail: "Plan the sitting date and the application together", code: "05" },
+] as const;
+
+/**
+ * The four tests compared on the only axis worth comparing: what the platform
+ * can honestly provide. Values are positional and follow
+ * TEST_COMPARISON_COLUMNS. Difficulty, pass likelihood and score equivalence
+ * are deliberately absent — those are claims about an official test we do not
+ * control and cannot verify.
+ *
+ * "varies" is used where the answer depends on this deployment (whether a
+ * practice set is active, whether the grammar service is configured). A blanket
+ * "yes" there would be a promise the page cannot keep; "no" would be equally
+ * wrong in the other direction.
+ */
+const TEST_COMPARISON_COLUMNS = ["IELTS", "PTE", "TOEFL iBT", "Duolingo English Test"] as const;
+
+const TEST_COMPARISON_ROWS: Array<{ label: string; description?: string; values: Array<"yes" | "no" | "varies"> }> = [
+  {
+    label: "Provider format page linked here",
+    description: "The official description, not our summary",
+    values: ["yes", "yes", "yes", "yes"],
+  },
+  {
+    label: "Practice sets currently active",
+    description: "Shown per set on the practice page",
+    values: ["varies", "varies", "varies", "varies"],
+  },
+  {
+    label: "Machine-scored reading & listening practice",
+    description: "Local practice scoring",
+    values: ["yes", "yes", "yes", "yes"],
+  },
+  {
+    label: "Automated language feedback on writing",
+    description: "Only when the grammar service is configured",
+    values: ["varies", "varies", "varies", "varies"],
+  },
+  {
+    label: "Automated speaking assessment",
+    description: "No acoustic scoring is offered to anyone",
+    values: ["no", "no", "no", "no"],
+  },
+  {
+    label: "Official score equivalence claimed",
+    description: "Never claimed, for any test",
+    values: ["no", "no", "no", "no"],
+  },
+];
 
 export default function LanguagePrepPage() {
   return (
@@ -116,6 +178,41 @@ export default function LanguagePrepPage() {
           </div>
         </div>
       </section>
+
+      <section aria-labelledby="prep-path-title" className="border-y border-slate-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="mb-7 max-w-2xl">
+            <h2 id="prep-path-title" className="text-2xl font-extrabold tracking-tight text-[#0B1F3A] sm:text-3xl">The preparation path</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Five steps, in the order they work. The loop at the end is the point: practice is not finished when a set is
+              scored, it is finished when the weak areas stop being weak.
+            </p>
+          </div>
+          <ProcessFlow
+            id="prep-path"
+            tone="blue"
+            title="How preparation runs"
+            description="Each step is a feature that exists today; none of it depends on official test content."
+            caption="Steps 1 and 5 involve a person; steps 2–4 are what the practice platform does on its own."
+            steps={PREPARATION_STEPS.map((step) => ({ ...step }))}
+            loopLabel="Return to the step that matches the feedback"
+          />
+
+          <div className="mt-10">
+            <ComparisonMatrix
+              id="test-honesty-matrix"
+              tone="navy"
+              title="What is actually offered, per test"
+              description="The same four tests compared on the only axis worth comparing: what the platform can honestly provide."
+              caption="Difficulty is deliberately absent: “easier” is a claim about an official test that we do not control and cannot verify."
+              rows={TEST_COMPARISON_ROWS.map((row) => ({ ...row, values: [...row.values] }))}
+              columns={[...TEST_COMPARISON_COLUMNS]}
+            />
+          </div>
+        </div>
+      </section>
+
+      <WritingPractice />
     </div>
   );
 }

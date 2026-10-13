@@ -101,6 +101,33 @@ Two name-driven false positives worth recording: `thu-ml/CRM` is *"Single Image 
 | `mureka.ai` | Commercial AI music service | Not relevant (no music surface) |
 | `enerpize.com`, `aipraktor.com`, `supercool.com`, `join.supercool.com` | Commercial websites | Competitive/inspiration reference only |
 
+## 5. Implementation status (updated 2026-10-14)
+
+Section 3A is a checklist, not a reading list. This is where each actionable row
+stands now, in the order the checklist puts them. "Implemented" means code, tests
+and a failure mode that is honest when the external service is absent — not a
+screen that renders.
+
+| Reference | Status | Where |
+| --- | --- | --- |
+| `cathrynlavery/diagram-design`, `tt-a1i/archify` | Implemented | `src/components/diagrams/*` (4 diagrams, `tests/diagrams-render.test.tsx`) used by `/resources`, `/language-prep` and `/exam-prep` |
+| `every-app/open-seo` | Implemented | `src/app/sitemap.ts`, `src/app/robots.ts`, `src/lib/public-routes.ts`, and now the audit surface: `src/lib/seo/audit.ts` + `src/lib/seo/metadata.ts` + `tests/seo-audit.test.ts` (metadata, duplicates, keyword cannibalisation, sitemap drift). Two public pages that had no metadata of their own got route layouts (`/exam-prep`, `/ask-handbook`) and six got real descriptions instead of a title-only stub |
+| `coreyhaines31/marketingskills` | Implemented | `src/lib/agents/skills/*` (marketing skill pack + `copy-guard` safe-claims checker) behind `src/lib/agents/registry.ts` |
+| `umami-software/umami` | Implemented as a first-party bridge | `src/lib/analytics/events.ts`, `/api/analytics/events` beacon, `/api/admin/analytics`, `AnalyticsCounter` table + migration `20261014180000`. Aggregate counters only: no cookie, session, IP, user-agent or free text can enter the table, and the rules are enforced in the module and tested |
+| `TryGhost/Ghost` | Open | A deployment that wants an external CMS can point at Ghost (`GHOST_API_URL`, see the integration registry). The in-repo blog is tracked as remaining work |
+| `ArnasDon/wacrm`, `melgarafael/DeskcommCRM`, `trycompai/crm` | Implemented as UI + data model | Consent register `/employee/consent`, review queue `/employee/review-queue`, lead pipeline under `/api/crm/*`, priority call list `/api/crm/leads/priority` |
+| `languagetool-org/languagetool` | Implemented as a separate service | `src/lib/writing/grammar.ts` (LGPL: called over HTTP, never linked), `/api/grammar/check`, writing-practice panel on `/language-prep` |
+| `blader/humanizer` | Implemented | `src/lib/copy/humanizer.ts` + `tests/copy-style.test.ts`: an AI-tell style filter that reports and never rewrites, run over the repository's own copy |
+| `public-apis/public-apis` | Implemented as a registry | `src/lib/integrations/registry.ts` + `/api/admin/integrations`: every external service with its licence, copying policy, environment variables and — the part that matters — what stops working without it |
+| `clawnify/OpenProspector` (MIT) | Implemented | `src/lib/crm/lead-score.ts` + `/api/crm/leads/priority`: explainable lead prioritisation. Deliberately not a prediction of admission, funding or visa outcome, and the reasons never echo the lead's own data |
+| firecrawl / molx / siyuan / OpenViking / ToolJet / Cap | Read-only reference | Copyleft or unlicensed; nothing copied. The reasoning is preserved in `src/lib/integrations/registry.ts` rather than only in this document |
+| Study-abroad IA references (unlicensed) | Visual/IA reference only | Public pages redesigned against them; no code taken |
+
+**What this section cannot fix.** Nothing here supplies an authorised question
+bank, validated band-score calibration, a merchant account, email delivery or a
+verified host deployment. Those remain the release blockers listed in section 4,
+and no amount of reference code changes them.
+
 ## 4. Conclusion
 
 1. **Existence:** 134 of 138 links resolve; 4 do not (three are inaccessible `engralaminn-collab` repositories, one is a typo).
