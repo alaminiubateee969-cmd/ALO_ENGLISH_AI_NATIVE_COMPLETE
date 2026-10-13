@@ -49,6 +49,6 @@ ChannelAccount,Communication Hub,14,2,"id (@id); @@unique(kind,externalId)",@@in
 Conversation,Communication Hub,15,4,"id (@id); @@unique(channel,externalThreadId)",@@index(studentId); @@index(status); @@index(needsReview); @@index(lastMessageAt)
 DocumentVersion,Communication Hub,15,1,"id (@id); @@unique(documentId,version)",@@index(documentId); @@index(reviewStatus)
 CounselorAssignmentHistory,Communication Hub,7,1,id (@id),@@index(studentId); @@index(toUserId); @@index(createdAt)
-CommunicationConsent,Communication Hub,10,1,"id (@id); @@unique(studentId,channel,purpose)",@@index(status); @@index(purpose)
+CommunicationConsent,Communication Hub,13,1,"id (@id); @@unique(studentId,channel,purpose); @@unique(capturedLeadId,channel,purpose)",@@index(status); @@index(purpose); @@index(capturedLeadEmail)
 MessageOutbox,Communication Hub,22,1,id (@id); sendKey (@unique),"@@index(status,nextAttemptAt); @@index(studentId,channel); @@index(status,scheduledFor)"
 AutomationEvent,Communication Hub,15,0,id (@id); idempotencyKey (@unique),@@index(kind); @@index(status); @@index(createdAt)

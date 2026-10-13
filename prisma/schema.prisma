@@ -1064,7 +1064,10 @@ model CounselorAssignmentHistory {
 /// marketing consent on WhatsApp also stops SMS marketing for the same student.
 model CommunicationConsent {
   id               String   @id @default(cuid())
-  studentId        String
+  // Nullable so a capture taken before the person was a student can be recorded
+  // without inventing a student row. A row must have a student OR a lead; the
+  // migration carries a CHECK constraint for that.
+  studentId        String?
   channel          String   // WHATSAPP|SMS|EMAIL|FACEBOOK|INSTAGRAM
   purpose          String   // MARKETING|SERVICE|FOLLOW_UP
   status           String   @default("UNKNOWN") // GRANTED|DENIED|WITHDRAWN|UNKNOWN
@@ -1073,12 +1076,23 @@ model CommunicationConsent {
   recordedByUserId String?
   recordedAt       DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  // A consent capture that happened before the person was a student. A website
+  // form is filled in by someone who has no student record yet, so the capture
+  // hangs off the lead until the identities line up, and is promoted then. It is
+  // never attached to a student by name alone — two people can share a name.
+  capturedLeadId   String?
+  capturedLeadEmail String?
+  capturedLeadPhone String?
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
+  /// One decision per student/channel/purpose, and one per lead/channel/purpose
+  /// while a capture waits for its student.
   @@unique([studentId, channel, purpose])
+  @@unique([capturedLeadId, channel, purpose])
   @@index([status])
   @@index([purpose])
+  @@index([capturedLeadEmail])
 }
 
 /// The outbound queue.

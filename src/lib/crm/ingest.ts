@@ -23,6 +23,7 @@
 import { deriveEventKey, deriveMessageKey, type InboundEventRef, type ProviderId } from './automation';
 import { academicYear, formatStudentCode, normalizePhone, resolveIdentity, type IdentityCandidate } from './identity';
 import { suggestDocumentType, type StorageResult } from './document-storage';
+import { CONSENT_CHANNELS, detectWithdrawalIntent } from './consent';
 
 export type InboundAttachment = {
   fileName: string;
@@ -76,6 +77,12 @@ export type IngestOutcome =
       reviewReasons: string[];
       attachmentsStored: Array<{ documentId: string; storageKey: string; documentType: string; verificationStatus: 'PENDING_REVIEW' }>;
       attachmentsRejected: Array<{ fileName: string; code: string; reason: string }>;
+      /**
+       * Consent decisions the sender made in this very message ("stop", "বন্ধ
+       * করুন", "bondho korun"). Applied immediately, with the message id kept as
+       * evidence, and reported so an operator can see why a channel went quiet.
+       */
+      consentChanges: Array<{ channel: string; purpose: string; status: string; matched: string[] }>;
     };
 
 /** Everything the pipeline needs from persistence. */
@@ -135,6 +142,19 @@ export type IngestStore = {
     conversationId: string;
   }): Promise<StorageResult>;
   recordAssignmentHistory?(input: { studentId: string; reason: string }): Promise<void>;
+  /**
+   * Write a consent decision made by the student in their own message. Optional
+   * so a store without the register (an older adapter, or a test double) still
+   * implements the inbound pipeline.
+   */
+  recordConsent?(input: {
+    studentId: string;
+    channel: string;
+    purpose: string;
+    status: string;
+    source: string;
+    evidence: string;
+  }): Promise<void>;
 };
 
 export type IngestDependencies = {
@@ -273,7 +293,30 @@ export async function ingestInboundMessage(
     // REVIEW with canCreate === false: an ambiguous match. Record the
     // conversation with no student attached; a human resolves it.
 
-    const needsReview = resolution.decision === 'REVIEW';
+    // ── 3b. Did the student use this message to tell us to stop? ─────────────
+    // Read before the conversation row is written, because a withdrawal that
+    // cannot be applied is something a human must see, not something to swallow.
+    const withdrawal = detectWithdrawalIntent(message.body);
+    const consentChannel = CONSENT_CHANNELS.find((channel) => channel === message.channel) ?? null;
+    const reviewReasons = [...resolution.reasons];
+    const plannedConsentChanges = withdrawal.withdrawal && studentId && consentChannel
+      ? withdrawal.purposes.map((purpose) => ({
+          channel: consentChannel as string,
+          purpose: purpose as string,
+          // A request to stop marketing withdraws marketing consent. Declining
+          // service is recorded as a denial, because it is a different sentence.
+          status: purpose === 'MARKETING' ? 'WITHDRAWN' : 'DENIED',
+          matched: withdrawal.matched,
+        }))
+      : [];
+
+    if (withdrawal.withdrawal && plannedConsentChanges.length === 0) {
+      reviewReasons.push(
+        `The sender asked to stop receiving messages ("${withdrawal.matched[0]}") but could not be identified confidently, so the withdrawal was NOT applied. Apply it by hand before any send to this person.`,
+      );
+    }
+
+    const needsReview = resolution.decision === 'REVIEW' || reviewReasons.length > resolution.reasons.length;
 
     // ── 4. Conversation and message. ─────────────────────────────────────────
     const conversation = await store.findOrCreateConversation({
@@ -281,7 +324,7 @@ export async function ingestInboundMessage(
       externalThreadId: message.externalThreadId ?? null,
       studentId,
       needsReview,
-      reviewReason: needsReview ? resolution.reasons.join(' ') : null,
+      reviewReason: needsReview ? reviewReasons.join(' ') : null,
       lastMessageAt: now,
     });
 
@@ -348,6 +391,24 @@ export async function ingestInboundMessage(
       }
     }
 
+    // ── 6. Apply a withdrawal the student made in this message. ──────────────
+    // Evidence is the message id: a consent decision must point at the words
+    // that were actually written.
+    const consentChanges: Array<{ channel: string; purpose: string; status: string; matched: string[] }> = [];
+    if (plannedConsentChanges.length > 0 && studentId) {
+      for (const change of plannedConsentChanges) {
+        await store.recordConsent?.({
+          studentId,
+          channel: change.channel,
+          purpose: change.purpose,
+          status: change.status,
+          source: 'INBOUND_MESSAGE',
+          evidence: `message:${stored.id}`,
+        });
+        consentChanges.push(change);
+      }
+    }
+
     await store.completeEvent({ eventKey, status: 'SUCCEEDED', studentId, conversationId: conversation.id });
 
     return {
@@ -360,9 +421,10 @@ export async function ingestInboundMessage(
       conversationId: conversation.id,
       messageId: stored.id,
       needsReview,
-      reviewReasons: resolution.reasons,
+      reviewReasons,
       attachmentsStored,
       attachmentsRejected,
+      consentChanges,
     };
   } catch (error) {
     // A failed event is recorded as failed so a provider retry is allowed to

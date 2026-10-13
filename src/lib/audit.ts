@@ -75,6 +75,10 @@ export type AuditAction =
   | 'MESSAGES_SEND'
   /** A delivery receipt from a provider was applied to a message. */
   | 'MESSAGES_RECEIPT'
+  /** A consent decision was recorded in the register, or a capture was promoted. */
+  | 'CONSENT_RECORD'
+  /** A review-queue entry was linked, dismissed or deferred. */
+  | 'REVIEW_RESOLVE'
   | 'MESSAGES_DELETE'
   | 'TASKS_DELETE'
   | 'APPOINTMENTS_DELETE'

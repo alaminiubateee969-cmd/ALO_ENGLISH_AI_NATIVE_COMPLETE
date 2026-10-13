@@ -22,7 +22,20 @@ const schema = z.object({
   password: z.string().min(12, "Password must be at least 12 characters").max(128),
   name: z.string().min(1).max(100).optional(),
   referralCode: z.string().trim().max(64).regex(/^[a-zA-Z0-9-]+$/).optional(),
+  /**
+   * The marketing consent checkbox. Optional and never assumed: an absent value
+   * is not consent, so nothing is written unless it is explicitly true.
+   */
+  marketingConsent: z.boolean().optional(),
 });
+
+/**
+ * The form's checkbox covers these channels, and the copy on the form says so
+ * in these words. Consent recorded for a channel the person was not told about
+ * is not consent, so the list here and the sentence on the page are one fact
+ * written twice on purpose.
+ */
+const REGISTRATION_CONSENT_CHANNELS = ['EMAIL', 'SMS', 'WHATSAPP'] as const;
 
 export async function POST(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
@@ -59,6 +72,8 @@ export async function POST(req: Request): Promise<Response> {
       return badRequest("This referral code is invalid or inactive");
     }
 
+    const marketingConsent = parsed.data.marketingConsent === true;
+
     const user = await db.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
@@ -71,8 +86,9 @@ export async function POST(req: Request): Promise<Response> {
         select: { id: true, email: true, name: true, role: true },
       });
 
+      let leadId: string | null = null;
       if (partner) {
-        await tx.lead.create({
+        const lead = await tx.lead.create({
           data: {
             name: name || email,
             email,
@@ -80,7 +96,57 @@ export async function POST(req: Request): Promise<Response> {
             status: "NEW",
             partnerId: partner.id,
           },
+          select: { id: true },
         });
+        leadId = lead.id;
+      }
+
+      // Consent captured on the form. It attaches to the student record when one
+      // already exists for this email, and otherwise waits against the lead until
+      // the identities line up (see src/lib/crm/consent.ts). It is never attached
+      // by name, and it is never written when the box was not ticked.
+      if (marketingConsent) {
+        const existingStudent = await tx.student.findFirst({ where: { email }, select: { id: true } });
+
+        if (!existingStudent && !leadId) {
+          const lead = await tx.lead.create({
+            data: { name: name || email, email, source: "WEBSITE", status: "NEW" },
+            select: { id: true },
+          });
+          leadId = lead.id;
+        }
+
+        const evidence = `Registration form: marketing consent checkbox ticked at ${new Date().toISOString()}`;
+        for (const channel of REGISTRATION_CONSENT_CHANNELS) {
+          if (existingStudent) {
+            await tx.communicationConsent.upsert({
+              where: { studentId_channel_purpose: { studentId: existingStudent.id, channel, purpose: "MARKETING" } },
+              create: {
+                studentId: existingStudent.id,
+                channel,
+                purpose: "MARKETING",
+                status: "GRANTED",
+                source: "FORM",
+                evidence,
+              },
+              update: { status: "GRANTED", source: "FORM", evidence },
+            });
+          } else if (leadId) {
+            await tx.communicationConsent.upsert({
+              where: { capturedLeadId_channel_purpose: { capturedLeadId: leadId, channel, purpose: "MARKETING" } },
+              create: {
+                capturedLeadId: leadId,
+                capturedLeadEmail: email,
+                channel,
+                purpose: "MARKETING",
+                status: "GRANTED",
+                source: "FORM",
+                evidence,
+              },
+              update: { status: "GRANTED", source: "FORM", evidence },
+            });
+          }
+        }
       }
 
       return createdUser;
@@ -91,7 +157,10 @@ export async function POST(req: Request): Promise<Response> {
       userId: user.id,
       ipAddress: ip,
       resource: `user:${user.id}`,
-      metadata: partner ? { attribution: "REFERRAL", partnerId: partner.id } : undefined,
+      metadata: {
+        ...(partner ? { attribution: "REFERRAL", partnerId: partner.id } : {}),
+        marketingConsent,
+      },
     });
 
     return created({ user }, "Account created successfully");

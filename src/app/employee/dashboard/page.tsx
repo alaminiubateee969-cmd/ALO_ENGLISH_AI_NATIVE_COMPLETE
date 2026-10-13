@@ -12,6 +12,8 @@ const NAV = [
   { label: "Tasks", href: "/api/crm/tasks" },
   { label: "Documents", href: "/api/crm/documents" },
   { label: "Messages", href: "/api/crm/messages" },
+  { label: "Review queue", href: "/employee/review-queue" },
+  { label: "Consent register", href: "/employee/consent" },
   { label: "Logout", href: "/login" },
 ];
 

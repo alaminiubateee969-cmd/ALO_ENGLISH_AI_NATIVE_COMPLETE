@@ -8,15 +8,15 @@ docs,70,"Architecture decisions, audits and archived documentation"
 download,1,Runtime downloads (contents git-ignored)
 examples,2,"Reference examples, not part of the build"
 mini-services,4,"Optional standalone sidecar services, not deployed by default"
-prisma,22,"Schema, migrations and seed scripts — the only way to provision prod"
+prisma,23,"Schema, migrations and seed scripts — the only way to provision prod"
 public,31,"Static assets, copied into .next/standalone by the build"
 scripts,24,"Build, verification, backup and seeding tooling"
 server-config,5,"Optional self-managed deployment (systemd, Caddy, nginx)"
 src,1,"TypeScript sources outside app/, components/, hooks/ and lib/"
-src/app,117,"App Router: pages, layouts and API route handlers"
+src/app,123,"App Router: pages, layouts and API route handlers"
 src/components,110,"React components (alo/, ai-os/, site/, ui/ shadcn primitives)"
 src/hooks,2,Client hooks
-src/lib,71,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
-tests,27,bun test suites run by CI
+src/lib,73,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
+tests,29,bun test suites run by CI
 upload,1,Runtime uploads (contents git-ignored)
-TOTAL,705,Tracked and intended worktree content for a deploy
+TOTAL,716,Tracked and intended worktree content for a deploy

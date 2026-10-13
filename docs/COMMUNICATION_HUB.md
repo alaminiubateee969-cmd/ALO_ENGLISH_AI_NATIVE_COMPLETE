@@ -2,8 +2,9 @@
 
 **Status:** ingestion, storage and retention layers implemented and tested. Outbound provider delivery and the after-hours assistant are **not** implemented — they require provider credentials, business verification and approved templates.
 **Gate:** `npm run content:provenance` and `npm run content:validate` remain the release gates for exam content; this document covers the CRM/communication side.
-**Schema:** migrations `20261014120000_communication_hub` (7 new tables, 17 new columns) and
-`20261014140000_message_outbox` (the outbound queue)
+**Schema:** migrations `20261014120000_communication_hub` (7 new tables, 17 new columns),
+`20261014140000_message_outbox` (the outbound queue) and `20261014160000_consent_lead_capture` (consent
+captured before there was a student to attach it to)
 
 This is the approved architecture for central student communication: WhatsApp, Facebook, Instagram, SMS and email through one hub, with automatic student identity, permanent records, and a human in the loop wherever a mistake would be irreversible.
 
@@ -23,7 +24,10 @@ This is the approved architecture for central student communication: WhatsApp, F
 | Send policy: consent, channel window, cap, quiet hours | `src/lib/crm/messaging-policy.ts` | 12 tests |
 | Permission matrix (passport access, deletion, credentials) | `src/lib/crm/permissions.ts` | 12 tests |
 | Tables: sequences, channel accounts, conversations, document versions, assignment history, consent, automation events | `prisma/migrations/20261014120000_communication_hub/` | applied to a fresh SQLite database; schema/migration parity passes |
-| Outbound queue (`MessageOutbox`), send policy gate, retry backoff, delivery receipts | `prisma/migrations/20261014140000_message_outbox/`, `src/lib/crm/outbound.ts` | 46 tests; parity passes (55 tables) |
+| Outbound queue (`MessageOutbox`), send policy gate, retry backoff, delivery receipts | `prisma/migrations/20261014140000_message_outbox/`, `src/lib/crm/outbound.ts` | 46 tests; parity passes (56 tables) |
+| Consent register, capture workflows and promotion | `src/lib/crm/consent.ts`, `/api/crm/consent`, `/employee/consent` | 30 tests + 6 ingest tests |
+| Review queue (conversations, documents, flagged students) | `src/lib/crm/review-queue.ts`, `/api/crm/review-queue`, `/employee/review-queue` | 21 tests |
+| Consent captured on the public form | `prisma/migrations/20261014160000_consent_lead_capture/`, `/api/auth/register` | parity passes; rendered copy names the channels in words |
 
 ## Section-by-section status against the specification
 
@@ -141,6 +145,65 @@ scheduler holding `CRON_SECRET` (compared in constant time), or by an authentica
 with no secret configured, anonymous callers are refused outright. Every row it picks up is re-decided by the
 same policy gate, so a deferral can never become a way around a withdrawal of consent.
 
+## The consent register
+
+Consent is not a boolean and not a checkbox that lives in a form's memory. It is a record that has to
+survive being questioned a year later, so `src/lib/crm/consent.ts` enforces three rules and the UI cannot
+talk its way around them:
+
+- **A grant needs a source and evidence.** A `GRANTED` row without either is an assertion, not a record, and
+  `validateConsentCapture` refuses to store one. A denial or a withdrawal is the opposite case: always
+  accepted, immediately, with nothing required — making it easy to say stop is the entire point.
+- **Silence is not consent.** `UNKNOWN` is the state of having no record, so it cannot be "recorded", only
+  resolved.
+- **Marketing is global.** A withdrawal recorded on WhatsApp suppresses marketing on SMS and email too,
+  matching `evaluateSendPolicy`. Permission to write on Instagram is not permission to text; an opt-out is a
+  statement about the person, not about one app.
+
+Three workflows fill the register, which is the requirement — a register nobody fills is a register that
+blocks every marketing send forever:
+
+| Workflow | How | Source recorded |
+| --- | --- | --- |
+| Inbound keyword | The student writes "stop", "unsubscribe", "বন্ধ করুন" or "bondho korun" in a chat. Applied in the same transaction as the message, with the message id as evidence. | `INBOUND_MESSAGE` |
+| Staff entry | `/employee/consent` — search the student, see the whole grid, record a decision with its evidence. | `STAFF_ENTRY` / `FORM` |
+| Website form | The registration checkbox (never pre-ticked) states the channels in words: email, SMS and WhatsApp. Recorded against the student if one already exists, otherwise against the lead until the identities line up. | `FORM` |
+
+A capture taken before the person was a student waits in `CommunicationConsent` against the lead's email and
+normalised phone, and is **promoted** the next time that student's register is read. It is never attached by
+name: two students can share a name, and attaching one person's consent to another is precisely the mistake
+this register exists to prevent.
+
+Two deliberate limits:
+
+- A "stop" withdraws **marketing**. It does not cut off service: a student who stops receiving offers must
+  still be able to ask about their application. Declining service is recorded only when it was actually said
+  ("do not contact me", "no calls", "সব বন্ধ").
+- A withdrawal that cannot be applied — the sender could not be identified confidently — is **not** silently
+  dropped. It becomes a review-queue entry naming the phrase and telling the operator to apply it by hand
+  before any send.
+
+## The review queue
+
+`/employee/review-queue` is the human half of every "we will not guess" rule in this hub. Three things land
+there, returned together because they are usually about the same person: a conversation flagged on an
+ambiguous match, the documents that arrived with it, and the student record created for it.
+
+- **Oldest first.** A queue sorted by newest buries the student who has waited longest.
+- **The reason is always shown**, with the last message quoted, so the decision can be made from the queue
+  instead of by opening a conversation in another tab.
+- **Linking is not merging.** Linking attaches a conversation, its messages and its orphaned documents to an
+  existing student and clears the flag. It never merges two student records: the pipeline created a flagged
+  record precisely because merging two people's files is not recoverable by an apology.
+- **Dismissing needs a note.** Linking is self-documenting; dismissing a possible duplicate is the decision
+  that could quietly lose two people's files. `validateResolution` refuses a dismissal without one.
+- **Documents are verified one at a time, by a named person**, through the existing document route, with the
+  download audited. There is no "verify all": that would turn a human decision into a click, which is what
+  the rule against automatic verification exists to prevent.
+
+Resolving requires `canResolveReview`; reading requires only a signed-in staff account, because hiding a
+queue of unanswered students from the people who answer students is how a queue grows.
+
 ## Backup and restore
 
 `npm run drill:restore` creates a backup, restores it into a scratch directory and verifies it: the archive extracts, the database opens, every schema model has a table, and every stored document hashes without error. It exits 2 (BLOCKED) when it could not run, which is deliberately distinct from a pass.
@@ -152,6 +215,6 @@ Failure paths were exercised, not assumed: no database → BLOCKED/2; corrupt ar
 1. ~~**Provider media fetcher**~~ — **done** (`src/lib/crm/media-fetcher.ts`, 25 tests). Remaining: set `WHATSAPP_ACCESS_TOKEN` and `META_PAGE_ACCESS_TOKEN` in host secret storage so media is collected rather than reported.
 2. ~~**Outbound delivery adapter**~~ — **done** (`src/lib/crm/outbound.ts`, `outbound-providers.ts`, `outbox-runner.ts`, `prisma-outbound-store.ts`, 46 tests) together with the `MessageOutbox` queue, the send route and the receipt handling. Remaining: set the channel credentials *and* `CRON_SECRET`, and point the host scheduler at `/api/crm/messages/queue/run`, or deferred and retried messages will wait for a manual run.
 3. **Channel integrations** — WhatsApp Business (Meta) first, then Messenger/Instagram, then an SMS provider. Needs: business verification, phone-number id, approved templates, and the secrets above in host secret storage.
-4. **Consent capture in the UI** — the register must be filled by a real workflow (inbound keyword, form checkbox, staff entry), otherwise every marketing send is blocked by design.
-5. **Review queue UI** — conversations with `needsReview` and documents with `verificationStatus = PENDING_REVIEW` need one screen where a human resolves them.
+4. ~~**Consent capture in the UI**~~ — **done**. Three capture workflows (inbound keyword, staff entry screen, registration form checkbox), the promotion of pre-student captures, and `canRecordConsent` on the write path. 30 tests.
+5. ~~**Review queue UI**~~ — **done**. `/employee/review-queue` over conversations, documents and flagged students, with oldest-first ordering, a required note for a dismissal, and no merge action anywhere. 21 tests.
 6. **After-hours assistant** — only after 1–5 are running, with `requiresHumanReview` gating every answer and no promises on admission, scholarship or visa.

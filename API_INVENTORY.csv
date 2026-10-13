@@ -24,6 +24,7 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/branches/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/branches/[id]/route.ts
 /api/crm/commissions,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/commissions/route.ts
 /api/crm/commissions/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/commissions/[id]/route.ts
+/api/crm/consent,GET POST,none declared,nodejs,src/app/api/crm/consent/route.ts
 /api/crm/countries,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/countries/route.ts
 /api/crm/countries/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/countries/[id]/route.ts
 /api/crm/courses,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/courses/route.ts
@@ -44,6 +45,9 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/partners,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/partners/route.ts
 /api/crm/partners/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/partners/[id]/route.ts
 /api/crm/partners/{id}/user,PUT,role:ADMIN,nodejs,src/app/api/crm/partners/[id]/user/route.ts
+/api/crm/review-queue,GET,none declared,nodejs,src/app/api/crm/review-queue/route.ts
+/api/crm/review-queue/conversations/{id},POST,none declared,nodejs,src/app/api/crm/review-queue/conversations/[id]/route.ts
+/api/crm/review-queue/students/{id},POST,none declared,nodejs,src/app/api/crm/review-queue/students/[id]/route.ts
 /api/crm/scholarships,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/scholarships/route.ts
 /api/crm/scholarships/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/scholarships/[id]/route.ts
 /api/crm/students,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/students/route.ts

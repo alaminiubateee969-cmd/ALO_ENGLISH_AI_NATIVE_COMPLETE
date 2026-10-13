@@ -87,6 +87,36 @@ export function canSendMarketing(role: CrmRole): AccessDecision {
 }
 
 /**
+ * Roles that may record a consent decision for a student.
+ *
+ * Consent is a legal record, so writing one is a deliberate act by accountable
+ * staff — not something every signed-in account may do. FRONT_DESK is included
+ * because the capture often happens at the desk, in person, which is exactly the
+ * kind of capture that needs a name attached to it.
+ */
+export function canRecordConsent(role: CrmRole): AccessDecision {
+  const allowed: CrmRole[] = ['FRONT_DESK', 'COUNSELOR', 'SUPPORT', 'BRANCH_MANAGER', 'MARKETING_MANAGER', 'ADMIN', 'SUPER_ADMIN'];
+  return allowed.includes(role)
+    ? { allowed: true, code: 'OK', reason: 'Role may record a consent decision.', auditRequired: true }
+    : { allowed: false, code: 'ROLE_NOT_PERMITTED', reason: `${role} may not write to the consent register.`, auditRequired: true };
+}
+
+/**
+ * Roles that may resolve the review queue.
+ *
+ * An identity decision — "this message belongs to this student" — is a decision
+ * about who someone is, and it moves their documents and conversations with it.
+ * It belongs to the people who own student relationships, not to everyone who
+ * can log in.
+ */
+export function canResolveReview(role: CrmRole): AccessDecision {
+  const allowed: CrmRole[] = ['FRONT_DESK', 'COUNSELOR', 'APPLICATION_TEAM', 'VISA_OFFICER', 'BRANCH_MANAGER', 'ADMIN', 'SUPER_ADMIN'];
+  return allowed.includes(role)
+    ? { allowed: true, code: 'OK', reason: 'Role may resolve review-queue entries.', auditRequired: true }
+    : { allowed: false, code: 'ROLE_NOT_PERMITTED', reason: `${role} may not resolve review-queue entries.`, auditRequired: true };
+}
+
+/**
  * Roles that may send a service or follow-up message to a student.
  *
  * Deliberately excludes PARTNER (they are not ALO staff and must not speak as

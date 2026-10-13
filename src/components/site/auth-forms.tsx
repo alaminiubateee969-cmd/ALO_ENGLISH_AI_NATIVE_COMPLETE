@@ -81,6 +81,10 @@ export function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Never pre-ticked, and never required. The wording below names the exact
+  // channels the server records consent for, because consent given for channels
+  // the person was not told about is not consent.
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -101,6 +105,7 @@ export function RegisterForm() {
           password,
           name,
           referralCode: new URLSearchParams(window.location.search).get("ref") || undefined,
+          marketingConsent,
         }),
       });
       const data = await res.json();
@@ -130,6 +135,28 @@ export function RegisterForm() {
       <div>
         <label className="block text-sm font-medium mb-1">Password (min 12 characters)</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" required minLength={12} />
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={marketingConsent}
+            onChange={(e) => setMarketingConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4"
+          />
+          <span>
+            Yes, send me study updates, deadline reminders and event invitations by <strong>email, SMS or WhatsApp</strong>.
+            Optional — you can create your account without this, and you can say &ldquo;stop&rdquo; at any time in any reply; it will be
+            honoured on every channel.
+          </span>
+        </label>
+        <p className="mt-2 pl-7 text-xs text-slate-500">
+          What we do with your data is set out in the{" "}
+          <Link href="/privacy-policy" className="text-blue-600 hover:underline">
+            privacy policy
+          </Link>
+          .
+        </p>
       </div>
       <button type="submit" disabled={loading} className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
         {loading ? "Creating account..." : "Create Account"}

@@ -15,6 +15,8 @@ const NAV = [
   { label: "Scholarships", href: "/api/crm/scholarships" },
   { label: "Partners", href: "/api/crm/partners" },
   { label: "AI Agents", href: "/api/agents/status" },
+  { label: "Review queue", href: "/employee/review-queue" },
+  { label: "Consent register", href: "/employee/consent" },
   { label: "Audit Logs", href: "/api/crm/audit-logs" },
   { label: "Settings", href: "/api/admin/settings" },
 ];

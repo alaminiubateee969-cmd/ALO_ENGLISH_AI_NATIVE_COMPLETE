@@ -46,6 +46,7 @@ function createMemoryStore() {
   const conversations: Array<{ id: string; channel: string; thread: string | null; studentId: string | null; needsReview: boolean }> = [];
   const documents: Array<{ studentId: string; documentId: string; documentType: string; storageKey: string; verificationStatus: string }> = [];
   const assignments: string[] = [];
+  const consents = new Map<string, { status: string; source: string; evidence: string }>();
   const sequences = new Map<number, number>();
   let counter = 0;
 
@@ -145,9 +146,13 @@ function createMemoryStore() {
     async recordAssignmentHistory(input) {
       assignments.push(input.studentId);
     },
+    async recordConsent(input) {
+      const key = `${input.studentId}:${input.channel}:${input.purpose}`;
+      consents.set(key, { status: input.status, source: input.source, evidence: input.evidence });
+    },
   };
 
-  return { store, events, students, messages, conversations, documents, assignments };
+  return { store, events, students, messages, conversations, documents, assignments, consents };
 }
 
 function inbound(overrides: Partial<InboundMessage> = {}): InboundMessage {
@@ -491,5 +496,118 @@ describe('media that the provider referenced but this deployment could not colle
     // Both the stored and the uncollected attachment are counted: the number
     // describes what the sender sent, not what we managed to keep.
     expect(memory.documents).toHaveLength(1);
+  });
+});
+
+describe('a student withdrawing consent in their own message', () => {
+  test('"stop" withdraws marketing consent and keeps the message as evidence', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(
+      inbound({ body: 'Please STOP sending me offers', externalEventId: 'W1', providerMessageId: 'W1' }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    expect(result.status).toBe('PROCESSED');
+    if (result.status !== 'PROCESSED') return;
+    expect(result.consentChanges).toHaveLength(1);
+    expect(result.consentChanges[0]?.status).toBe('WITHDRAWN');
+    expect(result.consentChanges[0]?.purpose).toBe('MARKETING');
+
+    const recorded = memory.consents.get(`${result.studentId}:WHATSAPP:MARKETING`);
+    expect(recorded?.status).toBe('WITHDRAWN');
+    expect(recorded?.source).toBe('INBOUND_MESSAGE');
+    // The evidence is the message itself: a consent record must point at the
+    // words the student actually wrote.
+    expect(recorded?.evidence).toBe(`message:${result.messageId}`);
+  });
+
+  test('a withdrawal also applies when the sender is a brand new student', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(
+      inbound({ body: 'bondho korun', externalEventId: 'W2', providerMessageId: 'W2' }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    expect(result.status === 'PROCESSED' && result.identityDecision).toBe('NEW');
+    expect(result.status === 'PROCESSED' && result.consentChanges[0]?.status).toBe('WITHDRAWN');
+  });
+
+  test('marketing stops but the message is still answered: "stop" is not a service withdrawal', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(
+      inbound({ body: 'stop the offers please', externalEventId: 'W3', providerMessageId: 'W3' }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    expect(result.status).toBe('PROCESSED');
+    if (result.status !== 'PROCESSED') return;
+    // One change, marketing, and nothing recorded against SERVICE or FOLLOW_UP.
+    expect(result.consentChanges).toHaveLength(1);
+    expect(memory.consents.has(`${result.studentId}:WHATSAPP:SERVICE`)).toBe(false);
+  });
+
+  test('"never contact me" declines service as well, because that is what was said', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(
+      inbound({ body: 'do not contact me again', externalEventId: 'W4', providerMessageId: 'W4' }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    expect(result.status).toBe('PROCESSED');
+    if (result.status !== 'PROCESSED') return;
+    expect(result.consentChanges.map((change) => change.purpose).sort()).toEqual(['FOLLOW_UP', 'MARKETING', 'SERVICE']);
+  });
+
+  test('an ordinary message records no consent change at all', async () => {
+    const memory = createMemoryStore();
+    const result = await ingestInboundMessage(
+      inbound({ body: 'When is the next IELTS intake?', externalEventId: 'W5', providerMessageId: 'W5' }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    expect(result.status).toBe('PROCESSED');
+    expect(result.status === 'PROCESSED' && result.consentChanges).toEqual([]);
+    expect(memory.consents.size).toBe(0);
+  });
+
+  test('a withdrawal that cannot be applied is flagged for a human, never swallowed', async () => {
+    // An ambiguous sender: the store cannot attach the message to either
+    // candidate, and the pipeline creates a flagged record instead. The
+    // withdrawal must not be silently dropped in that case — the same person
+    // would keep receiving marketing.
+    const memory = createMemoryStore();
+    await ingestInboundMessage(
+      inbound({ externalEventId: 'X1', providerMessageId: 'X1', senderName: 'Rahim' }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    const ambiguous = await ingestInboundMessage(
+      inbound({
+        externalEventId: 'X2',
+        providerMessageId: 'X2',
+        body: 'stop messaging me',
+        studentCode: null,
+        senderPhone: null,
+        senderId: 'unknown-handle',
+        externalThreadId: 'unknown-handle',
+      }),
+      memory.store,
+      { now: FIXED_NOW },
+    );
+
+    expect(ambiguous.status).toBe('PROCESSED');
+    if (ambiguous.status !== 'PROCESSED') return;
+    expect(ambiguous.needsReview).toBe(true);
+    // Either the withdrawal was applied to a confidently identified student, or
+    // it is named in the review reasons as something a human must do by hand.
+    const applied = ambiguous.consentChanges.length > 0;
+    const escalated = ambiguous.reviewReasons.some((reason) => reason.includes('asked to stop'));
+    expect(applied || escalated).toBe(true);
   });
 });

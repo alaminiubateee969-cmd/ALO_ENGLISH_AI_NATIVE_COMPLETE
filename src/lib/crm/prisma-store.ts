@@ -15,6 +15,7 @@
 
 import { db } from '@/lib/db';
 import { writePrivateDocument, type StorageResult } from './document-storage';
+import { audit } from '@/lib/audit';
 import type { IngestStore } from './ingest';
 import type { IdentityCandidate } from './identity';
 
@@ -238,6 +239,55 @@ export const prismaIngestStore: IngestStore = {
     });
 
     return stored;
+  },
+
+  /**
+   * A withdrawal made in the student's own message.
+   *
+   * The register is one row per (student, channel, purpose), so this is an
+   * upsert: a second "stop" updates the same row rather than piling up records.
+   * The evidence is the message id, which is what makes the decision auditable
+   * later — the row points at the words the student actually wrote.
+   *
+   * A withdrawal is never downgraded by a later grant: if the student writes
+   * "stop" and then agrees in person, the staff member can record a new GRANTED
+   * from the UI, which is a deliberate act by a named person. What must not
+   * happen is an automated path silently re-granting consent.
+   */
+  async recordConsent(input) {
+    await db.communicationConsent.upsert({
+      where: {
+        studentId_channel_purpose: {
+          studentId: input.studentId,
+          channel: input.channel,
+          purpose: input.purpose,
+        },
+      },
+      create: {
+        studentId: input.studentId,
+        channel: input.channel,
+        purpose: input.purpose,
+        status: input.status,
+        source: input.source,
+        evidence: input.evidence,
+      },
+      update: {
+        status: input.status,
+        source: input.source,
+        evidence: input.evidence,
+      },
+    });
+
+    await audit('CONSENT_RECORD', {
+      resource: `Student:${input.studentId}`,
+      metadata: {
+        channel: input.channel,
+        purpose: input.purpose,
+        status: input.status,
+        source: input.source,
+        evidence: input.evidence,
+      },
+    });
   },
 
   async recordAssignmentHistory(input) {
