@@ -62,6 +62,8 @@ Path,Methods,Auth,Runtime,Source
 /api/learning/daily,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/learning/daily/route.ts
 /api/learning/dashboard,GET,authenticated,nodejs,src/app/api/learning/dashboard/route.ts
 /api/learning/orchestrator,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/learning/orchestrator/route.ts
+/api/linkis/health,GET,role:SUPER_ADMIN,nodejs,src/app/api/linkis/health/route.ts
+/api/linkis/jobs,GET POST,role:SUPER_ADMIN,nodejs,src/app/api/linkis/jobs/route.ts
 /api/partner/dashboard,GET,role:PARTNER,nodejs,src/app/api/partner/dashboard/route.ts
 /api/partner/profile,GET,role:PARTNER,nodejs,src/app/api/partner/profile/route.ts
 /api/payment,GET POST,authenticated,nodejs,src/app/api/payment/route.ts

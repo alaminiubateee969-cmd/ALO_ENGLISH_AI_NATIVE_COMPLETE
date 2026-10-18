@@ -1,0 +1,70 @@
+# docker-compose.linkis.yml — local Linkis stack for ALO (opt-in)
+# Apache Linkis requires Java 8/11 + MySQL + Eureka. This compose runs a
+# minimal Linkis 1.9 stack alongside ALO for development only.
+# Production: deploy Linkis on its own JVM host (see docs/LINKIS_INTEGRATION.md).
+#
+# Usage:
+#   cp .env.example .env
+#   # set LINKIS_ENABLED=true, LINKIS_GATEWAY_URL=http://localhost:9001, LINKIS_TOKEN=...
+#   docker compose -f docker-compose.linkis.yml up -d
+#   # Linkis Web: http://localhost:8088  admin/admin
+#   # Gateway:    http://localhost:9001
+#   # ALO:        http://localhost:3000  -> /api/linkis/health should report healthy
+#
+# Upstream: https://github.com/apache/linkis
+# Docs: https://linkis.apache.org/docs/latest/deployment/quick-deploy
+
+services:
+  linkis-mysql:
+    image: mysql:8.0
+    container_name: alo-linkis-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: linkis_root
+      MYSQL_DATABASE: linkis
+      MYSQL_USER: linkis
+      MYSQL_PASSWORD: linkis
+    ports:
+      - "3306:3306"
+    volumes:
+      - linkis-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "linkis", "-plinkis"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Full Linkis distribution — built from apache/linkis release tarball.
+  # For dev you can use the prebuilt image; for prod build from https://github.com/apache/linkis/releases
+  linkis:
+    image: apache/linkis:1.9.0
+    container_name: alo-linkis
+    depends_on:
+      linkis-mysql:
+        condition: service_healthy
+    environment:
+      # These env are read by linkis/conf/db.sh on first boot
+      MYSQL_HOST: linkis-mysql
+      MYSQL_PORT: 3306
+      MYSQL_DB: linkis
+      MYSQL_USER: linkis
+      MYSQL_PASSWORD: linkis
+      EUREKA_HOST: localhost
+    ports:
+      - "9001:9001"  # Gateway
+      - "8088:8088"  # Web
+      - "20303:20303" # Entrance
+      - "20306:20306" # Manager
+    volumes:
+      - linkis-conf:/app/linkis/conf
+      - linkis-logs:/app/linkis/logs
+    # Linkis does not provide a standard healthcheck; we probe the gateway
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9001/api/rest_j/v1/linkisManager/ecinfo || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 20
+
+volumes:
+  linkis-mysql-data:
+  linkis-conf:
+  linkis-logs:
