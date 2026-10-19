@@ -132,6 +132,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The application and the Prisma CLI could open different database files.**
+  A relative SQLite URL — `file:./ci-test.db` — is resolved by the Prisma CLI
+  against the schema's own directory, and by a raw `new PrismaClient()` against
+  the working directory, while the application resolved it against the app
+  root. Three different answers for one string.
+
+  In CI this meant `prisma migrate deploy` migrated `<repo>/prisma/ci-test.db`
+  while the seeds and the tests used a different file, so the database-backed
+  suites failed against an unmigrated database. It passed locally, because
+  there the paths happened to coincide. Only a fresh CI database exposed it.
+
+  The application now resolves a relative SQLite path against the Prisma
+  schema directory — the same base the CLI uses — and the CI workflow uses an
+  absolute `DATABASE_URL`, which is what production already does, so the
+  question does not arise at all. `tests/paths.test.ts` pins the agreement
+  down, and asserts that no relative `file:` URL remains in the workflow.
+
+- **The seed-guard test depended on the runner's environment.** The "refuses
+  seeding without explicit opt-in" case did not clear
+  `ALLOW_SYNTHETIC_SAMPLE_QUESTIONS`, so it passed or failed depending on how
+  the shell was set up — and CI sets that variable for the seeding step. It
+  now clears it explicitly, so it tests the guard rather than the
+  environment.
+
+### Fixed
+
 - **CI could never go green.** The pipeline seeded the administrator, the
   exam types, the settings and the RBAC tables, then ran `content:validate` —
   a gate that refuses to pass on an empty question bank. Nothing in the chain

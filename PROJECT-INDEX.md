@@ -135,11 +135,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `server-config/` | `Caddyfile.production`, `README.md`, `alo-english.nginx`, `alo-english.service`, `sudo-policy` |
 
-## Tests (15 files)
+## Tests (16 files)
 
 | Path | Purpose |
 |---|---|
-| `tests/` | `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `crud-scope.test.ts`, `exam-attempt.test.ts`, `exam-engine.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `seed-sample-guard.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts` |
+| `tests/` | `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `crud-scope.test.ts`, `exam-attempt.test.ts`, `exam-engine.test.ts`, `paths.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `seed-sample-guard.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts` |
 
 ## CI/CD (2 workflows)
 
@@ -161,11 +161,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 698 |
+| Tracked files | 699 |
 | Prisma models | 54 |
 | API routes | 86 |
 | Pages | 33 |
 | Migrations | 9 |
-| Test files | 15 |
+| Test files | 16 |
 | Scripts | 26 |
 | Environment variables (template) | 29 |

@@ -71,7 +71,7 @@ Useful checks (run only with the required local tooling and a disposable databas
 npm run lint
 npm run typecheck
 npm test
-DATABASE_URL='file:./ci-test.db' npm run content:validate
+DATABASE_URL="file:$PWD/prisma/ci-test.db" npm run content:validate
 npm run build
 ```
 

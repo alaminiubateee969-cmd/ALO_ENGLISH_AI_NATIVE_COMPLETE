@@ -18,7 +18,7 @@
  * being discovered by a student mid-sitting.
  *
  * Usage:  bun run scripts/validate-question-bank.ts [path-to-sqlite-file]
- *         DATABASE_URL=file:./db/custom.db bun run qa:questions
+ *         DATABASE_URL="file:$PWD/prisma/custom.db" bun run qa:questions
  */
 
 import { Database } from "bun:sqlite";
@@ -77,7 +77,10 @@ const notes: string[] = [];
 function resolveDbPath(): string {
   const arg = process.argv[2];
   if (arg) return arg;
-  const url = process.env.DATABASE_URL || "file:./db/custom.db";
+  // A relative default would resolve against the schema directory — the same
+  // base the Prisma CLI uses — so it can never open a different file from
+  // the one that was migrated.
+  const url = process.env.DATABASE_URL || "file:./custom.db";
   return url.replace(/^file:/, "");
 }
 
