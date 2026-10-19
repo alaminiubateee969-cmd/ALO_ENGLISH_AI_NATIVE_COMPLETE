@@ -70,10 +70,26 @@ function listNames(dir, filter = () => true) {
     .sort();
 }
 
-/** Count tracked files in the repository, ignoring the worktree noise. */
+/**
+ * Count the files that will be in the repository.
+ *
+ * This counts tracked files *and* untracked files that are not ignored.
+ * Counting only the tracked set would make the number depend on whether the
+ * new files had been staged yet, so the same tree would produce two
+ * different answers depending on when the generator ran — and CI, which
+ * checks out a clean tree, would compute a different number from the one
+ * that was committed.
+ *
+ * `scripts/generate-inventories.mjs` counts its file manifest the same way,
+ * which is why the two never disagree.
+ */
 function trackedFileCount() {
   try {
-    const out = execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8" });
+    const out = execFileSync(
+      "git",
+      ["ls-files", "--cached", "--others", "--exclude-standard"],
+      { cwd: ROOT, encoding: "utf8" },
+    );
     return out.split("\n").filter(Boolean).length;
   } catch {
     return 0;
