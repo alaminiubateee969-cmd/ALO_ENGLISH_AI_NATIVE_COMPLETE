@@ -22,27 +22,38 @@
  */
 
 import { Database } from "bun:sqlite";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 const VALID_SECTIONS = ["LISTENING", "READING", "WRITING", "SPEAKING"];
 
-/** Every question type declared in prisma/schema.prisma. */
+/**
+ * The question-type vocabulary is shared with the server-side grader and the
+ * CI content gate, so "valid type" means the same thing in all three places.
+ * See src/lib/exam/question-types.json.
+ */
+const QUESTION_TYPES = JSON.parse(
+  readFileSync(join(ROOT, "src/lib/exam/question-types.json"), "utf8"),
+) as {
+  indexTypes: string[];
+  textTypes: string[];
+  setTypes: string[];
+  subjectiveTypes: string[];
+};
+
 const VALID_TYPES = [
-  "MULTIPLE_CHOICE",
-  "TRUE_FALSE_NOT_GIVEN",
-  "MATCHING",
-  "FILL_BLANK",
-  "LABELING",
-  "SHORT_ANSWER",
-  "ESSAY",
-  "SPEAKING",
-  "SENTENCE_COMPLETION",
-  "SUMMARY_COMPLETION",
-  "CHART_DESCRIPTION",
+  ...QUESTION_TYPES.indexTypes,
+  ...QUESTION_TYPES.textTypes,
+  ...QUESTION_TYPES.setTypes,
+  ...QUESTION_TYPES.subjectiveTypes,
 ];
 
 /** Types that must carry a machine-checkable answer. */
-const INDEX_TYPES = new Set(["MULTIPLE_CHOICE", "TRUE_FALSE_NOT_GIVEN"]);
-const TEXT_TYPES = new Set(["FILL_BLANK", "SHORT_ANSWER", "SENTENCE_COMPLETION", "SUMMARY_COMPLETION"]);
+const INDEX_TYPES = new Set(QUESTION_TYPES.indexTypes);
+const TEXT_TYPES = new Set(QUESTION_TYPES.textTypes);
 
 const PLACEHOLDER_PATTERNS = [
   /lorem ipsum/i,
@@ -179,7 +190,13 @@ for (const q of rows) {
   }
 
   if (type === "MATCHING" || type === "LABELING") {
-    if (!String(q.correctIndices ?? "").trim()) add(`${type} has no correctIndices`);
+    // The grader (src/lib/exam/grading.ts) prefers a correctIndices array but
+    // falls back to a single correctIndex for one-to-one matching, so a
+    // question carrying only correctIndex IS gradeable and must not be
+    // reported as broken.
+    const hasIndices = String(q.correctIndices ?? "").trim().length > 0;
+    const hasIndex = q.correctIndex !== null && q.correctIndex !== undefined;
+    if (!hasIndices && !hasIndex) add(`${type} has no correctIndices and no correctIndex`);
   }
 
   // ── listening audio

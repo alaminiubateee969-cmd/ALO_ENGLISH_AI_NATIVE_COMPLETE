@@ -70,6 +70,9 @@ jobs:
       - name: Verify inventories match source
         run: node scripts/generate-inventories.mjs --check
 
+      - name: Verify the project index matches source
+        run: node scripts/generate-project-index.mjs --check
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -126,6 +129,33 @@ jobs:
           fi
         env:
           DATABASE_URL: "file:./ci-test.db"
+          ADMIN_SEED_EMAIL: "ci-admin@test.local"
+          ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      # The content gate below refuses to pass on an empty question bank, and
+      # nothing in the chain above inserted a question — so CI could never go
+      # green. The question seeders are deliberately guarded so that synthetic
+      # fixtures can never reach a production database; this step opts into
+      # that guard explicitly, against the disposable ci-test.db file only.
+      #
+      # The seeded content is synthetic and unlicensed: short-form development
+      # fixtures used to exercise the grader, the selection logic and the
+      # content gate. It is not official or full-length exam material, and it
+      # is never loaded in production.
+      - name: Seed sample question bank
+        run: |
+          set +e
+          out=$(bun run db:seed:sample-bank 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ]; then
+            echo "$out" | tail -25 | sed 's/^/::error ::seed sample question bank: /'
+            exit "$code"
+          fi
+        env:
+          DATABASE_URL: "file:./ci-test.db"
+          ALLOW_SYNTHETIC_SAMPLE_QUESTIONS: "1"
+          NODE_ENV: "test"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
 

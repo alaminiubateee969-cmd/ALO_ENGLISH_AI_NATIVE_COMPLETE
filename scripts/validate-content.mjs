@@ -23,21 +23,57 @@
 // provide an explicitly chosen safe DATABASE_URL or receive a blocked result.
 // Runtime question selection independently excludes ungradeable objective rows.
 
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+
+/**
+ * Minimal .env reader. Only fills in variables that are not already set, and
+ * only from the repository's own .env / .env.local files. It never overrides
+ * an exported value and never writes anything back.
+ */
+function loadDotEnv() {
+  for (const name of ['.env', '.env.local']) {
+    const file = join(ROOT, name);
+    if (!existsSync(file)) continue;
+    let contents;
+    try {
+      contents = readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    for (const line of contents.split('\n')) {
+      const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+      if (!match) continue;
+      const key = match[1];
+      if (process.env[key] !== undefined) continue;
+      let value = match[2].trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      process.env[key] = value;
+    }
+  }
+}
+
 const errors = [];
 const warnings = [];
 
-const INDEX_TYPES = new Set([
-  'MULTIPLE_CHOICE', 'TRUE_FALSE', 'TRUE_FALSE_NOT_GIVEN',
-  'READING_MCQ', 'READ_AND_SELECT', 'LISTEN_AND_SELECT',
-]);
-const TEXT_TYPES = new Set([
-  'FILL_BLANK', 'SHORT_ANSWER', 'SENTENCE_COMPLETION', 'SUMMARY_COMPLETION',
-  'WRITE_FROM_DICTATION', 'COMPLETE_THE_SENTENCE',
-]);
-const SET_TYPES = new Set(['MATCHING', 'LABELING']);
-const SUBJECTIVE_TYPES = new Set([
-  'ESSAY', 'SPEAKING', 'CHART_DESCRIPTION', 'WRITING_TASK1', 'WRITING_TASK2',
-]);
+/**
+ * The question-type vocabulary is shared with the server-side grader and the
+ * bank auditor, so "valid type" means the same thing in all three places.
+ * See src/lib/exam/question-types.json.
+ */
+const QUESTION_TYPES = JSON.parse(
+  readFileSync(join(ROOT, 'src/lib/exam/question-types.json'), 'utf8'),
+);
+
+const INDEX_TYPES = new Set(QUESTION_TYPES.indexTypes);
+const TEXT_TYPES = new Set(QUESTION_TYPES.textTypes);
+const SET_TYPES = new Set(QUESTION_TYPES.setTypes);
+const SUBJECTIVE_TYPES = new Set(QUESTION_TYPES.subjectiveTypes);
 
 function isObjective(t) {
   const u = String(t).toUpperCase().replace(/-/g, '_');
@@ -82,6 +118,15 @@ function hasUsableAnswerKey(q, type) {
 // Run only against an explicitly configured database. Missing DATABASE_URL is
 // a blocked validation, not a successful empty-bank check.
 async function validateDb() {
+  if (!process.env.DATABASE_URL) {
+    // `npm run build` runs this through `postbuild`, and a build does not
+    // export the shell environment. Without this the gate printed
+    // "BLOCKED: DATABASE_URL is not set" on every local build and never
+    // actually checked anything. Load the project's own .env file — but only
+    // when DATABASE_URL is still unset, so an explicitly exported value
+    // always wins.
+    loadDotEnv();
+  }
   if (!process.env.DATABASE_URL) {
     console.error('  ✗ BLOCKED: DATABASE_URL is not set; no content validation was performed.');
     process.exitCode = 2;
@@ -128,8 +173,16 @@ async function validateDb() {
       // This is what happened when `prisma:seed` was reduced to a single seed
       // file: CI reported "all selectable objective questions are gradeable"
       // over a database with no questions in it.
-      console.error('\n  ✗ The question bank is EMPTY — the seed chain did not populate questions.');
-      console.error('    Expected `prisma:seed` to run the question seeds as well as the core seed.');
+      console.error('\n  ✗ The question bank is EMPTY — this database has no questions.');
+      console.error('    The core seed (`npm run prisma:seed`) only creates the administrator,');
+      console.error('    the exam types and the settings. Question content is deliberately NOT');
+      console.error('    part of that chain: the only bundled question seeders write unlicensed');
+      console.error('    synthetic fixtures and refuse to run against a production database');
+      console.error('    (see prisma/seed-sample-guard.mjs).');
+      console.error('    For a disposable CI/test database, run:');
+      console.error('      ALLOW_SYNTHETIC_SAMPLE_QUESTIONS=1 npm run db:seed:sample-bank');
+      console.error('    For production, load reviewed, licensed content through the admin');
+      console.error('    content workflow.');
       process.exitCode = 1;
     } else if (ungradeable > 0 || unsupportedTypes > 0) {
       console.error('\n  CONTENT TYPE/ANSWER-KEY ERRORS:');

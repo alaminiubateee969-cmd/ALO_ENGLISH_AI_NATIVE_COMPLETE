@@ -1,45 +1,64 @@
 # Regression Checklist
 
-**Audit date:** 2026-10-10  
-**Report status:** BLOCKED for release. A check is `PASS` only when its command/test completed successfully in this workspace; source presence or a check on another branch is not sufficient.
+**Audit date:** 2026-10-19  
+**Report status:** every row below was re-run in this workspace after the
+2026-10-19 repair pass. A check is `PASS` only when its command completed
+successfully here; source presence or a check on another branch is not
+sufficient.
 
 | Area / regression | Status | Evidence / result | Next action |
 | --- | --- | --- | --- |
-| Schema/migration parity | PASS | Static checker reported 45 models, 7 migrations, 47 tables and parity. | Repeat in CI and rehearse migrations on disposable DB. |
-| Source inventories | PASS | Generated/check mode reported 77 API rows and 32 page rows up to date. | Repeat after final code edits. |
-| Package manifest JSON | PASS | Parsed successfully after seed-script changes. | Repeat with the final diff. |
-| Whitespace / patch hygiene | PASS | `git diff --check` passed; the branch is committed and pushed as PR #11. | Keep. |
-| CRM scope pure tests | PASS | Six `tests/crud-scope.test.ts` tests passed in the latest all-tests run. | Add DB route tests for counselor/student/admin cross-record isolation. |
-| Objective grading, timers, answer redaction | PASS for pure tests | Latest Bun run passed the pure exam-engine suite, including stored answer keys, generic indicators, server timer, transcript redaction, and unknown-type fail-closed behavior. | Add persisted API integration tests. |
-| New READY listening-asset selection gate | PARTIAL | Both new pure tests passed: matching READY metadata is accepted and a gradeable Listening item without READY media fails selection. Database-backed route behavior and the 422/no-quota side effect remain unverified. | Run generated-client route tests against a migrated disposable DB; verify 422 response does not reserve quota. |
-| Sample-seed safety guard | PASS | Four pure guard tests passed; the earlier separate Node probe allowed named test/sample SQLite targets and blocked production-looking DB paths. | Keep seed scripts out of production command chain; validate manifest checks. |
-| AI disclosure tests | PASS | Writing/speaking/interview pure disclosure tests passed in the latest all-tests run; no numeric subjective scores emitted. | Add provider failure/prompt-injection evaluation. |
-| Audio utility tests | PASS for local fixtures | MP3 structure/path checks passed in the latest run; a deliberate missing-file case logged `FAIL q-missing` as expected and its test passed. | Run safe DB/audio validation, target-host HTTP checks, and browser playback; do not treat fixture test as asset coverage. |
-| Full Bun test suite | PASS in CI, BLOCKED locally | CI job `114205904736` on PR #11 (commit `d66a246`) ran every `tests/*.test.ts` file against a generated client and migrated SQLite DB: "Tests — all suites" and "Verify every suite passed" both succeeded. Locally the same command reports 98 pass and `exam-attempt`/`rbac` erroring with `Cannot find module '.prisma/client/default'` because the client cannot be generated in this sandbox. | Keep the aggregate CI gate; add DB-backed route tests for remaining areas. |
-| ESLint | PASS | `npm ci --ignore-scripts` installed 856 packages; `npm run lint` then exited 0 with no findings, after restoring the missing `Badge` import in `src/app/ask-handbook/page.tsx`. | Keep lint in the required CI gate. |
-| TypeScript | PASS in CI, BLOCKED locally | CI job `114205904736` on PR #11 (commit `d66a246`) passed the Typecheck step with the client generated. Locally `npx tsc --noEmit` returns 10 errors, all `TS2305 … '"@prisma/client"' has no exported member 'PrismaClient'` — the same missing-client cause, and no other type errors. | None for this branch; keep typecheck required. |
-| Prisma generation/build | PASS in CI, BLOCKED locally | CI job `114205904736` on PR #11 (commit `d66a246`) passed "Generate Prisma client", "Build", and "Verify build output" (`.next/standalone/server.js` present). Locally `npx prisma generate --no-engine` fails fetching `binaries.prisma.sh/…/schema-engine.gz.sha256`, a host outside this sandbox's egress allowlist. | Boot the standalone artifact on staging and verify a live health check. |
-| Official format and question provenance | NOT VERIFIED — measured as empty | CI job `114205904736` on PR #11 (commit `d66a246`) seeded a fresh migrated DB with the repository's own seed chain and reported "The question bank is EMPTY" with "0 total questions, 0 active objective questions, 0 ungradeable, 0 unsupported types". Licensing remains undocumented. | Obtain authorized content, then record provenance/license and per-product counts. |
-| Listening coverage and browser playback | NOT VERIFIED | Local listening asset count is 0; DB rows and production HTTP responses were not queried. | Generate/verify authorized media on staging and test in browsers/mobile. |
-| Authentication/role/ownership DB tests | PARTIAL — first real DB run passed | CI job `114205904736` on PR #11 (commit `d66a246`) executed `tests/rbac.test.ts` and `tests/exam-attempt.test.ts` against a migrated SQLite DB and both suites passed, including attempt ownership and answer-key redaction. Session revocation and concurrent-attempt cases are still absent. | Add session/revocation, concurrent-start, and cross-tenant route tests. |
-| Payment and quota integration | BLOCKED | Purchase endpoint returns 503; no provider/webhook; identity verification not tested. | Keep disabled; implement and sandbox provider flow before release. |
-| RAG/AI provider runtime | NOT VERIFIED | Bounded request path inspected; no external provider or live DB call. | Test credentials, provider data handling, abuse/cost controls, and adversarial prompts in staging. |
-| Accessibility/responsiveness | NOT VERIFIED | No browser automation, keyboard/screen-reader, or device test run. | Run WCAG-oriented automated and manual checks. |
-| Backup/restore and production migration | NOT VERIFIED | No production or disposable restore drill; no migration applied. | Rehearse backup/restore and review migration approval process. |
-| Live deployment / health endpoint | NOT VERIFIED | No current deployment record or health probe from this branch. | Verify a staged and then production release with auditable evidence. |
-| PR creation | BLOCKED | Release gates are unmet; prior decision was “Wait for release gates.” | Do not open or merge until all mandatory gates pass. |
+| Schema/migration parity | PASS | `node scripts/check-schema-migrations.mjs` → "schema models: 46 \| migrations: 8 \| tables created: 48", parity OK across 48 tables. | Repeat in CI and rehearse migrations on a disposable DB. |
+| Question-type vocabulary | PASS | Same checker → "Question-type vocabulary OK: 19 types documented in the schema and shared by the grader and both validators." | Keep the single source of truth (`src/lib/exam/question-types.json`). |
+| Source inventories | PASS | `node scripts/generate-inventories.mjs --check` → 46 model rows, 82 API rows, 32 page rows, 21 file-manifest rows all up to date. | Repeat after final code edits. |
+| Project index | PASS | `node scripts/generate-project-index.mjs --check` → "PROJECT-INDEX.md matches the source." | Repeat after final code edits. |
+| Repository manifest | PASS | `node scripts/check-manifest.mjs` → "318 source files scanned, 2 workflow(s) checked, scripts and lockfiles consistent." The gate also forbids `pm2` and SSH deploy paths, and tracked-but-ignored files. | Keep. |
+| Package manifest JSON | PASS | Parsed successfully after the dependency-removal edit. | Repeat with the final diff. |
+| TypeScript | PASS | `npx tsc --noEmit` → exit 0, no output. | Keep typecheck required. |
+| ESLint | PASS | `npx eslint .` → exit 0, no findings. | Keep lint in the required CI gate. |
+| Full test suite | PASS | `bun test tests/` → **151 pass, 0 fail, 696 assertions, 14 files.** | Keep the aggregate gate. |
+| AI evaluation layer | PASS | `tests/ai-evaluation-layer.test.ts` (18 tests): rubric coverage for all 20 exam codes, no acoustic claim, generic fallback, provider unavailable without a credential, schema rejection, no band/grade/score field, too-short work not sent. | Add a human-rated benchmark before any scoring claim. |
+| Objective grading, timers, answer redaction | PASS | Pure exam-engine suite passed in the full run, including stored answer keys, generic indicators, server timer, transcript redaction, and unknown-type fail-closed behaviour. | Add persisted API integration tests. |
+| Attempt end to end | PASS | Live: login → start → submit → `SCORED` → evaluation read back via `GET /api/attempts/:id/evaluation` (200, 2 rows). `scoreProvider` stayed `deterministic_objective`. | Repeat on staging. |
+| Evaluation with a model behind it | PASS | A local OpenAI-compatible mock stood in for the provider: `WRITING/groq` + `SPEAKING/groq` persisted; the prompt was captured and inspected; an invented criterion was dropped; an out-of-scope answer was rejected in favour of the local rule engine. | Repeat with a real, approved provider credential. |
+| API surface | PASS | 114-probe live smoke: 64 × 2xx/3xx, 20 × 401/403, 13 × 404 (dynamic routes probed literally), 1 × 503 (the Linkis feature, disabled by design), **0 unexpected 5xx**. | Add two-user isolation probes. |
+| Listening-asset selection gate | PASS | A gradeable listening item without a `READY` asset fails selection and the start route answers 422 before quota is reserved — confirmed live against two practice sets. | Verify real HTTP media delivery and browser playback. |
+| Free quota | PASS | A second attempt on an exhausted allowance is refused with 403 and no attempt is created. | Add concurrent-reservation tests. |
+| CRM scope pure tests | PASS | `tests/crud-scope.test.ts` passed in the full run. | Add DB route tests for counselor/student/admin cross-record isolation. |
+| Sample-seed safety guard | PASS | The guard still refuses production-looking database targets; the sample bank is seeded only against a disposable file. | Keep the sample seeders out of the production command chain. |
+| Content validation gate | PASS | `npm run content:validate` → "320 total questions, 261 active objective questions, 0 ungradeable, 0 unsupported types." The gate now actually loads `.env` and therefore really runs. | Keep the gate required in CI. |
+| Listening audio coverage | **NOT VERIFIED — measured as missing** | 74 of the 320 questions are listening items with no audio asset. The platform refuses to seat a learner on one, so the failure is safe, but the content is incomplete. | `npm run audio:generate` on a host with TTS access, then `npm run audio:verify`. |
+| Question provenance | **NOT VERIFIED — synthetic** | The 320-question bank is generated by the platform's own generator. Licensing and official-format alignment are undocumented, and the seed guard prevents it from reaching production. | Obtain authorized content and record provenance per product. |
+| Prisma generation / build | PASS | `npm run build` → "✓ Compiled successfully in 8.2s"; standalone artifact 91.6 MB with 136 client bundles, 33 public assets, the Prisma schema/migrations and the generated client copied in. | Boot the artifact on staging and verify a live health check. |
+| Standalone artifact | PASS | `node scripts/smoke-standalone.mjs` → **8/8 checks green** (boots, serves `/`, serves a compiled stylesheet as real CSS, serves `/login`, returns a health document, serves `public/`). | Repeat on the host. |
+| Authentication / role / ownership | PASS | Login, session cookie, role checks and attempt ownership all behaved correctly end to end. | Add session-revocation and concurrent-attempt cases. |
+| Payments, email, password reset, MFA | BLOCKED by design | The endpoints refuse safely (503 for payments; a safe reset path with no token creation). | Keep disabled until a provider, delivery and a signed webhook exist. |
+| RAG / live provider runtime | **NOT VERIFIED** | The bounded request path is inspected; no live provider and no production database were queried. | Test credentials, provider data handling, abuse/cost controls, and adversarial prompts on staging. |
+| Accessibility / responsiveness | **NOT VERIFIED** | No browser automation, keyboard, screen-reader or device test was run. | Run WCAG-oriented automated and manual checks. |
+| Backup / restore / production migration | **NOT VERIFIED** | No restore drill was executed; no production migration was applied. | Rehearse backup/restore and review the migration approval process. |
+| Live deployment / health endpoint | **NOT VERIFIED** | No deployment of this branch was performed or observed. | Verify a staged, then a production, release with auditable evidence. |
+| CI on this branch | **NOT OBSERVED** | The pipeline's content gate was fixed (it could never pass before), but the GitHub Actions runner is outside this sandbox's reach. | Require green CI on this exact commit before release. |
+| Dependency advisories | PASS with one accepted exception | `npm audit` → **5 high, 0 critical, 0 moderate**. All 5 are one dev-only root cause: `braces@3.0.3`, for which no fixed version has been published, via `eslint-config-next`. | Re-check on each dependency bump. |
+| Structured application logging | **MISSING** | Audit logging exists (`AuditLog`); the application itself uses `console.*`, so there are no correlation IDs and no log aggregation. | Adopt a structured logger before multi-instance deployment. |
+| Rate limiting at scale | PARTIAL | The limiter is process-local and trusts forwarded headers for the client IP. | Move to a shared store and a trusted-proxy configuration. |
+| PR creation | BLOCKED | Release gates are unmet: no observed CI run, no staging visit, no restore drill, no browser test, no authorized content. | Do not merge until the mandatory gates above pass. |
 
 ## Run before requesting release review
 
 ```bash
+node scripts/check-manifest.mjs
 node scripts/check-schema-migrations.mjs
 node scripts/generate-inventories.mjs --check
+node scripts/generate-project-index.mjs --check
 git diff --check
 npm run lint
 npm run typecheck
-npm run content:validate   # disposable DB only; no production URL
-npm test                   # after Prisma client + safe test DB are provisioned
+npm test                   # after the Prisma client and a disposable test DB are provisioned
 npm run build
+node scripts/smoke-standalone.mjs
+npm run content:validate   # disposable DB only; no production URL
 ```
 
-After local checks, require green CI for this exact branch/commit, database-backed isolation tests, approved content/audio evidence, staging browser tests, backup/restore evidence, and an operator-approved production plan. A skipped suite, missing database, or passing check from PR #10 is not a pass for this branch.
+After local checks, require green CI for this exact commit, database-backed
+isolation tests, approved content/audio evidence, staging browser tests,
+backup/restore evidence, and an operator-approved production plan.

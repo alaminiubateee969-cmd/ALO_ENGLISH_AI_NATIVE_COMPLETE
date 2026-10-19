@@ -7,9 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Corrections and one new gate, following the merge of 1.1.0 to `main` (`bebc470`).
-
 ### Added
+
+- **The platform now has its own working evaluation agent, for every exam it
+  offers.** The registry listed a "Writing Evaluator" and a "Speaking
+  Evaluator" for all exams, but the only implementation was a local heuristic
+  that counted words and looked for discourse markers — it did not know which
+  exam the learner was preparing for, and nothing called it with a model.
+  `src/lib/agents/GroqClient.ts` and `src/lib/ai/routing/ModelRouter.ts`
+  existed but were imported by nothing at all.
+  - `src/lib/ai/evaluation/rubrics.ts` — a rubric for **every** exam code the
+    platform ships (20): the tasks that exam contains and the criteria that
+    matter for it. Academic writing exams get reasoning/evidence/focus
+    criteria, language exams get task-coverage/organisation/vocabulary/grammar
+    criteria, and the speaking criteria deliberately exclude everything
+    acoustic, because a transcript cannot evidence it. `OIETC` uses the
+    generic criteria and says why: that product's identity is unverified.
+  - `src/lib/ai/evaluation/ai-evaluation.ts` — the evaluator. It builds the
+    prompt from the rubric, marks the learner's work as untrusted data inside
+    the prompt, validates the model's answer against a strict schema, drops
+    any criterion the model invented, and falls back to the local rule engine
+    when the provider is absent, errors, or answers with something unusable.
+    It never produces a band, a grade or a score, and every result carries a
+    disclosure saying so.
+  - `src/lib/ai/providers/ai-provider.ts` — the single module that performs an
+    outbound model call. Chain: Groq → OpenRouter → Gemini → HuggingFace →
+    local rule engine. It never throws, never blocks a submission, and sends
+    nothing when no credential is configured or `AI_ENABLED=false`.
+  - `AttemptEvaluation` (new model + migration
+    `20261019060000_attempt_evaluation`) — one row per attempt and section,
+    recording which engine produced the result and whether the local rule
+    engine was used as a fallback.
+  - `GET /api/attempts/:id/evaluation` — owner or administrator only.
+  - The attempt submission path now collects the **speaking** transcript and
+    the task prompts as well as the writing text, runs the evaluation agent
+    over both, and returns the result on the result screen.
+  - `tests/ai-evaluation-layer.test.ts` — 18 tests covering rubric coverage
+    for all 20 exam codes, the absence of any acoustic claim, the generic
+    fallback, the provider being unavailable without a credential, the schema
+    rejection path, and the absence of any band/grade/score field.
+
+  The objective sections are still graded by the deterministic rule engine.
+  That is deliberate: a language model must not decide a multiple-choice
+  answer. The numeric result remains `deterministic_objective`, and the
+  `Score` row's `writing` and `speaking` columns stay null.
 
 - **`check-manifest.mjs` gained check 9: no tracked file may match `.gitignore`.**
   `git ls-files -i -c --exclude-standard` must be empty. This class of defect has
@@ -20,7 +61,83 @@ Corrections and one new gate, following the merge of 1.1.0 to `main` (`bebc470`)
   clone. The check skips itself when there is no git repository, so an extracted
   source archive still passes the other eight.
 
+- **`GET /api/crm/audit-logs` and `/api/crm/audit-logs/[id]` now exist.**
+  Three admin dashboards linked to `/api/crm/audit-logs`, which was never
+  registered, so the link was a 404. The new routes are read-only — an audit
+  log is append-only, so a write is answered with 405 rather than pretending
+  to record one.
+
+- **`npm run db:seed:sample-bank`** runs the guarded synthetic question
+  seeders in the one order that works, for a disposable CI/test database.
+
 ### Fixed
+
+- **CI could never go green.** The pipeline seeded the administrator, the
+  exam types, the settings and the RBAC tables, then ran `content:validate` —
+  a gate that refuses to pass on an empty question bank. Nothing in the chain
+  ever inserted a question, so the gate always failed and CI was red on the
+  default branch. The question seeders are deliberately guarded so that
+  synthetic fixtures can never reach a production database, so the fix was to
+  add an explicit step that opts into that guard against the disposable
+  `ci-test.db` file, not to weaken the gate.
+
+- **Three validators disagreed about what a valid question type is.** The
+  grader and the CI content gate accepted `TRUE_FALSE` and the read/select
+  variants; the bank auditor rejected them as "invalid question type" and
+  failed a bank the platform grades correctly. The vocabulary now lives in
+  `src/lib/exam/question-types.json` and is read by the grader and by both
+  scripts, and `scripts/check-schema-migrations.mjs` asserts that the schema
+  documents exactly the same list.
+
+- **The bank auditor was stricter than the grader.** It reported MATCHING
+  questions with a single `correctIndex` as having no answer key, although
+  the grader grades exactly that form.
+
+- **Two Cambridge open-cloze questions could not be answered.** "Gap 1:" and
+  "Gap 2:" were typed as prompts, and the second and third gap questions
+  carried no passage at all, so the learner was asked to answer a question
+  with no context. Each gap now repeats the passage and states the sentence
+  to complete.
+
+- **`postbuild` never actually validated anything.** `scripts/validate-content.mjs`
+  did not load the project's `.env`, so every local build printed "BLOCKED:
+  DATABASE_URL is not set" and checked nothing. It now loads `.env` when
+  `DATABASE_URL` is not already exported, so an exported value still wins.
+
+- **`.env.example` advertised three settings that no code reads**
+  (`CRON_ENABLED`, `LOW_CONFIDENCE_THRESHOLD`, `MEDIUM_CONFIDENCE_THRESHOLD`).
+  The daily-generation script is deliberately disabled and the confidence
+  thresholds have no calibrated consumer, so the variables are removed rather
+  than left advertising a feature that does not exist. The variables that the
+  code *does* read but that were undocumented are now documented:
+  `ADMIN_SEED_EMAIL`, `ADMIN_SEED_PASSWORD`, `ALLOW_SYNTHETIC_SAMPLE_QUESTIONS`
+  and the `AUDIO_*` set.
+
+- **`src/lib/env.ts` validated `NEXTAUTH_URL`**, advertising an integration
+  the platform does not have. `src/lib/auth.ts` is a dependency-free session
+  system; `next-auth` is not installed and never was used.
+
+- **16 unused dependencies were removed** (`@dnd-kit/*`, `@hookform/resolvers`,
+  `@mdxeditor/editor`, `@reactuses/core`, `@tanstack/react-query`,
+  `@tanstack/react-table`, `date-fns`, `framer-motion`, `next-auth`,
+  `next-intl`, `react-markdown`, `react-syntax-highlighter`, `uuid`,
+  `zustand`). `npm audit` goes from 14 advisories (10 high) to 5, and the
+  remaining 5 are a single dev-only chain — `braces` → `micromatch` →
+  `fast-glob` → `@next/eslint-plugin-next` → `eslint-config-next` — for which
+  no fixed version of `braces` has been published and npm's suggested "fix"
+  is a downgrade to an ESLint config that predates Next 16.
+
+- **`sharp` was upgraded to 0.35.5** (forced for Next's own optional
+  dependency too), clearing three high-severity libvips/librsvg/libheif
+  advisories.
+
+- **`SECURITY.md` described controls the code does not have.** It named
+  `LOGIN_MAX_ATTEMPTS`/`LOGIN_LOCKOUT_MINUTES` (no such variables),
+  `UPLOAD_MAX_MB` (no such variable, and no general upload endpoint exists),
+  Next.js server-action CSRF tokens (the application has no server actions),
+  and a role list that did not match the code. It now names the real
+  mechanisms, and says plainly where a control is only a published policy
+  rather than an enforced behaviour (the 365-day audit-log retention).
 
 - **The 1.1.0 branch-consolidation record was wrong about `main`'s history.** It
   said `main` was a single orphan commit and that six of the seven open branches

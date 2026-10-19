@@ -212,6 +212,16 @@ const OET_EXTRA: Q[] = [
 
 // ═══ Cambridge B2 First — Expand (10 more) ══════════════════════════════
 
+/**
+ * Shared open-cloze passage. Every gap question repeats it so that each one
+ * is answerable on its own: a question that shows "Gap 2:" with no context
+ * cannot be answered, and the bank auditor rejects prompts that short.
+ */
+const CAMBRIDGE_OPEN_CLOZE =
+  "Open cloze: For many people, working from home has become ___1___ new normal. " +
+  "Studies show that remote workers are, ___2___ average, 13% more productive than office workers. " +
+  "However, some struggle ___3___ loneliness and lack of motivation.";
+
 const CAMBRIDGE_EXTRA: Q[] = [
   // Reading & Use of English
   { section: "READING", type: "MULTIPLE_CHOICE", order: 7,
@@ -229,18 +239,20 @@ const CAMBRIDGE_EXTRA: Q[] = [
     correctAnswer: "FALSE",
   },
   { section: "READING", type: "MULTIPLE_CHOICE", order: 10,
-    passage: "Open cloze: For many people, working from home has become ___1___ new normal. Studies show that remote workers are, ___2___ average, 13% more productive than office workers. However, some struggle ___3___ loneliness and lack of motivation.",
-    prompt: "Gap 1:",
+    passage: CAMBRIDGE_OPEN_CLOZE,
+    prompt: "Gap 1 — complete the sentence: \"For many people, working from home has become ___ new normal.\"",
     options: JSON.stringify(["a", "the", "an", "some"]),
     correctIndex: 1,
   },
   { section: "READING", type: "MULTIPLE_CHOICE", order: 11,
-    prompt: "Gap 2:",
+    passage: CAMBRIDGE_OPEN_CLOZE,
+    prompt: "Gap 2 — complete the sentence: \"Studies show that remote workers are, ___ average, 13% more productive than office workers.\"",
     options: JSON.stringify(["in", "at", "on", "for"]),
     correctIndex: 2,
   },
   { section: "READING", type: "MULTIPLE_CHOICE", order: 12,
-    prompt: "Gap 3:",
+    passage: CAMBRIDGE_OPEN_CLOZE,
+    prompt: "Gap 3 — complete the sentence: \"However, some struggle ___ loneliness and lack of motivation.\"",
     options: JSON.stringify(["with", "by", "from", "about"]),
     correctIndex: 0,
   },

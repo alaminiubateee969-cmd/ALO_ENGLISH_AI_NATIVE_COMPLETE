@@ -388,6 +388,9 @@ export default function PracticeTestPage() {
 
   // RESULT SCREEN
   if (result) {
+    const hasSpeakingEvaluation =
+      Array.isArray(result.evaluations) &&
+      result.evaluations.some((evaluation: any) => evaluation?.section === "SPEAKING");
     return (
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="rounded-2xl border border-slate-200 bg-white p-8">
@@ -425,11 +428,80 @@ export default function PracticeTestPage() {
             <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Listening</p><p className="text-3xl font-bold">{result.listening ?? "—"}</p></div>
             <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Reading</p><p className="text-3xl font-bold">{result.reading ?? "—"}</p></div>
             <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Writing</p><p className="text-lg font-semibold">Feedback only</p></div>
-            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Speaking</p><p className="text-lg font-semibold">Not scored</p></div>
+            <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Speaking</p><p className="text-lg font-semibold">{hasSpeakingEvaluation ? "Feedback only" : "Not scored"}</p></div>
           </div>
 
+          {/* The platform's own evaluation of the subjective sections. */}
+          {Array.isArray(result.evaluations) && result.evaluations.length > 0 && (
+            <div className="mb-6 space-y-4">
+              {result.evaluations.map((evaluation: any) => (
+                <div key={evaluation.section} className="rounded-xl border p-6">
+                  <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="font-semibold">
+                      {evaluation.section === "WRITING" ? "Writing" : "Speaking"} evaluation
+                      {evaluation.taskType ? ` — ${evaluation.taskType}` : ""}
+                    </h3>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+                      {evaluation.fallbackUsed
+                        ? "Built-in rule engine"
+                        : `Assessed by the ALO evaluation agent (${evaluation.providerUsed})`}
+                    </span>
+                  </div>
+
+                  <p className="mb-4 text-sm text-slate-700">{evaluation.summary}</p>
+
+                  {Array.isArray(evaluation.criteria) && evaluation.criteria.length > 0 && (
+                    <dl className="mb-4 space-y-3">
+                      {evaluation.criteria.map((criterion: any) => (
+                        <div key={criterion.key}>
+                          <dt className="text-sm font-medium text-slate-800">{criterion.label}</dt>
+                          <dd className="text-sm text-slate-600">{criterion.comment}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+
+                  {Array.isArray(evaluation.strengths) && evaluation.strengths.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-slate-800">What worked</p>
+                      <ul className="text-sm text-slate-600 space-y-1">
+                        {evaluation.strengths.map((item: string, i: number) => (
+                          <li key={i}>• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {Array.isArray(evaluation.improvements) && evaluation.improvements.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-slate-800">What to improve</p>
+                      <ul className="text-sm text-slate-600 space-y-1">
+                        {evaluation.improvements.map((item: string, i: number) => (
+                          <li key={i}>• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {Array.isArray(evaluation.nextSteps) && evaluation.nextSteps.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-slate-800">Next steps</p>
+                      <ul className="text-sm text-slate-600 space-y-1">
+                        {evaluation.nextSteps.map((item: string, i: number) => (
+                          <li key={i}>• {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <p className="mt-4 text-xs text-slate-400">{evaluation.disclosure}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Writing guidance only; no heuristic/model band is exposed. */}
-          {result.writingFeedback && (
+          {result.writingFeedback && (!Array.isArray(result.evaluations) || result.evaluations.length === 0) && (
             <div className="mb-6 rounded-xl border p-6">
               <h3 className="font-semibold mb-2">Writing suggestions (not a score)</h3>
               <p className="text-sm text-slate-600 mb-3">Response word count: {result.writingFeedback.wordCount}. Suggestions are generic and have not been validated against an exam-specific rubric.</p>
@@ -444,7 +516,9 @@ export default function PracticeTestPage() {
 
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 className="font-semibold text-amber-900">Speaking is not scored</h3>
-            <p className="mt-1 text-sm text-amber-800">This practice attempt does not attach a recording for acoustic assessment. Typing a transcript cannot measure spoken fluency or pronunciation, so no speaking score is produced.</p>
+            <p className="mt-1 text-sm text-amber-800">
+              Any speaking feedback above comes from the transcript only. Typing a transcript cannot measure spoken fluency or pronunciation, so no speaking score is produced.
+            </p>
           </div>
 
           <p className="text-xs text-slate-400 mb-4">{result.disclosureText}</p>

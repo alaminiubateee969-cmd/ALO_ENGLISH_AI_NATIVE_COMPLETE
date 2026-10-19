@@ -46,11 +46,12 @@ Error: { "success": false, "status": 400, "message": "...", "error": "ERROR_CODE
 ## Exam Platform API
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | /api/exam-types | None | List 32 exam types |
+| GET | /api/exam-types | None | List 20 exam types |
 | GET | /api/practice-sets | None | List practice sets |
 | POST | /api/attempts/start | STUDENT | Start attempt |
-| POST | /api/attempts/submit | STUDENT | Submit + AI evaluate |
+| POST | /api/attempts/submit | STUDENT | Submit + run the evaluation agent |
 | GET | /api/attempts | STUDENT | List user attempts |
+| GET | /api/attempts/:id/evaluation | Owner / ADMIN | Read the stored evaluation for an attempt |
 
 ## Admin API
 | Method | Path | Auth | Description |

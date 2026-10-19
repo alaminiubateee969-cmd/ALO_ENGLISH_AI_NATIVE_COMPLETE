@@ -87,11 +87,12 @@ db-reset: ## Reset the database (DESTRUCTIVE)
 	bun run db:reset
 
 # ─── Deployment ────────────────────────────────────────────────────────
-preflight: ## Dependency-free gates: manifest + schema/migration parity + inventories
+preflight: ## Dependency-free gates: manifest + schema/migration parity + inventories + project index
 	@echo "▸ Repository preflight…"
 	node scripts/check-manifest.mjs
 	node scripts/check-schema-migrations.mjs
 	node scripts/generate-inventories.mjs --check
+	node scripts/generate-project-index.mjs --check
 	@echo "✓ Preflight clean"
 
 smoke: ## Boot the built artifact and assert it serves traffic (needs `make build` first)

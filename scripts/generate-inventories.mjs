@@ -214,6 +214,25 @@ function isPublicApi(path) {
   return PUBLIC_API_PATTERNS.some((pattern) => pattern.test(path));
 }
 
+/**
+ * Routes whose write verbs exist only to answer 405.
+ *
+ * The audit trail is append-only, so /api/crm/audit-logs* exports the write
+ * handlers to return a proper "method not allowed" envelope instead of the
+ * framework's bare 405. Listing the verb without saying it is always refused
+ * would overstate what the endpoint does.
+ */
+const READ_ONLY_API_PATHS = new Set([
+  "/api/crm/audit-logs",
+  "/api/crm/audit-logs/{id}",
+]);
+
+function methodLabel(methods, path) {
+  const label = methods.join(" ") || "(none exported)";
+  if (!READ_ONLY_API_PATHS.has(path) || methods.length === 0) return label;
+  return `${label} (writes answer 405)`;
+}
+
 function apiInventory() {
   const apiRoot = join(ROOT, "src/app/api");
   const files = walk(apiRoot).filter((f) => f.endsWith("route.ts")).sort();
@@ -229,7 +248,7 @@ function apiInventory() {
     const path = routePath(file);
     rows.push([
       path,
-      methods.join(" ") || "(none exported)",
+      methodLabel(methods, path),
       authLevel(source, path),
       runtime,
       file.slice(ROOT.length + 1),

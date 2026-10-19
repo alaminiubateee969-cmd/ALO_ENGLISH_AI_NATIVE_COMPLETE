@@ -3,8 +3,12 @@
 ## Authentication & Authorization
 - bcrypt cost 12 password hashing
 - HMAC-SHA256 session tokens (timing-safe)
-- 13 roles with server-side RBAC enforcement
-- rate limiting on auth endpoints
+- two enforcement layers: legacy role strings on `User.role`
+  (`SUPER_ADMIN`, `ADMIN`, `COUNSELOR`, `STUDENT`, `EXAMINER`) and
+  permission + team RBAC (`src/lib/rbac.ts`, `/api/rbac/*`) seeded with
+  9 roles, 44 permissions and 149 role-permission mappings
+- object-level scoping is fail-closed (`src/lib/crud-scope.ts`)
+- rate limiting on auth endpoints (in-process sliding window)
 
 ## Answer Key Protection
 - /api/questions omits correctAnswer, correctIndex from response
