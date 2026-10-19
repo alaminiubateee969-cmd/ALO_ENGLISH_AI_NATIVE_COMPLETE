@@ -16,7 +16,9 @@ sufficient.
 | Package manifest JSON | PASS | Parsed successfully after the dependency-removal edit. | Repeat with the final diff. |
 | TypeScript | PASS | `npx tsc --noEmit` → exit 0, no output. | Keep typecheck required. |
 | ESLint | PASS | `npx eslint .` → exit 0, no findings. | Keep lint in the required CI gate. |
-| Full test suite | PASS | `bun test tests/` → **151 pass, 0 fail, 696 assertions, 14 files.** | Keep the aggregate gate. |
+| Full test suite | PASS | `bun test tests/` → **209 pass, 0 fail, 1287 assertions, 16 files**, and the same result in CI (run `39218505436`, step "Tests — all suites" green). | Keep the aggregate gate. |
+| CI pipeline, end to end | **PASS — observed green** | Run `39218505436`: every step of the verify job green, including "Validate question content" (the gate that could never pass before), "Tests — all suites", "Build" and "Verify build output"; plus "Host-parity build (npm, exactly as the host runs it)" and "Script syntax validation". | Keep it required before every merge. |
+| Database path agreement | PASS | `tests/paths.test.ts` asserts that the application, the Prisma CLI and a raw `new PrismaClient()` all open the same file, and that no relative `file:` URL remains in the CI workflow. | Keep the absolute `DATABASE_URL` in CI and in production. |
 | AI evaluation layer | PASS | `tests/ai-evaluation-layer.test.ts` (18 tests): rubric coverage for all 20 exam codes, no acoustic claim, generic fallback, provider unavailable without a credential, schema rejection, no band/grade/score field, too-short work not sent. | Add a human-rated benchmark before any scoring claim. |
 | Objective grading, timers, answer redaction | PASS | Pure exam-engine suite passed in the full run, including stored answer keys, generic indicators, server timer, transcript redaction, and unknown-type fail-closed behaviour. | Add persisted API integration tests. |
 | Attempt end to end | PASS | Live: login → start → submit → `SCORED` → evaluation read back via `GET /api/attempts/:id/evaluation` (200, 2 rows). `scoreProvider` stayed `deterministic_objective`. | Repeat on staging. |

@@ -1,8 +1,12 @@
 # Production Deployment Report
 
 **Audit date:** 2026-10-19  
-**Report status:** NOT VERIFIED — the repository builds, tests and boots here,
-but no production deployment of this branch was performed or observed.  
+**Report status:** CI is **observed green** (run `39218505436`, every step
+green, including the content gate that could never pass before, the whole test
+suite, the build, and the host-parity build that boots the artifact and
+asserts it serves traffic). What is still NOT VERIFIED is the **production
+deployment itself** — no deployment of this branch was performed or observed,
+and the production domain in the brief does not resolve in DNS.  
 **Branch:** `arena/0c643bfe-alo-english-ai-native-complete`  
 **Base commit:** `77bf99450eddbfe3d7e633f2689090064f6a50c9` (of `main`)
 
