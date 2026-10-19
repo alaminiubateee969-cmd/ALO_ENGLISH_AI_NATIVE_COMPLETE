@@ -7,14 +7,35 @@
  * PROJECT-INDEX.md was written by hand and then left. By 2026-10-19 it claimed
  * 21 files under `src/components/ai-os/` (there are 20), 25 under
  * `src/components/alo/` (26), 42 under `src/components/ui/` (48), 7 Prisma
- * models (there are 46), 1 test file (14), 1 CI workflow (2) and 189+ files in
- * the repository (661). It also pointed at `src/middleware.ts`, which does not
+ * models (there are 54), 1 test file (14), 1 CI workflow (2) and 189+ files in
+ * the repository (675). It also pointed at `src/middleware.ts`, which does not
  * exist — Next 16 renamed it to `src/proxy.ts`.
  *
  * An index that is wrong is worse than no index: it is the first thing
  * someone trusts when they are trying to work out what a system does. This
- * script derives the index from the same source the inventory CSVs use, so it
- * can be regenerated rather than maintained.
+ * script derives the index from the source, so it can be regenerated rather
+ * than maintained.
+ *
+ * THE ONE RULE: THE INDEX DESCRIBES THE REPOSITORY, NOT THE WORKING TREE
+ * ──────────────────────────────────────────────────────────────────────
+ * Every list in this file comes from the set of files that belong to the
+ * repository:
+ *
+ *     git ls-files --cached --others --exclude-standard
+ *
+ * That is the tracked set plus the untracked files that are not ignored. It
+ * is deliberately *not* a filesystem walk. Two reasons, both learned the hard
+ * way:
+ *
+ *  1. `git ls-files` alone lists the *index*, so a file that had been
+ *     written but not yet staged was invisible, and the committed index
+ *     disagreed with what a clean checkout computes. CI rejected it.
+ *  2. A filesystem walk includes generated files that are gitignored —
+ *     `next-env.d.ts`, which Next.js writes on every build. A clean
+ *     checkout does not have it, so the same tree produced two different
+ *     indexes depending on whether a build had been run.
+ *
+ * Both failures were found by CI, and both are why this rule exists.
  *
  * Run:  node scripts/generate-project-index.mjs [--check]
  *   --check   regenerate in memory and exit 1 if the file differs from what is
@@ -23,8 +44,8 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -33,67 +54,47 @@ const OUTPUT = join(ROOT, "PROJECT-INDEX.md");
 
 const read = (rel) => readFileSync(join(ROOT, rel), "utf8");
 
-/** Directories that are not part of the application source. */
-const EXCLUDED_DIRS = new Set([
-  "node_modules",
-  ".git",
-  ".next",
-  ".arena",
-  "cpanel-production",
-  "docs/archive",
-  "vendor",
-  "mini-services",
-  "examples",
-]);
-
-function walk(dir, out = [], filter = () => true) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith(".") && entry.name !== ".github" && entry.name !== ".zscripts") continue;
-    if (EXCLUDED_DIRS.has(entry.name)) continue;
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out, filter);
-    else if (filter(full)) out.push(full);
-  }
-  return out;
-}
-
-function countFiles(dir, filter = () => true) {
-  if (!existsSync(dir)) return 0;
-  return walk(dir, [], filter).length;
-}
-
-function listNames(dir, filter = () => true) {
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((name) => !name.startsWith("."))
-    .filter((name) => filter(join(dir, name)))
-    .sort();
-}
-
 /**
- * Count the files that will be in the repository.
- *
- * This counts tracked files *and* untracked files that are not ignored.
- * Counting only the tracked set would make the number depend on whether the
- * new files had been staged yet, so the same tree would produce two
- * different answers depending on when the generator ran — and CI, which
- * checks out a clean tree, would compute a different number from the one
- * that was committed.
- *
- * `scripts/generate-inventories.mjs` counts its file manifest the same way,
- * which is why the two never disagree.
+ * Every file that belongs to the repository, as repository-relative paths.
+ * See the note at the top of this file: this is the only source of truth
+ * for every list below.
  */
-function trackedFileCount() {
+function repositoryFiles() {
   try {
     const out = execFileSync(
       "git",
-      ["ls-files", "--cached", "--others", "--exclude-standard"],
-      { cwd: ROOT, encoding: "utf8" },
+      ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+      { cwd: ROOT, encoding: "utf8", maxBuffer: 64e6 },
     );
-    return out.split("\n").filter(Boolean).length;
+    return new Set(out.split("\0").filter(Boolean));
   } catch {
-    return 0;
+    return new Set();
   }
+}
+
+const REPO_FILES = repositoryFiles();
+
+/** The repository-relative paths under a directory, sorted. */
+function repoFilesUnder(dir) {
+  const prefix = dir.endsWith("/") ? dir : `${dir}/`;
+  return [...REPO_FILES]
+    .filter((file) => file.startsWith(prefix))
+    .map((file) => file.slice(prefix.length))
+    .sort();
+}
+
+/** The number of repository files under a directory. */
+function repoCountUnder(dir) {
+  return repoFilesUnder(dir).length;
+}
+
+/** The number of repository files directly inside a directory. */
+function repoCountDirect(dir) {
+  const prefix = dir.endsWith("/") ? dir : `${dir}/`;
+  return [...REPO_FILES].filter((file) => {
+    if (!file.startsWith(prefix)) return false;
+    return !file.slice(prefix.length).includes("/");
+  }).length;
 }
 
 // ─── Source facts ─────────────────────────────────────────────────────────
@@ -102,18 +103,18 @@ const schema = read("prisma/schema.prisma");
 const modelCount = (schema.match(/^model\s+\w+\s*\{/gm) || []).length;
 const enumCount = (schema.match(/^enum\s+\w+\s*\{/gm) || []).length;
 
-const migrationDirs = readdirSync(join(ROOT, "prisma", "migrations"), { withFileTypes: true })
-  .filter((d) => d.isDirectory())
-  .map((d) => d.name)
+const migrationDirs = [...REPO_FILES]
+  .filter((file) => file.startsWith("prisma/migrations/"))
+  .map((file) => file.split("/")[2])
+  .filter((name) => name && name !== "migration_lock.toml")
+  .filter((name, index, all) => all.indexOf(name) === index)
   .sort();
 
-const routeFiles = countFiles(join(ROOT, "src", "app"), (f) => f.endsWith("route.ts"));
-const pageFiles = countFiles(join(ROOT, "src", "app"), (f) => f.endsWith("page.tsx"));
-const layoutFiles = countFiles(join(ROOT, "src", "app"), (f) => f.endsWith("layout.tsx"));
-const apiDirs = readdirSync(join(ROOT, "src", "app", "api"), { withFileTypes: true })
-  .filter((d) => d.isDirectory())
-  .map((d) => d.name)
-  .sort();
+const routeFiles = repoFilesUnder("src/app").filter((f) => f.endsWith("route.ts")).length;
+const pageFiles = repoFilesUnder("src/app").filter((f) => f.endsWith("page.tsx")).length;
+const layoutFiles = repoFilesUnder("src/app").filter((f) => f.endsWith("layout.tsx")).length;
+
+const apiDirs = repoFilesUnder("src/app/api").filter((name) => !name.includes("/")).sort();
 
 const componentGroups = [
   ["AI OS", "src/components/ai-os", "Hidden admin modules."],
@@ -124,14 +125,15 @@ const componentGroups = [
   ["shadcn/ui", "src/components/ui", "Component library."],
 ];
 
-const libFiles = listNames(join(ROOT, "src", "lib"), (f) => statSync(f).isDirectory());
-const testFiles = listNames(join(ROOT, "tests"), (f) => f.endsWith(".ts"));
-const scriptFiles = listNames(join(ROOT, "scripts"), (f) => statSync(f).isFile());
-const workflowFiles = listNames(join(ROOT, ".github", "workflows"), (f) => f.endsWith(".yml"));
-const serverConfigFiles = listNames(join(ROOT, "server-config"), (f) => statSync(f).isFile());
-const publicFiles = walk(join(ROOT, "public"), []).map((f) => relative(ROOT, f));
-const publicImages = publicFiles.filter((f) => f.startsWith("public/images/"));
-const docFiles = listNames(join(ROOT, "docs"), (f) => f.endsWith(".md"));
+const libFiles = repoFilesUnder("src/lib").filter((name) => !name.includes("/"));
+const testFiles = repoFilesUnder("tests").filter((f) => f.endsWith(".ts"));
+const scriptFiles = repoFilesUnder("scripts").filter((f) => !f.includes("/"));
+const workflowFiles = repoFilesUnder(".github/workflows").filter((f) => f.endsWith(".yml"));
+const serverConfigFiles = repoFilesUnder("server-config").filter((f) => !f.includes("/"));
+const publicFiles = repoFilesUnder("public");
+const publicImages = publicFiles.filter((f) => f.startsWith("images/"));
+const docFiles = repoFilesUnder("docs").filter((f) => f.endsWith(".md"));
+
 const rootDocs = [
   "README.md",
   "DEPLOYMENT.md",
@@ -144,7 +146,7 @@ const rootDocs = [
   "API_DOCUMENTATION.md",
   "VALIDATION-REPORT.md",
   "PROJECT-INDEX.md",
-].filter((name) => existsSync(join(ROOT, name)));
+].filter((name) => REPO_FILES.has(name));
 
 const rootConfig = [
   "package.json",
@@ -161,12 +163,12 @@ const rootConfig = [
   "Makefile",
   "next-env.d.ts",
   "server.js",
-].filter((name) => existsSync(join(ROOT, name)));
+].filter((name) => REPO_FILES.has(name));
 
 const envExample = read(".env.example");
 const envVarCount = (envExample.match(/^[A-Z_][A-Z0-9_]*=/gm) || []).length;
 
-const totalTracked = trackedFileCount();
+const totalTracked = REPO_FILES.size;
 
 // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -184,6 +186,10 @@ push(
   "> 7 Prisma models against the real number, 1 test file against the real",
   "> number, and pointed at `src/middleware.ts`, which Next 16 replaced with",
   "> `src/proxy.ts`.",
+  ">",
+  "> The index describes the **repository**, not the working tree: every list",
+  "> comes from `git ls-files --cached --others --exclude-standard`, so a",
+  "> generated file that is gitignored cannot change the result.",
   "",
   "A complete map of every file in this project, organized by purpose.",
   "",
@@ -198,13 +204,13 @@ for (const name of rootConfig) {
         ? "Lockfile"
         : name === "package-lock.json"
           ? "Lockfile (npm, used by the host pipeline)"
-        : name === "Makefile"
-          ? "Workflow shortcuts (`make help` for all commands)"
-          : name === ".env.example"
-            ? `Environment template (${envVarCount} variables, no secrets)`
-            : name === "server.js"
-              ? "Production entry point for the standalone build"
-              : "Configuration";
+          : name === "Makefile"
+            ? "Workflow shortcuts (`make help` for all commands)"
+            : name === ".env.example"
+              ? `Environment template (${envVarCount} variables, no secrets)`
+              : name === "server.js"
+                ? "Production entry point for the standalone build"
+                : "Configuration";
   push(`| \`${name}\` | ${purpose} |`);
 }
 push("");
@@ -241,13 +247,15 @@ push(
 
 push("## Source — API Routes", "", "| Group | Route files |", "|---|---|");
 for (const dir of apiDirs) {
-  const count = countFiles(join(ROOT, "src", "app", "api", dir), (f) => f.endsWith("route.ts"));
+  const count = repoFilesUnder(`src/app/api/${dir}`).filter((f) => f.endsWith("route.ts")).length;
   push(`| \`api/${dir}\` | ${count} |`);
 }
 push(`| **total** | **${routeFiles}** |`, "");
 
 push("## Source — Libraries", "", "| Path | Purpose |", "|---|---|");
-push(`| \`src/lib/\` (${libFiles.length} modules) | ${libFiles.map((d) => `\`${d}\``).join(", ")} |`);
+push(
+  `| \`src/lib/\` (${libFiles.length} modules) | ${libFiles.map((d) => `\`${d}\``).join(", ")} |`,
+);
 push("");
 
 push("## Source — Middleware", "", "| File | Purpose |", "|---|---|");
@@ -256,7 +264,7 @@ push("");
 
 push("## Source — Components", "", "| Group | Files |", "|---|---|");
 for (const [label, dir, purpose] of componentGroups) {
-  push(`| \`${dir}\` | ${countFiles(join(ROOT, dir))} — ${purpose} |`);
+  push(`| \`${dir}\` | ${repoCountUnder(dir)} — ${purpose} |`);
 }
 push("");
 
@@ -312,10 +320,11 @@ push(
   "",
   "| Path | Purpose |",
   "|---|---|",
-  `| \`public/logo.svg\` | Platform logo |`,
-  `| \`public/robots.txt\` | SEO robots |`,
-  `| \`public/images/\` | ${publicImages.length} platform images |`,
-  `| \`public/examiners/\` | Examiner portraits |`,
+  "| `public/logo.svg` | Platform logo |",
+  "| `public/robots.txt` | SEO robots |",
+  "| `public/favicon.ico` | Browser icon (generated by `scripts/generate-favicon.mjs`) |",
+  "| `public/images/` | " + publicImages.length + " platform images |",
+  "| `public/examiners/` | Examiner portraits |",
   "",
 );
 
@@ -333,7 +342,12 @@ push("");
 const generated = lines.join("\n");
 
 if (CHECK_ONLY) {
-  const current = existsSync(OUTPUT) ? readFileSync(OUTPUT, "utf8") : "";
+  let current = "";
+  try {
+    current = readFileSync(OUTPUT, "utf8");
+  } catch {
+    current = "";
+  }
   if (current !== generated) {
     console.error(
       "PROJECT-INDEX.md is out of date. Run: node scripts/generate-project-index.mjs",
@@ -346,5 +360,5 @@ if (CHECK_ONLY) {
 
 writeFileSync(OUTPUT, generated);
 console.log(
-  `Wrote PROJECT-INDEX.md (${totalTracked} tracked files, ${modelCount} models, ${routeFiles} API routes, ${pageFiles} pages).`,
+  `Wrote PROJECT-INDEX.md (${totalTracked} repository files, ${modelCount} models, ${routeFiles} API routes, ${pageFiles} pages).`,
 );
