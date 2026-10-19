@@ -9,6 +9,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The platform now has a real AI agent workforce: fourteen agents, each
+  with an execution handler, running on a durable job queue.** The registry
+  used to be a hand-written list of twenty aspirational entries that all said
+  "not verified". It listed agents that did not exist, described agents that
+  did something else, and omitted the ones that did.
+
+  - A **SQLite-backed durable job queue** (`src/lib/agents/runtime/queue.ts`).
+    BullMQ needs Redis; the production deployment is a single Hostinger node
+    with SQLite and no Redis, and adding Redis would mean a second thing that
+    can be down. The queue keeps the properties that matter: jobs are leased
+    so a crashed worker cannot lose them, failures are retried with
+    exponential backoff and jitter and then dead-lettered, an enqueue can be
+    made idempotent so a retried request does not do the work twice, and every
+    transition is a row. The interface is deliberately close to BullMQ's, so
+    swapping in Redis later is a contained change.
+  - **Fourteen agents** (`src/lib/agents/runtime/agents/`): Exam Orchestrator,
+    Question Generation, Question Quality Gate, Speaking Examiner, Writing
+    Examiner, Listening & Media, Personal AI Teacher, Adaptive Learning,
+    Daily Learning, Analytics, CRM Synchronization, Security & Audit, AI Model
+    Router, and Agent Quality Improvement. Each one does real work against the
+    real database.
+  - **Every agent has a contract and a budget**: a JSON Schema for its input
+    and its output, an explicit permission list, a time budget, a retry budget,
+    a concurrency limit and an input-size limit. The runtime enforces them; a
+    payload that does not match the input schema is rejected rather than
+    retried, and a result that does not match the output schema is refused.
+  - **An approval gate.** No agent can publish content, change a rubric or
+    change the code. The quality gate raises an `AgentApproval`; a human
+    decides; the publish job re-checks the approval's status, so approving
+    twice cannot publish twice. Verified end to end: three drafts were
+    generated, gated, left the live set untouched until an approval was
+    recorded, and were then published with their answer keys intact — and a
+    re-run of the same seed was correctly rejected as a duplicate.
+  - **A self-hosted model endpoint** (`src/lib/ai/local/endpoint.ts`) with a
+    health probe, a circuit breaker, a concurrency-limited queue, a bounded
+    response cache and token accounting. It is tried **first**, before any
+    external provider, because the platform must not depend on a paid API and
+    must not send learner work to a third party by default.
+  - **Versioned exam blueprints** (`src/lib/agents/runtime/blueprints.ts`) for
+    all twenty exams the platform offers, each with its sections, timings,
+    item types, score scale, the public provider specification it was taken
+    from, and the date it was checked. The code asserts that every type a
+    blueprint names is one the grader can score.
+  - **A deterministic item generator** whose answer key is correct by
+    construction, because the question and the passage are built from the same
+    fact. It is what makes the daily pipeline work without a paid model.
+  - **Admin monitoring**: `/admin/agents`, `/api/agents/status`,
+    `/api/agents/metrics`, `/api/agents/jobs`, `/api/agents/approvals` and
+    `/api/agents/worker/run`. An agent's status is measured from completed
+    jobs, never typed by hand.
+  - `scripts/agent-worker.mjs` and `scripts/daily-question-pipeline.mjs` for
+    the host's cron, plus `npm run agents:work` and `npm run agents:daily`.
+  - `tests/agent-workforce.test.ts`: 45 tests that run the real handlers
+    against the real database. If a handler were a stub, they would fail.
+
+- **`docs/AGENT_WORKFORCE.md` and `docs/EXAM_BLUEPRINTS.md`.**
+
+
+### Added
+
 - **The platform now has its own working evaluation agent, for every exam it
   offers.** The registry listed a "Writing Evaluator" and a "Speaking
   Evaluator" for all exams, but the only implementation was a local heuristic
@@ -138,6 +198,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and a role list that did not match the code. It now names the real
   mechanisms, and says plainly where a control is only a published policy
   rather than an enforced behaviour (the 365-day audit-log retention).
+
+- **The `drainQueue` loop orphaned a claimed job.** When a job failed, the
+  loop claimed a second job to test whether there was more work, and never
+  executed it. The job sat in `RUNNING` until its lease expired, and the
+  agent's concurrency slot was blocked meanwhile. The end-to-end run against
+  the live application found it. The loop now asks the round whether it
+  claimed anything.
+
+- **The approval did not carry a target practice set,** so an approved publish
+  had nowhere to go and silently produced no publish job. The quality gate now
+  takes the target set, carries it on the approval, and the approval route
+  says out loud when a publish cannot be scheduled.
+
+- **The question generator produced an ungrammatical stem** — "did the site
+  generated" — because the question used the passage's past participle. The
+  generator now carries the base form for the question, and a test asserts
+  that no generated stem is ungrammatical.
 
 - **The 1.1.0 branch-consolidation record was wrong about `main`'s history.** It
   said `main` was a single orphan commit and that six of the seven open branches

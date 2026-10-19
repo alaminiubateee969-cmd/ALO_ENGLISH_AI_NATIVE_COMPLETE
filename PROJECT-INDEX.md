@@ -30,7 +30,7 @@ A complete map of every file in this project, organized by purpose.
 | `next-env.d.ts` | Configuration |
 | `server.js` | Production entry point for the standalone build |
 
-## Documentation (36 files)
+## Documentation (38 files)
 
 | File | Purpose |
 |---|---|
@@ -45,9 +45,9 @@ A complete map of every file in this project, organized by purpose.
 | `API_DOCUMENTATION.md` | API documentation |
 | `VALIDATION-REPORT.md` | Production readiness report |
 | `PROJECT-INDEX.md` | This file |
-| `docs/` | 25 documents |
+| `docs/` | 27 documents |
 
-## Source — App Router (82 API routes, 32 pages, 1 layout)
+## Source — App Router (86 API routes, 33 pages, 1 layout)
 
 API route groups: `admin`, `agents`, `attempts`, `audio`, `auth`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`.
 
@@ -58,7 +58,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | Group | Route files |
 |---|---|
 | `api/admin` | 2 |
-| `api/agents` | 1 |
+| `api/agents` | 5 |
 | `api/attempts` | 7 |
 | `api/audio` | 1 |
 | `api/auth` | 6 |
@@ -80,7 +80,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/rag` | 2 |
 | `api/rbac` | 4 |
 | `api/speaking` | 3 |
-| **total** | **82** |
+| **total** | **86** |
 
 ## Source — Libraries
 
@@ -111,20 +111,20 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `src/hooks/` | Shared React hooks |
 
-## Database (46 models, 0 enums, 8 migrations)
+## Database (54 models, 0 enums, 9 migrations)
 
 | Path | Purpose |
 |---|---|
-| `prisma/schema.prisma` | 46 models |
-| `prisma/migrations/` | 8 migration folders |
+| `prisma/schema.prisma` | 54 models |
+| `prisma/migrations/` | 9 migration folders |
 | `prisma/seed.mjs`, `prisma/seed-rbac.ts` | Core data + RBAC seeds |
 | `prisma/seed-sample-bank.mjs` | Guarded synthetic sample bank (disposable databases only) |
 
-## Scripts (24 files)
+## Scripts (26 files)
 
 | Path | Purpose |
 |---|---|
-| `scripts/` | `audit-with-rea.sh`, `backup.sh`, `bootstrap-admin.ts`, `check-manifest.mjs`, `check-schema-migrations.mjs`, `ensure-prisma-client.mjs`, `finalize-standalone.mjs`, `generate-daily-questions.ts`, `generate-favicon.mjs`, `generate-inventories.mjs`, `generate-listening-audio.mjs`, `generate-missing-migration.sh`, `generate-project-index.mjs`, `healthcheck.sh`, `install.sh`, `listening-audio-utils.mjs`, `restore.sh`, `rollback.sh`, `smoke-standalone.mjs`, `update.sh`, `validate-content.mjs`, `validate-question-bank.ts`, `verify-listening-audio.mjs`, `verify.sh` |
+| `scripts/` | `agent-worker.mjs`, `audit-with-rea.sh`, `backup.sh`, `bootstrap-admin.ts`, `check-manifest.mjs`, `check-schema-migrations.mjs`, `daily-question-pipeline.mjs`, `ensure-prisma-client.mjs`, `finalize-standalone.mjs`, `generate-daily-questions.ts`, `generate-favicon.mjs`, `generate-inventories.mjs`, `generate-listening-audio.mjs`, `generate-missing-migration.sh`, `generate-project-index.mjs`, `healthcheck.sh`, `install.sh`, `listening-audio-utils.mjs`, `restore.sh`, `rollback.sh`, `smoke-standalone.mjs`, `update.sh`, `validate-content.mjs`, `validate-question-bank.ts`, `verify-listening-audio.mjs`, `verify.sh` |
 
 ## Server Configuration (5 files)
 
@@ -132,11 +132,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `server-config/` | `Caddyfile.production`, `README.md`, `alo-english.nginx`, `alo-english.service`, `sudo-policy` |
 
-## Tests (14 files)
+## Tests (15 files)
 
 | Path | Purpose |
 |---|---|
-| `tests/` | `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `crud-scope.test.ts`, `exam-attempt.test.ts`, `exam-engine.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `seed-sample-guard.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts` |
+| `tests/` | `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `crud-scope.test.ts`, `exam-attempt.test.ts`, `exam-engine.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `seed-sample-guard.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts` |
 
 ## CI/CD (2 workflows)
 
@@ -157,11 +157,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 660 |
-| Prisma models | 46 |
-| API routes | 82 |
-| Pages | 32 |
-| Migrations | 8 |
-| Test files | 14 |
-| Scripts | 24 |
+| Tracked files | 675 |
+| Prisma models | 54 |
+| API routes | 86 |
+| Pages | 33 |
+| Migrations | 9 |
+| Test files | 15 |
+| Scripts | 26 |
 | Environment variables (template) | 29 |

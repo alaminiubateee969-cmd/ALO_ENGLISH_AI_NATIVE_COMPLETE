@@ -45,3 +45,11 @@ Role,Phase 1: RBAC + Multi-Tenancy + Session Management,8,3,id (@id); slug (@uni
 Permission,Phase 1: RBAC + Multi-Tenancy + Session Management,4,1,id (@id); key (@unique),@@index(category); @@index(key)
 RolePermission,Phase 1: RBAC + Multi-Tenancy + Session Management,2,2,-,@@index(permissionId)
 Session,Phase 1: RBAC + Multi-Tenancy + Session Management,8,1,id (@id); token (@unique),@@index(userId); @@index(expiresAt); @@index(token)
+AgentDefinition,AI Agent Workforce,18,5,id (@id); code (@unique),@@index(department); @@index(enabled)
+AgentJob,AI Agent Workforce,21,4,"id (@id); @@unique(idempotencyScope,idempotencyKey)","@@index(status,runAfter); @@index(queue,status,runAfter); @@index(agentId,status); @@index(createdAt)"
+AgentJobEvent,AI Agent Workforce,9,2,id (@id),"@@index(jobId,createdAt); @@index(agentId,createdAt); @@index(level,createdAt)"
+AgentArtifact,AI Agent Workforce,10,2,id (@id),"@@index(jobId); @@index(agentId,kind); @@index(ref)"
+AgentApproval,AI Agent Workforce,14,2,id (@id),"@@index(status,createdAt); @@index(agentId,status)"
+AgentMetric,AI Agent Workforce,15,1,"id (@id); @@unique(agentId,day)",@@index(day)
+ExamBlueprint,AI Agent Workforce,9,0,"id (@id); @@unique(examTypeCode,version)",@@index(examTypeCode)
+DailyQuestionRun,AI Agent Workforce,15,0,"id (@id); @@unique(day,examTypeCode)",@@index(day)

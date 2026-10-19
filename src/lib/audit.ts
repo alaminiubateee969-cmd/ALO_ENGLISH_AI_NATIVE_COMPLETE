@@ -87,7 +87,13 @@ export type AuditAction =
   | 'USER_CREATED'
   | 'USER_UPDATED'
   | 'USER_DISABLED'
-  | 'USER_ENABLED';
+  | 'USER_ENABLED'
+  // AI agent workforce
+  | 'AGENT_JOB_ENQUEUED'
+  | 'AGENT_JOB_APPROVED'
+  | 'AGENT_JOB_REJECTED'
+  | 'AGENT_APPROVAL_DECIDED'
+  | 'AGENT_CONTENT_PUBLISHED';
 
 /**
  * Record an audit log entry.

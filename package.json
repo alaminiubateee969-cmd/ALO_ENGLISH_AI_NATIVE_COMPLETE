@@ -34,6 +34,8 @@
     "inventories:check": "node scripts/generate-inventories.mjs --check",
     "index:generate": "node scripts/generate-project-index.mjs",
     "index:check": "node scripts/generate-project-index.mjs --check",
+    "agents:work": "node scripts/agent-worker.mjs",
+    "agents:daily": "node scripts/daily-question-pipeline.mjs",
     "verify": "bash scripts/verify.sh",
     "audit:rea": "bash scripts/audit-with-rea.sh",
     "backup": "bash scripts/backup.sh",

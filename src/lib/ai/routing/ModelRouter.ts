@@ -34,7 +34,13 @@ export type TaskType =
   | "self_improvement"
   | "reasoning";
 
-export type ProviderId = "groq" | "openrouter" | "gemini" | "huggingface" | "local";
+export type ProviderId =
+  | "local_model"
+  | "groq"
+  | "openrouter"
+  | "gemini"
+  | "huggingface"
+  | "local";
 
 export type ModelConfig = {
   provider: ProviderId;
@@ -74,10 +80,20 @@ const TASK_SETTINGS: Record<TaskType, TaskSettings> = {
  * The provider chain, in preference order. The first provider with a
  * credential wins; if none has one, the local rule engine is used.
  */
-const PROVIDER_CHAIN: ProviderId[] = ["groq", "openrouter", "gemini", "huggingface"];
+const PROVIDER_CHAIN: ProviderId[] = [
+  // The self-hosted model server comes first. The platform must not depend
+  // on a paid external API, and a model we host ourselves has no per-call
+  // cost and no third-party retention of learner work.
+  "local_model",
+  "groq",
+  "openrouter",
+  "gemini",
+  "huggingface",
+];
 
 /** Default model per provider. Every one of them can be overridden by env. */
 const DEFAULT_MODELS: Record<ProviderId, string> = {
+  local_model: "local-model",
   groq: "llama-3.3-70b-versatile",
   openrouter: "meta-llama/llama-3.3-70b-instruct",
   gemini: "gemini-2.0-flash",
@@ -86,6 +102,7 @@ const DEFAULT_MODELS: Record<ProviderId, string> = {
 };
 
 const MODEL_ENV_KEY: Record<ProviderId, string> = {
+  local_model: "AI_LOCAL_MODEL_NAME",
   groq: "AI_MODEL_GROQ",
   openrouter: "AI_MODEL_OPENROUTER",
   gemini: "AI_MODEL_GEMINI",
@@ -96,6 +113,9 @@ const MODEL_ENV_KEY: Record<ProviderId, string> = {
 /** The model a provider will use, honouring the env overrides. */
 export function modelFor(provider: ProviderId): string {
   if (provider === "local") return DEFAULT_MODELS.local;
+  if (provider === "local_model") {
+    return (process.env.AI_LOCAL_MODEL_NAME || "").trim() || DEFAULT_MODELS.local_model;
+  }
   const specific = MODEL_ENV_KEY[provider] ? (process.env[MODEL_ENV_KEY[provider]] || "").trim() : "";
   if (specific) return specific;
   const global = (process.env.AI_MODEL || "").trim();
@@ -159,10 +179,41 @@ export function routeModel(task: TaskType): RouteResult {
 }
 
 /**
+ * The ordered list of providers to try for a task.
+ *
+ * The chain always ends with `local`, the deterministic rule engine, so a
+ * task never has nowhere to go. `routeModel` returns the first *available*
+ * entry; `routeChain` returns all of them, so the provider layer can fall
+ * through when a provider fails mid-request.
+ */
+export function routeChain(task: TaskType): RouteResult[] {
+  const configs = MODEL_REGISTRY[task];
+  if (!configs || configs.length === 0) {
+    return [{ provider: "local", model: "rule-engine", used: true, fallback: true }];
+  }
+  return configs
+    .filter((config) => isProviderAvailable(config.provider))
+    .map((config, index) => ({
+      provider: config.provider,
+      model: config.model,
+      used: true,
+      fallback: index > 0,
+    }));
+}
+
+/**
  * Check if a provider is available (has API key configured).
  */
 export function isProviderAvailable(provider: ProviderId): boolean {
   if (provider === "local") return true; // Always available
+  if (provider === "local_model") {
+    // A self-hosted server is not an external API, so AI_ENABLED=false does
+    // not disable it: that flag exists to stop the platform spending money
+    // and sending learner work to a third party.
+    const enabled = (process.env.AI_LOCAL_MODEL_ENABLED || "").trim().toLowerCase();
+    const endpoint = (process.env.AI_LOCAL_MODEL_ENDPOINT || "").trim();
+    return (enabled === "true" || enabled === "1") && endpoint.length > 0;
+  }
   if (process.env.AI_ENABLED?.toLowerCase() === "false") return false;
   switch (provider) {
     case "groq":
@@ -198,7 +249,14 @@ export function getRegisteredTasks(): TaskType[] {
  * Get provider status for monitoring.
  */
 export function getProviderStatus(): Array<{ provider: ProviderId; available: boolean; tasks: TaskType[] }> {
-  const providers: ProviderId[] = ["groq", "openrouter", "gemini", "huggingface", "local"];
+  const providers: ProviderId[] = [
+    "local_model",
+    "groq",
+    "openrouter",
+    "gemini",
+    "huggingface",
+    "local",
+  ];
   return providers.map((provider) => ({
     provider,
     available: isProviderAvailable(provider),

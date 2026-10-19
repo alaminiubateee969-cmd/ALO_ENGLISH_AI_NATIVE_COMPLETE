@@ -31,9 +31,16 @@
  * 5. ALWAYS BOUNDED. Hard timeout, capped output size, capped input size.
  */
 
-import { routeModel, type TaskType, type ProviderId } from "@/lib/ai/routing/ModelRouter";
+import { routeModel, routeChain, type TaskType, type ProviderId } from "@/lib/ai/routing/ModelRouter";
+import { completeLocal, isLocalModelEnabled } from "@/lib/ai/local/endpoint";
 
-export type AiProviderName = "groq" | "openrouter" | "gemini" | "huggingface" | "local_rule_engine";
+export type AiProviderName =
+  | "local_model"
+  | "groq"
+  | "openrouter"
+  | "gemini"
+  | "huggingface"
+  | "local_rule_engine";
 
 export type AiRequest = {
   /** Instructions. The caller must mark student text as untrusted data. */
@@ -50,6 +57,8 @@ export type AiCompletion = {
   provider: AiProviderName;
   model: string;
   data: Record<string, unknown>;
+  /** Token usage, when the provider reports it. */
+  usage?: { inputTokens: number; outputTokens: number };
 };
 
 const DEFAULT_MAX_TOKENS = 1200;
@@ -60,6 +69,7 @@ const MAX_INPUT_CHARS = 24000;
 
 /** Provider display names used in the persisted evaluation rows. */
 const PROVIDER_LABEL: Record<ProviderId, AiProviderName> = {
+  local_model: "local_model",
   groq: "groq",
   openrouter: "openrouter",
   gemini: "gemini",
@@ -77,8 +87,9 @@ export function isAiEnabled(): boolean {
 
 /** Which providers have credentials configured right now. */
 export function getConfiguredProviders(): AiProviderName[] {
-  if (!isAiEnabled()) return [];
   const configured: AiProviderName[] = [];
+  if (isLocalModelEnabled()) configured.push("local_model");
+  if (!isAiEnabled()) return configured;
   if (hasKey("GROQ_API_KEY")) configured.push("groq");
   if (hasKey("OPENROUTER_API_KEY")) configured.push("openrouter");
   if (hasKey("GEMINI_API_KEY")) configured.push("gemini");
@@ -96,7 +107,7 @@ export function getAiStatus(): {
   const configured = getConfiguredProviders();
   const routed = routeModel("writing_evaluation");
   return {
-    enabled: isAiEnabled() && configured.length > 0,
+    enabled: configured.length > 0,
     configuredProviders: configured,
     provider: PROVIDER_LABEL[routed.provider],
     model: routed.model,
@@ -111,45 +122,75 @@ export function getAiStatus(): {
  * the local rule engine.
  */
 export async function complete(task: TaskType, request: AiRequest): Promise<AiCompletion | null> {
-  if (!isAiEnabled()) return null;
-
-  const routed = routeModel(task);
-  if (routed.provider === "local") return null;
-
-  const provider = PROVIDER_LABEL[routed.provider];
-  const key = apiKeyFor(provider);
-  if (!key) return null;
-
   const user = request.user.length > MAX_INPUT_CHARS
     ? request.user.slice(0, MAX_INPUT_CHARS)
     : request.user;
 
-  const timeoutSeconds = resolveTimeout();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutSeconds * 1000);
+  // The chain, in order: the self-hosted model server first, then the
+  // external providers, then (implicitly) the deterministic rule engine,
+  // which the caller uses when this returns null.
+  //
+  // A provider that fails does not end the request. The next one is tried,
+  // so a model server that is down does not take the platform's AI features
+  // down with it.
+  for (const routed of routeChain(task)) {
+    if (routed.provider === "local") continue;
 
-  try {
-    const raw =
-      provider === "gemini"
-        ? await callGemini(routed.model, key, request, user, controller.signal)
-        : await callOpenAiCompatible(provider, routed.model, key, request, user, controller.signal);
+    if (routed.provider === "local_model") {
+      if (!isLocalModelEnabled()) continue;
+      const local = await completeLocal({
+        system: request.system,
+        user: user + (request.jsonSchema ? `\n\nRESPONSE SCHEMA (JSON):\n${request.jsonSchema}` : ""),
+        maxTokens: request.maxTokens,
+        temperature: request.temperature,
+      });
+      if (local) {
+        return {
+          provider: "local_model",
+          model: local.model,
+          data: local.data,
+          usage: local.usage,
+        };
+      }
+      continue;
+    }
 
-    if (raw === null) return null;
+    // External providers are disabled wholesale by AI_ENABLED=false.
+    if (!isAiEnabled()) continue;
 
-    const parsed = parseJsonObject(raw);
-    if (!parsed) return null;
+    const provider = PROVIDER_LABEL[routed.provider];
+    const key = apiKeyFor(provider);
+    if (!key) continue;
 
-    return { provider, model: routed.model, data: parsed };
-  } catch (error) {
-    // Never log the student text or the key.
-    console.error(
-      `[ai] ${provider} request failed:`,
-      error instanceof Error ? error.message : "unknown error",
-    );
-    return null;
-  } finally {
-    clearTimeout(timer);
+    const timeoutSeconds = resolveTimeout();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutSeconds * 1000);
+
+    try {
+      const raw =
+        provider === "gemini"
+          ? await callGemini(routed.model, key, request, user, controller.signal)
+          : await callOpenAiCompatible(provider, routed.model, key, request, user, controller.signal);
+
+      if (raw === null) continue;
+
+      const parsed = parseJsonObject(raw);
+      if (!parsed) continue;
+
+      return { provider, model: routed.model, data: parsed };
+    } catch (error) {
+      // Never log the student text or the key.
+      console.error(
+        `[ai] ${provider} request failed:`,
+        error instanceof Error ? error.message : "unknown error",
+      );
+      continue;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+
+  return null;
 }
 
 // ─── Provider implementations ─────────────────────────────────────────────

@@ -316,6 +316,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate Node scripts
+        run: |
+          # Every .mjs script is parsed, so a syntax error cannot reach the
+          # host. The agent worker and the daily pipeline are included.
+          for script in scripts/*.mjs; do
+            echo "Checking $script…"
+            node --check "$script" || { echo "Syntax error in $script"; exit 1; }
+          done
+          echo "✓ All Node scripts pass syntax validation"
+
       - name: Validate bash scripts
         run: |
           # git-push.sh lives at the repository root, not in scripts/, but it is
