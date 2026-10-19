@@ -1,5 +1,19 @@
 # Implementation Report
 
+> **Historical snapshot — read with care.**
+> This report was written on **an earlier revision** against an earlier revision of the
+> codebase. The counts, file lists and verdicts below were true on that date
+> and have since changed. Do not use it as the current state of the project.
+>
+> For the current, verified state see:
+> - `docs/AUDIT_REPORT_2026-10-19.md` — the full audit and repair report
+> - `DATABASE_MODEL_INVENTORY.csv`, `API_INVENTORY.csv`, `ROUTE_INVENTORY.csv`,
+>   `FILE_MANIFEST.csv` — machine-generated inventories, checked in CI
+> - `PROJECT-INDEX.md` — the generated project map
+>
+> —
+
+
 ## A. FINAL STATUS
 COMPLETE FOR DEPLOYMENT, EXTERNAL PROVIDER AUTHORIZATION PENDING
 

@@ -2,16 +2,32 @@
  * src/lib/agents/ExamConductorAgent.ts
  *
  * AGENT-CONDUCT-01 — persists objective listening/reading practice indicators
- * and optional non-scored writing guidance for a submitted attempt.
+ * and the platform's own evaluation of the subjective sections.
+ *
+ * The evaluation agent (src/lib/ai/evaluation/ai-evaluation.ts) assesses the
+ * writing response and the speaking transcript against the rubric for the
+ * exam the attempt belongs to. It is the platform's own agent, and it runs
+ * for every exam type the platform offers.
+ *
+ * The evaluation is qualitative. It never produces a band, a grade or a
+ * score, because no rubric in this repository has been calibrated against
+ * human raters. The numeric practice indicator still comes only from the
+ * deterministic objective grader.
  *
  * Writing feedback is exposed without heuristic/LLM band numbers. Speaking is
- * not scored here: an attempt must include a securely associated recording and
- * a validated acoustic evaluation before any speaking score can be reported.
+ * evaluated from the transcript only: an attempt must include the transcript
+ * before any speaking feedback is produced, and nothing acoustic is inferred.
  */
 
 import { db } from '@/lib/db';
 import { evaluateWriting, type WritingEvaluation } from './WritingEvaluationAgent';
 import { calculatePracticeIndicators } from '@/lib/exam/indicators';
+import {
+  evaluateSpeakingWithAi,
+  evaluateWritingWithAi,
+  type AiEvaluation,
+} from '@/lib/ai/evaluation/ai-evaluation';
+import { hasSpeakingRubric, hasWritingRubric } from '@/lib/ai/evaluation/rubrics';
 
 type WritingFeedback = Pick<
   WritingEvaluation,
@@ -33,13 +49,49 @@ export type ExamResult = {
   fallbackUsed: false;
   reviewRecommendation: 'unavailable';
   writingFeedback?: WritingFeedback;
+  /** The platform's own evaluation of the subjective sections. */
+  evaluations: AiEvaluation[];
   disclosureText: string;
 };
 
 const PRACTICE_DISCLAIMER =
   'Listening and reading values are generic practice indicators calculated from answer accuracy, not official exam scores or publisher-equivalent results. ' +
-  'Writing feedback is non-scored and has not been validated against human ratings. ' +
-  'Speaking is not scored: this attempt does not provide a securely linked recording or validated acoustic assessment, so pronunciation and spoken fluency are not inferred from transcript text.';
+  'Writing and speaking feedback is qualitative practice feedback from the platform\'s own evaluation agent; it carries no band, grade or score and has not been validated against human ratings. ' +
+  'Speaking feedback is based on the transcript only, so pronunciation and spoken fluency are not inferred from it.';
+
+const EVALUATION_DISCLOSURE =
+  'The subjective sections were assessed by the platform\'s evaluation agent against the rubric for this exam. ' +
+  'The result is qualitative practice feedback: it is not a band, a grade or a score, and it is not calibrated against human raters.';
+
+/**
+ * Persist one evaluation, replacing any earlier evaluation of the same
+ * section for this attempt. The stored payload is the full evaluation
+ * document, so the result can be shown again without re-running a model.
+ */
+async function persistEvaluation(attemptId: string, evaluation: AiEvaluation): Promise<void> {
+  const payload = JSON.stringify(evaluation);
+  const data = {
+    examTypeCode: evaluation.examCode,
+    taskType: evaluation.taskType,
+    providerUsed: evaluation.providerUsed,
+    fallbackUsed: evaluation.fallbackUsed,
+    payload,
+  };
+  try {
+    await db.attemptEvaluation.upsert({
+      where: { attemptId_section: { attemptId, section: evaluation.section } },
+      create: { attemptId, section: evaluation.section, ...data },
+      update: data,
+    });
+  } catch (error) {
+    // A storage failure must never lose the attempt: the feedback is still
+    // returned to the student in the response, and the log records it.
+    console.error(
+      '[ExamConductor] could not persist the evaluation:',
+      error instanceof Error ? error.message : 'unknown error',
+    );
+  }
+}
 
 /**
  * Conduct the supported, evidence-based part of the exam submission pipeline.
@@ -71,6 +123,11 @@ export async function conductExam(
 
   const writingValue = answers.writing ?? answers.essay;
   const writingText = typeof writingValue === 'string' ? writingValue : '';
+  const speakingValue = answers.speaking ?? answers.transcript;
+  const speakingText = typeof speakingValue === 'string' ? speakingValue : '';
+  const writingPrompt = typeof answers.writingPrompt === 'string' ? answers.writingPrompt : '';
+  const speakingPrompt = typeof answers.speakingPrompt === 'string' ? answers.speakingPrompt : '';
+  const examCode = attempt.practiceSet.examType.code;
   const readingCorrect = typeof answers.readingCorrect === 'number' ? answers.readingCorrect : 0;
   const readingTotal = typeof answers.readingTotal === 'number' ? Math.max(0, answers.readingTotal) : 0;
   const listeningCorrect = typeof answers.listeningCorrect === 'number' ? answers.listeningCorrect : 0;
@@ -87,6 +144,34 @@ export async function conductExam(
         disclaimer: writingEval.disclaimer,
       }
     : undefined;
+
+  // ─── The platform's own evaluation of the subjective sections ───────────
+  //
+  // The evaluation agent assesses the writing response and the speaking
+  // transcript against the rubric for THIS exam. It never produces a band, a
+  // grade or a score; the result is qualitative feedback, and it records
+  // whether a model or the local rule engine produced it.
+  const evaluations: AiEvaluation[] = [];
+
+  if (writingText.trim().length > 0 && hasWritingRubric(examCode)) {
+    const evaluation = await evaluateWritingWithAi({
+      examCode,
+      taskPrompt: writingPrompt,
+      text: writingText,
+    });
+    evaluations.push(evaluation);
+    await persistEvaluation(attemptId, evaluation);
+  }
+
+  if (speakingText.trim().length > 0 && hasSpeakingRubric(examCode)) {
+    const evaluation = await evaluateSpeakingWithAi({
+      examCode,
+      taskPrompt: speakingPrompt,
+      text: speakingText,
+    });
+    evaluations.push(evaluation);
+    await persistEvaluation(attemptId, evaluation);
+  }
 
   const indicators = calculatePracticeIndicators({
     listeningCorrect,
@@ -122,6 +207,7 @@ export async function conductExam(
       fallbackUsed: false,
       reviewRecommendation: 'unavailable',
       ...(writingFeedback ? { writingFeedback } : {}),
+      evaluations,
       disclosureText: `${PRACTICE_DISCLAIMER} No numeric result was created because this attempt had no listening or reading answers supported by the current scorer.`,
     };
   }
@@ -165,6 +251,7 @@ export async function conductExam(
     fallbackUsed: false,
     reviewRecommendation: 'unavailable',
     ...(writingFeedback ? { writingFeedback } : {}),
-    disclosureText: PRACTICE_DISCLAIMER,
+    evaluations,
+    disclosureText: evaluations.length > 0 ? `${PRACTICE_DISCLAIMER} ${EVALUATION_DISCLOSURE}` : PRACTICE_DISCLAIMER,
   };
 }

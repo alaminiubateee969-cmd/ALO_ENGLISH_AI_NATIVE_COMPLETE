@@ -7,9 +7,110 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Corrections and one new gate, following the merge of 1.1.0 to `main` (`bebc470`).
+### Added
+
+- **The platform now has a real AI agent workforce: fourteen agents, each
+  with an execution handler, running on a durable job queue.** The registry
+  used to be a hand-written list of twenty aspirational entries that all said
+  "not verified". It listed agents that did not exist, described agents that
+  did something else, and omitted the ones that did.
+
+  - A **SQLite-backed durable job queue** (`src/lib/agents/runtime/queue.ts`).
+    BullMQ needs Redis; the production deployment is a single Hostinger node
+    with SQLite and no Redis, and adding Redis would mean a second thing that
+    can be down. The queue keeps the properties that matter: jobs are leased
+    so a crashed worker cannot lose them, failures are retried with
+    exponential backoff and jitter and then dead-lettered, an enqueue can be
+    made idempotent so a retried request does not do the work twice, and every
+    transition is a row. The interface is deliberately close to BullMQ's, so
+    swapping in Redis later is a contained change.
+  - **Fourteen agents** (`src/lib/agents/runtime/agents/`): Exam Orchestrator,
+    Question Generation, Question Quality Gate, Speaking Examiner, Writing
+    Examiner, Listening & Media, Personal AI Teacher, Adaptive Learning,
+    Daily Learning, Analytics, CRM Synchronization, Security & Audit, AI Model
+    Router, and Agent Quality Improvement. Each one does real work against the
+    real database.
+  - **Every agent has a contract and a budget**: a JSON Schema for its input
+    and its output, an explicit permission list, a time budget, a retry budget,
+    a concurrency limit and an input-size limit. The runtime enforces them; a
+    payload that does not match the input schema is rejected rather than
+    retried, and a result that does not match the output schema is refused.
+  - **An approval gate.** No agent can publish content, change a rubric or
+    change the code. The quality gate raises an `AgentApproval`; a human
+    decides; the publish job re-checks the approval's status, so approving
+    twice cannot publish twice. Verified end to end: three drafts were
+    generated, gated, left the live set untouched until an approval was
+    recorded, and were then published with their answer keys intact — and a
+    re-run of the same seed was correctly rejected as a duplicate.
+  - **A self-hosted model endpoint** (`src/lib/ai/local/endpoint.ts`) with a
+    health probe, a circuit breaker, a concurrency-limited queue, a bounded
+    response cache and token accounting. It is tried **first**, before any
+    external provider, because the platform must not depend on a paid API and
+    must not send learner work to a third party by default.
+  - **Versioned exam blueprints** (`src/lib/agents/runtime/blueprints.ts`) for
+    all twenty exams the platform offers, each with its sections, timings,
+    item types, score scale, the public provider specification it was taken
+    from, and the date it was checked. The code asserts that every type a
+    blueprint names is one the grader can score.
+  - **A deterministic item generator** whose answer key is correct by
+    construction, because the question and the passage are built from the same
+    fact. It is what makes the daily pipeline work without a paid model.
+  - **Admin monitoring**: `/admin/agents`, `/api/agents/status`,
+    `/api/agents/metrics`, `/api/agents/jobs`, `/api/agents/approvals` and
+    `/api/agents/worker/run`. An agent's status is measured from completed
+    jobs, never typed by hand.
+  - `scripts/agent-worker.mjs` and `scripts/daily-question-pipeline.mjs` for
+    the host's cron, plus `npm run agents:work` and `npm run agents:daily`.
+  - `tests/agent-workforce.test.ts`: 45 tests that run the real handlers
+    against the real database. If a handler were a stub, they would fail.
+
+- **`docs/AGENT_WORKFORCE.md` and `docs/EXAM_BLUEPRINTS.md`.**
+
 
 ### Added
+
+- **The platform now has its own working evaluation agent, for every exam it
+  offers.** The registry listed a "Writing Evaluator" and a "Speaking
+  Evaluator" for all exams, but the only implementation was a local heuristic
+  that counted words and looked for discourse markers — it did not know which
+  exam the learner was preparing for, and nothing called it with a model.
+  `src/lib/agents/GroqClient.ts` and `src/lib/ai/routing/ModelRouter.ts`
+  existed but were imported by nothing at all.
+  - `src/lib/ai/evaluation/rubrics.ts` — a rubric for **every** exam code the
+    platform ships (20): the tasks that exam contains and the criteria that
+    matter for it. Academic writing exams get reasoning/evidence/focus
+    criteria, language exams get task-coverage/organisation/vocabulary/grammar
+    criteria, and the speaking criteria deliberately exclude everything
+    acoustic, because a transcript cannot evidence it. `OIETC` uses the
+    generic criteria and says why: that product's identity is unverified.
+  - `src/lib/ai/evaluation/ai-evaluation.ts` — the evaluator. It builds the
+    prompt from the rubric, marks the learner's work as untrusted data inside
+    the prompt, validates the model's answer against a strict schema, drops
+    any criterion the model invented, and falls back to the local rule engine
+    when the provider is absent, errors, or answers with something unusable.
+    It never produces a band, a grade or a score, and every result carries a
+    disclosure saying so.
+  - `src/lib/ai/providers/ai-provider.ts` — the single module that performs an
+    outbound model call. Chain: Groq → OpenRouter → Gemini → HuggingFace →
+    local rule engine. It never throws, never blocks a submission, and sends
+    nothing when no credential is configured or `AI_ENABLED=false`.
+  - `AttemptEvaluation` (new model + migration
+    `20261019060000_attempt_evaluation`) — one row per attempt and section,
+    recording which engine produced the result and whether the local rule
+    engine was used as a fallback.
+  - `GET /api/attempts/:id/evaluation` — owner or administrator only.
+  - The attempt submission path now collects the **speaking** transcript and
+    the task prompts as well as the writing text, runs the evaluation agent
+    over both, and returns the result on the result screen.
+  - `tests/ai-evaluation-layer.test.ts` — 18 tests covering rubric coverage
+    for all 20 exam codes, the absence of any acoustic claim, the generic
+    fallback, the provider being unavailable without a credential, the schema
+    rejection path, and the absence of any band/grade/score field.
+
+  The objective sections are still graded by the deterministic rule engine.
+  That is deliberate: a language model must not decide a multiple-choice
+  answer. The numeric result remains `deterministic_objective`, and the
+  `Score` row's `writing` and `speaking` columns stay null.
 
 - **`check-manifest.mjs` gained check 9: no tracked file may match `.gitignore`.**
   `git ls-files -i -c --exclude-standard` must be empty. This class of defect has
@@ -20,7 +121,126 @@ Corrections and one new gate, following the merge of 1.1.0 to `main` (`bebc470`)
   clone. The check skips itself when there is no git repository, so an extracted
   source archive still passes the other eight.
 
+- **`GET /api/crm/audit-logs` and `/api/crm/audit-logs/[id]` now exist.**
+  Three admin dashboards linked to `/api/crm/audit-logs`, which was never
+  registered, so the link was a 404. The new routes are read-only — an audit
+  log is append-only, so a write is answered with 405 rather than pretending
+  to record one.
+
+- **`npm run db:seed:sample-bank`** runs the guarded synthetic question
+  seeders in the one order that works, for a disposable CI/test database.
+
 ### Fixed
+
+- **The application and the Prisma CLI could open different database files.**
+  A relative SQLite URL — `file:./ci-test.db` — is resolved by the Prisma CLI
+  against the schema's own directory, and by a raw `new PrismaClient()` against
+  the working directory, while the application resolved it against the app
+  root. Three different answers for one string.
+
+  In CI this meant `prisma migrate deploy` migrated `<repo>/prisma/ci-test.db`
+  while the seeds and the tests used a different file, so the database-backed
+  suites failed against an unmigrated database. It passed locally, because
+  there the paths happened to coincide. Only a fresh CI database exposed it.
+
+  The application now resolves a relative SQLite path against the Prisma
+  schema directory — the same base the CLI uses — and the CI workflow uses an
+  absolute `DATABASE_URL`, which is what production already does, so the
+  question does not arise at all. `tests/paths.test.ts` pins the agreement
+  down, and asserts that no relative `file:` URL remains in the workflow.
+
+- **The seed-guard test depended on the runner's environment.** The "refuses
+  seeding without explicit opt-in" case did not clear
+  `ALLOW_SYNTHETIC_SAMPLE_QUESTIONS`, so it passed or failed depending on how
+  the shell was set up — and CI sets that variable for the seeding step. It
+  now clears it explicitly, so it tests the guard rather than the
+  environment.
+
+### Fixed
+
+- **CI could never go green.** The pipeline seeded the administrator, the
+  exam types, the settings and the RBAC tables, then ran `content:validate` —
+  a gate that refuses to pass on an empty question bank. Nothing in the chain
+  ever inserted a question, so the gate always failed and CI was red on the
+  default branch. The question seeders are deliberately guarded so that
+  synthetic fixtures can never reach a production database, so the fix was to
+  add an explicit step that opts into that guard against the disposable
+  `ci-test.db` file, not to weaken the gate.
+
+- **Three validators disagreed about what a valid question type is.** The
+  grader and the CI content gate accepted `TRUE_FALSE` and the read/select
+  variants; the bank auditor rejected them as "invalid question type" and
+  failed a bank the platform grades correctly. The vocabulary now lives in
+  `src/lib/exam/question-types.json` and is read by the grader and by both
+  scripts, and `scripts/check-schema-migrations.mjs` asserts that the schema
+  documents exactly the same list.
+
+- **The bank auditor was stricter than the grader.** It reported MATCHING
+  questions with a single `correctIndex` as having no answer key, although
+  the grader grades exactly that form.
+
+- **Two Cambridge open-cloze questions could not be answered.** "Gap 1:" and
+  "Gap 2:" were typed as prompts, and the second and third gap questions
+  carried no passage at all, so the learner was asked to answer a question
+  with no context. Each gap now repeats the passage and states the sentence
+  to complete.
+
+- **`postbuild` never actually validated anything.** `scripts/validate-content.mjs`
+  did not load the project's `.env`, so every local build printed "BLOCKED:
+  DATABASE_URL is not set" and checked nothing. It now loads `.env` when
+  `DATABASE_URL` is not already exported, so an exported value still wins.
+
+- **`.env.example` advertised three settings that no code reads**
+  (`CRON_ENABLED`, `LOW_CONFIDENCE_THRESHOLD`, `MEDIUM_CONFIDENCE_THRESHOLD`).
+  The daily-generation script is deliberately disabled and the confidence
+  thresholds have no calibrated consumer, so the variables are removed rather
+  than left advertising a feature that does not exist. The variables that the
+  code *does* read but that were undocumented are now documented:
+  `ADMIN_SEED_EMAIL`, `ADMIN_SEED_PASSWORD`, `ALLOW_SYNTHETIC_SAMPLE_QUESTIONS`
+  and the `AUDIO_*` set.
+
+- **`src/lib/env.ts` validated `NEXTAUTH_URL`**, advertising an integration
+  the platform does not have. `src/lib/auth.ts` is a dependency-free session
+  system; `next-auth` is not installed and never was used.
+
+- **16 unused dependencies were removed** (`@dnd-kit/*`, `@hookform/resolvers`,
+  `@mdxeditor/editor`, `@reactuses/core`, `@tanstack/react-query`,
+  `@tanstack/react-table`, `date-fns`, `framer-motion`, `next-auth`,
+  `next-intl`, `react-markdown`, `react-syntax-highlighter`, `uuid`,
+  `zustand`). `npm audit` goes from 14 advisories (10 high) to 5, and the
+  remaining 5 are a single dev-only chain — `braces` → `micromatch` →
+  `fast-glob` → `@next/eslint-plugin-next` → `eslint-config-next` — for which
+  no fixed version of `braces` has been published and npm's suggested "fix"
+  is a downgrade to an ESLint config that predates Next 16.
+
+- **`sharp` was upgraded to 0.35.5** (forced for Next's own optional
+  dependency too), clearing three high-severity libvips/librsvg/libheif
+  advisories.
+
+- **`SECURITY.md` described controls the code does not have.** It named
+  `LOGIN_MAX_ATTEMPTS`/`LOGIN_LOCKOUT_MINUTES` (no such variables),
+  `UPLOAD_MAX_MB` (no such variable, and no general upload endpoint exists),
+  Next.js server-action CSRF tokens (the application has no server actions),
+  and a role list that did not match the code. It now names the real
+  mechanisms, and says plainly where a control is only a published policy
+  rather than an enforced behaviour (the 365-day audit-log retention).
+
+- **The `drainQueue` loop orphaned a claimed job.** When a job failed, the
+  loop claimed a second job to test whether there was more work, and never
+  executed it. The job sat in `RUNNING` until its lease expired, and the
+  agent's concurrency slot was blocked meanwhile. The end-to-end run against
+  the live application found it. The loop now asks the round whether it
+  claimed anything.
+
+- **The approval did not carry a target practice set,** so an approved publish
+  had nowhere to go and silently produced no publish job. The quality gate now
+  takes the target set, carries it on the approval, and the approval route
+  says out loud when a publish cannot be scheduled.
+
+- **The question generator produced an ungrammatical stem** — "did the site
+  generated" — because the question used the passage's past participle. The
+  generator now carries the base form for the question, and a test asserts
+  that no generated stem is ungrammatical.
 
 - **The 1.1.0 branch-consolidation record was wrong about `main`'s history.** It
   said `main` was a single orphan commit and that six of the seven open branches

@@ -39,7 +39,6 @@ export type AuditAction =
   | 'NOTIFICATIONS_CREATE'
   | 'USERS_CREATE'
   | 'COMMISSIONS_CREATE'
-  | 'AUDIT-LOGS_CREATE'
   | 'LEADS_UPDATE'
   | 'STUDENTS_UPDATE'
   | 'PARTNERS_UPDATE'
@@ -57,7 +56,6 @@ export type AuditAction =
   | 'NOTIFICATIONS_UPDATE'
   | 'USERS_UPDATE'
   | 'COMMISSIONS_UPDATE'
-  | 'AUDIT-LOGS_UPDATE'
   | 'LEADS_DELETE'
   | 'STUDENTS_DELETE'
   | 'PARTNERS_DELETE'
@@ -75,7 +73,6 @@ export type AuditAction =
   | 'NOTIFICATIONS_DELETE'
   | 'USERS_DELETE'
   | 'COMMISSIONS_DELETE'
-  | 'AUDIT-LOGS_DELETE'
   // Phase 1: RBAC + Multi-tenancy audit actions
   | 'ROLE_CREATED'
   | 'ROLE_UPDATED'
@@ -90,7 +87,13 @@ export type AuditAction =
   | 'USER_CREATED'
   | 'USER_UPDATED'
   | 'USER_DISABLED'
-  | 'USER_ENABLED';
+  | 'USER_ENABLED'
+  // AI agent workforce
+  | 'AGENT_JOB_ENQUEUED'
+  | 'AGENT_JOB_APPROVED'
+  | 'AGENT_JOB_REJECTED'
+  | 'AGENT_APPROVAL_DECIDED'
+  | 'AGENT_CONTENT_PUBLISHED';
 
 /**
  * Record an audit log entry.

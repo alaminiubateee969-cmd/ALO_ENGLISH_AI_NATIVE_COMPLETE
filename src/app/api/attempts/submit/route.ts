@@ -100,6 +100,7 @@ export async function POST(req: Request): Promise<Response> {
         id: true,
         section: true,
         type: true,
+        prompt: true,
         points: true,
         correctAnswer: true,
         correctIndex: true,
@@ -120,7 +121,20 @@ export async function POST(req: Request): Promise<Response> {
         .map((q) => persistedAnswers[q.id])
         .join("\n\n") || "";
 
+    // The task prompt is what the student was asked to produce. The
+    // evaluation agent needs it to judge the response against the task and
+    // not against a generic standard.
+    const collectPrompts = (section: string) =>
+      questions
+        .filter((q) => q.section.toUpperCase() === section && isSubjective(q))
+        .map((q) => q.prompt)
+        .filter(Boolean)
+        .join("\n\n") || "";
+
     const writingText = collect("WRITING");
+    const writingPrompt = collectPrompts("WRITING");
+    const speakingText = collect("SPEAKING");
+    const speakingPrompt = collectPrompts("SPEAKING");
 
     // ── Atomically claim the attempt. This is the real double-submit guard:
     // ── concurrent requests race on this single conditional update.
@@ -137,6 +151,9 @@ export async function POST(req: Request): Promise<Response> {
         attemptId,
         {
           writing: writingText,
+          writingPrompt,
+          speaking: speakingText,
+          speakingPrompt,
           readingCorrect: reading.correct,
           readingTotal: reading.total,
           listeningCorrect: listening.correct,
@@ -158,6 +175,11 @@ export async function POST(req: Request): Promise<Response> {
           listening: listening.correct + "/" + listening.total,
           reading: reading.correct + "/" + reading.total,
           objectiveCorrect: graded.correctTotal + "/" + graded.objectiveTotal,
+          evaluations: result.evaluations.map((e) => ({
+            section: e.section,
+            provider: e.providerUsed,
+            fallback: e.fallbackUsed,
+          })),
         },
       });
 

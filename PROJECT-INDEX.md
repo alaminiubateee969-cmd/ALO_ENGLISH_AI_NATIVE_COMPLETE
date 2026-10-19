@@ -1,187 +1,171 @@
 # Project File Index
 
-> **Status: partly stale.** This index was written by hand and the repository has
-> moved since — counts, filenames and the deployment description below lag what
-> is on disk. Two things are authoritative and generated instead:
+> **Generated file.** Do not edit it by hand.
 >
-> - **Deployment** — [`HOSTINGER_DEPLOYMENT.md`](./HOSTINGER_DEPLOYMENT.md). The
->   VPS/cPanel guides this index may still point at are archived under
->   [`docs/archive/legacy-deployment-guides/`](./docs/archive/legacy-deployment-guides/).
-> - **Inventories** — `FILE_MANIFEST.csv`, `API_INVENTORY.csv`,
->   `ROUTE_INVENTORY.csv` and `DATABASE_MODEL_INVENTORY.csv` are generated from
->   source by `node scripts/generate-inventories.mjs`. Trust those over any
->   count written in prose here.
+> Regenerate with `node scripts/generate-project-index.mjs`; verify with
+> `node scripts/generate-project-index.mjs --check` (wired into CI and
+> `make preflight`). It was hand-written once and then drifted — it claimed
+> 7 Prisma models against the real number, 1 test file against the real
+> number, and pointed at `src/middleware.ts`, which Next 16 replaced with
+> `src/proxy.ts`.
+>
+> The index describes the **repository**, not the working tree: every list
+> comes from `git ls-files --cached --others --exclude-standard`, so a
+> generated file that is gitignored cannot change the result.
 
 A complete map of every file in this project, organized by purpose.
 
-## Root Configuration (12 files)
+## Root Configuration (13 files)
 
 | File | Purpose |
 |---|---|
 | `package.json` | Package manifest, scripts, dependencies, engines |
-| `bun.lock` | Lockfile (single, deterministic) |
-| `tsconfig.json` | TypeScript configuration (excludes separate projects) |
-| `next.config.ts` | Next.js config (standalone, strict, security headers) |
-| `eslint.config.mjs` | ESLint configuration |
-| `tailwind.config.ts` | Tailwind CSS configuration |
-| `postcss.config.mjs` | PostCSS configuration |
-| `components.json` | shadcn/ui configuration |
-| `.env.example` | Environment template (22 variables, no secrets) |
-| `.gitignore` | Git ignore rules |
+| `bun.lock` | Lockfile |
+| `package-lock.json` | Lockfile (npm, used by the host pipeline) |
+| `tsconfig.json` | Configuration |
+| `next.config.ts` | Configuration |
+| `eslint.config.mjs` | Configuration |
+| `tailwind.config.ts` | Configuration |
+| `postcss.config.mjs` | Configuration |
+| `components.json` | Configuration |
+| `.env.example` | Environment template (29 variables, no secrets) |
+| `.gitignore` | Configuration |
 | `Makefile` | Workflow shortcuts (`make help` for all commands) |
-| `next-env.d.ts` | Next.js TypeScript declarations |
+| `server.js` | Production entry point for the standalone build |
 
-## Documentation (9 files)
+## Documentation (78 files)
 
 | File | Purpose |
 |---|---|
 | `README.md` | Project overview + quick start |
-| `DEPLOYMENT.md` | 12-step staged deployment guide |
-| `OPERATIONS.md` | Daily/weekly/monthly operations |
-| `TROUBLESHOOTING.md` | Common issues + solutions |
+| `DEPLOYMENT.md` | Documentation |
+| `HOSTINGER_DEPLOYMENT.md` | Documentation |
+| `OPERATIONS.md` | Documentation |
+| `TROUBLESHOOTING.md` | Documentation |
 | `SECURITY.md` | Security controls + policies |
 | `CHANGELOG.md` | Version history |
-| `API.md` | API documentation (all endpoints) |
-| `VALIDATION-REPORT.md` | Final production readiness report |
+| `API.md` | API documentation |
+| `API_DOCUMENTATION.md` | API documentation |
+| `VALIDATION-REPORT.md` | Production readiness report |
 | `PROJECT-INDEX.md` | This file |
+| `docs/` | 67 documents (including the archived guides) |
 
-## Source — App Router (6 files)
+## Source — App Router (86 API routes, 33 pages, 1 layout)
+
+API route groups: `admin`, `agents`, `attempts`, `audio`, `auth`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`.
+
+Each API route is a folder under `src/app/api/` containing a `route.ts`.
+
+## Source — API Routes
+
+| Group | Route files |
+|---|---|
+| `api/admin` | 2 |
+| `api/agents` | 5 |
+| `api/attempts` | 7 |
+| `api/audio` | 1 |
+| `api/auth` | 6 |
+| `api/crm` | 37 |
+| `api/deliverable` | 1 |
+| `api/deliverables` | 1 |
+| `api/exam` | 1 |
+| `api/exam-types` | 1 |
+| `api/examiners` | 1 |
+| `api/health` | 1 |
+| `api/lead` | 1 |
+| `api/learning` | 3 |
+| `api/learning-memory` | 1 |
+| `api/linkis` | 2 |
+| `api/partner` | 2 |
+| `api/payment` | 1 |
+| `api/practice-sets` | 1 |
+| `api/questions` | 1 |
+| `api/rag` | 2 |
+| `api/rbac` | 4 |
+| `api/speaking` | 3 |
+| **total** | **86** |
+
+## Source — Libraries
+
+| Path | Purpose |
+|---|---|
+| `src/lib/` (29 modules) | `QuestionExposure.ts`, `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `audio`, `audit.ts`, `auth.ts`, `crud-scope.ts`, `crud.ts`, `db.ts`, `env.ts`, `exam`, `exam-catalog.ts`, `http`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `speech`, `utils.ts`, `validation.ts` |
+
+## Source — Middleware
 
 | File | Purpose |
 |---|---|
-| `src/app/layout.tsx` | Root layout |
-| `src/app/page.tsx` | Homepage (the only user-visible route) |
-| `src/app/globals.css` | Global styles |
-| `src/app/api/route.ts` | API index |
-| `src/app/api/health/route.ts` | Health endpoint (real DB check) |
-| `src/app/api/lead/route.ts` | Lead capture endpoint |
+| `src/proxy.ts` | Security headers on every response (Next 16 renamed `middleware.ts` to `proxy.ts`) |
 
-## Source — API Routes (14 files)
+## Source — Components
 
-### Auth (`src/app/api/auth/`)
-| File | Method | Purpose | Auth | Rate Limit |
-|---|---|---|---|---|
-| `register/route.ts` | POST | Create student account | None | 3/hour |
-| `login/route.ts` | POST | Authenticate user | None | 5/15min |
-| `logout/route.ts` | POST | Clear session | Required | — |
-| `me/route.ts` | GET | Current user | Required | — |
-
-### Exam Catalog (`src/app/api/`)
-| File | Method | Purpose | Auth |
-|---|---|---|---|
-| `exam-types/route.ts` | GET | List exam types | None |
-| `practice-sets/route.ts` | GET | List practice sets | None |
-
-### Attempts (`src/app/api/attempts/`)
-| File | Method | Purpose | Auth |
-|---|---|---|---|
-| `route.ts` | GET | List user's attempts | STUDENT |
-| `start/route.ts` | POST | Start an attempt | STUDENT |
-| `submit/route.ts` | POST | Submit + score an attempt | STUDENT |
-
-### Admin (`src/app/api/admin/`)
-| File | Method | Purpose | Auth |
-|---|---|---|---|
-| `stats/route.ts` | GET | Dashboard statistics | ADMIN |
-| `settings/route.ts` | GET/POST | List/update settings | ADMIN |
-
-### Legacy
-| File | Method | Purpose |
-|---|---|---|
-| `deliverable/route.ts` | GET | Deliverable info |
-| `deliverables/route.ts` | GET | Deliverables list |
-
-## Source — Libraries (11 files)
-
-### Core (`src/lib/`)
-| File | Purpose |
+| Group | Files |
 |---|---|
-| `db.ts` | Prisma client singleton (prod-safe logging) |
-| `env.ts` | Runtime env validation (fail-fast in production) |
-| `auth.ts` | Password hashing + session tokens + RBAC helpers |
-| `responses.ts` | Consistent API response helpers (success/error) |
-| `validation.ts` | Zod schemas for every API input |
-| `audit.ts` | Audit logging utility (immutable) |
-| `rate-limit.ts` | In-memory rate limiter |
-| `sanitize.ts` | Input sanitization (XSS, path traversal) |
-| `utils.ts` | General utilities (cn) |
-| `agent-data.ts` | AI agent workforce data |
-| `alo-data.ts` | Platform content data |
-| `exam-catalog.ts` | Exam catalog data |
-| `platform-data.ts` | Platform configuration data |
-| `question-bank.ts` | Question bank (original practice questions) |
+| `src/components/ai-os` | 20 — Hidden admin modules. |
+| `src/components/alo` | 26 — Public platform components. |
+| `src/components/site` | 7 — Public site sections. |
+| `src/components/exam` | 1 — Exam-taking components. |
+| `src/components/speaking` | 1 — Speaking practice components. |
+| `src/components/ui` | 48 — Component library. |
 
-## Source — Middleware (1 file)
+## Source — Hooks
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `src/middleware.ts` | Security headers on every response |
+| `src/hooks/` | Shared React hooks |
 
-## Source — Components (49 files)
+## Database (54 models, 0 enums, 9 migrations)
 
-### AI OS (`src/components/ai-os/`) — 21 files
-Hidden admin modules: admin, agents, analytics, avatar, courses, education, english-test-platform, hidden-admin-login, home, image, marketing, module-registry, parenting, presentation, research, role-context, social, video, voice, workflow.
-
-### ALO Platform (`src/components/alo/`) — 25 files
-Public platform components: ai-chatbot, app-shell, auth-modal, cbt-catalog, course-finder, dashboard-preview, destinations, exam-types, footer, free-quota, hero, how-it-works, language-prep, legal-pages, mock-test-demo, mock-test-engine, navbar, portals, pricing-ambassador-crm, production-deliverables, public-sections, services-journey, speaking-writing, student-portal, testimonials-faq-lead.
-
-### shadcn/ui (`src/components/ui/`) — 42 files
-Complete component library: accordion, alert, alert-dialog, aspect-ratio, avatar, badge, breadcrumb, button, calendar, card, carousel, chart, checkbox, collapsible, command, context-menu, dialog, drawer, dropdown-menu, form, hover-card, input, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, select, separator, sheet, sidebar, skeleton, slider, sonner, switch, table, tabs, textarea, toast, toaster, toggle, toggle-group, tooltip.
-
-## Source — Hooks (2 files)
-
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `src/hooks/use-mobile.ts` | Mobile detection hook |
-| `src/hooks/use-toast.ts` | Toast notification hook |
+| `prisma/schema.prisma` | 54 models |
+| `prisma/migrations/` | 9 migration folders |
+| `prisma/seed.mjs`, `prisma/seed-rbac.ts` | Core data + RBAC seeds |
+| `prisma/seed-sample-bank.mjs` | Guarded synthetic sample bank (disposable databases only) |
 
-## Database (4 files)
+## Scripts (26 files)
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `prisma/schema.prisma` | 7 models: User, ExamType, PracticeSet, Attempt, Score, AuditLog, Setting |
-| `prisma/seed.ts` | Seed: admin user + 20 exam types + 6 settings |
-| `prisma/migrations/20260722222653_init/migration.sql` | Initial migration |
-| `prisma/migrations/migration_lock.toml` | Migration lock (SQLite) |
+| `scripts/` | `agent-worker.mjs`, `audit-with-rea.sh`, `backup.sh`, `bootstrap-admin.ts`, `check-manifest.mjs`, `check-schema-migrations.mjs`, `daily-question-pipeline.mjs`, `ensure-prisma-client.mjs`, `finalize-standalone.mjs`, `generate-daily-questions.ts`, `generate-favicon.mjs`, `generate-inventories.mjs`, `generate-listening-audio.mjs`, `generate-missing-migration.sh`, `generate-project-index.mjs`, `healthcheck.sh`, `install.sh`, `listening-audio-utils.mjs`, `restore.sh`, `rollback.sh`, `smoke-standalone.mjs`, `update.sh`, `validate-content.mjs`, `validate-question-bank.ts`, `verify-listening-audio.mjs`, `verify.sh` |
 
-## Scripts (7 files)
+## Server Configuration (5 files)
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `scripts/install.sh` | Staged deployment with symlink swap |
-| `scripts/update.sh` | Alias for install.sh (preserves previous release) |
-| `scripts/rollback.sh` | Atomic symlink rollback |
-| `scripts/backup.sh` | DB + uploads + config backup with checksum |
-| `scripts/restore.sh` | Restore from backup (checksum verify + confirm) |
-| `scripts/healthcheck.sh` | Local health endpoint check |
-| `scripts/verify.sh` | 25-point verification gate |
+| `server-config/` | `Caddyfile.production`, `README.md`, `alo-english.nginx`, `alo-english.service`, `sudo-policy` |
 
-## Server Configuration (3 files)
+## Tests (16 files)
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `server-config/alo-english.service` | systemd unit (12 security hardening directives) |
-| `server-config/Caddyfile.production` | Reverse proxy (TLS + headers + health + logs) |
-| `server-config/sudo-policy` | Restricted sudoers (service management only) |
+| `tests/` | `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `crud-scope.test.ts`, `exam-attempt.test.ts`, `exam-engine.test.ts`, `paths.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `seed-sample-guard.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts` |
 
-## Tests (1 file)
+## CI/CD (2 workflows)
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `tests/smoke.test.ts` | 30 assertions: structure, package, schema, config, scripts, docs |
+| `.github/workflows/` | `ci.yml`, `deploy.yml` |
 
-## CI/CD (1 file)
-
-| File | Purpose |
-|---|---|
-| `.github/workflows/ci.yml` | 3 jobs: verify, scripts, package |
-
-## Public Assets (24 files)
+## Public Assets (33 files)
 
 | Path | Purpose |
 |---|---|
 | `public/logo.svg` | Platform logo |
 | `public/robots.txt` | SEO robots |
-| `public/images/*.png` | 22 platform images (logos, destinations, exam prep) |
+| `public/favicon.ico` | Browser icon (generated by `scripts/generate-favicon.mjs`) |
+| `public/images/` | 25 platform images |
+| `public/examiners/` | Examiner portraits |
 
-## Total: 189+ files (after enhancements: ~210)
+## Totals
+
+| Measure | Value |
+|---|---|
+| Tracked files | 699 |
+| Prisma models | 54 |
+| API routes | 86 |
+| Pages | 33 |
+| Migrations | 9 |
+| Test files | 16 |
+| Scripts | 26 |
+| Environment variables (template) | 29 |

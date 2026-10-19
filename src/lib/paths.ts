@@ -9,7 +9,7 @@
  * NOT the repository root.
  *
  * Every relative path in the app inherits that shift. The one that hurts most
- * is a `file:./db/production.db` DATABASE_URL: the running app opens
+ * is a relative `file:` DATABASE_URL: the running app opens
  * `<app>/.next/standalone/db/production.db`, while `prisma migrate deploy` —
  * run from the repository root — writes `<app>/db/production.db`. Two different
  * files. The symptom is a site that boots healthy and then reports an empty
@@ -74,6 +74,29 @@ export function getDataRoot(): string {
   return resolve(override || getAppRoot());
 }
 
+/**
+ * The directory the Prisma schema lives in.
+ *
+ * This matters more than it looks. The Prisma CLI resolves a relative
+ * SQLite URL — `file:./ci-test.db` — against the schema's own directory, not
+ * against the working directory. So `prisma migrate deploy` writes
+ * `<app>/prisma/ci-test.db`.
+ *
+ * The application used to resolve the same URL against the app root, which
+ * made it open `<app>/ci-test.db` — a *different file*. In CI that meant the
+ * migration was applied to one database and the tests ran against an
+ * unmigrated one, and every query failed with "no such table". The two
+ * disagreed silently, and only a fresh CI database exposed it.
+ *
+ * Resolving against the schema directory makes the application and the CLI
+ * agree by construction, whatever the working directory happens to be.
+ */
+export function getSchemaDir(): string {
+  const override = process.env.PRISMA_SCHEMA_DIR?.trim();
+  if (override) return resolve(override);
+  return join(getAppRoot(), "prisma");
+}
+
 /** Turn a possibly-relative data path into an absolute one under the data root. */
 export function resolveDataPath(input: string): string {
   const trimmed = input.trim();
@@ -107,6 +130,9 @@ function isInsideBuildOutput(target: string): boolean {
  * Only SQLite (`file:`) URLs are rewritten. MySQL/Postgres URLs are returned
  * untouched, and a missing value is returned as-is so Prisma reports the real
  * "environment variable not found" error instead of a misleading path.
+ *
+ * A relative SQLite path is resolved against the Prisma schema directory, the
+ * same base the CLI uses. See getSchemaDir().
  */
 export function resolveDatabaseUrl(input?: string): string | undefined {
   const raw = input ?? process.env.DATABASE_URL;
@@ -122,7 +148,12 @@ export function resolveDatabaseUrl(input?: string): string | undefined {
   if (specifier.startsWith(":")) return value;
 
   const [pathPart, ...queryParts] = specifier.split("?");
-  const absolute = resolveDataPath(pathPart);
+  // Resolved against the schema directory, exactly as the Prisma CLI does,
+  // so `prisma migrate deploy` and the running application always open the
+  // same file. See getSchemaDir() for why this is not the app root.
+  const absolute = isAbsolute(pathPart)
+    ? resolve(pathPart)
+    : resolve(getSchemaDir(), pathPart);
   const query = queryParts.length > 0 ? `?${queryParts.join("?")}` : "";
   const resolved = `file:${absolute}${query}`;
 

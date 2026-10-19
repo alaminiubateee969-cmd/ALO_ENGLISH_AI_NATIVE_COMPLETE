@@ -21,6 +21,12 @@ afterAll(restoreEnv);
 
 describe("legacy synthetic question seed guard", () => {
   test("refuses seeding without explicit opt-in", () => {
+    // The opt-in is cleared explicitly. If this test merely relied on the
+    // variable being absent, it would pass or fail depending on how the
+    // runner's environment happened to be set up — and CI does set
+    // ALLOW_SYNTHETIC_SAMPLE_QUESTIONS for the seeding step, so a suite that
+    // runs in the same shell would see it.
+    delete process.env.ALLOW_SYNTHETIC_SAMPLE_QUESTIONS;
     process.env.DATABASE_URL = "file:./test.db";
     expect(() => assertSafeSampleSeedTarget()).toThrow("Refusing to seed");
   });

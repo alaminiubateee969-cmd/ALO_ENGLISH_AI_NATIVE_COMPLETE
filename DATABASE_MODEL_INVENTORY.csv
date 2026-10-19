@@ -22,9 +22,10 @@ AuditLog,Audit & Settings,7,1,id (@id),@@index(userId); @@index(action); @@index
 Setting,Audit & Settings,3,0,id (@id); key (@unique),-
 ExamType,Exam Platform,7,1,id (@id); code (@unique),-
 PracticeSet,Exam Platform,8,3,id (@id),@@index(examTypeId)
-Attempt,Exam Platform,11,5,id (@id),"@@index(userId); @@index(status); @@index(userId,practiceSetId); @@index(expiresAt)"
+Attempt,Exam Platform,11,6,id (@id),"@@index(userId); @@index(status); @@index(userId,practiceSetId); @@index(expiresAt)"
 AttemptQuestion,Exam Platform,6,2,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId); @@index(questionId)
 AttemptAnswer,Exam Platform,6,1,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId)
+AttemptEvaluation,Exam Platform,9,1,"id (@id); @@unique(attemptId,section)",@@index(attemptId); @@index(examTypeCode)
 Score,Exam Platform,12,2,id (@id); attemptId (@unique),@@index(userId)
 Question,Exam Questions,16,3,id (@id),@@index(practiceSetId); @@index(section)
 QuestionAudioAsset,Exam Questions,14,1,id (@id); questionId (@unique),@@index(status)
@@ -44,3 +45,11 @@ Role,Phase 1: RBAC + Multi-Tenancy + Session Management,8,3,id (@id); slug (@uni
 Permission,Phase 1: RBAC + Multi-Tenancy + Session Management,4,1,id (@id); key (@unique),@@index(category); @@index(key)
 RolePermission,Phase 1: RBAC + Multi-Tenancy + Session Management,2,2,-,@@index(permissionId)
 Session,Phase 1: RBAC + Multi-Tenancy + Session Management,8,1,id (@id); token (@unique),@@index(userId); @@index(expiresAt); @@index(token)
+AgentDefinition,AI Agent Workforce,18,5,id (@id); code (@unique),@@index(department); @@index(enabled)
+AgentJob,AI Agent Workforce,21,4,"id (@id); @@unique(idempotencyScope,idempotencyKey)","@@index(status,runAfter); @@index(queue,status,runAfter); @@index(agentId,status); @@index(createdAt)"
+AgentJobEvent,AI Agent Workforce,9,2,id (@id),"@@index(jobId,createdAt); @@index(agentId,createdAt); @@index(level,createdAt)"
+AgentArtifact,AI Agent Workforce,10,2,id (@id),"@@index(jobId); @@index(agentId,kind); @@index(ref)"
+AgentApproval,AI Agent Workforce,14,2,id (@id),"@@index(status,createdAt); @@index(agentId,status)"
+AgentMetric,AI Agent Workforce,15,1,"id (@id); @@unique(agentId,day)",@@index(day)
+ExamBlueprint,AI Agent Workforce,9,0,"id (@id); @@unique(examTypeCode,version)",@@index(examTypeCode)
+DailyQuestionRun,AI Agent Workforce,15,0,"id (@id); @@unique(day,examTypeCode)",@@index(day)

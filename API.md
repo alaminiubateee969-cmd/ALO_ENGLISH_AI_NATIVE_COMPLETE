@@ -114,7 +114,46 @@ Start a new practice attempt.
 Submit an attempt for scoring. Validates ownership.
 
 **Body:** `{ "attemptId": "cuid", "answers": { ... } }`
-**Response:** `{ attempt: { id, status }, score: { id, overall, listening, reading, writing, speaking, confidence, providerUsed } }`
+**Response:** `{ attempt: { id, status }, score: { id, overall, listening, reading, writing, speaking, confidence, providerUsed }, evaluations: [ ... ] }`
+
+`evaluations` holds one document per assessed section (`WRITING`, `SPEAKING`),
+each with the rubric criteria that were commented on, the strengths, the
+improvements and the next steps. The evaluation is qualitative — it contains no
+band, grade or score, and it is produced by the platform's own evaluation agent
+(`src/lib/ai/evaluation/ai-evaluation.ts`). `score` is unaffected by it: the
+numeric result still comes from the deterministic objective grader, and the
+`writing` and `speaking` columns of the score stay `null`.
+
+#### `GET /api/attempts/:id/evaluation`
+Read the stored evaluation for an attempt. Owner or administrator only.
+
+**Response data:**
+```json
+{
+  "attemptId": "cuid",
+  "evaluations": [
+    {
+      "section": "WRITING",
+      "providerUsed": "groq",
+      "fallbackUsed": false,
+      "taskType": "academic_writing",
+      "taskTitle": "Task 2 — Opinion Essay",
+      "rubric": ["task_coverage", "organisation", "vocabulary", "grammar"],
+      "criteria": [{ "key": "task_coverage", "comment": "…" }],
+      "strengths": ["…"],
+      "improvements": ["…"],
+      "nextSteps": ["…"],
+      "wordCount": 156,
+      "disclosure": "Practice feedback only. Not an official score and not an exam result."
+    }
+  ]
+}
+```
+
+`providerUsed` is `groq` / `openrouter` / `gemini` / `huggingface` when a model
+produced the result, and `local_rule_engine` when the platform's local rule
+engine did — in which case `fallbackUsed` is `true`. A 404 is returned when the
+attempt does not exist or has not been evaluated.
 
 #### `GET /api/attempts?page=1&limit=20`
 List the current user's attempts (paginated).

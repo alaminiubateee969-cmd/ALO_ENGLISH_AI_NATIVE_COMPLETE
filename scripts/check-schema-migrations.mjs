@@ -166,3 +166,55 @@ console.log(
   `Schema/migration parity OK: every model has a table and every scalar column is present ` +
     `(${columnsByTable.size} tables inspected).`,
 );
+
+// ─── Question-type vocabulary parity ───────────────────────────────────────
+//
+// The grader, the CI content gate and the bank auditor all read
+// src/lib/exam/question-types.json. The schema comment documents the same
+// vocabulary. If the two drift, the bank auditor reports a bank the platform
+// grades correctly as invalid — which is exactly the disagreement this check
+// was added to prevent.
+
+const vocabularyPath = join(ROOT, "src", "lib", "exam", "question-types.json");
+if (!existsSync(vocabularyPath)) {
+  fail("src/lib/exam/question-types.json is missing — the grader and the content validators cannot agree on question types");
+  process.exit(1);
+}
+
+const vocabulary = JSON.parse(readFileSync(vocabularyPath, "utf8"));
+const vocabularyTypes = [
+  ...vocabulary.indexTypes,
+  ...vocabulary.textTypes,
+  ...vocabulary.setTypes,
+  ...vocabulary.subjectiveTypes,
+];
+const vocabularySet = new Set(vocabularyTypes);
+
+if (vocabularySet.size !== vocabularyTypes.length) {
+  fail("src/lib/exam/question-types.json contains duplicate type names");
+  process.exit(1);
+}
+
+const questionModel = /^model\s+Question\s*\{([\s\S]*?)^}/m.exec(schema);
+const typeComment = questionModel
+  ? (/^\s*type\s+String\s+\/\/\s*(.*)$/m.exec(questionModel[1]) || [])[1]
+  : null;
+const documentedTypes = typeComment
+  ? typeComment.split("|").map((t) => t.trim()).filter(Boolean)
+  : [];
+
+const undocumented = vocabularyTypes.filter((t) => !documentedTypes.includes(t));
+const unknown = documentedTypes.filter((t) => !vocabularySet.has(t));
+
+if (undocumented.length > 0 || unknown.length > 0) {
+  fail(
+    "the Question.type vocabulary in prisma/schema.prisma does not match src/lib/exam/question-types.json:\n" +
+      (undocumented.length > 0 ? `  missing from the schema comment: ${undocumented.join(", ")}\n` : "") +
+      (unknown.length > 0 ? `  not in the vocabulary file: ${unknown.join(", ")}\n` : ""),
+  );
+  process.exit(1);
+}
+
+console.log(
+  `Question-type vocabulary OK: ${vocabularyTypes.length} types documented in the schema and shared by the grader and both validators.`,
+);

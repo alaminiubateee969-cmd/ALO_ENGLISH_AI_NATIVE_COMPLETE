@@ -77,10 +77,18 @@ Unused prototype components under `src/components/alo/portals.tsx`, `src/compone
 
 ## Verification status
 
-- **PASS:** Static schema/migration parity, generated-inventory checks, `git diff --check`, and the 98 tests that completed in the latest all-tests run (including six pure CRM scope tests).
-- **PASS:** After `npm ci --ignore-scripts`, `npm run lint` exits 0 with no findings.
-- **PASS in CI:** CI job `114205904736` (PR #11, commit `d66a246`) passed `Generate Prisma client`, `Lint`, `Typecheck`, `Provision test database (migrate deploy)`, `Seed core data`, `Seed RBAC`, `Tests — all suites`, `Verify every suite passed`, `Build`, and `Verify build output`. `tests/rbac.test.ts` and `tests/exam-attempt.test.ts` therefore ran against a real migrated database for the first time on this branch.
-- **BLOCKED locally:** `npx tsc --noEmit` returns 10 errors, all `TS2305 … '"@prisma/client"' has no exported member 'PrismaClient'`, and `exam-attempt`/`rbac` error with `Cannot find module '.prisma/client/default'` — both solely because `prisma generate --no-engine` cannot reach `binaries.prisma.sh`, a host outside this sandbox's egress allowlist.
-- **NOT VERIFIED:** Production secrets, headers, database access isolation, email reset, MFA, CSRF, deployed rate limits, privacy retention, audio/recording lifecycle, and penetration testing.
+Re-verified 2026-10-19 after the full audit and repair pass.
 
-No deployment, production data review, or secret inspection was performed. See `PRODUCTION_DEPLOYMENT_REPORT.md` for the exact local execution results and release blockers.
+- **PASS:** `node scripts/check-schema-migrations.mjs` — 46 models, 8 migrations, 48 created tables, parity OK, and the question-type vocabulary check passes.
+- **PASS:** `node scripts/generate-inventories.mjs --check` and `node scripts/generate-project-index.mjs --check` — no drift.
+- **PASS:** `node scripts/check-manifest.mjs` — 318 source files scanned, 2 workflows checked, scripts and lockfiles consistent.
+- **PASS:** `npx tsc --noEmit` exits 0 with no errors, and `npx eslint .` exits 0 with no findings.
+- **PASS:** `bun test tests/` — **151 pass, 0 fail, 696 assertions across 14 files**, including the six pure CRM scope tests, the RBAC suite, the exam-attempt suite, and the 18 new AI-evaluation-layer tests.
+- **PASS:** `npm run build` compiles successfully and produces a 91.6 MB standalone artifact; `node scripts/smoke-standalone.mjs` boots it and passes 8/8 checks.
+- **PASS (live, against a seeded disposable database):** login -> start attempt -> submit -> attempt `SCORED` -> the evaluation agent produced a document for both the writing and the speaking section -> both persisted and read back through `GET /api/attempts/:id/evaluation`. A 114-probe API smoke produced 0 unexpected 5xx responses; the 20 x 401/403 are the authentication and authorization layer working.
+- **PASS (model path):** with a local OpenAI-compatible provider standing in for a real credential, the evaluation agent produced `WRITING/groq` and `SPEAKING/groq` results, the prompt sent to the provider was captured and inspected, a criterion key invented by the model was dropped, and an answer that commented only on out-of-scope criteria was rejected in favour of the local rule engine. **No live provider credential was used.**
+- **PASS:** `npm audit` reports 5 high advisories, 0 critical, 0 moderate, 0 low. All five are one dev-only root cause — `braces@3.0.3`, for which no fixed version has been published, reached through `eslint-config-next`. It does not ship to production.
+- **NOT VERIFIED:** Production secrets, production headers, production database access isolation, email reset, MFA, deployed rate limits, privacy retention, the audio/recording lifecycle, browser rendering and accessibility, and penetration testing.
+- **NOT VERIFIED:** The GitHub Actions runner is outside this sandbox's reach, so CI has not been observed on this branch.
+
+No deployment, production data review, or secret inspection was performed. See `docs/PRODUCTION_DEPLOYMENT_REPORT.md` for the exact local execution results and release blockers, and `docs/AUDIT_REPORT_2026-10-19.md` for the full field-by-field audit.
