@@ -88,13 +88,39 @@ function repoCountUnder(dir) {
   return repoFilesUnder(dir).length;
 }
 
-/** The number of repository files directly inside a directory. */
-function repoCountDirect(dir) {
+/**
+ * The direct children of a directory: the files in it and the directories
+ * beneath it, by name.
+ */
+function repoChildren(dir) {
   const prefix = dir.endsWith("/") ? dir : `${dir}/`;
-  return [...REPO_FILES].filter((file) => {
-    if (!file.startsWith(prefix)) return false;
-    return !file.slice(prefix.length).includes("/");
-  }).length;
+  const children = new Set();
+  for (const file of REPO_FILES) {
+    if (!file.startsWith(prefix)) continue;
+    const rest = file.slice(prefix.length);
+    const slash = rest.indexOf("/");
+    children.add(slash === -1 ? rest : rest.slice(0, slash));
+  }
+  return [...children].sort();
+}
+
+/**
+ * The direct subdirectories of a directory.
+ *
+ * A directory is only a directory if something lives beneath it, so a file
+ * that sits directly in the parent (`src/app/api/route.ts`) is not counted
+ * as a group.
+ */
+function repoDirectories(dir) {
+  const prefix = dir.endsWith("/") ? dir : `${dir}/`;
+  const directories = new Set();
+  for (const file of REPO_FILES) {
+    if (!file.startsWith(prefix)) continue;
+    const rest = file.slice(prefix.length);
+    const slash = rest.indexOf("/");
+    if (slash !== -1) directories.add(rest.slice(0, slash));
+  }
+  return [...directories].sort();
 }
 
 // ─── Source facts ─────────────────────────────────────────────────────────
@@ -114,7 +140,7 @@ const routeFiles = repoFilesUnder("src/app").filter((f) => f.endsWith("route.ts"
 const pageFiles = repoFilesUnder("src/app").filter((f) => f.endsWith("page.tsx")).length;
 const layoutFiles = repoFilesUnder("src/app").filter((f) => f.endsWith("layout.tsx")).length;
 
-const apiDirs = repoFilesUnder("src/app/api").filter((name) => !name.includes("/")).sort();
+const apiDirs = repoDirectories("src/app/api");
 
 const componentGroups = [
   ["AI OS", "src/components/ai-os", "Hidden admin modules."],
@@ -125,13 +151,14 @@ const componentGroups = [
   ["shadcn/ui", "src/components/ui", "Component library."],
 ];
 
-const libFiles = repoFilesUnder("src/lib").filter((name) => !name.includes("/"));
+const libFiles = repoChildren("src/lib");
 const testFiles = repoFilesUnder("tests").filter((f) => f.endsWith(".ts"));
-const scriptFiles = repoFilesUnder("scripts").filter((f) => !f.includes("/"));
+const scriptFiles = repoChildren("scripts");
 const workflowFiles = repoFilesUnder(".github/workflows").filter((f) => f.endsWith(".yml"));
-const serverConfigFiles = repoFilesUnder("server-config").filter((f) => !f.includes("/"));
+const serverConfigFiles = repoChildren("server-config");
 const publicFiles = repoFilesUnder("public");
 const publicImages = publicFiles.filter((f) => f.startsWith("images/"));
+// Every document, including the archived deployment guides.
 const docFiles = repoFilesUnder("docs").filter((f) => f.endsWith(".md"));
 
 const rootDocs = [
@@ -233,7 +260,7 @@ for (const name of rootDocs) {
                 : "Documentation";
   push(`| \`${name}\` | ${purpose} |`);
 }
-push(`| \`docs/\` | ${docFiles.length} documents |`);
+push(`| \`docs/\` | ${docFiles.length} documents (including the archived guides) |`);
 push("");
 
 push(

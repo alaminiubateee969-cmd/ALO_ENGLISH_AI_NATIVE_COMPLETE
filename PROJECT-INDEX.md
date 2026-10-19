@@ -48,11 +48,11 @@ A complete map of every file in this project, organized by purpose.
 | `API_DOCUMENTATION.md` | API documentation |
 | `VALIDATION-REPORT.md` | Production readiness report |
 | `PROJECT-INDEX.md` | This file |
-| `docs/` | 67 documents |
+| `docs/` | 67 documents (including the archived guides) |
 
 ## Source — App Router (86 API routes, 33 pages, 1 layout)
 
-API route groups: `route.ts`.
+API route groups: `admin`, `agents`, `attempts`, `audio`, `auth`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -60,14 +60,36 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Group | Route files |
 |---|---|
-| `api/route.ts` | 0 |
+| `api/admin` | 2 |
+| `api/agents` | 5 |
+| `api/attempts` | 7 |
+| `api/audio` | 1 |
+| `api/auth` | 6 |
+| `api/crm` | 37 |
+| `api/deliverable` | 1 |
+| `api/deliverables` | 1 |
+| `api/exam` | 1 |
+| `api/exam-types` | 1 |
+| `api/examiners` | 1 |
+| `api/health` | 1 |
+| `api/lead` | 1 |
+| `api/learning` | 3 |
+| `api/learning-memory` | 1 |
+| `api/linkis` | 2 |
+| `api/partner` | 2 |
+| `api/payment` | 1 |
+| `api/practice-sets` | 1 |
+| `api/questions` | 1 |
+| `api/rag` | 2 |
+| `api/rbac` | 4 |
+| `api/speaking` | 3 |
 | **total** | **86** |
 
 ## Source — Libraries
 
 | Path | Purpose |
 |---|---|
-| `src/lib/` (22 modules) | `QuestionExposure.ts`, `agent-data.ts`, `alo-data.ts`, `audit.ts`, `auth.ts`, `crud-scope.ts`, `crud.ts`, `db.ts`, `env.ts`, `exam-catalog.ts`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `utils.ts`, `validation.ts` |
+| `src/lib/` (29 modules) | `QuestionExposure.ts`, `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `audio`, `audit.ts`, `auth.ts`, `crud-scope.ts`, `crud.ts`, `db.ts`, `env.ts`, `exam`, `exam-catalog.ts`, `http`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `speech`, `utils.ts`, `validation.ts` |
 
 ## Source — Middleware
 
