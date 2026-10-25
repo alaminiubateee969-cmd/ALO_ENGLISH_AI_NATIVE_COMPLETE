@@ -20,11 +20,13 @@ const NAV = [
   { group: "My Portal", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard }, { id: "tests", label: "Practice Tests", icon: BookOpen }, { id: "mock-test", label: "Take Mock Test", icon: FileText }, { id: "results", label: "My Results", icon: Award }, { id: "vouchers", label: "My Vouchers", icon: Gift }, { id: "feedback", label: "Practice Feedback", icon: Sparkles }, { id: "study-plan", label: "Study Plan", icon: TrendingUp }, { id: "messages", label: "Messages", icon: MessageSquare }, { id: "settings", label: "Settings", icon: Settings }] },
 ];
 
-export function StudentPortal({ onExit }: { onExit: () => void }) {
+export function StudentPortal({ onExit, user, onStartExam }: { onExit: () => void; user?: { id: string; email: string; name: string | null; role: string }; onStartExam?: (et: ExamType) => void }) {
   const [page, setPage] = useState<Page>("dashboard");
   const [selectedExam, setSelectedExam] = useState<ExamType | undefined>(undefined);
+  const userName = user?.name || user?.email || "Student";
+  const userMeta = user?.email || "";
   return (
-    <PortalLayout role="STUDENT" userName="Tania Islam" userMeta="Student · AE-2026000042" accent="bg-alo-blue" nav={NAV} activePage={page} setPage={(p) => setPage(p as Page)} onExit={onExit}>
+    <PortalLayout role="STUDENT" userName={userName} userMeta={userMeta} accent="bg-alo-blue" nav={NAV} activePage={page} setPage={(p) => setPage(p as Page)} onExit={onExit}>
       {page === "dashboard" && <StudentDashboard onNavigate={(p) => setPage(p as Page)} />}
       {page === "tests" && <StudentTests onStart={() => { setSelectedExam(undefined); setPage("mock-test"); }} onSelectExam={(et) => { setSelectedExam(et); setPage("mock-test"); }} />}
       {page === "mock-test" && <div className="max-w-5xl mx-auto"><MockTestEngine initialExam={selectedExam} /></div>}

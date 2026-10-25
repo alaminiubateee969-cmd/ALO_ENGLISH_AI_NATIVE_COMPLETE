@@ -30,7 +30,7 @@ const EXAM_TYPE_LABELS: Record<ExamType, string> = {
   Placement: "ALO Placement", VisaInterview: "Visa Interview",
 };
 
-export function MockTestEngine({ initialExam }: { initialExam?: ExamType }) {
+export function MockTestEngine({ initialExam, onExit }: { initialExam?: ExamType; onExit?: () => void }) {
   const [phase, setPhase] = useState<Phase>("setup");
   const [examType, setExamType] = useState<ExamType>(initialExam || "IELTS");
   const [sections, setSections] = useState<Section[]>([]);
