@@ -182,6 +182,22 @@ jobs:
         env:
           DATABASE_URL: "file:${{ github.workspace }}/ci-test.db"
 
+      # Provenance gate: gradeable is not the same as lawful. No question bank
+      # may be published without a recorded licence, permission evidence, an
+      # official-format source, verified answer keys and cleared audio rights.
+      # Fails closed: a missing manifest is a blocked release, not a vacuous
+      # pass. See docs/QUESTION_BANK_PROVENANCE.md.
+      - name: Validate question-bank provenance
+        run: |
+          set +e
+          out=$(npm run content:provenance 2>&1)
+          code=$?
+          echo "$out"
+          echo "$out" | grep -E 'BLOCKED|PROVENANCE|declared:|✓' | head -20 | sed 's/^/::notice ::provenance: /'
+          exit "$code"
+        env:
+          QUESTION_PROVENANCE_FILE: "prisma/question-provenance.json"
+
       # Run every discovered test file (including the database-backed suites).
       # This step deliberately runs after a content-gate failure so the job
       # reports independent test/build evidence instead of silently skipping it.

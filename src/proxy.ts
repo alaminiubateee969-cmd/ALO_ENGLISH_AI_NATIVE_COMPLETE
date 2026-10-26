@@ -13,11 +13,15 @@
  * Public routes (no auth required):
  *   /, /login, /register, /forgot-password, /reset-password
  *   /destinations, /course-finder, /universities, /scholarships
- *   /services, /language-prep, /resources, /events
+ *   /services, /language-prep, /exam-prep, /resources, /events
  *   /contact, /book-consultation, /ask-handbook
- *   /privacy-policy, /terms, /cookie-policy, /portals
+ *   /privacy-policy, /terms, /cookie-policy, /portals, /blog (and /blog/<slug>)
  *   /api/auth/*, /api/health, /api/lead, /api/rag/ask, /api/rag/materials (GET)
  *   /api/exam-types, /api/practice-sets, /api/examiners
+ *   /api/webhooks/*  (public endpoint, but NOT unauthenticated: every request
+ *                     must carry a valid provider HMAC signature, checked in the
+ *                     route before any database work. See
+ *                     src/lib/crm/webhook-signature.ts and docs/COMMUNICATION_HUB.md.)
  *   /_next/*, /favicon.ico, /public/*
  */
 
@@ -38,6 +42,11 @@ const PUBLIC_PAGES = new Set([
   '/scholarships',
   '/services',
   '/language-prep',
+  // "/exam-prep" is public content: it is linked from the site header, the
+  // footer and /resources, and it only reads the public exam-types API. It was
+  // missing from this list, which made it absent from ROUTE_INVENTORY.csv and
+  // caused tests/sitemap.test.ts to fail once the sitemap was generated.
+  '/exam-prep',
   '/resources',
   '/events',
   '/contact',
@@ -47,6 +56,10 @@ const PUBLIC_PAGES = new Set([
   '/terms',
   '/cookie-policy',
   '/portals',
+  // The blog index is public. Individual posts live at /blog/<slug> and are
+  // reached by crawling the index; the proxy list is exact-match, so the prefix
+  // is documented in the header comment rather than here.
+  '/blog',
 ]);
 
 const PUBLIC_API_PATTERNS = [
@@ -58,6 +71,9 @@ const PUBLIC_API_PATTERNS = [
   /^\/api\/exam-types$/,
   /^\/api\/practice-sets$/,
   /^\/api\/examiners$/,
+  /^\/api\/webhooks\/.+/,      // signature-verified inbound providers (see route)
+  /^\/api\/analytics\/events$/, // anonymous beacon; aggregate counters only, rate limited,
+                                 // and nothing about a visitor is stored (src/lib/analytics/events.ts)
 ];
 
 // ─── Proxy Handler ────────────────────────────────────────────────────────

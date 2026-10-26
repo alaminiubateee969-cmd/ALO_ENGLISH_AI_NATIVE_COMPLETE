@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Cookie Policy" };
+export const metadata: Metadata = {
+  title: "Cookie Policy",
+  description: "Which cookies this site sets, what each one is for, and how the built-in analytics counts visits without storing any identifier for a visitor.",
+};
 export default function CookiePolicyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 prose prose-slate">

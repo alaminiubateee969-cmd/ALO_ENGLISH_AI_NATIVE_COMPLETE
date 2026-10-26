@@ -1,11 +1,104 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpenText, Compass, GraduationCap, LibraryBig, SearchCheck, WalletCards } from "lucide-react";
+import { ProcessFlow, TimelineRoadmap } from "@/components/diagrams";
 
 export const metadata: Metadata = {
   title: "Study and Test Preparation Resources",
   description: "Browse ALO English practice, test-provider references, and study-abroad planning resources.",
+  alternates: { canonical: "/resources" },
+  openGraph: {
+    title: "Study and Test Preparation Resources",
+    description: "Browse ALO English practice, test-provider references, and study-abroad planning resources.",
+    url: "/resources",
+    type: "website",
+  },
 };
+
+/**
+ * Diagrams rendered on this page. Both are content, not decoration: the process
+ * flow is what actually happens in a practice sitting, and the roadmap is the
+ * sequence a student works through. Neither claims an official score or a
+ * guaranteed outcome.
+ */
+const PRACTICE_SITTING_STEPS = [
+  {
+    label: "Choose a practice set",
+    detail: "Only active sets are listed",
+    code: "01",
+  },
+  {
+    label: "Server freezes questions",
+    detail: "Deadline set from server time",
+    code: "02",
+  },
+  {
+    label: "Answers autosave",
+    detail: "Resume after a refresh or dropout",
+    code: "03",
+  },
+  {
+    label: "Submit for grading",
+    detail: "Objective answers scored locally",
+    code: "04",
+  },
+  {
+    label: "Review the feedback",
+    detail: "Practice estimate, never official",
+    code: "05",
+  },
+] as const;
+
+const STUDY_ROADMAP = [
+  {
+    label: "Phase 1",
+    period: "Weeks 1–2",
+    title: "Establish the baseline",
+    description:
+      "Take one short practice sitting per skill to see where you actually stand. A baseline is a starting measurement, not a prediction of your final result.",
+    milestones: [
+      "Complete one listening and one reading practice set",
+      "Write one timed task and read the feedback",
+      "Record the question types that cost you the most time",
+    ],
+  },
+  {
+    label: "Phase 2",
+    period: "Weeks 3–6",
+    title: "Work the weak task types",
+    description:
+      "Go after specific question types rather than whole papers. Shorter, focused sittings with a review between them move more than repeated full tests.",
+    milestones: [
+      "Two focused sittings per week on your weakest task types",
+      "Keep a list of recurring mistakes, not just scores",
+      "Re-check the official test format for your sitting date",
+    ],
+  },
+  {
+    label: "Phase 3",
+    period: "Weeks 7–9",
+    title: "Build exam conditions",
+    description:
+      "Sit full-length sessions under the real time limit with no interruptions, so pacing and fatigue become part of what you have practised.",
+    milestones: [
+      "One full timed sitting per week",
+      "Practise the transition between sections without stopping",
+      "Confirm the rules and identity requirements with the test provider",
+    ],
+  },
+  {
+    label: "Phase 4",
+    period: "Week 10+",
+    title: "Taper and confirm logistics",
+    description:
+      "Reduce volume, protect sleep, and settle the practical details. Test-day administration is the provider's responsibility, so verify it directly with them.",
+    milestones: [
+      "Light review only in the final days",
+      "Confirm test centre, timing, and accepted ID documents",
+      "Reconcile your plan with your application deadlines",
+    ],
+  },
+] as const;
 
 const RESOURCES = [
   {
@@ -83,6 +176,33 @@ export default function ResourcesPage() {
         <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
           Practice scores and generated handbook responses are learning aids only. ALO does not represent official exam providers, immigration authorities, universities, or scholarship-awarding organisations.
         </p>
+      </section>
+
+      <section className="border-y border-slate-200 bg-white px-4 py-10 sm:px-6 sm:py-14" aria-label="How a practice sitting works">
+        <div className="mx-auto max-w-6xl">
+          <ProcessFlow
+            id="practice-sitting"
+            tone="blue"
+            title="How one practice sitting works"
+            description="Five steps, in order. The server owns question selection, the deadline, and grading — the browser never decides your score or how many questions you get."
+            caption="If a sitting is interrupted, saved answers are restored and the original deadline is kept. A second attempt at the same set is a new sitting with its own selection."
+            steps={PRACTICE_SITTING_STEPS.map((step) => ({ ...step }))}
+            loopLabel="Review the feedback, then choose the next focused sitting"
+          />
+        </div>
+      </section>
+
+      <section className="px-4 py-10 sm:px-6 sm:py-14" aria-label="Study roadmap">
+        <div className="mx-auto max-w-5xl">
+          <TimelineRoadmap
+            id="study-roadmap"
+            tone="orange"
+            title="A ten-week preparation roadmap"
+            description="A workable preparation sequence for a language test. Adjust the periods to the time you actually have; the order matters more than the exact weeks."
+            caption="Durations are a planning suggestion for self-study, not a recommendation from any test provider, and not a guarantee of a particular band or score."
+            phases={STUDY_ROADMAP.map((phase) => ({ ...phase, milestones: [...phase.milestones] }))}
+          />
+        </div>
       </section>
     </div>
   );

@@ -67,6 +67,16 @@ export type AuditAction =
   | 'BRANCHES_DELETE'
   | 'DEPARTMENTS_DELETE'
   | 'DOCUMENTS_DELETE'
+  /** A document was read or an attempt to read it was refused. */
+  | 'DOCUMENTS_DOWNLOAD'
+  /** An outbound message was queued, refused, deferred, sent or failed. */
+  | 'MESSAGES_SEND'
+  /** A delivery receipt from a provider was applied to a message. */
+  | 'MESSAGES_RECEIPT'
+  /** A consent decision was recorded in the register, or a capture was promoted. */
+  | 'CONSENT_RECORD'
+  /** A review-queue entry was linked, dismissed or deferred. */
+  | 'REVIEW_RESOLVE'
   | 'MESSAGES_DELETE'
   | 'TASKS_DELETE'
   | 'APPOINTMENTS_DELETE'
@@ -88,12 +98,9 @@ export type AuditAction =
   | 'USER_UPDATED'
   | 'USER_DISABLED'
   | 'USER_ENABLED'
-  // AI agent workforce
-  | 'AGENT_JOB_ENQUEUED'
-  | 'AGENT_JOB_APPROVED'
-  | 'AGENT_JOB_REJECTED'
-  | 'AGENT_APPROVAL_DECIDED'
-  | 'AGENT_CONTENT_PUBLISHED';
+  | 'BLOG_POST_CREATED'
+  | 'BLOG_POST_PUBLISHED'
+  | 'BLOG_POST_UPDATED';
 
 /**
  * Record an audit log entry.

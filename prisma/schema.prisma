@@ -36,6 +36,8 @@ model User {
   subordinates User[]        @relation("Supervisor")
   leads        Lead[]        @relation("LeadCounselor")
   students     Student[]     @relation("StudentCounselor")
+  channelAccounts       ChannelAccount[]              @relation("ChannelAccountOwner")
+  assignedConversations Conversation[]                @relation("ConversationAssignee")
   studentProfile Student?    @relation("StudentUser")
   partnerProfile Partner?    @relation("PartnerUser")
   applications Application[] @relation("AppAssignee")
@@ -134,6 +136,11 @@ model Lead {
 
 model Student {
   id            String    @id @default(cuid())
+  // Human-readable identity, allocated server-side as ALO-YYYY-NNNNNN.
+  // Nullable so pre-existing rows survive the migration; every row created
+  // through the communication hub receives one, and the unique index is the
+  // duplicate guard (see src/lib/crm/student-id.ts).
+  studentCode   String?   @unique
   userId        String?   @unique
   leadId        String?   @unique
   name          String
@@ -161,9 +168,14 @@ model Student {
   commissions Commission[]
   tasks      Task[]
   messages   Message[]
+  conversations          Conversation[]
+  counselorAssignments   CounselorAssignmentHistory[]
+  communicationConsents  CommunicationConsent[]
+  outboundMessages       MessageOutbox[]               @relation("StudentOutbox")
 
   @@index([counselorId])
   @@index([status])
+  @@index([studentCode])
 }
 
 model Partner {
@@ -321,6 +333,23 @@ model Document {
   ocrConfidence Float?
   reviewedBy   String?
   reviewedAt   DateTime?
+  // ── Communication-hub fields ───────────────────────────────────────────
+  // Private storage key. Never a public URL: files are served through an
+  // authorized route that checks ownership and role.
+  storageKey        String?
+  // Verification is a human decision. OCR/PENDING is not verification, and an
+  // automatically received file starts at PENDING_REVIEW.
+  verificationStatus String  @default("PENDING_REVIEW") // PENDING_REVIEW|VERIFIED|REJECTED|EXPIRED
+  verifiedBy        String?
+  verifiedAt        DateTime?
+  sourceChannel     String?  // WHATSAPP|FACEBOOK|INSTAGRAM|SMS|EMAIL|PORTAL|STAFF_UPLOAD
+  conversationId    String?
+  currentVersion    Int      @default(1)
+  retentionClass    String   @default("STANDARD") // STANDARD|SENSITIVE|LEGAL_HOLD
+  // Soft delete only. Permanent deletion requires an approved legal/retention
+  // workflow; ordinary staff and marketers cannot remove a document at all.
+  deletedAt         DateTime?
+  versions          DocumentVersion[]
   createdAt    DateTime @default(now())
 
   student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -329,6 +358,8 @@ model Document {
   @@index([studentId])
   @@index([type])
   @@index([ocrStatus])
+  @@index([verificationStatus])
+  @@index([retentionClass])
 }
 
 // ═══ Communications ════════════════════════════════════════════════════
@@ -353,16 +384,31 @@ model Message {
   internalNote String?
   aiSummary    String?
   readAt       DateTime?
+  // ── Communication-hub fields ───────────────────────────────────────────
+  conversationId    String?
+  // Provider's own message id. Together with the channel it is unique, which
+  // is what makes replayed webhooks idempotent.
+  providerMessageId String?
+  // Deterministic key for this delivery attempt/event (see
+  // src/lib/crm/idempotency.ts). Unique: a repeat is detected, not re-stored.
+  idempotencyKey    String?  @unique
+  rawPayloadHash    String?  // hash of the normalised inbound payload, never the payload itself
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedReason      String?
   createdAt    DateTime @default(now())
 
   sender      User?     @relation("MessageSender", fields: [senderId], references: [id])
   lead        Lead?     @relation(fields: [leadId], references: [id])
   student     Student?  @relation(fields: [studentId], references: [id])
+  conversation Conversation? @relation(fields: [conversationId], references: [id])
 
   @@index([channel])
   @@index([leadId])
   @@index([studentId])
   @@index([createdAt])
+  @@index([conversationId])
+  @@unique([channel, providerMessageId])
 }
 
 // ═══ Tasks, Appointments, Timeline ════════════════════════════════════
@@ -930,281 +976,278 @@ model Session {
   @@index([token])
 }
 
-// ═══ AI Agent Workforce ══════════════════════════════════════════════════
+// ═══ Communication Hub ═════════════════════════════════════════════════
 //
-// The fourteen production agents (Agent 001 … Agent 014) are real workers,
-// not dashboard rows. Every one of them runs through the same durable job
-// pipeline:
-//
-//   AgentDefinition  — the registered identity of an agent: its code, version,
-//                       its permissions, its input/output contract and its
-//                       resource limits. Changing a handler without bumping
-//                       the version is how "it works on my machine" bugs start.
-//
-//   AgentJob         — one durable unit of work. Enqueued, claimed, leased,
-//                       executed, retried with backoff, and finally completed,
-//                       failed, or dead-lettered. Every state change is a row,
-//                       so a crash cannot lose work.
-//
-//   AgentJobEvent    — the execution log. Append-only. Every transition, every
-//                       provider call and every error lands here.
-//
-//   AgentArtifact    — the output of a job, stored as JSON. Kept separate from
-//                       the job so the same artifact can be re-read, compared
-//                       against a later run, or rolled back.
-//
-//   AgentApproval    — the human-approval gate. High-impact work (publishing
-//                       questions, changing a rubric, retraining anything) is
-//                       not performed by an agent; it is *proposed* by an agent
-//                       and waits here for a human.
-//
-//   AgentMetric      — daily counters per agent, so monitoring does not have to
-//                       aggregate the job table on every page view.
-//
-//   ExamBlueprint    — a versioned description of an exam's structure. The
-//                       generators and the quality gate both work against the
-//                       blueprint, not against hard-coded strings.
-//
-//   DailyQuestionRun — one row per day of the daily generation pipeline, with
-//                       the outcome of every stage.
+// Central messaging, identity, documents and automation state. Nothing here
+// stores credentials: ChannelAccount.credentialRef is a pointer into the
+// host's secret storage, never a token, password or OTP.
+// Architecture and rollout order: docs/COMMUNICATION_HUB.md
 
-model AgentDefinition {
-  id          String   @id @default(cuid())
-  code        String   @unique // "AGENT-EXAM-ORCHESTRATOR-01"
-  name        String
-  version     String   @default("1.0.0")
-  department  String
-  description String
-  enabled     Boolean  @default(true)
-
-  // The contract. `inputSchema` and `outputSchema` are JSON Schema documents
-  // that are checked at enqueue time and at completion time respectively.
-  inputSchema  String
-  outputSchema String
-
-  // Explicit capabilities, stored as a JSON array of strings.
-  permissions String
-
-  // Resource limits. The runtime enforces these; they are not advice.
-  maxDurationSeconds Int     @default(60)
-  maxRetries         Int     @default(3)
-  maxConcurrency     Int     @default(2)
-  maxInputBytes      Int     @default(262144)
-
-  // Which model provider the agent prefers, and what it falls back to.
-  preferredProvider String?
-  fallbackProvider  String?
-
-  createdAt DateTime @default(now())
+/// Per-year counter for the human-readable student code (ALO-YYYY-NNNNNN).
+/// The row is the allocation lock: increments happen in a transaction so two
+/// concurrent inbound messages can never receive the same code.
+model StudentIdSequence {
+  year      Int      @id
+  lastValue Int      @default(0)
   updatedAt DateTime @updatedAt
-
-  jobs     AgentJob[]
-  events   AgentJobEvent[]
-  artifacts AgentArtifact[]
-  approvals AgentApproval[]
-  metrics  AgentMetric[]
-
-  @@index([department])
-  @@index([enabled])
 }
 
-model AgentJob {
-  id     String @id @default(cuid())
-  agentId String
+/// Registry of official, staff-owned communication accounts and their health.
+model ChannelAccount {
+  id                 String    @id @default(cuid())
+  kind               String    // WHATSAPP|FACEBOOK|INSTAGRAM|SMS|EMAIL|WEBCHAT
+  label              String    // official display name shown to students
+  externalId         String?   // provider phone-number id / page id / account id
+  ownerUserId        String?   // accountable staff member
+  branchId           String?
+  status             String    @default("DISCONNECTED") // CONNECTED|DISCONNECTED|ERROR|PENDING_VERIFICATION
+  lastWebhookAt      DateTime?
+  healthCheckedAt    DateTime?
+  lastError          String?
+  /// Pointer to the secret store entry. Never the secret itself.
+  credentialRef      String?
+  credentialRotatedAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  // The queue key. Jobs are processed in order within a key, which is how the
-  // per-student and per-exam ordering guarantees are kept.
-  queue String @default("default")
+  owner         User?          @relation("ChannelAccountOwner", fields: [ownerUserId], references: [id])
+  conversations Conversation[]
 
-  // Idempotency. A job with an existing idempotency key is not enqueued twice;
-  // the original job id is returned instead.
-  idempotencyKey String?
-  idempotencyScope String?
+  @@unique([kind, externalId])
+  @@index([status])
+  @@index([ownerUserId])
+}
 
-  status String @default("QUEUED") // QUEUED RUNNING SUCCEEDED FAILED RETRY_WAIT DEAD_LETTER CANCELLED
+/// One thread with one student on one channel. Survives staff changes.
+model Conversation {
+  id               String    @id @default(cuid())
+  studentId        String?
+  leadId           String?
+  channelAccountId String?
+  channel          String    // WHATSAPP|FACEBOOK|INSTAGRAM|SMS|EMAIL|WEBCHAT|PORTAL
+  externalThreadId String?   // provider conversation id
+  subject          String?
+  status           String    @default("OPEN") // OPEN|PENDING_REVIEW|CLOSED|SPAM
+  /// Set when identity matching was ambiguous. The conversation is still
+  /// recorded, but it is not attached to a student until a human confirms.
+  needsReview      Boolean   @default(false)
+  reviewReason     String?
+  assignedUserId   String?
+  lastMessageAt    DateTime?
+  messageCount     Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  payload   String
-  result    String?
-  error     String?
-  errorKind String? // validation | provider | timeout | limit | unknown
+  student        Student?        @relation(fields: [studentId], references: [id])
+  channelAccount ChannelAccount? @relation(fields: [channelAccountId], references: [id])
+  assignedUser   User?           @relation("ConversationAssignee", fields: [assignedUserId], references: [id])
+  messages       Message[]
 
-  attempts    Int       @default(0)
-  maxAttempts Int       @default(3)
-  runAfter    DateTime  @default(now())
-  startedAt   DateTime?
-  finishedAt  DateTime?
-  leaseUntil  DateTime?
+  @@unique([channel, externalThreadId])
+  @@index([studentId])
+  @@index([status])
+  @@index([needsReview])
+  @@index([lastMessageAt])
+}
 
-  // Cost accounting, so a runaway agent is visible rather than surprising.
-  inputTokens  Int @default(0)
-  outputTokens Int @default(0)
-  durationMs   Int @default(0)
+/// Immutable version history for a document. Replacing a file adds a version;
+/// the previously verified file stays in history.
+model DocumentVersion {
+  id               String    @id @default(cuid())
+  documentId       String
+  version          Int
+  storageKey       String
+  fileHash         String
+  fileSize         Int
+  mimeType         String
+  sourceChannel    String?
+  uploaderUserId   String?
+  reviewStatus     String    @default("PENDING_REVIEW") // PENDING_REVIEW|VERIFIED|REJECTED
+  reviewNote       String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  supersededAt     DateTime?
+  createdAt        DateTime  @default(now())
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
-  agent     AgentDefinition  @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  events    AgentJobEvent[]
-  artifacts AgentArtifact[]
-  approvals AgentApproval[]
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@index([reviewStatus])
+}
 
-  @@unique([idempotencyScope, idempotencyKey])
-  @@index([status, runAfter])
-  @@index([queue, status, runAfter])
-  @@index([agentId, status])
+/// Who held a student, when, and who handed it over.
+model CounselorAssignmentHistory {
+  id               String   @id @default(cuid())
+  studentId        String
+  fromUserId       String?
+  toUserId         String?
+  assignedByUserId String?
+  reason           String?
+  createdAt        DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([toUserId])
   @@index([createdAt])
 }
 
-model AgentJobEvent {
-  id     String  @id @default(cuid())
-  jobId  String
-  agentId String
+/// Central consent register. One row per student/channel/purpose, so withdrawing
+/// marketing consent on WhatsApp also stops SMS marketing for the same student.
+model CommunicationConsent {
+  id               String   @id @default(cuid())
+  // Nullable so a capture taken before the person was a student can be recorded
+  // without inventing a student row. A row must have a student OR a lead; the
+  // migration carries a CHECK constraint for that.
+  studentId        String?
+  channel          String   // WHATSAPP|SMS|EMAIL|FACEBOOK|INSTAGRAM
+  purpose          String   // MARKETING|SERVICE|FOLLOW_UP
+  status           String   @default("UNKNOWN") // GRANTED|DENIED|WITHDRAWN|UNKNOWN
+  source           String?  // FORM|INBOUND_MESSAGE|IMPORT|STAFF_ENTRY
+  evidence         String?  // message id, form reference, or import reference
+  recordedByUserId String?
+  recordedAt       DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  // A consent capture that happened before the person was a student. A website
+  // form is filled in by someone who has no student record yet, so the capture
+  // hangs off the lead until the identities line up, and is promoted then. It is
+  // never attached to a student by name alone — two people can share a name.
+  capturedLeadId   String?
+  capturedLeadEmail String?
+  capturedLeadPhone String?
 
-  level   String  @default("info") // debug info warn error
-  event   String // e.g. "job.claimed" "provider.call" "job.failed"
-  message String?
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  // Structured detail for this event. Never contains student PII beyond the
-  // identifiers the job already carries.
-  data String?
-
-  durationMs Int?
-  createdAt  DateTime @default(now())
-
-  job  AgentJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
-
-  @@index([jobId, createdAt])
-  @@index([agentId, createdAt])
-  @@index([level, createdAt])
+  /// One decision per student/channel/purpose, and one per lead/channel/purpose
+  /// while a capture waits for its student.
+  @@unique([studentId, channel, purpose])
+  @@unique([capturedLeadId, channel, purpose])
+  @@index([status])
+  @@index([purpose])
+  @@index([capturedLeadEmail])
 }
 
-model AgentArtifact {
-  id     String @id @default(cuid())
-  jobId  String
-  agentId String
+/// The outbound queue.
+///
+/// Every message this system intends to send has a row here before it has a
+/// provider message id, which is what makes three things possible at once:
+/// a send is claimed exactly once (sendKey is unique), a deferred send has a
+/// time to run at (nextAttemptAt), and a failure has a bounded number of
+/// attempts (attempts) before it is left for a human instead of retried
+/// forever.
+///
+/// Rows say WHY they are waiting: a deferral because of quiet hours is a
+/// different situation from a refusal because the student opted out, and an
+/// operator needs to tell them apart without guessing.
+model MessageOutbox {
+  id                String    @id @default(cuid())
+  /// Derived from channel, student, purpose, content and schedule. Unique.
+  sendKey           String    @unique
+  channel           String    // WHATSAPP|SMS|EMAIL|FACEBOOK|INSTAGRAM
+  purpose           String    // MARKETING|SERVICE|FOLLOW_UP
+  studentId         String
+  conversationId    String?
+  recipientHandle   String
+  body              String
+  isApprovedTemplate Boolean  @default(false)
+  templateName      String?
+  templateLanguage  String?
+  scheduledFor      DateTime
+  status            String    @default("PENDING") // PENDING|SENT|FAILED|SUPPRESSED|CANCELLED
+  attempts          Int       @default(0)
+  nextAttemptAt     DateTime?
+  lastDecisionCode  String?
+  lastError         String?
+  messageId         String?   // the Message row once one exists
+  providerMessageId String?
+  createdBy         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  // "question.draft" | "evaluation" | "analysis" | "plan" | "media" | "sync"
-  kind   String
-  // Where the artifact points: a question id, a file path, an agent id.
-  ref    String?
-  payload String
+  student Student @relation("StudentOutbox", fields: [studentId], references: [id], onDelete: Cascade)
 
-  // Provenance: which provider and model produced this, and which prompt
-  // version was used. A reader must always be able to tell where a number or
-  // a piece of text came from.
-  provider    String?
-  model       String?
-  promptVersion String?
-
-  createdAt DateTime @default(now())
-
-  job  AgentJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
-
-  @@index([jobId])
-  @@index([agentId, kind])
-  @@index([ref])
+  @@index([status, nextAttemptAt])
+  @@index([studentId, channel])
+  @@index([status, scheduledFor])
 }
 
-model AgentApproval {
-  id     String @id @default(cuid())
-  jobId  String
-  agentId String
+/// Every automation attempt: inbound webhooks, campaign sends, follow-ups and
+/// retries. idempotencyKey is unique, so a replayed webhook is recorded once.
+model AutomationEvent {
+  id                String    @id @default(cuid())
+  kind              String    // WEBHOOK_INBOUND|CAMPAIGN_SEND|FOLLOW_UP|RETRY|REMINDER
+  provider          String?   // whatsapp_cloud|meta_messenger|instagram|sms_provider|internal
+  idempotencyKey    String    @unique
+  status            String    @default("RECEIVED") // RECEIVED|PROCESSING|SUCCEEDED|FAILED|SKIPPED|DUPLICATE
+  signatureVerified Boolean   @default(false)
+  attempts          Int       @default(0)
+  lastError         String?
+  studentId         String?
+  conversationId    String?
+  payloadHash       String?
+  payloadSummary    String?
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  // "question.publish" | "rubric.change" | "blueprint.change" | "agent.deploy"
-  action String
-  status String @default("PENDING") // PENDING APPROVED REJECTED
+  @@index([kind])
+  @@index([status])
+  @@index([createdAt])
+}
 
-  // What is being approved, and why the agent wants it.
-  subject  String
-  summary  String
-  payload  String
-
-  requestedBy String? // the user id, when a human triggered the agent
-  decidedBy   String? // the user id, when a human decided
-  decisionNote String?
-  decidedAt    DateTime?
-
+/// Privacy-first analytics counters: one row per day, event, path and label,
+/// holding a count and nothing else.
+///
+/// There is deliberately no visitor, session, IP address or user-agent column
+/// here, and `path`/`label` are NOT NULL with an empty default rather than
+/// nullable: SQLite treats NULLs as distinct in a unique index, so nullable
+/// columns would allow a duplicate counter row and double-count every visit.
+/// The rules that keep personal data out of this table live in
+/// src/lib/analytics/events.ts, and they are enforced there rather than here so
+/// they can be tested without a database.
+model AnalyticsCounter {
+  id        String   @id @default(cuid())
+  /// Local day, YYYY-MM-DD.
+  day       String
+  event     String
+  /// Path with the query string removed; empty when the event has no page.
+  path      String   @default("")
+  /// Slug-shaped label; empty when the event carries none.
+  label     String   @default("")
+  count     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  job  AgentJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
-
-  @@index([status, createdAt])
-  @@index([agentId, status])
-}
-
-model AgentMetric {
-  id     String @id @default(cuid())
-  agentId String
-  day     String // YYYY-MM-DD
-
-  enqueued  Int @default(0)
-  succeeded Int @default(0)
-  failed    Int @default(0)
-  retried   Int @default(0)
-  deadLettered Int @default(0)
-  rejected  Int @default(0) // failed schema validation
-  approvalsPending Int @default(0)
-
-  durationMsTotal Int @default(0)
-  inputTokens     Int @default(0)
-  outputTokens    Int @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
-
-  @@unique([agentId, day])
+  @@unique([day, event, path, label])
   @@index([day])
+  @@index([event])
+  @@index([path])
 }
 
-model ExamBlueprint {
-  id     String @id @default(cuid())
-  examTypeCode String
-  version String
+/// A published article.
+///
+/// Content marketing and nothing else. A post is written by a person, checked by
+/// the safe-claims rule set before it can be published, and carries no exam
+/// claim, no score promise and no student data of any kind. `styleIndex` records
+/// the machine-prose score at the moment of publishing, so a later reader can see
+/// what the reviewer actually saw.
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  body        String
+  /// Comma-separated slug tags. A join table would be purer and is unnecessary
+  /// at the scale this is used at.
+  tags        String    @default("")
+  status      String    @default("DRAFT") // DRAFT|PUBLISHED
+  publishedAt DateTime?
+  authorId    String?
+  styleIndex  Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  // JSON: the sections, their question types, their counts and their timing.
-  structure String
-  // JSON: the official reference this blueprint was derived from, with the
-  // date it was last checked. Kept as data so it can be re-verified.
-  source   String
-  sourceCheckedAt DateTime
-
-  notes String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([examTypeCode, version])
-  @@index([examTypeCode])
+  @@index([status, publishedAt])
 }
 
-model DailyQuestionRun {
-  id     String @id @default(cuid())
-  day    String
-  examTypeCode String
-
-  status String @default("RUNNING") // RUNNING COMPLETED BLOCKED FAILED
-  // The outcome of each pipeline stage, in order.
-  stages String
-
-  requested  Int @default(0)
-  generated  Int @default(0)
-  validated  Int @default(0)
-  duplicates Int @default(0)
-  approved   Int @default(0)
-  published  Int @default(0)
-
-  error String?
-  jobId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([day, examTypeCode])
-  @@index([day])
-}

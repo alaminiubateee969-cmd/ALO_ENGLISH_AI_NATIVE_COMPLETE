@@ -1,10 +1,10 @@
 Model,Category,ScalarFields,Relations,Identifiers,Indexes
-User,Authentication & RBAC,15,18,id (@id); email (@unique),@@index(role); @@index(status); @@index(branchId); @@index(departmentId)
+User,Authentication & RBAC,15,20,id (@id); email (@unique),@@index(role); @@index(status); @@index(branchId); @@index(departmentId)
 Branch,Authentication & RBAC,8,3,id (@id); name (@unique),-
 Department,Authentication & RBAC,5,2,id (@id),-
 PasswordReset,Authentication & RBAC,6,1,id (@id); token (@unique),@@index(userId); @@index(token)
 Lead,"CRM Core: Leads, Students, Partners",17,6,id (@id),@@index(status); @@index(counselorId); @@index(branchId); @@index(source)
-Student,"CRM Core: Leads, Students, Partners",18,9,id (@id); userId (@unique); leadId (@unique),@@index(counselorId); @@index(status)
+Student,"CRM Core: Leads, Students, Partners",19,13,id (@id); studentCode (@unique); userId (@unique); leadId (@unique),@@index(counselorId); @@index(status); @@index(studentCode)
 Partner,"CRM Core: Leads, Students, Partners",12,4,id (@id); userId (@unique); referralCode (@unique),@@index(status)
 Commission,"CRM Core: Leads, Students, Partners",7,2,id (@id),@@index(partnerId); @@index(status)
 Country,Education Catalog,6,1,id (@id); name (@unique); code (@unique),-
@@ -12,8 +12,8 @@ University,Education Catalog,11,3,id (@id),@@index(countryId); @@index(isPublish
 Course,Education Catalog,13,2,id (@id),@@index(universityId); @@index(isPublished)
 Scholarship,Education Catalog,11,1,id (@id),@@index(universityId)
 Application,Applications,10,5,id (@id),@@index(studentId); @@index(status); @@index(assignedTo)
-Document,Documents & OCR,16,2,id (@id),@@index(studentId); @@index(type); @@index(ocrStatus)
-Message,Communications,20,3,id (@id),@@index(channel); @@index(leadId); @@index(studentId); @@index(createdAt)
+Document,Documents & OCR,25,3,id (@id),@@index(studentId); @@index(type); @@index(ocrStatus); @@index(verificationStatus); @@index(retentionClass)
+Message,Communications,27,4,"id (@id); idempotencyKey (@unique); @@unique(channel,providerMessageId)",@@index(channel); @@index(leadId); @@index(studentId); @@index(createdAt); @@index(conversationId)
 Task,"Tasks, Appointments, Timeline",13,4,id (@id),@@index(assigneeId); @@index(status); @@index(dueDate)
 Appointment,"Tasks, Appointments, Timeline",11,0,id (@id),@@index(startTime); @@index(assigneeId)
 TimelineEntry,"Tasks, Appointments, Timeline",8,0,id (@id),@@index(entityType); @@index(entityId); @@index(createdAt)
@@ -45,11 +45,13 @@ Role,Phase 1: RBAC + Multi-Tenancy + Session Management,8,3,id (@id); slug (@uni
 Permission,Phase 1: RBAC + Multi-Tenancy + Session Management,4,1,id (@id); key (@unique),@@index(category); @@index(key)
 RolePermission,Phase 1: RBAC + Multi-Tenancy + Session Management,2,2,-,@@index(permissionId)
 Session,Phase 1: RBAC + Multi-Tenancy + Session Management,8,1,id (@id); token (@unique),@@index(userId); @@index(expiresAt); @@index(token)
-AgentDefinition,AI Agent Workforce,18,5,id (@id); code (@unique),@@index(department); @@index(enabled)
-AgentJob,AI Agent Workforce,21,4,"id (@id); @@unique(idempotencyScope,idempotencyKey)","@@index(status,runAfter); @@index(queue,status,runAfter); @@index(agentId,status); @@index(createdAt)"
-AgentJobEvent,AI Agent Workforce,9,2,id (@id),"@@index(jobId,createdAt); @@index(agentId,createdAt); @@index(level,createdAt)"
-AgentArtifact,AI Agent Workforce,10,2,id (@id),"@@index(jobId); @@index(agentId,kind); @@index(ref)"
-AgentApproval,AI Agent Workforce,14,2,id (@id),"@@index(status,createdAt); @@index(agentId,status)"
-AgentMetric,AI Agent Workforce,15,1,"id (@id); @@unique(agentId,day)",@@index(day)
-ExamBlueprint,AI Agent Workforce,9,0,"id (@id); @@unique(examTypeCode,version)",@@index(examTypeCode)
-DailyQuestionRun,AI Agent Workforce,15,0,"id (@id); @@unique(day,examTypeCode)",@@index(day)
+StudentIdSequence,Communication Hub,3,0,year (@id),-
+ChannelAccount,Communication Hub,14,2,"id (@id); @@unique(kind,externalId)",@@index(status); @@index(ownerUserId)
+Conversation,Communication Hub,15,4,"id (@id); @@unique(channel,externalThreadId)",@@index(studentId); @@index(status); @@index(needsReview); @@index(lastMessageAt)
+DocumentVersion,Communication Hub,15,1,"id (@id); @@unique(documentId,version)",@@index(documentId); @@index(reviewStatus)
+CounselorAssignmentHistory,Communication Hub,7,1,id (@id),@@index(studentId); @@index(toUserId); @@index(createdAt)
+CommunicationConsent,Communication Hub,13,1,"id (@id); @@unique(studentId,channel,purpose); @@unique(capturedLeadId,channel,purpose)",@@index(status); @@index(purpose); @@index(capturedLeadEmail)
+MessageOutbox,Communication Hub,22,1,id (@id); sendKey (@unique),"@@index(status,nextAttemptAt); @@index(studentId,channel); @@index(status,scheduledFor)"
+AutomationEvent,Communication Hub,15,0,id (@id); idempotencyKey (@unique),@@index(kind); @@index(status); @@index(createdAt)
+AnalyticsCounter,Communication Hub,8,0,"id (@id); @@unique(day,event,path,label)",@@index(day); @@index(event); @@index(path)
+BlogPost,Communication Hub,12,0,id (@id); slug (@unique),"@@index(status,publishedAt)"

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { LeadCaptureForm } from "@/components/site/lead-capture-form";
 
-export const metadata: Metadata = { title: "Book a Consultation", description: "Request a consultation with ALO Education." };
+export const metadata: Metadata = {
+  title: "Book a Study-Abroad Consultation",
+  description: "Request a consultation about destinations, courses, budgets or English-test preparation. A counsellor replies during office hours.",
+};
 
 type SearchParams = Record<string, string | string[] | undefined>;
 

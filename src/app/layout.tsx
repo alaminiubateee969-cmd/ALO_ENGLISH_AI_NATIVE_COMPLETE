@@ -1,15 +1,47 @@
 import { SiteHeader } from "@/components/site/site-header";
+import { AnalyticsBeacon } from "@/components/site/analytics-beacon";
 import { SiteFooter } from "@/components/site/site-footer";
 import type { Metadata } from "next";
+import { resolveSiteUrl } from "@/lib/public-routes";
 import "./globals.css";
 
+const SITE_URL = resolveSiteUrl();
+const SITE_DESCRIPTION =
+  "ALO Education helps students study in the UK, Canada, Australia, USA, Ireland, New Zealand and Dubai. University applications, scholarships, visas, English test prep and CRM.";
+
 export const metadata: Metadata = {
+  // metadataBase makes every relative canonical/OpenGraph URL absolute. Without
+  // it Next.js warns at build time and social crawlers resolve against the
+  // wrong host.
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "ALO Education — Study Abroad Consultancy",
     template: "%s — ALO Education",
   },
-  description:
-    "ALO Education helps students study in the UK, Canada, Australia, USA, Ireland, New Zealand and Dubai. University applications, scholarships, visas, English test prep and CRM.",
+  description: SITE_DESCRIPTION,
+  applicationName: "ALO English",
+  // Authenticated and machine surfaces declare noindex at the page level too;
+  // this is the site-wide default for the public content pages.
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "ALO Education",
+    url: SITE_URL,
+    title: "ALO Education — Study Abroad Consultancy",
+    description: SITE_DESCRIPTION,
+    locale: "en_GB",
+    images: [{ url: "/images/alo-logo.webp", alt: "ALO Education" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ALO Education — Study Abroad Consultancy",
+    description: SITE_DESCRIPTION,
+    images: ["/images/alo-logo.webp"],
+  },
   icons: { icon: "/logo.svg" },
 };
 
@@ -25,6 +57,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <SiteHeader />
         <main id="main-content" className="flex-1">{children}</main>
+        {/* Counts page views as aggregate counters and stores nothing about the
+            visitor: no cookie, no session, no identifier. See
+            src/components/site/analytics-beacon.tsx and
+            src/lib/analytics/events.ts. Private areas are skipped. */}
+        <AnalyticsBeacon />
         <SiteFooter />
       </body>
     </html>

@@ -13,31 +13,11 @@
  * probing, and its result is available at /api/agents/metrics.
  */
 
-import { requireRole } from "@/lib/auth";
-import { AI_AGENTS, PLATFORM_SERVICES, buildAgentRegistry } from "@/lib/agents/registry";
-import { getAiStatus } from "@/lib/ai/providers/ai-provider";
-import { getProviderStatus } from "@/lib/ai/routing/ModelRouter";
-import { listRubricCodes } from "@/lib/ai/evaluation/rubrics";
-import { getLocalModelStatus } from "@/lib/ai/local/endpoint";
-import { db } from "@/lib/db";
-import { ok } from "@/lib/responses";
-import { withErrorHandler } from "@/lib/responses";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-/** The measured numbers for each agent, from the job table. */
-async function gatherMeasurements() {
-  const since = new Date(Date.now() - 30 * 86_400_000);
-  const rows = await db.agentJob.findMany({
-    where: { createdAt: { gte: since } },
-    select: {
-      status: true,
-      durationMs: true,
-      agent: { select: { code: true } },
-    },
-    take: 5000,
-  });
+import { requireRole } from '@/lib/auth';
+import { AI_AGENTS, getAgentStats } from '@/lib/agents/registry';
+import { MARKETING_SKILLS, getSkillStats } from '@/lib/agents/skills';
+import { ok } from '@/lib/responses';
+import { withErrorHandler } from '@/lib/responses';
 
   const measurements: Record<
     string,
@@ -111,15 +91,20 @@ export async function GET(): Promise<Response> {
           limits: agent.limits,
           measured: agent.measured,
         })),
-        services: PLATFORM_SERVICES,
-        approvalsPending: pendingApprovals,
-        evaluation: {
-          // What the platform's own evaluation agent can do right now.
-          ai: getAiStatus(),
-          providers: getProviderStatus(),
-          rubrics: listRubricCodes(),
-          localModel: getLocalModelStatus(),
-        },
+        // Reviewed skill packs (inputs, steps, guardrails, output sections).
+        // Registered metadata only — none of these has been executed against a
+        // provider, so they are reported separately from agent readiness.
+        skills: MARKETING_SKILLS.map((skill) => ({
+          id: skill.id,
+          name: skill.name,
+          owner: skill.owner,
+          purpose: skill.purpose,
+          canAutoExecute: skill.canAutoExecute,
+          status: skill.status,
+          guardrailCount: skill.guardrails.length,
+          stepCount: skill.steps.length,
+        })),
+        skillStats: getSkillStats(),
         readiness: {
           status: pendingApprovals > 0 ? "AWAITING_APPROVAL" : "MEASURED",
           basis:

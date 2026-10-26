@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-export const metadata: Metadata = { title: "Portals" };
+export const metadata: Metadata = {
+  title: "Student, Partner & Staff Portals",
+  description: "Sign in to the ALO Education student, partner, employee or administrator portal to reach your applications, students or CRM workspace.",
+};
 
 const PORTALS = [
   { name: "Student Portal", href: "/login", desc: "Access your applications, documents, and messages.", icon: "🎓", color: "bg-blue-600" },
