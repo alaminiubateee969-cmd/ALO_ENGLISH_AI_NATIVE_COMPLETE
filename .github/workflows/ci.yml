@@ -70,6 +70,9 @@ jobs:
       - name: Verify inventories match source
         run: node scripts/generate-inventories.mjs --check
 
+      - name: Verify the project index matches source
+        run: node scripts/generate-project-index.mjs --check
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -95,7 +98,7 @@ jobs:
       - name: Provision test database (migrate deploy)
         run: bunx prisma migrate deploy
         env:
-          DATABASE_URL: "file:./ci-test.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-test.db"
 
       - name: Seed core data
         run: |
@@ -110,7 +113,7 @@ jobs:
             exit "$code"
           fi
         env:
-          DATABASE_URL: "file:./ci-test.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-test.db"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
 
@@ -125,7 +128,40 @@ jobs:
             exit "$code"
           fi
         env:
-          DATABASE_URL: "file:./ci-test.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-test.db"
+          ADMIN_SEED_EMAIL: "ci-admin@test.local"
+          ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
+
+      # DATABASE_URL is absolute on purpose. The Prisma CLI resolves a
+      # relative `file:` URL against the schema directory, and the application
+      # resolves it against the same base — but only because the application
+      # was changed to agree. An absolute path removes the question entirely,
+      # and it is what production uses.
+      #
+      # The content gate below refuses to pass on an empty question bank, and
+      # nothing in the chain above inserted a question — so CI could never go
+      # green. The question seeders are deliberately guarded so that synthetic
+      # fixtures can never reach a production database; this step opts into
+      # that guard explicitly, against the disposable ci-test.db file only.
+      #
+      # The seeded content is synthetic and unlicensed: short-form development
+      # fixtures used to exercise the grader, the selection logic and the
+      # content gate. It is not official or full-length exam material, and it
+      # is never loaded in production.
+      - name: Seed sample question bank
+        run: |
+          set +e
+          out=$(bun run db:seed:sample-bank 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ]; then
+            echo "$out" | tail -25 | sed 's/^/::error ::seed sample question bank: /'
+            exit "$code"
+          fi
+        env:
+          DATABASE_URL: "file:${{ github.workspace }}/ci-test.db"
+          ALLOW_SYNTHETIC_SAMPLE_QUESTIONS: "1"
+          NODE_ENV: "test"
           ADMIN_SEED_EMAIL: "ci-admin@test.local"
           ADMIN_SEED_PASSWORD: "ci-test-password-not-a-real-secret"
 
@@ -144,7 +180,7 @@ jobs:
           echo "$out" | grep -E 'Content validation:|gradeable|lack audio|✗' | head -20 | sed 's/^/::notice ::content: /'
           exit "$code"
         env:
-          DATABASE_URL: "file:./ci-test.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-test.db"
 
       # Provenance gate: gradeable is not the same as lawful. No question bank
       # may be published without a recorded licence, permission evidence, an
@@ -175,7 +211,7 @@ jobs:
           grep -E "^\(fail\)" tests.log | head -30 | sed 's/^/::error ::tests /'
           echo "all=$code" >> test-results.txt
         env:
-          DATABASE_URL: "file:./ci-test.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-test.db"
 
       # A single invocation discovers every tests/*.test.ts file, so adding a
       # new suite cannot be silently omitted from a manually maintained list.
@@ -255,7 +291,7 @@ jobs:
       - name: Build (host command)
         run: npm run build
         env:
-          DATABASE_URL: "file:./ci-host-build.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-host-build.db"
           AUTH_SECRET: "ci-test-secret-not-for-production-use-32chars"
 
       # `next build` does not copy .next/static, public/ or prisma/ into the
@@ -284,12 +320,12 @@ jobs:
       - name: Provision the database the way production does
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: "file:./ci-host-build.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-host-build.db"
 
       - name: Boot the artifact and assert it serves traffic
         run: node scripts/smoke-standalone.mjs --timeout 120
         env:
-          DATABASE_URL: "file:./ci-host-build.db"
+          DATABASE_URL: "file:${{ github.workspace }}/ci-host-build.db"
           AUTH_SECRET: "ci-test-secret-not-for-production-use-32chars"
 
   # ─── Script validation ───────────────────────────────────────────────
@@ -301,6 +337,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate Node scripts
+        run: |
+          # Every .mjs script is parsed, so a syntax error cannot reach the
+          # host. The agent worker and the daily pipeline are included.
+          for script in scripts/*.mjs; do
+            echo "Checking $script…"
+            node --check "$script" || { echo "Syntax error in $script"; exit 1; }
+          done
+          echo "✓ All Node scripts pass syntax validation"
 
       - name: Validate bash scripts
         run: |

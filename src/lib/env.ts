@@ -31,8 +31,8 @@ const ENV_SCHEMA: EnvVar[] = [
   { key: 'PORT', required: false, description: 'Application port (set by Hostinger)' },
   { key: 'DATABASE_URL', required: true, description: 'Database connection string (SQLite file:/absolute/path or MySQL mysql://...)' },
   { key: 'AUTH_SECRET', required: false, default: '', description: '32+ char session signing secret (auto-generated if missing in dev)' },
-  { key: 'NEXTAUTH_URL', required: false, description: 'NextAuth base URL' },
   { key: 'GROQ_API_KEY', required: false, description: 'Optional Groq AI key' },
+  { key: 'AI_ENABLED', required: false, description: 'Set to "false" to disable AI evaluation (the local rule engine is always available)' },
   { key: 'APP_DATA_DIR', required: false, description: 'Absolute directory for data that must survive a redeploy (defaults to the app root)' },
   // UPLOAD_DIR / BACKUP_DIR have no literal default: they are resolved by
   // src/lib/paths.ts so they land under the data root rather than under

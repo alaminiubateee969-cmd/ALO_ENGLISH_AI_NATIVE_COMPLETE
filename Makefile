@@ -15,7 +15,7 @@
 # Every command prints WHAT/WHY/EXPECTED before running.
 # ═══════════════════════════════════════════════════════════════════════
 
-.PHONY: help install dev build start lint typecheck test verify preflight smoke inventories deploy rollback backup restore health db-setup db-seed db-reset clean archive
+.PHONY: help install dev build start lint typecheck test verify preflight smoke inventories agents-work agents-daily deploy rollback backup restore health db-setup db-seed db-reset clean archive
 
 # Default shell — fail fast on errors.
 SHELL := /usr/bin/env bash
@@ -87,12 +87,23 @@ db-reset: ## Reset the database (DESTRUCTIVE)
 	bun run db:reset
 
 # ─── Deployment ────────────────────────────────────────────────────────
-preflight: ## Dependency-free gates: manifest + schema/migration parity + inventories
+preflight: ## Dependency-free gates: manifest + schema/migration parity + inventories + project index
 	@echo "▸ Repository preflight…"
 	node scripts/check-manifest.mjs
 	node scripts/check-schema-migrations.mjs
 	node scripts/generate-inventories.mjs --check
+	node scripts/generate-project-index.mjs --check
 	@echo "✓ Preflight clean"
+
+agents-work: ## Drain the AI agent job queue (needs the platform running)
+	@echo "▸ Running the agent worker…"
+	node scripts/agent-worker.mjs
+	@echo "✓ Agent queue drained"
+
+agents-daily: ## Run the daily question pipeline (generates drafts, never publishes)
+	@echo "▸ Running the daily question pipeline…"
+	node scripts/daily-question-pipeline.mjs
+	@echo "✓ Daily pipeline finished. Drafts are awaiting human approval."
 
 smoke: ## Boot the built artifact and assert it serves traffic (needs `make build` first)
 	@echo "▸ Booting .next/standalone and probing it…"

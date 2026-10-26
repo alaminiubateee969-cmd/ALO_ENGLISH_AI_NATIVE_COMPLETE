@@ -1,7 +1,7 @@
 Directory,Files,Purpose
 .github,7,CI and deployment-readiness workflows
 .zscripts,6,Local dev/build/start helpers for the optional self-managed path
-(root),66,"Application config, entry point and top-level documentation"
+(root),68,"Application config, entry point and top-level documentation"
 cpanel-production,137,"Legacy PHP deliverables, served to SUPER_ADMIN by /api/deliverable*"
 db,1,Runtime database directory (contents git-ignored)
 docs,70,"Architecture decisions, audits and archived documentation"

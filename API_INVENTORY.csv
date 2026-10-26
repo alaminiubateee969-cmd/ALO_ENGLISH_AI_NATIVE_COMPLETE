@@ -5,10 +5,14 @@ Path,Methods,Auth,Runtime,Source
 /api/admin/seo/audit,GET,role:ADMIN+SUPER_ADMIN+MARKETING_MANAGER,nodejs,src/app/api/admin/seo/audit/route.ts
 /api/admin/settings,GET POST,role:ADMIN,nodejs,src/app/api/admin/settings/route.ts
 /api/admin/stats,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/stats/route.ts
+/api/agents/approvals,GET POST,authenticated,nodejs,src/app/api/agents/approvals/route.ts
+/api/agents/jobs,GET POST,authenticated,nodejs,src/app/api/agents/jobs/route.ts
+/api/agents/metrics,GET,authenticated,nodejs,src/app/api/agents/metrics/route.ts
 /api/agents/status,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/agents/status/route.ts
 /api/analytics/events,POST,public intended (allowlist; verify handler),nodejs,src/app/api/analytics/events/route.ts
 /api/attempts,GET,authenticated,nodejs,src/app/api/attempts/route.ts
 /api/attempts/{id},GET,authenticated,nodejs,src/app/api/attempts/[id]/route.ts
+/api/attempts/{id}/evaluation,GET,authenticated,nodejs,src/app/api/attempts/[id]/evaluation/route.ts
 /api/attempts/active,GET,authenticated,nodejs,src/app/api/attempts/active/route.ts
 /api/attempts/save,POST,authenticated,nodejs,src/app/api/attempts/save/route.ts
 /api/attempts/start,POST,authenticated,nodejs,src/app/api/attempts/start/route.ts
@@ -78,6 +82,8 @@ Path,Methods,Auth,Runtime,Source
 /api/learning/daily,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/learning/daily/route.ts
 /api/learning/dashboard,GET,authenticated,nodejs,src/app/api/learning/dashboard/route.ts
 /api/learning/orchestrator,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/learning/orchestrator/route.ts
+/api/linkis/health,GET,role:SUPER_ADMIN,nodejs,src/app/api/linkis/health/route.ts
+/api/linkis/jobs,GET POST,role:SUPER_ADMIN,nodejs,src/app/api/linkis/jobs/route.ts
 /api/partner/dashboard,GET,role:PARTNER,nodejs,src/app/api/partner/dashboard/route.ts
 /api/partner/profile,GET,role:PARTNER,nodejs,src/app/api/partner/profile/route.ts
 /api/payment,GET POST,authenticated,nodejs,src/app/api/payment/route.ts

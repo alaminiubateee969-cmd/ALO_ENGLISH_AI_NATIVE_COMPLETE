@@ -567,6 +567,7 @@ model Attempt {
   /// refresh or a different device always yields the same questions.
   attemptQuestions AttemptQuestion[]
   answers     AttemptAnswer[]
+  evaluations AttemptEvaluation[]
 
   @@index([userId])
   @@index([status])
@@ -607,6 +608,36 @@ model AttemptAnswer {
   @@index([attemptId])
 }
 
+/// The platform's own evaluation of the subjective parts of one attempt.
+///
+/// Written by the evaluation agent (src/lib/ai/evaluation/ai-evaluation.ts).
+/// `providerUsed` records which engine produced the result and
+/// `fallbackUsed` records that the local rule engine was used because no
+/// model was available. The payload is the full evaluation document; it
+/// never contains a band, a grade or a score, because no rubric in this
+/// repository has been calibrated against human raters.
+model AttemptEvaluation {
+  id           String   @id @default(cuid())
+  attemptId    String
+  /// WRITING | SPEAKING
+  section      String
+  examTypeCode String
+  /// The specific task within the exam, e.g. "Task 2 — Opinion essay".
+  taskType     String?
+  /// groq | openrouter | gemini | huggingface | local_rule_engine
+  providerUsed String   @default("local_rule_engine")
+  fallbackUsed Boolean  @default(false)
+  /// The evaluation document as JSON.
+  payload      String
+  createdAt    DateTime @default(now())
+
+  attempt      Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, section])
+  @@index([attemptId])
+  @@index([examTypeCode])
+}
+
 model Score {
   id           String   @id @default(cuid())
   attemptId    String   @unique
@@ -634,7 +665,9 @@ model Question {
   id            String   @id @default(cuid())
   practiceSetId String
   section       String   // LISTENING|READING|WRITING|SPEAKING
-  type          String   // MULTIPLE_CHOICE|TRUE_FALSE_NOT_GIVEN|MATCHING|FILL_BLANK|LABELING|SHORT_ANSWER|ESSAY|SPEAKING|SENTENCE_COMPLETION|SUMMARY_COMPLETION|CHART_DESCRIPTION
+  /// Canonical vocabulary: src/lib/exam/question-types.json (kept in sync by
+  /// scripts/check-schema-migrations.mjs).
+  type          String   // MULTIPLE_CHOICE|TRUE_FALSE|TRUE_FALSE_NOT_GIVEN|READING_MCQ|READ_AND_SELECT|LISTEN_AND_SELECT|FILL_BLANK|SHORT_ANSWER|SENTENCE_COMPLETION|SUMMARY_COMPLETION|WRITE_FROM_DICTATION|COMPLETE_THE_SENTENCE|MATCHING|LABELING|ESSAY|SPEAKING|CHART_DESCRIPTION|WRITING_TASK1|WRITING_TASK2
   prompt        String
   passage       String?  // Reading passage or audio transcript
   audioUrl      String?  // Audio file for listening (optional)

@@ -11,7 +11,13 @@
  * which never appears in the seeded bank ("TRUE_FALSE_NOT_GIVEN" is used).
  * Those questions were silently skipped and dragged scores down. The type
  * sets below cover every type present in the schema and the seeds.
+ *
+ * The vocabulary itself lives in ./question-types.json so the grader, the CI
+ * content gate and the bank auditor cannot disagree about what a valid type
+ * is. See that file for the history.
  */
+
+import QUESTION_TYPES from "./question-types.json";
 
 export type GradableQuestion = {
   id: string;
@@ -51,12 +57,12 @@ export type ObjectiveGradeResult = {
 };
 
 /** Types graded automatically from stored correct answers. */
-const INDEX_TYPES = new Set(["MULTIPLE_CHOICE", "TRUE_FALSE", "TRUE_FALSE_NOT_GIVEN", "READING_MCQ", "READ_AND_SELECT", "LISTEN_AND_SELECT"]);
-const TEXT_TYPES = new Set(["FILL_BLANK", "SHORT_ANSWER", "SENTENCE_COMPLETION", "SUMMARY_COMPLETION", "WRITE_FROM_DICTATION", "COMPLETE_THE_SENTENCE"]);
-const SET_TYPES = new Set(["MATCHING", "LABELING"]);
+const INDEX_TYPES = new Set<string>(QUESTION_TYPES.indexTypes);
+const TEXT_TYPES = new Set<string>(QUESTION_TYPES.textTypes);
+const SET_TYPES = new Set<string>(QUESTION_TYPES.setTypes);
 
 /** Types that require a human/AI evaluator and are never scored here. */
-export const SUBJECTIVE_TYPES = new Set(["ESSAY", "SPEAKING", "CHART_DESCRIPTION", "WRITING_TASK1", "WRITING_TASK2"]);
+export const SUBJECTIVE_TYPES = new Set<string>(QUESTION_TYPES.subjectiveTypes);
 
 export function isObjective(q: { type: string }): boolean {
   const t = q.type.toUpperCase();

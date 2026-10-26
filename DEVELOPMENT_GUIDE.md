@@ -28,7 +28,7 @@
 - CRM: Leads, Students, Partners, Applications, Universities, Courses, Scholarships
 - Communications: Messages (multi-channel)
 - Documents: Upload + OCR status tracking
-- Exam Platform: 32 exam types, practice sets, attempts, AI-evaluated scoring
+- Exam Platform: 20 exam types, practice sets, attempts, and the platform's own evaluation agent (writing + speaking feedback, no band or score)
 - AI Agents: 20 registered agents (Writing, Speaking, Interview, Exam Conductor, etc.)
 - Security: Auth, RBAC, audit logging, rate limiting
 
