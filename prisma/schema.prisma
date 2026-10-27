@@ -156,6 +156,13 @@ model Student {
   branchId      String?
   counselorId   String?
   partnerId     String?
+  // ── Review-queue / soft-delete fields ─────────────────────────────────
+  /// Soft-delete marker. NULL means the record is live; a set value hides the
+  /// student from queues and conversations without destroying history.
+  deletedAt     DateTime?
+  /// Set when an inbound message could not be matched to exactly one student:
+  /// the record waits in the employee review queue for a human decision.
+  needsReview   Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -176,6 +183,9 @@ model Student {
   @@index([counselorId])
   @@index([status])
   @@index([studentCode])
+  // The employee review queue filters on needsReview first, so it gets its own
+  // index rather than scanning every student row on each queue view.
+  @@index([needsReview])
 }
 
 model Partner {
@@ -1157,6 +1167,9 @@ model MessageOutbox {
   status            String    @default("PENDING") // PENDING|SENT|FAILED|SUPPRESSED|CANCELLED
   attempts          Int       @default(0)
   nextAttemptAt     DateTime?
+  /// Set when the provider accepted the send. The audit trail of *when* a
+  /// student was actually contacted, distinct from when it was scheduled.
+  sentAt            DateTime?
   lastDecisionCode  String?
   lastError         String?
   messageId         String?   // the Message row once one exists
@@ -1251,3 +1264,282 @@ model BlogPost {
   @@index([status, publishedAt])
 }
 
+
+// ═══ AI Agent Workforce ══════════════════════════════════════════════════
+//
+// The fourteen production agents (Agent 001 … Agent 014) are real workers,
+// not dashboard rows. Every one of them runs through the same durable job
+// pipeline:
+//
+//   AgentDefinition  — the registered identity of an agent: its code, version,
+//                       its permissions, its input/output contract and its
+//                       resource limits. Changing a handler without bumping
+//                       the version is how "it works on my machine" bugs start.
+//
+//   AgentJob         — one durable unit of work. Enqueued, claimed, leased,
+//                       executed, retried with backoff, and finally completed,
+//                       failed, or dead-lettered. Every state change is a row,
+//                       so a crash cannot lose work.
+//
+//   AgentJobEvent    — the execution log. Append-only. Every transition, every
+//                       provider call and every error lands here.
+//
+//   AgentArtifact    — the output of a job, stored as JSON. Kept separate from
+//                       the job so the same artifact can be re-read, compared
+//                       against a later run, or rolled back.
+//
+//   AgentApproval    — the human-approval gate. High-impact work (publishing
+//                       questions, changing a rubric, retraining anything) is
+//                       not performed by an agent; it is *proposed* by an agent
+//                       and waits here for a human.
+//
+//   AgentMetric      — daily counters per agent, so monitoring does not have to
+//                       aggregate the job table on every page view.
+//
+//   ExamBlueprint    — a versioned description of an exam's structure. The
+//                       generators and the quality gate both work against the
+//                       blueprint, not against hard-coded strings.
+//
+//   DailyQuestionRun — one row per day of the daily generation pipeline, with
+//                       the outcome of every stage.
+
+model AgentDefinition {
+  id          String   @id @default(cuid())
+  code        String   @unique // "AGENT-EXAM-ORCHESTRATOR-01"
+  name        String
+  version     String   @default("1.0.0")
+  department  String
+  description String
+  enabled     Boolean  @default(true)
+
+  // The contract. `inputSchema` and `outputSchema` are JSON Schema documents
+  // that are checked at enqueue time and at completion time respectively.
+  inputSchema  String
+  outputSchema String
+
+  // Explicit capabilities, stored as a JSON array of strings.
+  permissions String
+
+  // Resource limits. The runtime enforces these; they are not advice.
+  maxDurationSeconds Int     @default(60)
+  maxRetries         Int     @default(3)
+  maxConcurrency     Int     @default(2)
+  maxInputBytes      Int     @default(262144)
+
+  // Which model provider the agent prefers, and what it falls back to.
+  preferredProvider String?
+  fallbackProvider  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs     AgentJob[]
+  events   AgentJobEvent[]
+  artifacts AgentArtifact[]
+  approvals AgentApproval[]
+  metrics  AgentMetric[]
+
+  @@index([department])
+  @@index([enabled])
+}
+
+model AgentJob {
+  id     String @id @default(cuid())
+  agentId String
+
+  // The queue key. Jobs are processed in order within a key, which is how the
+  // per-student and per-exam ordering guarantees are kept.
+  queue String @default("default")
+
+  // Idempotency. A job with an existing idempotency key is not enqueued twice;
+  // the original job id is returned instead.
+  idempotencyKey String?
+  idempotencyScope String?
+
+  status String @default("QUEUED") // QUEUED RUNNING SUCCEEDED FAILED RETRY_WAIT DEAD_LETTER CANCELLED
+
+  payload   String
+  result    String?
+  error     String?
+  errorKind String? // validation | provider | timeout | limit | unknown
+
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  runAfter    DateTime  @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  leaseUntil  DateTime?
+
+  // Cost accounting, so a runaway agent is visible rather than surprising.
+  inputTokens  Int @default(0)
+  outputTokens Int @default(0)
+  durationMs   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent     AgentDefinition  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  events    AgentJobEvent[]
+  artifacts AgentArtifact[]
+  approvals AgentApproval[]
+
+  @@unique([idempotencyScope, idempotencyKey])
+  @@index([status, runAfter])
+  @@index([queue, status, runAfter])
+  @@index([agentId, status])
+  @@index([createdAt])
+}
+
+model AgentJobEvent {
+  id     String  @id @default(cuid())
+  jobId  String
+  agentId String
+
+  level   String  @default("info") // debug info warn error
+  event   String // e.g. "job.claimed" "provider.call" "job.failed"
+  message String?
+
+  // Structured detail for this event. Never contains student PII beyond the
+  // identifiers the job already carries.
+  data String?
+
+  durationMs Int?
+  createdAt  DateTime @default(now())
+
+  job  AgentJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+  @@index([agentId, createdAt])
+  @@index([level, createdAt])
+}
+
+model AgentArtifact {
+  id     String @id @default(cuid())
+  jobId  String
+  agentId String
+
+  // "question.draft" | "evaluation" | "analysis" | "plan" | "media" | "sync"
+  kind   String
+  // Where the artifact points: a question id, a file path, an agent id.
+  ref    String?
+  payload String
+
+  // Provenance: which provider and model produced this, and which prompt
+  // version was used. A reader must always be able to tell where a number or
+  // a piece of text came from.
+  provider    String?
+  model       String?
+  promptVersion String?
+
+  createdAt DateTime @default(now())
+
+  job  AgentJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([agentId, kind])
+  @@index([ref])
+}
+
+model AgentApproval {
+  id     String @id @default(cuid())
+  jobId  String
+  agentId String
+
+  // "question.publish" | "rubric.change" | "blueprint.change" | "agent.deploy"
+  action String
+  status String @default("PENDING") // PENDING APPROVED REJECTED
+
+  // What is being approved, and why the agent wants it.
+  subject  String
+  summary  String
+  payload  String
+
+  requestedBy String? // the user id, when a human triggered the agent
+  decidedBy   String? // the user id, when a human decided
+  decisionNote String?
+  decidedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job  AgentJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([agentId, status])
+}
+
+model AgentMetric {
+  id     String @id @default(cuid())
+  agentId String
+  day     String // YYYY-MM-DD
+
+  enqueued  Int @default(0)
+  succeeded Int @default(0)
+  failed    Int @default(0)
+  retried   Int @default(0)
+  deadLettered Int @default(0)
+  rejected  Int @default(0) // failed schema validation
+  approvalsPending Int @default(0)
+
+  durationMsTotal Int @default(0)
+  inputTokens     Int @default(0)
+  outputTokens    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, day])
+  @@index([day])
+}
+
+model ExamBlueprint {
+  id     String @id @default(cuid())
+  examTypeCode String
+  version String
+
+  // JSON: the sections, their question types, their counts and their timing.
+  structure String
+  // JSON: the official reference this blueprint was derived from, with the
+  // date it was last checked. Kept as data so it can be re-verified.
+  source   String
+  sourceCheckedAt DateTime
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examTypeCode, version])
+  @@index([examTypeCode])
+}
+
+model DailyQuestionRun {
+  id     String @id @default(cuid())
+  day    String
+  examTypeCode String
+
+  status String @default("RUNNING") // RUNNING COMPLETED BLOCKED FAILED
+  // The outcome of each pipeline stage, in order.
+  stages String
+
+  requested  Int @default(0)
+  generated  Int @default(0)
+  validated  Int @default(0)
+  duplicates Int @default(0)
+  approved   Int @default(0)
+  published  Int @default(0)
+
+  error String?
+  jobId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([day, examTypeCode])
+  @@index([day])
+}

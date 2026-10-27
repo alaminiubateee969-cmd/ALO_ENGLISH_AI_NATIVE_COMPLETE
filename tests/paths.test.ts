@@ -16,7 +16,7 @@
  * application's own assumption.
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
@@ -30,6 +30,30 @@ import {
 } from "../src/lib/paths";
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
+
+// resolveDatabaseUrl() has a documented side effect: it writes the resolved
+// absolute URL back into process.env.DATABASE_URL so the Prisma CLI, the query
+// engine and the application all agree on the same file. Without the guard
+// below, one of these tests leaves DATABASE_URL pointing at an unmigrated
+// fixture file, and every database-backed test file that runs later in the
+// same process fails with P2021 ("the table does not exist") — the whole-suite
+// RBAC failures traced in docs/AUDIT_BASELINE_2026-10-26.md. The guard saves
+// and restores the variable around EVERY test in this file, whatever an
+// individual test forgets to do.
+let savedDatabaseUrl: string | undefined;
+let savedAppDataDir: string | undefined;
+
+beforeEach(() => {
+  savedDatabaseUrl = process.env.DATABASE_URL;
+  savedAppDataDir = process.env.APP_DATA_DIR;
+});
+
+afterEach(() => {
+  if (savedDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = savedDatabaseUrl;
+  if (savedAppDataDir === undefined) delete process.env.APP_DATA_DIR;
+  else process.env.APP_DATA_DIR = savedAppDataDir;
+});
 
 describe("Path resolution", () => {
   test("the schema directory sits beside the app root", () => {

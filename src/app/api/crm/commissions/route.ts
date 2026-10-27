@@ -12,6 +12,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
+  partnerId: z.string().cuid(),
+  amount: z.number().min(0),
   studentId: z.string().optional(),
   status: z.string().optional(),
 });

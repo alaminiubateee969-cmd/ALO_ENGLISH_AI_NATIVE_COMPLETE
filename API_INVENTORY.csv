@@ -9,6 +9,7 @@ Path,Methods,Auth,Runtime,Source
 /api/agents/jobs,GET POST,authenticated,nodejs,src/app/api/agents/jobs/route.ts
 /api/agents/metrics,GET,authenticated,nodejs,src/app/api/agents/metrics/route.ts
 /api/agents/status,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/agents/status/route.ts
+/api/agents/worker/run,GET POST,authenticated,nodejs,src/app/api/agents/worker/run/route.ts
 /api/analytics/events,POST,public intended (allowlist; verify handler),nodejs,src/app/api/analytics/events/route.ts
 /api/attempts,GET,authenticated,nodejs,src/app/api/attempts/route.ts
 /api/attempts/{id},GET,authenticated,nodejs,src/app/api/attempts/[id]/route.ts
@@ -31,6 +32,8 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/appointments,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/route.ts
 /api/crm/appointments/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/[id]/route.ts
 /api/crm/assistant/reply,POST,none declared,nodejs,src/app/api/crm/assistant/reply/route.ts
+/api/crm/audit-logs,GET POST (writes answer 405),role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/audit-logs/route.ts
+/api/crm/audit-logs/{id},GET PUT DELETE (writes answer 405),role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/audit-logs/[id]/route.ts
 /api/crm/branches,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/branches/route.ts
 /api/crm/branches/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/branches/[id]/route.ts
 /api/crm/commissions,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/commissions/route.ts
@@ -68,7 +71,7 @@ Path,Methods,Auth,Runtime,Source
 /api/crm/tasks/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/tasks/[id]/route.ts
 /api/crm/universities,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/universities/route.ts
 /api/crm/universities/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/universities/[id]/route.ts
-/api/crm/users,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/users/route.ts
+/api/crm/users,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/crm/users/route.ts
 /api/crm/users/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/users/[id]/route.ts
 /api/deliverable,GET,role:SUPER_ADMIN,nodejs,src/app/api/deliverable/route.ts
 /api/deliverables,GET,role:SUPER_ADMIN,nodejs,src/app/api/deliverables/route.ts

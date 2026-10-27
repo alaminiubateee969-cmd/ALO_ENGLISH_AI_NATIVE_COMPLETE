@@ -7,10 +7,10 @@ import { Users, GraduationCap, FileText, TrendingUp, BookOpen, Award, Bot, Activ
 const NAV = [
   { label: "Dashboard", href: "/super-admin/dashboard" },
   { label: "Admin Panel", href: "/admin/dashboard" },
-  { label: "AI Agents", href: "/api/agents/status" },
-  { label: "Health Check", href: "/api/health" },
-  { label: "Audit Logs", href: "/api/crm/audit-logs" },
-  { label: "Settings", href: "/api/admin/settings" },
+  { label: "AI Agents", href: "/admin/agents" },
+  { label: "Health Check", href: "/super-admin/health" },
+  { label: "Audit Logs", href: "/admin/crm/audit-logs" },
+  { label: "Settings", href: "/admin/settings" },
 ];
 
 function SuperAdminDashboardContent() {
