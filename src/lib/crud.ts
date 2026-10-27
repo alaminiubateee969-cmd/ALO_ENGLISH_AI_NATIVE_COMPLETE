@@ -55,6 +55,13 @@ export type CrudConfig = {
   select: Record<string, boolean>;
   include?: Record<string, boolean>;
   searchableFields?: string[];
+  /**
+   * Columns the list endpoint accepts as exact-match query filters, e.g.
+   * `filterFields: ["role"]` makes `/api/crm/users?role=TEACHER` return only
+   * teachers. Whitelisted per route so a caller can never filter on a column
+   * the route did not opt into.
+   */
+  filterFields?: string[];
 };
 
 function rolesFor(config: CrudConfig): string[] {
@@ -151,6 +158,13 @@ export function createListHandler<T>(config: CrudConfig) {
         filter.OR = config.searchableFields.map((field) => ({
           [field]: { contains: search },
         }));
+      }
+      // Exact-match filters on whitelisted columns (?role=TEACHER etc.).
+      if (config.filterFields?.length) {
+        for (const field of config.filterFields) {
+          const value = (url.searchParams.get(field) || "").trim().slice(0, 100);
+          if (value) filter[field] = value;
+        }
       }
       const where = combineWhere(scope, filter);
       const model = getModel(config.entityName);

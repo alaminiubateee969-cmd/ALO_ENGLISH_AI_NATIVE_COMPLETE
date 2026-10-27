@@ -83,7 +83,11 @@ export async function POST(req: Request): Promise<Response> {
             attemptsLimit: defaultLimit,
             isAloStudent: user.role === "STUDENT",
           },
-          update: {},
+          // Practice is free and unlimited now. Legacy rows created under the
+          // old 3/1 policy are refreshed to the unlimited default here, on
+          // their next attempt, so no historical row can keep blocking a
+          // learner.
+          update: { attemptsLimit: defaultLimit },
         });
 
         const [completedAttempts, paidAggregate] = await Promise.all([
@@ -162,9 +166,12 @@ export async function POST(req: Request): Promise<Response> {
     if (outcome.kind === "missing") return notFound("Active practice set not found");
     if (outcome.kind === "active") return conflict("You already have an in-progress attempt. Reload the practice page to resume it before starting another.");
     if (outcome.kind === "quota") {
+      // Unreachable under the unlimited-free policy (limit is 2 billion);
+      // kept as a defensive fail-safe so a misconfigured row degrades to a
+      // clear message instead of an unhandled error.
       return forbidden(
         `No attempt quota remains (${outcome.freeLimit} free + ${outcome.paidAttempts} completed payment-record attempts). ` +
-          "Online purchases are not currently enabled.",
+          "Practice is free and unlimited — if you see this message, contact support; your quota row needs a one-line fix.",
       );
     }
 

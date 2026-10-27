@@ -79,7 +79,6 @@ export async function generateExaminerResponse(
   examinerId: string = AI_EXAMINERS[0].id
 ): Promise<{ text: string; nextState: ExaminerState; isComplete: boolean; topic?: string }> {
   const examiner = AI_EXAMINERS.find((e) => e.id === examinerId) || AI_EXAMINERS[0];
-  const zai = await getZAI();
 
   const stateMachine = new ExaminerStateMachine();
   const stateInstruction = stateMachine.getInstructionForState(state);
@@ -90,6 +89,11 @@ export async function generateExaminerResponse(
   const histText = memory.getRecentTurns(6).map((t) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
 
   try {
+    // Created inside the try on purpose: with no AI provider configured
+    // (AI_ENABLED=false or no key), ZAI.create() throws — and that must land
+    // in the deterministic state-machine fallback below, not surface as a
+    // 500. Speaking practice stays available 24/7, provider or no provider.
+    const zai = await getZAI();
     const completion = await zai.chat.completions.create({
       messages: [
         { role: "system", content: buildSystemPrompt(examiner) },

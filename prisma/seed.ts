@@ -77,8 +77,8 @@ async function main() {
     { key: 'practice_only', value: 'true' },
     { key: 'no_human_exam_mode', value: 'enabled' },
     { key: 'evaluation_provider', value: 'local_rule_engine' },
-    { key: 'free_quota_alo', value: '3' },
-    { key: 'free_quota_public', value: '1' },
+    { key: 'free_quota_alo', value: 'unlimited' },
+    { key: 'free_quota_public', value: 'unlimited' },
   ]
   for (const s of settings) {
     await prisma.setting.upsert({

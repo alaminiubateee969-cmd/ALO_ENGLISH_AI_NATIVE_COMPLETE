@@ -56,9 +56,13 @@ Practical rules for an agent operator:
 | Webhooks in | `POST /api/webhooks/{provider}` | Signature-verified (WhatsApp/Meta/SMS…) |
 | Payments | `POST /api/payment` | **Deliberately 503** until a merchant exists |
 
-Full machine-readable inventory: `API_INVENTORY.csv` (103 routes) and
-`ROUTE_INVENTORY.csv` (40 pages), regenerated from source by
-`npm run inventories`.
+Full machine-readable inventory: `API_INVENTORY.csv` and
+`ROUTE_INVENTORY.csv`, regenerated from source by `npm run inventories`.
+
+Teacher-portal surface (added 2026-10-27): `GET /api/teacher/overview`
+(TEACHER role — student roster + recent results + material counts) and
+`GET /api/rag/materials?category=` / `GET /api/rag/materials/{id}` (public
+study-material library). The users list also accepts `?role=TEACHER`.
 
 ## 3. The internal workforce (14 agents) — and how it relates to an external agent
 

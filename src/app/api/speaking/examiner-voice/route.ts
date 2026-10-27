@@ -33,7 +33,18 @@ export async function POST(req: Request): Promise<Response> {
     if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid voice request");
 
     const { text, examinerId } = parsed.data;
-    const voice = await generateExaminerVoice(text, examinerId);
-    return ok({ audioBase64: voice.audioBase64, mimeType: voice.mimeType }, "Practice voice generated");
+    try {
+      const voice = await generateExaminerVoice(text, examinerId);
+      return ok({ audioBase64: voice.audioBase64, mimeType: voice.mimeType }, "Practice voice generated");
+    } catch {
+      // No TTS provider configured (or the provider failed). Return empty
+      // audio instead of a 500: the client automatically falls back to the
+      // browser's built-in speech synthesis, so the practice conversation
+      // keeps working with zero providers configured.
+      return ok(
+        { audioBase64: "", mimeType: "audio/wav", unavailable: true },
+        "Voice synthesis is not configured; the browser's built-in speech is used instead.",
+      );
+    }
   });
 }

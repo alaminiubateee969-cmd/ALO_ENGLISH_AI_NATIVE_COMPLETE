@@ -7,7 +7,7 @@ const STEPS = [
   {
     icon: UserPlus,
     title: "Register free",
-    desc: "Create your account in 30 seconds. Verify your ALO Student ID to unlock 3 free mock tests.",
+    desc: "Create your account in 30 seconds. Every exam and mock is free and unlimited from the first login.",
     color: "bg-alo-blue",
   },
   {

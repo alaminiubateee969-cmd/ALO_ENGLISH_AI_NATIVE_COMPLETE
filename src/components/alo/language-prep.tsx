@@ -46,7 +46,7 @@ export function AloLanguagePrep({ onCta }: { onCta: () => void }) {
           </h2>
           <p className="mt-4 text-base md:text-lg leading-8 text-alo-muted">
             Full mock tests, speaking practice and writing feedback for IELTS, PTE, TOEFL, Duolingo,
-            OIETC and OET. ALO Education students get 3 free mock tests.
+            OIETC and OET — all free and unlimited.
           </p>
         </div>
 
@@ -73,8 +73,8 @@ export function AloLanguagePrep({ onCta }: { onCta: () => void }) {
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-alo-orange text-white"><GraduationCap className="h-5 w-5" /></div>
             <div>
-              <div className="text-sm font-bold text-alo-navy">Free mock test quota</div>
-              <div className="text-xs text-alo-muted">ALO Education students get <span className="font-bold text-alo-orange">3 free</span> · new visitors get <span className="font-bold text-alo-orange">1 free</span></div>
+              <div className="text-sm font-bold text-alo-navy">Free &amp; unlimited practice</div>
+              <div className="text-xs text-alo-muted">Every mock test is <span className="font-bold text-alo-orange">free &amp; unlimited</span> · 24/7 · no card required</div>
             </div>
           </div>
           <Button onClick={onCta} className="h-10 rounded-xl bg-alo-orange text-white hover:bg-[#cc3f10]">Verify ALO Student ID</Button>

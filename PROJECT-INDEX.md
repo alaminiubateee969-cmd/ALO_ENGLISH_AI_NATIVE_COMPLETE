@@ -50,9 +50,9 @@ A complete map of every file in this project, organized by purpose.
 | `PROJECT-INDEX.md` | This file |
 | `docs/` | 73 documents (including the archived guides) |
 
-## Source — App Router (103 API routes, 45 pages, 3 layout)
+## Source — App Router (105 API routes, 47 pages, 3 layout)
 
-API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`, `webhooks`.
+API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`, `teacher`, `webhooks`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -83,11 +83,12 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/payment` | 1 |
 | `api/practice-sets` | 1 |
 | `api/questions` | 1 |
-| `api/rag` | 2 |
+| `api/rag` | 3 |
 | `api/rbac` | 4 |
 | `api/speaking` | 3 |
+| `api/teacher` | 1 |
 | `api/webhooks` | 1 |
-| **total** | **103** |
+| **total** | **105** |
 
 ## Source — Libraries
 
@@ -165,10 +166,10 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 818 |
+| Tracked files | 822 |
 | Prisma models | 64 |
-| API routes | 103 |
-| Pages | 45 |
+| API routes | 105 |
+| Pages | 47 |
 | Migrations | 15 |
 | Test files | 39 |
 | Scripts | 28 |
