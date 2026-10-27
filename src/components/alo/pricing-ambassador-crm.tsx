@@ -18,7 +18,7 @@ export function AloPricing({ onOpenAuth }: { onOpenAuth: (mode: "login" | "regis
             Start free. Upgrade when you're ready.
           </h2>
           <p className="mt-4 text-lg text-alo-muted leading-relaxed">
-            After your free quota, pick a single test, a bundle, or a full prep course.
+            Everything on the platform is free and unlimited; guided prep courses simply add human instruction.
             Admins can also create free coupons, discounts and scholarships.
           </p>
         </div>
@@ -232,7 +232,7 @@ export function AloCrmIntegration() {
                 { t: "Auto lead creation", d: "source = english.aloeducation.com" },
                 { t: "Score sync", d: "Latest mock to CRM timeline" },
                 { t: "Counselor tasks", d: "Auto follow-up after each attempt" },
-                { t: "Quota visibility", d: "Counselors see free quota & results" },
+                { t: "Results visibility", d: "Counselors see every attempt & result" },
                 { t: "Safe status only", d: "Students never see CRM private notes" },
                 { t: "Offline-first", d: "Saves locally & retries if CRM down" },
               ].map((f) => (

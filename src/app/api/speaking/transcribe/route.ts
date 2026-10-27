@@ -38,7 +38,18 @@ export async function POST(req: Request): Promise<Response> {
 
     // Audio is transmitted to the configured ASR provider for this request; it
     // is not persisted as an attempt recording by this endpoint.
-    const result = await transcribeStudentSpeech(audio.payload);
-    return ok({ transcript: result.transcript, confidence: result.confidence, confidenceCalibrated: false }, "Speech transcription completed");
+    //
+    // With no speech-to-text provider configured, this endpoint degrades
+    // honestly instead of throwing a 500: the conversation practice page
+    // shows its type-your-answer fallback, so practice still works 24/7.
+    try {
+      const result = await transcribeStudentSpeech(audio.payload);
+      return ok({ transcript: result.transcript, confidence: result.confidence, confidenceCalibrated: false }, "Speech transcription completed");
+    } catch {
+      return ok(
+        { transcript: "", confidence: null, confidenceCalibrated: false, providerAvailable: false },
+        "Speech recognition is not configured on this deployment. Type your answer instead — the practice conversation works without it.",
+      );
+    }
   });
 }

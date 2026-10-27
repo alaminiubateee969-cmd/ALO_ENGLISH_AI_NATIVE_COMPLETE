@@ -94,6 +94,7 @@ Path,Methods,Auth,Runtime,Source
 /api/questions,GET,authenticated,nodejs,src/app/api/questions/route.ts
 /api/rag/ask,POST,public intended (allowlist; verify handler),nodejs,src/app/api/rag/ask/route.ts
 /api/rag/materials,GET POST,mixed: GET public; POST ADMIN+SUPER_ADMIN,nodejs,src/app/api/rag/materials/route.ts
+/api/rag/materials/{id},GET,none declared,nodejs,src/app/api/rag/materials/[id]/route.ts
 /api/rbac/permissions,GET,permission-based,nodejs,src/app/api/rbac/permissions/route.ts
 /api/rbac/roles,GET POST,permission-based,nodejs,src/app/api/rbac/roles/route.ts
 /api/rbac/team-members,GET POST DELETE,permission-based,nodejs,src/app/api/rbac/team-members/route.ts
@@ -101,4 +102,7 @@ Path,Methods,Auth,Runtime,Source
 /api/speaking/examiner-respond,POST,authenticated,nodejs,src/app/api/speaking/examiner-respond/route.ts
 /api/speaking/examiner-voice,POST,authenticated,nodejs,src/app/api/speaking/examiner-voice/route.ts
 /api/speaking/transcribe,POST,authenticated,nodejs,src/app/api/speaking/transcribe/route.ts
+/api/teacher/overview,GET,authenticated,nodejs,src/app/api/teacher/overview/route.ts
+/api/teachers,GET,none declared,nodejs,src/app/api/teachers/route.ts
+/api/teachers/ask,POST,authenticated,nodejs,src/app/api/teachers/ask/route.ts
 /api/webhooks/{provider},GET POST,public intended (allowlist; verify handler),nodejs,src/app/api/webhooks/[provider]/route.ts

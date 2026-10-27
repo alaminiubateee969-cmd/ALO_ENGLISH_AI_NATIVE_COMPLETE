@@ -65,6 +65,12 @@ export type CrmEntityConfig = {
   canDelete?: boolean;
   /** Read-only entities (audit logs) hide every mutation control. */
   readOnly?: boolean;
+  /**
+   * Extra fixed query params for list requests, e.g. { role: "TEACHER" } on a
+   * config whose slug points at /api/crm/users. The server whitelists the
+   * filterable columns, and create/edit still go through the same endpoint.
+   */
+  filter?: Record<string, string>;
 };
 
 type Row = Record<string, unknown> & { id: string };
@@ -136,11 +142,16 @@ export function CrmManager({ config }: { config: CrmEntityConfig }) {
     (page: number, searchTerm: string) => {
       const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
       if (searchTerm) params.set("search", searchTerm);
+      // Fixed list filters from the entity config (e.g. role=TEACHER on the
+      // Teachers screen, which lists users filtered by role).
+      for (const [key, value] of Object.entries(config.filter ?? {})) {
+        params.set(key, value);
+      }
       return fetch(`/api/crm/${config.slug}?${params.toString()}`, { cache: "no-store" }).then(
         (response) => response.json() as Promise<ListResponse>,
       );
     },
-    [config.slug],
+    [config.slug, config.filter],
   );
 
   const applyList = useCallback(

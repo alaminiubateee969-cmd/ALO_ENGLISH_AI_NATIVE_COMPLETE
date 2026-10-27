@@ -30,6 +30,7 @@ const STAFF_ROLES = new Set([
   'BRANCH_MANAGER',
   'MARKETING_MANAGER',
   'COUNSELOR',
+  'TEACHER',
   'APPLICATION_TEAM',
   'VISA_OFFICER',
   'FINANCE',
@@ -64,6 +65,10 @@ const listConfig = {
   createSchema,
   updateSchema: createSchema.partial(),
   searchableFields: ['email', 'name', 'role'],
+  // Allows the management UI (and the Bill agent) to request a filtered view,
+  // e.g. /api/crm/users?role=TEACHER for the Teachers screen. Values are
+  // matched exactly — there is no way to probe arbitrary columns.
+  filterFields: ['role', 'status'],
   select: {
     id: true,
     email: true,

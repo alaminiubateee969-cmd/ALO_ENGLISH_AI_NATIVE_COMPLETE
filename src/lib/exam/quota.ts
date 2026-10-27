@@ -2,8 +2,22 @@
 
 type QuotaDb = Pick<typeof import("@/lib/db").db, "freeQuota">;
 
+/**
+ * Platform policy (2026-10-27): every exam, mock and practice feature is free
+ * and unlimited, 24/7 — for students, ALO members and visitors alike. There is
+ * no paid tier and no attempt ceiling.
+ *
+ * The FreeQuota row is still kept (and `attemptsUsed` still incremented) so
+ * usage analytics keep working, but the limit is set to a value no learner can
+ * reach in practice, which makes the quota gate structurally unable to block
+ * anyone. Kept below Prisma's Int32 ceiling (2,147,483,647).
+ */
+export const FREE_PRACTICE_LIMIT = 2_000_000_000;
+
 export function freeAttemptLimitForRole(role: string): number {
-  return role === "STUDENT" ? 3 : 1;
+  // Role kept for signature compatibility; the free plan is unlimited for all.
+  void role;
+  return FREE_PRACTICE_LIMIT;
 }
 
 /**

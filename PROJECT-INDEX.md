@@ -50,9 +50,9 @@ A complete map of every file in this project, organized by purpose.
 | `PROJECT-INDEX.md` | This file |
 | `docs/` | 73 documents (including the archived guides) |
 
-## Source — App Router (103 API routes, 45 pages, 3 layout)
+## Source — App Router (107 API routes, 48 pages, 3 layout)
 
-API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`, `webhooks`.
+API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`, `teacher`, `teachers`, `webhooks`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -83,11 +83,13 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/payment` | 1 |
 | `api/practice-sets` | 1 |
 | `api/questions` | 1 |
-| `api/rag` | 2 |
+| `api/rag` | 3 |
 | `api/rbac` | 4 |
 | `api/speaking` | 3 |
+| `api/teacher` | 1 |
+| `api/teachers` | 2 |
 | `api/webhooks` | 1 |
-| **total** | **103** |
+| **total** | **107** |
 
 ## Source — Libraries
 
@@ -139,11 +141,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `server-config/` | `Caddyfile.production`, `README.md`, `alo-english.nginx`, `alo-english.service`, `sudo-policy` |
 
-## Tests (39 files)
+## Tests (40 files)
 
 | Path | Purpose |
 |---|---|
-| `tests/` | `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `analytics.test.ts`, `assistant.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `blog.test.ts`, `communication-hub.test.ts`, `consent.test.ts`, `copy-style.test.ts`, `crud-scope.test.ts`, `diagram-catalogue.test.ts`, `document-storage.test.ts`, `exam-attempt.test.ts`, `exam-engine.test.ts`, `grammar.test.ts`, `integrations.test.ts`, `lead-score.test.ts`, `marketing-skills.test.ts`, `media-fetcher.test.ts`, `outbound.test.ts`, `paths.test.ts`, `pipeline.test.ts`, `provider-payload.test.ts`, `question-provenance.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `review-queue.test.ts`, `seed-sample-guard.test.ts`, `seo-audit.test.ts`, `seo-routes.test.ts`, `sitemap.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts`, `webhook-ingest.test.ts`, `webhook-signature.test.ts` |
+| `tests/` | `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `ai-teachers.test.ts`, `analytics.test.ts`, `assistant.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `blog.test.ts`, `communication-hub.test.ts`, `consent.test.ts`, `copy-style.test.ts`, `crud-scope.test.ts`, `diagram-catalogue.test.ts`, `document-storage.test.ts`, `exam-attempt.test.ts`, `exam-engine.test.ts`, `grammar.test.ts`, `integrations.test.ts`, `lead-score.test.ts`, `marketing-skills.test.ts`, `media-fetcher.test.ts`, `outbound.test.ts`, `paths.test.ts`, `pipeline.test.ts`, `provider-payload.test.ts`, `question-provenance.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `review-queue.test.ts`, `seed-sample-guard.test.ts`, `seo-audit.test.ts`, `seo-routes.test.ts`, `sitemap.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts`, `webhook-ingest.test.ts`, `webhook-signature.test.ts` |
 
 ## CI/CD (2 workflows)
 
@@ -165,11 +167,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 818 |
+| Tracked files | 828 |
 | Prisma models | 64 |
-| API routes | 103 |
-| Pages | 45 |
+| API routes | 107 |
+| Pages | 48 |
 | Migrations | 15 |
-| Test files | 39 |
+| Test files | 40 |
 | Scripts | 28 |
 | Environment variables (template) | 30 |

@@ -9,7 +9,7 @@ type Msg = { role: "bot" | "user"; text: string; time: string };
 
 const QUICK_PROMPTS = [
   "How do I start a mock test?",
-  "What is the free quota?",
+  "Is it really free?",
   "How is my score calculated?",
   "Can I download my certificate?",
   "What exams are available?",
@@ -18,7 +18,7 @@ const QUICK_PROMPTS = [
 function botReply(userText: string): string {
   const t = userText.toLowerCase();
   if (t.includes("start") && t.includes("mock")) return "Sign in and open Practice Tests. You can start a session only if an active practice set is available for your account. Content counts and official-format coverage are not verified, so do not treat a session as a full official mock.";
-  if (t.includes("free") && (t.includes("quota") || t.includes("mock"))) return "Attempt limits are configured by the platform and may depend on your account role. Check the quota shown in your account. Online purchases are currently unavailable; this help widget cannot grant or change attempts.";
+  if (t.includes("free") && (t.includes("quota") || t.includes("mock") || t.includes("unlimited") || t.includes("cost") || t.includes("pay"))) return "Yes — completely free. Every exam, mock test, speaking practice and study material is unlimited, 24/7, with nothing to pay and no card required.";
   if (t.includes("score") && t.includes("calcul")) return "Supported listening and reading indicators are a simple accuracy-based practice measure. Writing may receive generic text suggestions; speaking is not numerically scored. No publisher-equivalent rubric, calibrated confidence, or official result is provided.";
   if (t.includes("certificate") || t.includes("cert")) return "I cannot verify a certificate-generation or download feature in the current application. Please contact ALO Education directly before relying on any certificate claim.";
   if (t.includes("exam") && t.includes("available")) return "The database schema includes multiple exam-type records, but active question-bank counts and full-length readiness have not been verified. Check the current catalog in the app; listed metadata does not guarantee a playable exam.";
@@ -29,7 +29,7 @@ function botReply(userText: string): string {
   if (t.includes("refund")) return "The application has no verified merchant checkout, webhook, or refund flow; online purchases are unavailable. Please ask ALO Education for the current written refund policy before making payment outside this app.";
   if (t.includes("privacy") || t.includes("data")) return "Please review the privacy notice and contact ALO Education for data-access or deletion requests. I cannot verify live CRM synchronization, retention, or download/delete workflows from this help widget.";
   if (t.includes("human") || t.includes("examiner") || t.includes("real")) return "This help widget is a set of scripted replies, not a human or AI examiner. Provider-backed conversation features require configuration and have not been verified here; no official examiner result is produced.";
-  if (t.includes("hello") || t.includes("hi") || t.includes("hey")) return "Hello! I'm the ALO Support Assistant. I can help with mock tests, free quota, scores, certificates, exams, and policies. What would you like to know?";
+  if (t.includes("hello") || t.includes("hi") || t.includes("hey")) return "Hello! I'm the ALO Support Assistant. I can help with mock tests (free & unlimited), scores, certificates, exams, and policies. What would you like to know?";
   if (t.includes("thank")) return "You're welcome! If you need more help, you can also book a free counseling session with an ALO Education advisor. Good luck with your practice!";
   if (t.includes("book") || t.includes("counsel")) return "You can book a free counseling session by scrolling to the 'Book Free Consultation' section on the homepage, or from your student dashboard. An ALO Education advisor will contact you within 24 hours.";
   return "This is a scripted help widget; its replies are not live support or official exam guidance. Try a suggested topic, then confirm account, payment, privacy, and test-format details with ALO Education or the relevant official exam provider.";

@@ -7,6 +7,7 @@ import { Users, GraduationCap, FileText, TrendingUp, BookOpen, Award } from "luc
 const NAV = [
   { label: "Dashboard", href: "/admin/dashboard" },
   { label: "Users", href: "/admin/crm/users" },
+  { label: "Teachers", href: "/admin/crm/teachers" },
   { label: "Universities", href: "/admin/crm/universities" },
   { label: "Courses", href: "/admin/crm/courses" },
   { label: "Scholarships", href: "/admin/crm/scholarships" },

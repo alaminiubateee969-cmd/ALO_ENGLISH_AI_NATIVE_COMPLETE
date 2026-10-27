@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  FREE_PRACTICE_LIMIT,
   freeAttemptLimitForRole,
   quotaSummary,
   reconcileAttemptsUsed,
@@ -7,9 +8,15 @@ import {
 } from "../src/lib/exam/quota";
 
 describe("attempt quota", () => {
-  test("role defaults are explicit and preserve admin capacity", () => {
-    expect(freeAttemptLimitForRole("STUDENT")).toBe(3);
-    expect(freeAttemptLimitForRole("ADMIN")).toBe(1);
+  test("practice is free and unlimited for every role (24/7 policy)", () => {
+    // Policy since 2026-10-27: no paid tier, no attempt ceiling. The limit is
+    // a number no learner can reach, and it must stay below Prisma's Int32
+    // ceiling (2,147,483,647).
+    expect(FREE_PRACTICE_LIMIT).toBeLessThanOrEqual(2_147_483_647);
+    expect(freeAttemptLimitForRole("STUDENT")).toBe(FREE_PRACTICE_LIMIT);
+    expect(freeAttemptLimitForRole("ADMIN")).toBe(FREE_PRACTICE_LIMIT);
+    expect(freeAttemptLimitForRole("COUNSELOR")).toBe(FREE_PRACTICE_LIMIT);
+    expect(freeAttemptLimitForRole("PARTNER")).toBe(FREE_PRACTICE_LIMIT);
   });
 
   test("quota summaries include only verified paid attempts", () => {

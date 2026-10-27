@@ -35,7 +35,7 @@ export function PublicHero() {
             </h1>
             <p className="mt-6 max-w-2xl text-lg md:text-xl leading-8 text-alo-muted">
               Original IELTS, PTE, TOEFL, Duolingo, OIETC & OET practice. Timed mock tests, speaking
-              evaluator, writing feedback and Smart Score reports. ALO Education students get 3 free mocks.
+              evaluator, writing feedback and Smart Score reports — all free and unlimited.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Button onClick={() => openAuth("register")} className="h-12 px-6 rounded-xl bg-alo-orange text-base font-semibold text-white alo-shadow-orange hover:bg-[#cc3f10]">
@@ -114,9 +114,9 @@ export function PublicFreeQuota({ onVerify }: { onVerify: () => void }) {
       <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-alo-orange/10 blur-3xl pointer-events-none" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-alo-blue/20 bg-white px-3 py-1 text-xs font-semibold text-alo-blue"><Gift className="h-3.5 w-3.5" />Free Mock Test Quota</div>
-          <h2 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-alo-navy">ALO students get 3 free. Everyone gets 1.</h2>
-          <p className="mt-4 text-base md:text-lg leading-8 text-alo-muted">Quota is enforced securely on our backend — refreshing the browser will not reset it.</p>
+          <div className="inline-flex items-center gap-2 rounded-full border border-alo-blue/20 bg-white px-3 py-1 text-xs font-semibold text-alo-blue"><Gift className="h-3.5 w-3.5" />Free &amp; Unlimited — Always</div>
+          <h2 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-alo-navy">Every exam. Every mock. Free for everyone, 24/7.</h2>
+          <p className="mt-4 text-base md:text-lg leading-8 text-alo-muted">All 32 exams, full-length mocks, AI speaking practice and the study-material library — unlimited, with nothing to pay and no card required.</p>
         </div>
         <div className="mt-10 grid md:grid-cols-2 gap-6">
           <div className="relative rounded-3xl border-2 border-alo-blue/30 bg-white p-7 alo-shadow-sm overflow-hidden">
@@ -125,9 +125,9 @@ export function PublicFreeQuota({ onVerify }: { onVerify: () => void }) {
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-alo-blue text-white"><UserCheck className="h-6 w-6" /></div>
               <span className="rounded-full bg-alo-blue px-3 py-1 text-xs font-bold text-white">ALO STUDENT</span>
             </div>
-            <div className="mt-5 flex items-end gap-3"><div className="text-6xl font-extrabold text-alo-navy leading-none">3</div><div className="mb-1"><div className="text-sm font-bold text-alo-navy">free mock tests</div><div className="text-xs text-alo-faint">total, no expiry during study</div></div></div>
+            <div className="mt-5 flex items-end gap-3"><div className="text-6xl font-extrabold text-alo-navy leading-none">∞</div><div className="mb-1"><div className="text-sm font-bold text-alo-navy">free mock tests</div><div className="text-xs text-alo-faint">unlimited, no expiry, 24/7</div></div></div>
             <ul className="mt-5 space-y-2.5">
-              {["Valid ALO Student ID (e.g. AE-2026000001)", "Verified email/phone from CRM sync", "Active application in ALO Web_CRM", "Admin can manually mark as ALO student", "Includes speaking & writing feedback", "Priority counselor follow-up"].map((item) => (
+              {["Valid ALO Student ID (e.g. AE-2026000001)", "Verified email/phone from CRM sync", "Results sync to ALO Web_CRM automatically", "Priority counselor follow-up", "Free consultation & application support", "Study-abroad guidance end to end"].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-alo-navy"><Check className="mt-0.5 h-4 w-4 shrink-0 text-alo-blue" /><span>{item}</span></li>
               ))}
             </ul>
@@ -139,9 +139,9 @@ export function PublicFreeQuota({ onVerify }: { onVerify: () => void }) {
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-alo-orange text-white"><Users className="h-6 w-6" /></div>
               <span className="rounded-full bg-alo-orange px-3 py-1 text-xs font-bold text-white">NEW VISITOR</span>
             </div>
-            <div className="mt-5 flex items-end gap-3"><div className="text-6xl font-extrabold text-alo-navy leading-none">1</div><div className="mb-1"><div className="text-sm font-bold text-alo-navy">free mock test</div><div className="text-xs text-alo-faint">try the full platform</div></div></div>
+            <div className="mt-5 flex items-end gap-3"><div className="text-6xl font-extrabold text-alo-navy leading-none">+</div><div className="mb-1"><div className="text-sm font-bold text-alo-navy">guided support on top</div><div className="text-xs text-alo-faint">for registered ALO students</div></div></div>
             <ul className="mt-5 space-y-2.5">
-              {["Any exam type of your choice", "Full-length mock experience", "Smart Score estimate report", "Basic writing feedback", "No credit card required", "Upgrade to bundle or prep course"].map((item) => (
+              {["All 32 computer-based exams", "Full-length mock experience with instant scoring", "AI speaking conversation practice", "Writing feedback & Smart Score reports", "Complete study-material library", "No credit card, no quota, ever"].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-alo-navy"><Check className="mt-0.5 h-4 w-4 shrink-0 text-alo-orange" /><span>{item}</span></li>
               ))}
             </ul>
@@ -356,7 +356,7 @@ export function PublicCrmIntegration() {
                 { t: "Auto lead creation", d: "source = english.aloeducation.com" },
                 { t: "Score sync", d: "Latest mock to CRM timeline" },
                 { t: "Counselor tasks", d: "Auto follow-up after each attempt" },
-                { t: "Quota visibility", d: "Counselors see free quota & results" },
+                { t: "Results visibility", d: "Counselors see every attempt & result" },
                 { t: "Safe status only", d: "Students never see CRM private notes" },
                 { t: "Offline-first", d: "Saves locally & retries if CRM down" },
               ].map((f) => (
@@ -526,7 +526,7 @@ export function PublicFinalCta({ onStart }: { onStart: () => void }) {
           <div className="relative grid lg:grid-cols-2 gap-8 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight text-white">Ready to ace your English exam?</h2>
-              <p className="mt-4 text-base md:text-lg leading-8 text-slate-200">Start your free mock test now. ALO Education students get 3 free — new visitors get 1 free. No card required.</p>
+              <p className="mt-4 text-base md:text-lg leading-8 text-slate-200">Start your free mock test now. Every exam, unlimited attempts, nothing to pay. No card required.</p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <Button onClick={onStart} className="h-12 px-6 rounded-xl bg-alo-orange text-white font-semibold hover:bg-[#cc3f10]">Take Free Mock Test</Button>
                 <a href="#contact"><Button variant="outline" className="h-12 px-6 rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20">Book Free Counseling</Button></a>

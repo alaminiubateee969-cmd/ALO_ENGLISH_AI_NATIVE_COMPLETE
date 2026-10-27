@@ -6,6 +6,8 @@ import { FileText, MessageSquare, Calendar, BookOpen, GraduationCap, Award, Tren
 
 const NAV = [
   { label: "Dashboard", href: "/student/dashboard" },
+  { label: "AI Teachers", href: "/student/ai-teachers" },
+  { label: "Study Materials", href: "/student/materials" },
   { label: "Speaking conversation practice", href: "/live-exam" },
   { label: "Course Finder", href: "/course-finder" },
   { label: "Scholarships", href: "/scholarships" },
@@ -70,6 +72,20 @@ function StudentDashboardContent() {
           </a>
           <a href="/scholarships" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
             <Award className="h-5 w-5 text-blue-600" /> Search Scholarships
+          </a>
+          <a href="/student/ai-teachers" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
+            <Mic className="h-5 w-5 text-rose-600" />
+            <div>
+              <div className="font-semibold">AI Teachers</div>
+              <div className="text-xs text-slate-500">Ask any subject specialist — grammar to GRE. Free, unlimited.</div>
+            </div>
+          </a>
+          <a href="/student/materials" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
+            <BookOpen className="h-5 w-5 text-emerald-600" />
+            <div>
+              <div className="font-semibold">Study Materials</div>
+              <div className="text-xs text-slate-500">Free guides for every exam — grammar, vocabulary, strategies.</div>
+            </div>
           </a>
           <a href="/practice-test" className="flex items-center gap-2 rounded-lg border p-4 hover:bg-slate-50">
             <GraduationCap className="h-5 w-5 text-blue-600" /> Practice Test (Written)

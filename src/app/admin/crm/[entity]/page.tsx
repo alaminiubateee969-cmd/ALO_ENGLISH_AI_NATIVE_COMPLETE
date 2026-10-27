@@ -18,6 +18,7 @@ import { ADMIN_ENTITIES } from "@/components/site/crm-entity-configs";
 const NAV = [
   { label: "Dashboard", href: "/admin/dashboard" },
   { label: "Users", href: "/admin/crm/users" },
+  { label: "Teachers", href: "/admin/crm/teachers" },
   { label: "Universities", href: "/admin/crm/universities" },
   { label: "Courses", href: "/admin/crm/courses" },
   { label: "Scholarships", href: "/admin/crm/scholarships" },

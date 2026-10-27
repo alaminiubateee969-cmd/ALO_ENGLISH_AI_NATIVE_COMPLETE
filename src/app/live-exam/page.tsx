@@ -18,7 +18,7 @@
  * by the configured service; learners should not submit sensitive information.
  */
 
-import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
+import React, { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ExaminerAvatar } from "@/components/exam/ExaminerAvatar";
@@ -61,6 +61,7 @@ export default function LiveExamPage() {
 
   const [examiner, setExaminer] = useState<AIExaminer>(AI_EXAMINERS[1]);
   const [phase, setPhase] = useState<ExamPhase>("not-started");
+  const [typedAnswer, setTypedAnswer] = useState("");
   const [currentState, setCurrentState] = useState<string>("introduction");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string>("");
@@ -246,8 +247,14 @@ export default function LiveExamPage() {
         index === prev.length - 1 ? { ...turn, text: transcript || "[No speech detected]" } : turn
       ));
 
+      if (sttData.data?.providerAvailable === false) {
+        setError("Voice transcription is not configured on this deployment — you can still practise by typing your answer below.");
+        setPhase("awaiting-student");
+        return;
+      }
+
       if (!transcript || transcript.length < 5) {
-        setError("I couldn't hear you clearly. Please try speaking again.");
+        setError("I couldn't hear you clearly. Please try speaking again — or type your answer below.");
         setPhase("awaiting-student");
         return;
       }
@@ -298,6 +305,25 @@ export default function LiveExamPage() {
       setPhase("awaiting-student");
     }
   }, [processRecording]);
+
+  // ─── Typed-answer fallback ────────────────────────────────────────────
+  // Always available: accessibility, quiet environments, and deployments
+  // with no speech-to-text provider configured. It feeds the exact same
+  // examiner pipeline as spoken answers.
+  const submitTypedAnswer = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      const text = typedAnswer.trim();
+      if (!text || phase !== "awaiting-student") return;
+      setTypedAnswer("");
+      setTurns((prev) => [
+        ...prev,
+        { role: "student", text, timestamp: new Date().toISOString() },
+      ]);
+      await getExaminerResponse(text);
+    },
+    [typedAnswer, phase, getExaminerResponse],
+  );
 
   // ─── Cleanup on unmount ───────────────────────────────────────────────
   useEffect(() => {
@@ -544,6 +570,20 @@ export default function LiveExamPage() {
                           <Mic className="h-7 w-7" />
                         </Button>
                         <p className="text-xs text-slate-400">Click to start speaking</p>
+                        <form onSubmit={submitTypedAnswer} className="mt-2 flex w-full max-w-xl gap-2">
+                          <input
+                            type="text"
+                            value={typedAnswer}
+                            onChange={(e) => setTypedAnswer(e.target.value)}
+                            placeholder="…or type your answer here"
+                            aria-label="Type your answer"
+                            maxLength={2000}
+                            className="min-h-11 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-400 focus:outline-none"
+                          />
+                          <Button type="submit" variant="outline" className="min-h-11" disabled={!typedAnswer.trim()}>
+                            Send
+                          </Button>
+                        </form>
                       </>
                     )}
 

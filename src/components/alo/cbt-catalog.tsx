@@ -229,9 +229,9 @@ function ExamLanding({ exam, onBack, onStart }: { exam: ExamModule; onBack: () =
             <div className={cn("rounded-2xl border-2 p-5", a.border, a.soft)}>
               <div className="flex items-center gap-2">
                 <Sparkles className={cn("h-5 w-5", a.text)} />
-                <span className="text-sm font-bold text-alo-navy">Free quota applies</span>
+                <span className="text-sm font-bold text-alo-navy">Free &amp; unlimited</span>
               </div>
-              <p className="mt-2 text-xs text-alo-navy leading-relaxed">ALO Education students get <span className="font-bold">3 free</span> mock tests across ALL computer-based exams. New visitors get <span className="font-bold">1 free</span>. Quota is shared — using a free IELTS mock counts toward your total.</p>
+              <p className="mt-2 text-xs text-alo-navy leading-relaxed">Every mock test across ALL computer-based exams is <span className="font-bold">free and unlimited</span> — practise IELTS, PTE, TOEFL and the rest as often as you like, 24/7. No quota, no card.</p>
               <Button onClick={onStart} className="mt-3 w-full h-11 rounded-xl bg-alo-orange text-white hover:bg-[#cc3f10]">Start now</Button>
             </div>
 
