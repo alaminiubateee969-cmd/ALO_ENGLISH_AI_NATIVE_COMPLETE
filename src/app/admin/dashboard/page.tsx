@@ -6,23 +6,24 @@ import { Users, GraduationCap, FileText, TrendingUp, BookOpen, Award } from "luc
 
 const NAV = [
   { label: "Dashboard", href: "/admin/dashboard" },
-  { label: "Users", href: "/api/crm/users" },
-  { label: "Leads", href: "/api/crm/leads" },
-  { label: "Students", href: "/api/crm/students" },
-  { label: "Applications", href: "/api/crm/applications" },
-  { label: "Universities", href: "/api/crm/universities" },
-  { label: "Courses", href: "/api/crm/courses" },
-  { label: "Scholarships", href: "/api/crm/scholarships" },
-  { label: "Partners", href: "/api/crm/partners" },
+  { label: "Users", href: "/admin/crm/users" },
+  { label: "Universities", href: "/admin/crm/universities" },
+  { label: "Courses", href: "/admin/crm/courses" },
+  { label: "Scholarships", href: "/admin/crm/scholarships" },
+  { label: "Countries", href: "/admin/crm/countries" },
+  { label: "Branches", href: "/admin/crm/branches" },
+  { label: "Departments", href: "/admin/crm/departments" },
+  { label: "Partners", href: "/admin/crm/partners" },
+  { label: "Commissions", href: "/admin/crm/commissions" },
+  { label: "Audit Logs", href: "/admin/crm/audit-logs" },
   { label: "Analytics", href: "/admin/analytics" },
   { label: "SEO audit", href: "/admin/seo" },
-  { label: "Lead priority", href: "/api/crm/leads/priority" },
-  { label: "AI Agents", href: "/api/agents/status" },
-  { label: "Integrations", href: "/api/admin/integrations" },
+  { label: "AI Agents", href: "/admin/agents" },
+  { label: "Exam center", href: "/admin/exam-center" },
+  { label: "Learning", href: "/admin/learning" },
   { label: "Review queue", href: "/employee/review-queue" },
   { label: "Consent register", href: "/employee/consent" },
-  { label: "Audit Logs", href: "/api/crm/audit-logs" },
-  { label: "Settings", href: "/api/admin/settings" },
+  { label: "Settings", href: "/admin/settings" },
 ];
 
 function AdminDashboardContent() {
@@ -66,18 +67,16 @@ function AdminDashboardContent() {
 
           {/* CRM Entity Links */}
           <DashboardTable
-            headers={["Entity", "Action", "API Endpoint"]}
+            headers={["Entity", "Action", "Open"]}
             rows={[
-              ["Users", "Manage users", <a key="u" href="/api/crm/users" className="text-blue-600 hover:underline">GET /api/crm/users</a>],
-              ["Leads", "Manage leads", <a key="l" href="/api/crm/leads" className="text-blue-600 hover:underline">GET /api/crm/leads</a>],
-              ["Students", "Manage students", <a key="s" href="/api/crm/students" className="text-blue-600 hover:underline">GET /api/crm/students</a>],
-              ["Applications", "Manage applications", <a key="a" href="/api/crm/applications" className="text-blue-600 hover:underline">GET /api/crm/applications</a>],
-              ["Universities", "Manage universities", <a key="uni" href="/api/crm/universities" className="text-blue-600 hover:underline">GET /api/crm/universities</a>],
-              ["Courses", "Manage courses", <a key="c" href="/api/crm/courses" className="text-blue-600 hover:underline">GET /api/crm/courses</a>],
-              ["Scholarships", "Manage scholarships", <a key="sch" href="/api/crm/scholarships" className="text-blue-600 hover:underline">GET /api/crm/scholarships</a>],
-              ["Partners", "Manage partners", <a key="p" href="/api/crm/partners" className="text-blue-600 hover:underline">GET /api/crm/partners</a>],
-              ["AI Agents", "View agent status", <a key="ai" href="/api/agents/status" className="text-blue-600 hover:underline">GET /api/agents/status</a>],
-              ["Settings", "Manage settings", <a key="set" href="/api/admin/settings" className="text-blue-600 hover:underline">GET /api/admin/settings</a>],
+              ["Users", "Manage users", <a key="u" href="/admin/crm/users" className="font-semibold text-blue-600 hover:underline">Users manager</a>],
+              ["Universities", "Manage universities", <a key="uni" href="/admin/crm/universities" className="font-semibold text-blue-600 hover:underline">Universities manager</a>],
+              ["Courses", "Manage courses", <a key="c" href="/admin/crm/courses" className="font-semibold text-blue-600 hover:underline">Courses manager</a>],
+              ["Scholarships", "Manage scholarships", <a key="sch" href="/admin/crm/scholarships" className="font-semibold text-blue-600 hover:underline">Scholarships manager</a>],
+              ["Partners", "Manage partners", <a key="p" href="/admin/crm/partners" className="font-semibold text-blue-600 hover:underline">Partners manager</a>],
+              ["Commissions", "Manage commissions", <a key="com" href="/admin/crm/commissions" className="font-semibold text-blue-600 hover:underline">Commissions manager</a>],
+              ["AI Agents", "View agent workforce", <a key="ai" href="/admin/agents" className="font-semibold text-blue-600 hover:underline">Agents dashboard</a>],
+              ["Settings", "Manage settings", <a key="set" href="/admin/settings" className="font-semibold text-blue-600 hover:underline">Settings editor</a>],
             ]}
           />
         </>

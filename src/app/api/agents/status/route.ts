@@ -13,22 +13,33 @@
  * probing, and its result is available at /api/agents/metrics.
  */
 
-import { requireRole } from '@/lib/auth';
-import { AI_AGENTS, getAgentStats } from '@/lib/agents/registry';
-import { MARKETING_SKILLS, getSkillStats } from '@/lib/agents/skills';
-import { ok } from '@/lib/responses';
-import { withErrorHandler } from '@/lib/responses';
+import { requireRole } from "@/lib/auth";
+import {
+  AI_AGENTS,
+  buildAgentRegistry,
+  type AgentMeasurements,
+} from "@/lib/agents/registry";
+import { MARKETING_SKILLS, getSkillStats } from "@/lib/agents/skills";
+import { db } from "@/lib/db";
+import { ok, withErrorHandler } from "@/lib/responses";
 
-  const measurements: Record<
-    string,
-    {
-      jobs: number;
-      succeeded: number;
-      failed: number;
-      successRate: number | null;
-      averageDurationMs: number | null;
-    }
-  > = {};
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/** The measured numbers for each agent, from the job table. */
+async function gatherMeasurements(): Promise<AgentMeasurements> {
+  const since = new Date(Date.now() - 30 * 86_400_000);
+  const rows = await db.agentJob.findMany({
+    where: { createdAt: { gte: since } },
+    select: {
+      status: true,
+      durationMs: true,
+      agent: { select: { code: true } },
+    },
+    take: 5000,
+  });
+
+  const measurements: AgentMeasurements = {};
 
   for (const row of rows) {
     const entry =

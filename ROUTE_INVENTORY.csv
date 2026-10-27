@@ -1,8 +1,11 @@
+/admin/agents,not public allowlisted; page guard required,static shell + client,src/app/admin/agents/page.tsx
 /admin/analytics,not public allowlisted; page guard required,static shell + client,src/app/admin/analytics/page.tsx
+/admin/crm/{entity},not public allowlisted; page guard required,static shell + client,src/app/admin/crm/[entity]/page.tsx
 /admin/dashboard,not public allowlisted; page guard required,static shell + client,src/app/admin/dashboard/page.tsx
 /admin/exam-center,not public allowlisted; page guard required,static shell + client,src/app/admin/exam-center/page.tsx
 /admin/learning,not public allowlisted; page guard required,static shell + client,src/app/admin/learning/page.tsx
 /admin/seo,not public allowlisted; page guard required,static shell + client,src/app/admin/seo/page.tsx
+/admin/settings,not public allowlisted; page guard required,static shell + client,src/app/admin/settings/page.tsx
 /ask-handbook,public (page allowlist),static shell + client,src/app/ask-handbook/page.tsx
 /blog,public (page allowlist),dynamic (per request),src/app/blog/page.tsx
 /blog/{slug},not public allowlisted; page guard required,dynamic (per request),src/app/blog/[slug]/page.tsx
@@ -12,7 +15,9 @@
 /course-finder,public (page allowlist),static (prerendered),src/app/course-finder/page.tsx
 /destinations,public (page allowlist),static (prerendered),src/app/destinations/page.tsx
 /employee/consent,not public allowlisted; page guard required,static shell + client,src/app/employee/consent/page.tsx
+/employee/crm/{entity},not public allowlisted; page guard required,static shell + client,src/app/employee/crm/[entity]/page.tsx
 /employee/dashboard,not public allowlisted; page guard required,static shell + client,src/app/employee/dashboard/page.tsx
+/employee/lead-priority,not public allowlisted; page guard required,static shell + client,src/app/employee/lead-priority/page.tsx
 /employee/pipeline,not public allowlisted; page guard required,static shell + client,src/app/employee/pipeline/page.tsx
 /employee/review-queue,not public allowlisted; page guard required,static shell + client,src/app/employee/review-queue/page.tsx
 /events,public (page allowlist),static (prerendered),src/app/events/page.tsx
@@ -35,6 +40,7 @@
 /student/dashboard,not public allowlisted; page guard required,static shell + client,src/app/student/dashboard/page.tsx
 /student/exam-history,not public allowlisted; page guard required,static shell + client,src/app/student/exam-history/page.tsx
 /super-admin/dashboard,not public allowlisted; page guard required,static shell + client,src/app/super-admin/dashboard/page.tsx
+/super-admin/health,not public allowlisted; page guard required,static shell + client,src/app/super-admin/health/page.tsx
 /terms,public (page allowlist),static (prerendered),src/app/terms/page.tsx
 /universities,public (page allowlist),static (prerendered),src/app/universities/page.tsx
 Path,Access,Rendering,Source

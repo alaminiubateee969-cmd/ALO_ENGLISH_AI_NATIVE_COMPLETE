@@ -130,15 +130,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: { studentId: student.id, needsReview: false, reviewReason: `Linked to ${student.studentCode ?? student.id} by a human.` },
       });
 
-      // Messages and documents that arrived with no owner move with the
-      // conversation. Documents were never stored against a guessed student, so
-      // this is the point at which an orphaned file finds its student.
+      // Messages that arrived with no owner move with the conversation.
+      // Message.studentId is nullable, so the filter is a plain null check.
       const messages = await tx.message.updateMany({
         where: { conversationId: id, studentId: null },
         data: { studentId: student.id },
       });
+      // Documents were never stored against a guessed student, so this is the
+      // point at which an orphaned file finds its student. Document.studentId
+      // is NOT NULL in the schema and the ingest pipeline refuses to store an
+      // attachment until a student is matched (NO_STUDENT), so there are
+      // normally no ownerless rows; the filter below is defensive so that a
+      // future ingest path that stores first cannot silently orphan a file.
+      const orphanedDocuments = await tx.document.findMany({
+        where: { conversationId: id },
+        select: { id: true, studentId: true },
+      });
       const documents = await tx.document.updateMany({
-        where: { conversationId: id, studentId: null },
+        where: {
+          id: { in: orphanedDocuments.filter((document) => !document.studentId).map((document) => document.id) },
+        },
         data: { studentId: student.id },
       });
 

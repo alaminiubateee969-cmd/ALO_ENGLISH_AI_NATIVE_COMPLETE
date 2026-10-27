@@ -77,6 +77,8 @@ export type AuditAction =
   | 'CONSENT_RECORD'
   /** A review-queue entry was linked, dismissed or deferred. */
   | 'REVIEW_RESOLVE'
+  /** A human approved or rejected a queued agent proposal. */
+  | 'AGENT_APPROVAL_DECIDED'
   | 'MESSAGES_DELETE'
   | 'TASKS_DELETE'
   | 'APPOINTMENTS_DELETE'
