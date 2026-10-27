@@ -64,6 +64,13 @@ Teacher-portal surface (added 2026-10-27): `GET /api/teacher/overview`
 `GET /api/rag/materials?category=` / `GET /api/rag/materials/{id}` (public
 study-material library). The users list also accepts `?role=TEACHER`.
 
+AI-teacher surface (added 2026-10-27): `GET /api/teachers` (public faculty
+directory — 12 subject specialists) and `POST /api/teachers/ask`
+`{teacherId, question, history?}` (any logged-in user, 40/hour). Every
+answer is grounded in the study-material library; with a provider
+configured the reply is fully conversational, without one it is the best
+grounded extract + the teacher's subject guidance (`usedAi` reports which).
+
 ## 3. The internal workforce (14 agents) — and how it relates to an external agent
 
 The platform ships its own durable agent workforce on a SQLite-backed job

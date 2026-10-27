@@ -128,7 +128,6 @@ export class RagEngine {
     contextChunks: string[],
     materialTitle: string | null
   ): Promise<{ text: string }> {
-    const zai = await getZAI();
     const context = contextChunks.join("\n\n---\n\n");
 
     const systemPrompt = `You are an AI study assistant for ALO Education. Answer the student's question using ONLY the provided study material context.
@@ -146,6 +145,11 @@ Context:
 ${context}`;
 
     try {
+      // Created inside the try on purpose: with no AI provider configured,
+      // ZAI.create() throws. The catch below then returns the retrieved
+      // context itself as an extractive answer, so the public study chat
+      // keeps working (grounded in the library) instead of returning a 500.
+      const zai = await getZAI();
       const completion = await zai.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
@@ -157,9 +161,25 @@ ${context}`;
       const text = completion.choices[0]?.message?.content || "I couldn't generate an answer. Please try rephrasing your question.";
       return { text };
     } catch (err) {
-      console.error("[RagEngine] LLM failed:", err);
-      return { text: "I'm having trouble generating an answer right now. Please try again later." };
+      console.error("[RagEngine] LLM unavailable, returning grounded extract:", err);
+      const extract = contextChunks.slice(0, 2).map((c) => c.trim()).join("\n\n").slice(0, 1200);
+      return {
+        text: extract
+          ? `Here is what the study materials say:\n\n${extract}`
+          : "I don't have enough information to answer that.",
+      };
     }
+  }
+
+  /**
+   * Public retrieval wrapper so other engines (the AI teachers) can ground
+   * their answers in the same study-material library with the same scoring.
+   */
+  static async retrieve(
+    question: string,
+    category?: string,
+  ): Promise<{ chunks: string[]; materialTitle: string | null }> {
+    return this.retrieveContext(question, undefined, category);
   }
 
   static async uploadMaterial(params: {

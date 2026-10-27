@@ -16,6 +16,7 @@ import { BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 
 const NAV = [
   { label: "Dashboard", href: "/student/dashboard" },
+  { label: "AI Teachers", href: "/student/ai-teachers" },
   { label: "Study Materials", href: "/student/materials" },
   { label: "Speaking conversation practice", href: "/live-exam" },
   { label: "Practice Tests", href: "/practice-test" },

@@ -16,7 +16,7 @@ IELTS (Academic & General), IELTS UKVI, PTE Core, PTE Academic, TOEFL iBT, Duoli
 
 | Portal | Highlights |
 |---|---|
-| **Student** | Exam catalogue, **unlimited free mock tests (24/7)** with autosave, instant deterministic scoring, history and progress, study-material library (per-exam guides, grammar, vocabulary), AI speaking practice, review queue, document vault, AI study chat |
+| **Student** | Exam catalogue, **unlimited free mock tests (24/7)** with autosave, instant deterministic scoring, history and progress, **12 AI subject teachers** (grammar to GRE — grounded in the study library, work with zero AI providers), study-material library (per-exam guides, grammar, vocabulary), AI speaking practice, review queue, document vault, AI study chat |
 | **Counsellor / Employee** | Lead capture + AI-scored priority call list (HOT/WARM/COLD), student pipeline, tasks, appointments, messages, applications, document review queue, consent register |
 | **Teacher** | Purpose-built portal: student roster, recent exam results across every exam, study-material and practice links — read-only by design |
 | **Partner** | Referral code, referral tracking, commission ledger, profile |
@@ -26,6 +26,7 @@ IELTS (Academic & General), IELTS UKVI, PTE Core, PTE Academic, TOEFL iBT, Duoli
 ## The AI layer (open and honest)
 
 - **14-agent internal workforce** (content generation, review, counselling, analytics…) with jobs, approvals, metrics, and guardrails — every AI action is auditable.
+- **12 AI teachers** — one specialist per exam subject, drivable over `POST /api/teachers/ask`, grounded in the platform's own study-material library, fully functional with zero AI providers configured.
 - **Deterministic-first design:** scoring, review queues, and fallbacks all work with zero AI configuration. AI enhances; it never blocks.
 - **Provider-agnostic by design:** Groq, OpenRouter, Gemini, HuggingFace, or fully **self-hosted open-source models** (Ollama, vLLM, llama.cpp) and self-hosted LanguageTool grammar checking. Adding a provider is a one-line registry entry — the platform never locks to a single vendor.
 

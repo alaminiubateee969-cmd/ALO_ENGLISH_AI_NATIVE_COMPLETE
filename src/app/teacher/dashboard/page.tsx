@@ -14,6 +14,7 @@ import { Users, BookOpen, GraduationCap, ClipboardCheck, Mic } from "lucide-reac
 
 const NAV = [
   { label: "Dashboard", href: "/teacher/dashboard" },
+  { label: "AI Teachers", href: "/student/ai-teachers" },
   { label: "Practice Tests", href: "/practice-test" },
   { label: "Speaking practice", href: "/live-exam" },
   { label: "Study materials", href: "/student/materials" },

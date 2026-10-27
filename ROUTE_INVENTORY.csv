@@ -37,6 +37,7 @@
 /resources,public (page allowlist),static (prerendered),src/app/resources/page.tsx
 /scholarships,public (page allowlist),static (prerendered),src/app/scholarships/page.tsx
 /services,public (page allowlist),static (prerendered),src/app/services/page.tsx
+/student/ai-teachers,not public allowlisted; page guard required,static shell + client,src/app/student/ai-teachers/page.tsx
 /student/dashboard,not public allowlisted; page guard required,static shell + client,src/app/student/dashboard/page.tsx
 /student/exam-history,not public allowlisted; page guard required,static shell + client,src/app/student/exam-history/page.tsx
 /student/materials,not public allowlisted; page guard required,static shell + client,src/app/student/materials/page.tsx
