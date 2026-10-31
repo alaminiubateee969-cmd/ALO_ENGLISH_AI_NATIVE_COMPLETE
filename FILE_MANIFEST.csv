@@ -5,7 +5,7 @@ Directory,Files,Purpose
 cpanel-production,137,"Legacy PHP deliverables, served to SUPER_ADMIN by /api/deliverable*"
 db,1,Runtime database directory (contents git-ignored)
 deploy,4,
-docs,77,"Architecture decisions, audits and archived documentation"
+docs,84,"Architecture decisions, audits and archived documentation"
 download,1,Runtime downloads (contents git-ignored)
 examples,2,"Reference examples, not part of the build"
 mini-services,4,"Optional standalone sidecar services, not deployed by default"
@@ -21,4 +21,4 @@ src/lib,103,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
 tests,41,bun test suites run by CI
 upload,1,Runtime uploads (contents git-ignored)
 vendor,1,
-TOTAL,828,Tracked and intended worktree content for a deploy
+TOTAL,835,Tracked and intended worktree content for a deploy
