@@ -33,7 +33,7 @@ A complete map of every file in this project, organized by purpose.
 | `Makefile` | Workflow shortcuts (`make help` for all commands) |
 | `server.js` | Production entry point for the standalone build |
 
-## Documentation (84 files)
+## Documentation (91 files)
 
 | File | Purpose |
 |---|---|
@@ -48,7 +48,7 @@ A complete map of every file in this project, organized by purpose.
 | `API_DOCUMENTATION.md` | API documentation |
 | `VALIDATION-REPORT.md` | Production readiness report |
 | `PROJECT-INDEX.md` | This file |
-| `docs/` | 73 documents (including the archived guides) |
+| `docs/` | 80 documents (including the archived guides) |
 
 ## Source — App Router (107 API routes, 48 pages, 3 layout)
 
@@ -167,7 +167,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 828 |
+| Tracked files | 835 |
 | Prisma models | 64 |
 | API routes | 107 |
 | Pages | 48 |
