@@ -26,6 +26,7 @@
  *   3. seed-all-missing-exams.ts the remaining exam types.
  *   4. seed-expand-exams.ts      extends the sets created above.
  *   5. seed-gre-gmat-sat-act.ts  GRE / GMAT / SAT / ACT / ALO placement.
+ *   6. seed-internal-exams.ts    COUNSELOR-ASSESSMENT / DOCUMENT-READINESS.
  *
  * `prisma/seed-questions.ts` is deliberately NOT part of this chain: it
  * declares a second, shorter set of fixtures for exams that steps 2 and 3
@@ -57,6 +58,7 @@ const SEEDS = [
   "seed-all-missing-exams.ts",
   "seed-expand-exams.ts",
   "seed-gre-gmat-sat-act.ts",
+  "seed-internal-exams.ts",
 ];
 
 console.log(`Seeding the synthetic sample question bank (${SEEDS.length} steps)…\n`);

@@ -345,6 +345,36 @@ export const EXAM_RUBRICS: Record<string, ExamRubric> = {
     focus:
       "This is the platform's own placement test: the purpose is to place the learner at the right level, so the evaluator reports which strengths and gaps would move the placement decision. It is not a proficiency certificate. Speaking is transcript-based only.",
   }),
+  "COUNSELOR-ASSESSMENT": build({
+    code: "COUNSELOR-ASSESSMENT",
+    name: "Counselor Assessment Test",
+    writingTasks: ["Counselor scenario response"],
+    speakingTasks: ["Mock counseling conversation — student guidance"],
+    writingCriteria: [
+      { key: "accuracy", label: "Advice accuracy", guidance: "Is the guidance factually sound, specific, and free of invented requirements or guarantees?" },
+      { key: "process", label: "Process knowledge", guidance: "Does the response follow the correct application sequence and name the next concrete step?" },
+      { key: "tone", label: "Professional tone", guidance: "Is the tone honest and helpful, without over-promising outcomes?" },
+      { key: "clarity", label: "Clarity", guidance: "Could a student act on this answer without needing to ask what was meant?" },
+    ],
+    speakingCriteria: SPEAKING_CRITERIA,
+    focus:
+      "An internal ALO staff assessment. The evaluator checks whether the counselor's guidance is accurate, process-correct and honest — it never certifies visa outcomes or admission guarantees.",
+  }),
+  "DOCUMENT-READINESS": build({
+    code: "DOCUMENT-READINESS",
+    name: "Document Readiness Test",
+    writingTasks: ["Document summary note"],
+    speakingTasks: ["Document interview — explain your application file"],
+    writingCriteria: [
+      { key: "completeness", label: "Completeness", guidance: "Does the note account for every document the task asked about, with nothing silently skipped?" },
+      { key: "accuracy", label: "Consistency", guidance: "Are names, dates and figures internally consistent and free of contradictions?" },
+      { key: "organisation", label: "Organisation", guidance: "Is the material ordered so a reviewer can verify each item quickly?" },
+      { key: "clarity", label: "Clarity", guidance: "Is anything ambiguous that would slow down an application or visa review?" },
+    ],
+    speakingCriteria: SPEAKING_CRITERIA,
+    focus:
+      "An internal ALO readiness check. The evaluator assesses whether the student's own account shows their documents are complete and consistent — it does not inspect real documents and is not a verification service.",
+  }),
 };
 
 /**

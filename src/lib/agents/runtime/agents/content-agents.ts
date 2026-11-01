@@ -382,10 +382,14 @@ const QUALITY_GATE: AgentDefinitionSpec = {
   fallbackProvider: "local",
   inputSchema: {
     type: "object",
-    required: ["examTypeCode", "items"],
+    required: ["examTypeCode"],
     properties: {
       examTypeCode: { type: "string", minLength: 1 },
-      items: { type: "array", minItems: 1, maxItems: 50 },
+      items: { type: "array", maxItems: 50 },
+      // Approvals whose questions were materialised into an inactive set up
+      // front (daily practice) publish by activating that set; these ids say
+      // which rows the approval covers.
+      questionIds: { type: "array", items: { type: "string" }, maxItems: 200 },
       action: { type: "string", enum: ["review", "publish"] },
       approvalId: { type: "string" },
       // The live set the approved questions will be published into. Without
@@ -427,6 +431,66 @@ const QUALITY_GATE: AgentDefinitionSpec = {
         );
       }
       const practiceSetId = String(ctx.input.practiceSetId ?? "");
+      const approvalPayloadParsed = JSON.parse(approval.payload) as {
+        items?: Array<Record<string, unknown>>;
+        questionIds?: unknown;
+        examTypeCode?: string;
+        practiceSetId?: string;
+      };
+
+      // Activation mode: the requesting agent already materialised the
+      // questions into an inactive set (daily practice). Publishing means
+      // verifying those exact rows are in the set and switching it live.
+      const materialisedIds = Array.isArray(approvalPayloadParsed.questionIds)
+        ? approvalPayloadParsed.questionIds.filter((q): q is string => typeof q === "string")
+        : [];
+      const draftItems = Array.isArray(approvalPayloadParsed.items) ? approvalPayloadParsed.items : [];
+      if (draftItems.length === 0 && materialisedIds.length > 0) {
+        const target = await db.practiceSet.findFirst({
+          where: { id: practiceSetId },
+          select: { id: true, isActive: true, examType: { select: { code: true } } },
+        });
+        if (!target) throw new Error(`no practice set with id ${practiceSetId}`);
+        if (target.examType.code !== examTypeCode) {
+          throw new Error(
+            `practice set ${practiceSetId} belongs to ${target.examType.code}, not ${examTypeCode}`,
+          );
+        }
+        const present = await db.question.count({
+          where: { practiceSetId, id: { in: materialisedIds } },
+        });
+        if (present !== materialisedIds.length) {
+          throw new Error(
+            `the approval names ${materialisedIds.length} question(s) but only ${present} are in set ${practiceSetId}`,
+          );
+        }
+        if (!target.isActive) {
+          await db.practiceSet.update({
+            where: { id: practiceSetId },
+            data: { isActive: true },
+          });
+        }
+        await ctx.artifact({
+          kind: "question.published",
+          ref: practiceSetId,
+          payload: { examTypeCode, published: materialisedIds.length, approvalId, activated: true },
+          provenance: { provider: "human_approved", model: "quality-gate/1.0.0" },
+        });
+        await ctx.log("gate.published", `${materialisedIds.length} question(s) published by activating the set after approval`, {
+          approvalId,
+          practiceSetId,
+        });
+        return {
+          examTypeCode,
+          passed: true,
+          checked: materialisedIds.length,
+          failed: 0,
+          issues: [],
+          approvalId,
+          published: materialisedIds.length,
+        };
+      }
+
       const set = await db.practiceSet.findFirst({
         where: { id: practiceSetId, isActive: true },
         select: { id: true, examType: { select: { code: true } } },
@@ -440,12 +504,7 @@ const QUALITY_GATE: AgentDefinitionSpec = {
 
       // The approval payload carries the draft items together with the exam
       // and the target set.
-      const approvalPayload = JSON.parse(approval.payload) as {
-        items?: Array<Record<string, unknown>>;
-        examTypeCode?: string;
-        practiceSetId?: string;
-      };
-      const approved = Array.isArray(approvalPayload.items) ? approvalPayload.items : [];
+      const approved = draftItems;
       if (approved.length === 0) {
         throw new Error("the approval carries no question drafts");
       }
@@ -495,6 +554,9 @@ const QUALITY_GATE: AgentDefinitionSpec = {
     }
 
     // ── Review mode ──────────────────────────────────────────────────────
+    if (items.length === 0) {
+      throw new Error("review mode requires at least one item to check");
+    }
     const blueprint = getBlueprint(examTypeCode);
     const issues: Array<{ index: number; code: string; detail: string }> = [];
     const canonical = new Set(

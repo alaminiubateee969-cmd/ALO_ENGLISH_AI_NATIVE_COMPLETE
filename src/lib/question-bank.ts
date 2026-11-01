@@ -62,6 +62,8 @@ export type ExamType =
   | "Duolingo"
   | "OIETC"
   | "OET"
+  | "TOEIC"
+  | "Cambridge"
   // CBT expansion (Task 1-cbt)
   | "SAT"
   | "GRE"
@@ -72,7 +74,10 @@ export type ExamType =
   | "LanguageCert"
   | "Linguaskill"
   | "Placement"
-  | "VisaInterview";
+  | "VisaInterview"
+  // ALO internal assessments
+  | "CounselorAssessment"
+  | "DocumentReadiness";
 
 export type Question = {
   id: string;
@@ -1373,6 +1378,7 @@ In short, the lecturer does not deny that the waggle dance occurs; she argues th
     ],
     correctAnswer:
       "elephant, blizzard, twilight, nonsense, pencil, glimmer, computer, lighthouse",
+    correctIndices: [0, 1, 2, 3, 4, 5, 6, 7],
     explanation:
       "The real English words are: elephant, blizzard, twilight, nonsense, pencil, glimmer, computer, lighthouse. The fakes are common misspellings: 'frozn' (frozen), 'phlosphy' (philosophy), 'oxegan' (oxygen), 'wisper' (whisper). Duolingo Read-and-Select tests both vocabulary size and spelling accuracy; select ONLY genuine words.",
     timeSeconds: 60,
@@ -1402,6 +1408,7 @@ In short, the lecturer does not deny that the waggle dance occurs; she argues th
     ],
     correctAnswer:
       "season, weather, breeze, tempest, horizon, quantum, shadow",
+    correctIndices: [0, 1, 2, 3, 4, 5, 6],
     explanation:
       "The real English words are: season, weather, breeze, tempest, horizon, quantum, shadow. 'Vizor' is a non-standard spelling (the correct form is 'visor'); 'skwer', 'neevr', 'batry', and 'palidy' are not English words. Be alert to plausible-looking pseudo-words that share letter patterns with real vocabulary.",
     timeSeconds: 60,
@@ -2545,6 +2552,930 @@ In conclusion, the case against traditional homework has merit but proves too mu
       "Visa officers want evidence of genuine research, not a single application sent speculatively. Naming specific accreditation bodies (AMBA, AACSB, EQUIS), virtual or physical open days attended, alumni spoken to, and ranking tables consulted all signal seriousness. Mentioning other universities you considered and rejected strengthens the answer further — it shows genuine comparison shopping rather than desperation.",
     timeSeconds: 100,
   },
+  // ===== OET (healthcare) — original practice =====
+  {
+    id: "oet-reading-1",
+    examType: "OET",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["healthcare-reading", "detail"],
+    passage:
+      "WARD NOTICE — Falls Prevention. From 1 March, all inpatients aged 65 and over must receive a falls-risk assessment within four hours of admission. Patients assessed as high risk are given a yellow wristband and must not mobilise without assistance. Staff should document the assessment in the electronic record and repeat it after any change in medication that affects balance or blood pressure.",
+    prompt: "According to the notice, when must the falls-risk assessment be repeated?",
+    options: [
+      "Every four hours",
+      "After a relevant medication change",
+      "Only when a patient actually falls",
+      "At discharge",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The notice says to repeat the assessment 'after any change in medication that affects balance or blood pressure'. Four hours is the deadline for the first assessment after admission, not the repeat rule.",
+    timeSeconds: 90,
+  },
+  {
+    id: "oet-reading-2",
+    examType: "OET",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["healthcare-reading", "purpose"],
+    passage:
+      "A patient information leaflet on wound care states: 'Keep the dressing dry for the first 48 hours. Some redness around the wound is normal during the first week. Contact the clinic if you notice increasing pain after the third day, pus, or a fever above 38°C, as these may indicate infection.'",
+    prompt: "Which finding should prompt the patient to contact the clinic?",
+    options: [
+      "Mild redness on day two",
+      "A dry dressing after 48 hours",
+      "Increasing pain after the third day",
+      "A temperature of 37.2°C",
+    ],
+    correctIndex: 2,
+    explanation:
+      "The leaflet lists increasing pain after day three, pus, or fever above 38°C as possible signs of infection requiring contact. Mild early redness is described as normal.",
+    timeSeconds: 90,
+  },
+  {
+    id: "oet-listening-1",
+    examType: "OET",
+    section: "Listening",
+    type: "fill-blanks",
+    difficulty: "medium",
+    tags: ["consultation", "note-completion"],
+    audioScript:
+      "Nurse: Good morning, Mr Carter. The doctor has reviewed your blood results. Your iron levels are still low, so she is increasing your iron tablets to twice a day, and she wants a repeat blood test in six weeks. Take the tablets with food to reduce nausea, and avoid tea for an hour after each dose because it reduces absorption.",
+    prompt:
+      "Complete the nursing note. Write ONE WORD OR A NUMBER for each blank. New dose: iron tablets (1) ______ times a day. Repeat blood test in (2) ______ weeks. Avoid tea for one hour after each dose because it reduces (3) ______.",
+    correctAnswer: "twice | six | absorption",
+    explanation:
+      "The nurse states the dose is 'twice a day', the repeat test is in 'six weeks', and tea 'reduces absorption'. All three details are stated explicitly in sequence.",
+    timeSeconds: 120,
+  },
+  {
+    id: "oet-listening-2",
+    examType: "OET",
+    section: "Listening",
+    type: "multiple-choice",
+    difficulty: "easy",
+    tags: ["handover", "detail"],
+    audioScript:
+      "Handover: Bed 12 is Mrs Ali, day two after her hip replacement. She is mobilising with a frame and one assistant. Pain is controlled on regular paracetamol. Her drain was removed this morning and the wound is clean and dry. The physiotherapist would like her to attempt the stairs tomorrow if her blood pressure remains stable.",
+    prompt: "What is planned for Mrs Ali tomorrow?",
+    options: [
+      "Removal of her drain",
+      "Attempting the stairs with the physiotherapist",
+      "Discharge home",
+      "A blood transfusion",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The handover says the physiotherapist wants her to 'attempt the stairs tomorrow' if blood pressure is stable. The drain was already removed this morning.",
+    timeSeconds: 90,
+  },
+  {
+    id: "oet-writing-1",
+    examType: "OET",
+    section: "Writing",
+    type: "writing-task1",
+    difficulty: "hard",
+    tags: ["referral-letter", "task-achievement"],
+    prompt:
+      "Write a referral letter (180–200 words) to a physiotherapist. Case notes: Patient: Mr James O'Neil, 68, retired builder. Six weeks post right total knee replacement. Progress: walking 200 m with one stick; flexion 95°. Concern: persistent swelling after activity; difficulty climbing stairs. Medication: paracetamol as required. Request: progressive strengthening programme and stair-training review.",
+    modelAnswer:
+      "Dear Physiotherapist,\n\nRe: Mr James O'Neil, 68 years\n\nI am writing to refer Mr O'Neil for a progressive strengthening programme and stair-training review, six weeks after an uncomplicated right total knee replacement.\n\nMr O'Neil, a retired builder, is progressing steadily. He now walks 200 metres with one stick and has knee flexion of 95 degrees. His pain is well controlled with paracetamol taken as required. However, he reports persistent swelling of the right knee after activity and continues to have difficulty climbing stairs, which is limiting his independence at home, as his bedroom is on the first floor.\n\nHis wound has healed well, and there are no signs of infection. I would be grateful if you could assess his quadriceps strength and gait, advise on managing the post-activity swelling, and commence supervised stair training. Please also reinforce his home exercise programme.\n\nThank you for seeing this patient. I will review him in clinic in four weeks and would appreciate your report before then.\n\nYours faithfully,\nDr A. Rahman\nOrthopaedic Registrar",
+    explanation:
+      "Effective OET-style referral: clear purpose in the opening line, only relevant case-note detail selected and expanded where it matters (stairs at home), a specific request, and a closing action. Irrelevant notes must be omitted, and the reader's needs drive the organisation.",
+    timeSeconds: 2400,
+  },
+  {
+    id: "oet-speaking-1",
+    examType: "OET",
+    section: "Speaking",
+    type: "speaking-sample",
+    difficulty: "medium",
+    tags: ["role-play", "empathy"],
+    prompt:
+      "Role play (speak 2–3 minutes): You are a nurse. Your patient is anxious about starting insulin for the first time and believes insulin means their diabetes has 'failed'. Explain why insulin has been prescribed, reassure the patient, and check what concerns them most.",
+    modelAnswer:
+      "Model opening: 'I can see this feels like a big step, and many people worry that insulin means they have done something wrong. That is not the case at all. In type 2 diabetes, over time the body simply makes less insulin of its own, and tablets alone may no longer keep sugar levels safe. Adding insulin replaces what your body is missing — it is a treatment change, not a punishment. We will start with a small dose, I will show you exactly how the pen works, and most people are surprised at how fine the needle is. What is worrying you most — the injections themselves, or what it means for the future?'",
+    explanation:
+      "Strong OET role-play markers: acknowledge the emotion first, correct the misconception without blame, explain in plain language, describe what will happen next, and invite the patient's own concerns with an open question.",
+    timeSeconds: 300,
+  },
+  {
+    id: "oet-speaking-2",
+    examType: "OET",
+    section: "Speaking",
+    type: "speaking-sample",
+    difficulty: "medium",
+    tags: ["role-play", "advice"],
+    prompt:
+      "Role play (speak 2–3 minutes): You are a pharmacist. A patient collecting a new antibiotic says they usually stop taking it once they feel better. Explain why completing the course matters and how to take this medicine safely (with food; avoid alcohol).",
+    modelAnswer:
+      "Model opening: 'That is a really common thing to do, so thank you for telling me. The problem is that feeling better usually means most of the bacteria have gone — but not all. The strongest ones can survive, multiply, and make the infection come back harder to treat. This course is seven days, and I would strongly recommend finishing every tablet even if you feel back to normal by day four. Take each dose with a small amount of food to protect your stomach, space the doses evenly, and please avoid alcohol while you are on it, as the combination can make you quite unwell. If you miss a dose, take it when you remember unless the next one is nearly due. How does that sound — any questions before you go?'",
+    explanation:
+      "Key strengths to demonstrate: non-judgemental acknowledgement, a clear lay explanation of resistance, concrete administration advice, missed-dose guidance, and a closing check for understanding.",
+    timeSeconds: 300,
+  },
+  {
+    id: "oet-vocab-1",
+    examType: "OET",
+    section: "Reading",
+    type: "vocabulary-in-context",
+    difficulty: "easy",
+    tags: ["medical-vocabulary"],
+    prompt:
+      "In a clinical note, the phrase 'the patient is now afebrile' means the patient:",
+    options: ["Has a high fever", "No longer has a fever", "Is allergic to fever medicine", "Needs a temperature check"],
+    correctIndex: 1,
+    explanation:
+      "'Afebrile' combines a- (without) + febrile (feverish): the patient's temperature has returned to normal. Precise clinical vocabulary is tested heavily in OET-style reading.",
+    timeSeconds: 45,
+  },
+  // ===== TOEIC (workplace English) — original practice =====
+  {
+    id: "toeic-listening-1",
+    examType: "TOEIC",
+    section: "Listening",
+    type: "multiple-choice",
+    difficulty: "easy",
+    tags: ["conversation", "detail"],
+    audioScript:
+      "Woman: Excuse me, is the marketing workshop still in Room 204? Man: It was moved this morning because of the projector fault. They are in Room 318 now — take the lift to the third floor and it is the second door on the left. Woman: Room 318 — thank you.",
+    prompt: "Where is the marketing workshop being held?",
+    options: ["Room 204", "Room 308", "Room 318", "Room 418"],
+    correctIndex: 2,
+    explanation:
+      "The man says the workshop 'was moved' and is 'in Room 318 now'. Room 204 is the original (wrong) location — a classic TOEIC distractor using information that has changed.",
+    timeSeconds: 60,
+  },
+  {
+    id: "toeic-listening-2",
+    examType: "TOEIC",
+    section: "Listening",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["announcement", "inference"],
+    audioScript:
+      "Attention passengers travelling to Coast City: the 9:15 service will now depart from Platform 6 at approximately 9:40 due to signalling problems near Harrow Junction. We apologise for the delay. Passengers with connections at Coast City should contact staff at the information desk for revised arrangements.",
+    prompt: "What are passengers with connections advised to do?",
+    options: [
+      "Wait on Platform 6",
+      "Speak to staff at the information desk",
+      "Travel via Harrow Junction",
+      "Request a refund",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The announcement explicitly tells passengers with connections to 'contact staff at the information desk for revised arrangements'.",
+    timeSeconds: 60,
+  },
+  {
+    id: "toeic-reading-1",
+    examType: "TOEIC",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "easy",
+    tags: ["email", "detail"],
+    passage:
+      "Subject: Office closure — Friday 14 June. Please note that the head office will close at 1 p.m. on Friday 14 June for the annual fire-alarm and systems maintenance. All servers, including email, will be offline from 1 p.m. until 6 p.m. Staff may work from home for the rest of the day, but should save any essential files locally before 1 p.m.",
+    prompt: "What should staff do before 1 p.m. on 14 June?",
+    options: [
+      "Email their managers",
+      "Save essential files locally",
+      "Book annual leave",
+      "Attend a fire drill",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The email warns that servers (including email) go offline at 1 p.m., so staff 'should save any essential files locally before 1 p.m.'.",
+    timeSeconds: 60,
+  },
+  {
+    id: "toeic-reading-2",
+    examType: "TOEIC",
+    section: "Reading",
+    type: "fill-blanks",
+    difficulty: "easy",
+    tags: ["grammar", "incomplete-sentence"],
+    prompt:
+      "Choose the word that best completes the sentence: 'The new software will be installed on all office computers ______ the end of this month.' Options are by / until / from / since — write the correct word.",
+    correctAnswer: "by",
+    explanation:
+      "'By the end of the month' sets a deadline (no later than). 'Until' would describe duration up to a point, which does not fit a one-off installation event.",
+    timeSeconds: 40,
+  },
+  {
+    id: "toeic-reading-3",
+    examType: "TOEIC",
+    section: "Reading",
+    type: "sentence-completion",
+    difficulty: "medium",
+    tags: ["vocabulary", "incomplete-sentence"],
+    prompt:
+      "Complete the sentence with the ONE correct word from: efficiency / efficient / efficiently / efficiencies. 'After the training programme, warehouse staff completed orders far more ______ than before.'",
+    correctAnswer: "efficiently",
+    explanation:
+      "The blank modifies the verb 'completed', so the adverb form 'efficiently' is required. TOEIC Part 5 frequently tests word-form families like this.",
+    timeSeconds: 40,
+  },
+  {
+    id: "toeic-reading-4",
+    examType: "TOEIC",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["advertisement", "inference"],
+    passage:
+      "GRAND OPENING — CityFit Gym, Harbour Road. Join before 30 September and pay no enrolment fee. Membership includes all classes, two guest passes per month, and parking. A valid student card gives a further 20% discount on monthly fees. Contracts can be cancelled with one month's written notice.",
+    prompt: "What must a student show to receive the additional discount?",
+    options: ["A guest pass", "A valid student card", "Written notice", "A parking permit"],
+    correctIndex: 1,
+    explanation:
+      "The advertisement states: 'A valid student card gives a further 20% discount'. The other options are mentioned in the text but do not answer the question.",
+    timeSeconds: 60,
+  },
+  {
+    id: "toeic-listening-3",
+    examType: "TOEIC",
+    section: "Listening",
+    type: "fill-blanks",
+    difficulty: "easy",
+    tags: ["short-talk", "detail"],
+    audioScript:
+      "Good morning, and welcome to the quarterly sales briefing. Sales rose by eight percent this quarter, largely due to growth in our northern region. Our main priority for the next quarter is the launch of the revised product catalogue, which will be sent to all regional offices by the fifteenth of next month.",
+    prompt: "Complete the note. Sales rose by ______ percent this quarter. (Write the number as a word.)",
+    correctAnswer: "eight|8",
+    explanation: "The speaker states 'Sales rose by eight percent this quarter'.",
+    timeSeconds: 60,
+  },
+  {
+    id: "toeic-reading-5",
+    examType: "TOEIC",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["notice", "purpose"],
+    passage:
+      "MEMO — New visitor policy. From Monday, all visitors must sign in at reception and wear a visitor badge while on the premises. Staff hosting visitors are responsible for escorting them at all times and for signing them out at the end of the visit. Unbadged visitors should be politely directed to reception.",
+    prompt: "What is the main purpose of this memo?",
+    options: [
+      "To announce new reception opening hours",
+      "To introduce rules for managing visitors",
+      "To advertise staff badges",
+      "To report a security incident",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Every sentence describes the new visitor procedures (sign in, badge, escorting, signing out), so the purpose is to introduce the visitor-management rules.",
+    timeSeconds: 60,
+  },
+  // ===== Cambridge English — original practice =====
+  {
+    id: "cambridge-reading-1",
+    examType: "Cambridge",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["use-of-english", "collocation"],
+    prompt:
+      "Choose the correct option: 'The committee finally reached a ______ after hours of discussion.'",
+    options: ["decision", "conclusion end", "finish", "result point"],
+    correctIndex: 0,
+    explanation:
+      "'Reach a decision' is the natural collocation (also 'reach a conclusion' as a single word — but 'conclusion end' and 'result point' are not valid phrases). Cambridge Use of English heavily tests collocation.",
+    timeSeconds: 45,
+  },
+  {
+    id: "cambridge-reading-2",
+    examType: "Cambridge",
+    section: "Reading",
+    type: "fill-blanks",
+    difficulty: "medium",
+    tags: ["use-of-english", "open-cloze"],
+    passage:
+      "Cycling to work has become increasingly popular in Britain, partly (1) ______ people want to avoid traffic congestion, and partly because it keeps them fit. Many employers now offer cycle-to-work schemes, (2) ______ allow staff to buy bicycles at a discount.",
+    prompt: "Write ONE word for gap (1).",
+    correctAnswer: "because|as|since",
+    explanation:
+      "The parallel structure 'partly X, and partly because…' requires a reason conjunction: 'because' (or as/since). Gap 2 would take the relative pronoun 'which'.",
+    timeSeconds: 60,
+  },
+  {
+    id: "cambridge-reading-3",
+    examType: "Cambridge",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "hard",
+    tags: ["reading-comprehension", "attitude"],
+    passage:
+      "When the city first proposed turning the old railway line into a park, I was frankly sceptical. Similar schemes elsewhere had produced little more than a strip of grass nobody used. Three years on, I have to admit the place has proved me wrong: at weekends it is full of runners, families and community gardeners, and the cafés along its edge are thriving. My only reservation now is whether the council will maintain it properly once the initial funding runs out.",
+    prompt: "How does the writer feel about the park now?",
+    options: [
+      "Entirely opposed to it",
+      "Mostly positive, with one remaining concern",
+      "Angry that the council built it",
+      "Uninterested in its future",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The writer admits the park 'has proved me wrong' and describes busy, successful use, but keeps 'one reservation' about future maintenance funding — mostly positive with a single concern.",
+    timeSeconds: 90,
+  },
+  {
+    id: "cambridge-listening-1",
+    examType: "Cambridge",
+    section: "Listening",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["interview", "main-idea"],
+    audioScript:
+      "Interviewer: So what made you give up a career in banking to run a bakery? Guest: People assume it was about money, but honestly I earned far more at the bank. What I could not stand any longer was spending ten hours a day in front of a screen and never seeing anything tangible at the end of it. Now, at six every morning, there are forty loaves on the counter that were not there the night before. That feeling has never worn off.",
+    prompt: "Why did the guest change career?",
+    options: [
+      "To earn more money",
+      "She wanted work that produced something tangible",
+      "She was made redundant by the bank",
+      "She disliked getting up early",
+    ],
+    correctIndex: 1,
+    explanation:
+      "She explicitly rejects the money motive and says she could not stand 'never seeing anything tangible', contrasting it with forty fresh loaves each morning.",
+    timeSeconds: 90,
+  },
+  {
+    id: "cambridge-writing-1",
+    examType: "Cambridge",
+    section: "Writing",
+    type: "essay",
+    difficulty: "hard",
+    tags: ["essay", "organisation"],
+    prompt:
+      "Write an essay (140–190 words) answering this question: 'Some people believe that schoolchildren should not be given homework. Do you agree?' You must include: your opinion, one advantage of homework, one disadvantage, and a conclusion.",
+    modelAnswer:
+      "Whether children should do homework is a question that divides parents and teachers alike. In my opinion, homework is valuable, provided the amount is reasonable.\n\nThe main advantage is that it reinforces what pupils learn in class. A short task completed independently helps new knowledge move into long-term memory, and it also teaches children to organise their own time — a skill they will need throughout adult life.\n\nOn the other hand, too much homework can be harmful. Children who spend every evening studying have little time for sport, music or simply playing, all of which are essential for healthy development. Excessive homework can also create stress and turn children against school.\n\nIn conclusion, I believe homework should not be abolished, but schools should limit it to a sensible amount for each age group.",
+    explanation:
+      "B2-level target features: clear position restated in the conclusion, balanced development (advantage + disadvantage as required), paragraphing, and linkers (provided, on the other hand, in conclusion). Keep strictly to the required points and word range.",
+    timeSeconds: 2400,
+  },
+  {
+    id: "cambridge-speaking-1",
+    examType: "Cambridge",
+    section: "Speaking",
+    type: "speaking-part2",
+    difficulty: "medium",
+    tags: ["photo-description", "comparison"],
+    prompt:
+      "Long turn (speak for about 1 minute): Compare two photographs — one shows a family eating together at home; the other shows friends eating at a busy street-food market. Say what the people are enjoying in each situation and which meal you would prefer, and why.",
+    modelAnswer:
+      "Model structure: 'In the first photograph, a family is sitting around a dining table at home. They look relaxed, and I would say they are probably enjoying the comfort and the chance to talk properly. The second photograph, on the other hand, shows friends at a night market. It looks noisy and lively — they seem to be enjoying trying lots of different dishes. Both situations are sociable, but in different ways. Personally, I would prefer the market because I love street food, although home cooking is healthier, I suppose.' Aim to compare (whereas/unlike/both) rather than describe each photo separately.",
+    explanation:
+      "Cambridge Part 2 rewards comparison language (on the other hand, whereas, unlike, both…), speculation (probably, I would say) and a brief personal preference with a reason — not two separate descriptions.",
+    timeSeconds: 180,
+  },
+  {
+    id: "cambridge-speaking-2",
+    examType: "Cambridge",
+    section: "Speaking",
+    type: "speaking-part1",
+    difficulty: "easy",
+    tags: ["interview", "personal-answers"],
+    prompt:
+      "Interview questions (answer each in 2–3 sentences): 1) Where do you live, and how long have you lived there? 2) What do you most enjoy about your local area? 3) Would you like to live somewhere different in the future? Why or why not?",
+    modelAnswer:
+      "Model answers: 1) 'I live in a small town about an hour from the capital, and I have lived there all my life.' 2) 'What I enjoy most is that it is quiet and green, but the station is only a short walk away, so the city is easy to reach.' 3) 'One day I would like to try living abroad for my studies, although I think I would miss my family a lot.' Extend with a reason or contrast — never answer with a single word.",
+    explanation:
+      "Part 1 measures fluency on familiar topics. The quickest way to raise your level is answer + reason/detail (+ contrast) for every question.",
+    timeSeconds: 180,
+  },
+  {
+    id: "cambridge-reading-4",
+    examType: "Cambridge",
+    section: "Reading",
+    type: "sentence-completion",
+    difficulty: "hard",
+    tags: ["key-word-transformation"],
+    prompt:
+      "Key word transformation. Complete the second sentence so it has a similar meaning to the first, using the word given (LESS). Write ONE word for the blank. Sentence 1: 'This hotel is cheaper than the one we stayed in last year.' Sentence 2: 'This hotel costs ______ than the one we stayed in last year.'",
+    correctAnswer: "less",
+    explanation:
+      "The transformation needs the comparative structure 'costs less than…'. Key-word transformations test strict grammar patterns (comparatives, passives, reported speech).",
+    timeSeconds: 45,
+  },
+  // ===== Counselor Assessment (ALO internal) — original practice =====
+  {
+    id: "counselor-reading-1",
+    examType: "CounselorAssessment",
+    section: "Reading",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["uk-visas", "cas"],
+    prompt:
+      "A student asks when they can apply for their UK Student visa. What must they receive from the university first?",
+    options: ["An unconditional offer only", "A CAS reference number", "Their BRP collection letter", "A tuition fee invoice"],
+    correctIndex: 1,
+    explanation:
+      "The visa application must quote the CAS (Confirmation of Acceptance for Studies) reference number assigned by the licensed sponsor.",
+    timeSeconds: 60,
+  },
+  {
+    id: "counselor-reading-2",
+    examType: "CounselorAssessment",
+    section: "Reading",
+    type: "multiple-choice",
+    difficulty: "easy",
+    tags: ["usa", "documents"],
+    prompt: "Which document does a US university issue so that a student can apply for an F-1 visa?",
+    options: ["CAS", "CoE", "I-20", "DS-2019 for every student"],
+    correctIndex: 2,
+    explanation: "F-1 students receive Form I-20 from their school (DS-2019 is for J-1 exchange visitors).",
+    timeSeconds: 45,
+  },
+  {
+    id: "counselor-reading-3",
+    examType: "CounselorAssessment",
+    section: "Reading",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["ethics", "financial-evidence"],
+    prompt:
+      "A parent suggests depositing a large sum for one week 'just for the statement'. What is the correct counselor response?",
+    options: [
+      "Agree, because only the closing balance matters",
+      "Explain the required holding period and refuse to present misleading evidence",
+      "Suggest a different relative's account instead",
+      "Proceed but avoid written records of the conversation",
+    ],
+    correctIndex: 1,
+    explanation:
+      "Visa rules require funds to be held for a minimum continuous period. Presenting 'show money' risks refusal and a deception finding; the counselor must explain the rule and decline.",
+    timeSeconds: 60,
+  },
+  {
+    id: "counselor-reading-4",
+    examType: "CounselorAssessment",
+    section: "Reading",
+    type: "true-false-not-given",
+    difficulty: "easy",
+    tags: ["offers"],
+    passage:
+      "A conditional offer becomes unconditional only when the applicant has met every stated condition, such as a final transcript or a required English score. Sponsors normally assign a CAS only after the offer is unconditional and any required deposit has been paid.",
+    prompt: "A CAS is normally assigned before the offer becomes unconditional.",
+    options: ["True", "False", "Not Given"],
+    correctIndex: 1,
+    explanation: "The passage states sponsors assign a CAS 'only after the offer is unconditional' — so the statement is False.",
+    timeSeconds: 60,
+  },
+  {
+    id: "counselor-reading-5",
+    examType: "CounselorAssessment",
+    section: "Reading",
+    type: "fill-blanks",
+    difficulty: "easy",
+    tags: ["terminology"],
+    prompt: "The essay in which an applicant explains their study goals is called a Statement of ______.",
+    correctAnswer: "Purpose",
+    explanation: "'Statement of Purpose' (SOP) is the standard term.",
+    timeSeconds: 30,
+  },
+  {
+    id: "counselor-writing-1",
+    examType: "CounselorAssessment",
+    section: "Writing",
+    type: "writing-task2",
+    difficulty: "hard",
+    tags: ["scenario", "honest-advice"],
+    prompt:
+      "Scenario (write at least 150 words): A student with IELTS 5.5 wants a UK master's requiring 6.5 in eight weeks and asks you to 'manage it somehow'. Write your advice: realistic options, what you will not do, and the next concrete step.",
+    modelAnswer:
+      "Model points to include: acknowledge the ambition and the tight timeline; explain clearly that scores cannot be altered or bypassed and that submitting a non-qualifying score risks refusal; set out real options — an intensive retake plan with a checkpoint mock at week 4, a pre-sessional English course if the university offers one at 5.5 entry, or deferring to the next intake while preparing properly; give costs and deadlines honestly for each; end with one concrete next step (e.g., 'Book a diagnostic mock this week so we can decide between the retake and pre-sessional routes by Friday').",
+    explanation:
+      "Strong responses combine empathy, a firm ethical boundary, genuine options with trade-offs, and a single dated next action — never guarantees.",
+    timeSeconds: 1200,
+  },
+  {
+    id: "counselor-speaking-1",
+    examType: "CounselorAssessment",
+    section: "Speaking",
+    type: "speaking-sample",
+    difficulty: "medium",
+    tags: ["mock-counseling", "expectations"],
+    prompt:
+      "Mock counseling (speak 1–2 minutes): A parent asks, 'Can you guarantee the visa?' Respond as the counselor, managing expectations honestly while keeping their confidence.",
+    modelAnswer:
+      "Model response: 'I understand why you want certainty — this is a big investment for your family. No counselor can honestly guarantee a visa, because the decision belongs to the visa officer alone, and anyone who promises otherwise is misleading you. What I can guarantee is our process: we will prepare a complete, genuine application, check every document against the rules, and prepare your son thoroughly for the interview. That is what gives an application its best possible chance.'",
+    explanation:
+      "Assessed on: empathy, a clear refusal to guarantee outcomes, explaining who decides, and redirecting to controllable process quality.",
+    timeSeconds: 180,
+  },
+  // ===== Document Readiness (ALO internal) — original practice =====
+  {
+    id: "docready-reading-1",
+    examType: "DocumentReadiness",
+    section: "Reading",
+    type: "multiple-choice",
+    difficulty: "easy",
+    tags: ["academic-documents"],
+    prompt: "Which pair forms the core academic evidence for a master's application?",
+    options: [
+      "National ID and birth certificate",
+      "Degree certificate and full transcripts",
+      "Bank statement and sponsor letter",
+      "Passport and photograph",
+    ],
+    correctIndex: 1,
+    explanation: "Universities assess the degree certificate together with the complete subject-by-subject transcripts.",
+    timeSeconds: 45,
+  },
+  {
+    id: "docready-reading-2",
+    examType: "DocumentReadiness",
+    section: "Reading",
+    type: "multiple-choice",
+    difficulty: "easy",
+    tags: ["translations"],
+    prompt: "Your certificate is not in English. What must you submit?",
+    options: [
+      "The original only",
+      "A certified English translation plus the original",
+      "A summary you wrote yourself",
+      "Nothing; it will be translated for you",
+    ],
+    correctIndex: 1,
+    explanation: "Certified translations must accompany non-English originals for both university and visa purposes.",
+    timeSeconds: 45,
+  },
+  {
+    id: "docready-reading-3",
+    examType: "DocumentReadiness",
+    section: "Reading",
+    type: "true-false-not-given",
+    difficulty: "medium",
+    tags: ["passport-validity"],
+    passage:
+      "Many universities require a passport with at least six months of validity at the time of application, and the name on the passport must match the academic documents exactly. Where names differ (for example after marriage), supporting evidence such as a marriage certificate or affidavit should be supplied.",
+    prompt: "A name difference between passport and certificates can be supported with extra evidence.",
+    options: ["True", "False", "Not Given"],
+    correctIndex: 0,
+    explanation: "The passage explicitly allows supporting evidence such as a marriage certificate or affidavit for name differences.",
+    timeSeconds: 60,
+  },
+  {
+    id: "docready-reading-4",
+    examType: "DocumentReadiness",
+    section: "Reading",
+    type: "multiple-choice",
+    difficulty: "medium",
+    tags: ["financial-documents"],
+    prompt: "Which is acceptable financial evidence for a student visa?",
+    options: [
+      "Funds deposited yesterday with no history",
+      "Continuous funds for the required period in an accepted institution",
+      "A mobile-wallet screenshot",
+      "An unsigned promise letter",
+    ],
+    correctIndex: 1,
+    explanation: "Visa rules require seasoning: funds held continuously for the specified period in an accepted financial institution.",
+    timeSeconds: 45,
+  },
+  {
+    id: "docready-reading-5",
+    examType: "DocumentReadiness",
+    section: "Reading",
+    type: "fill-blanks",
+    difficulty: "easy",
+    tags: ["terminology"],
+    prompt: "The subject-by-subject record of grades from a degree is called a ______.",
+    correctAnswer: "transcript",
+    explanation: "'Transcript' (or mark sheet) is the detailed grade record universities require.",
+    timeSeconds: 30,
+  },
+  {
+    id: "docready-writing-1",
+    examType: "DocumentReadiness",
+    section: "Writing",
+    type: "writing-task2",
+    difficulty: "medium",
+    tags: ["summary-note", "completeness"],
+    prompt:
+      "Document summary note (at least 120 words): List the documents in your application file (or a file you are preparing), state what each one proves, and identify anything missing or inconsistent.",
+    modelAnswer:
+      "Model structure: open with the purpose of the file (course, university, intake); then group documents — identity (passport, validity dates, name match confirmed), academic (degree certificate + transcripts + certified translations where applicable), English (test certificate with score vs requirement), financial (account type, holding period, sponsor relationship), and supporting items (SOP, CV, references). Close with an explicit gaps list ('Still outstanding: second reference, due Friday; passport renewal booked for…') so a reviewer can see nothing is being hidden.",
+    explanation:
+      "Assessed on completeness (every required item accounted for), consistency (names/dates/figures agree), organisation, and honest disclosure of gaps with dates.",
+    timeSeconds: 900,
+  },
+  {
+    id: "docready-speaking-1",
+    examType: "DocumentReadiness",
+    section: "Speaking",
+    type: "speaking-sample",
+    difficulty: "medium",
+    tags: ["document-interview"],
+    prompt:
+      "Document interview (speak 1–2 minutes): 'Walk me through your documents and explain how your studies will be funded.' Give the answer you would give in a real interview.",
+    modelAnswer:
+      "Model structure: start with the academic chain ('My bachelor's certificate and transcripts from… show I graduated in 2023 with…'), then English evidence, then funding in detail (who the sponsor is, their occupation/income, where the funds are held and since when, and the total vs first-year cost), finishing with what ties it together ('My CAS/CoE confirms the course dates these funds cover'). Specific figures and dates signal a genuine, consistent file.",
+    explanation:
+      "Strong answers are structured (academics → English → funding), specific about amounts/dates/institutions, and internally consistent with the written file.",
+    timeSeconds: 180,
+  },
+  // ===== Top-ups: MCAT / Linguaskill / LSAT / LanguageCert / ACT / Placement / Visa / OIETC =====
+  {
+    id: "mcat-cars-2",
+    examType: "MCAT",
+    section: "CARS",
+    type: "reading-mcq",
+    difficulty: "hard",
+    tags: ["cars", "inference"],
+    passage:
+      "Historians of science once treated the acceptance of new theories as a purely rational process: evidence accumulated, and the better theory won. Sociologists have since shown that prestige, funding structures and even the conventions of academic publishing shape which theories gain a hearing. This need not imply that truth is merely social; rather, the road to truth runs through institutions, and institutions have interests.",
+    prompt: "The author's main point is that scientific acceptance:",
+    options: [
+      "Has nothing to do with evidence",
+      "Is influenced by social and institutional factors without thereby being arbitrary",
+      "Is determined entirely by funding",
+      "Was fully rational until sociologists intervened",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The author accepts the sociological findings ('shape which theories gain a hearing') while explicitly denying that 'truth is merely social' — influence without arbitrariness.",
+    timeSeconds: 180,
+  },
+  {
+    id: "mcat-bio-2",
+    examType: "MCAT",
+    section: "Biological & Biochemical",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["cell-biology", "enzymes"],
+    prompt:
+      "An enzyme's Vmax is unchanged but its apparent Km increases in the presence of an inhibitor that binds the active site. This pattern is characteristic of:",
+    options: ["Non-competitive inhibition", "Competitive inhibition", "Irreversible inhibition", "Allosteric activation"],
+    correctIndex: 1,
+    explanation:
+      "Competitive inhibitors compete for the active site: more substrate overcomes them (Vmax unchanged) but more substrate is needed to reach half-maximal velocity (Km rises).",
+    timeSeconds: 120,
+  },
+  {
+    id: "mcat-psych-1",
+    examType: "MCAT",
+    section: "Psychological Foundations",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["psychology", "conditioning"],
+    prompt:
+      "A rat receives food after every fifth lever press, on average, but the exact number varies. This is a:",
+    options: ["Fixed-ratio schedule", "Variable-ratio schedule", "Fixed-interval schedule", "Variable-interval schedule"],
+    correctIndex: 1,
+    explanation:
+      "Reinforcement depends on the number of responses (ratio) and the required number varies around an average of five (variable) — a variable-ratio schedule.",
+    timeSeconds: 90,
+  },
+  {
+    id: "linguaskill-reading-2",
+    examType: "Linguaskill",
+    section: "Reading & Listening",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["sign-notice", "comprehension"],
+    passage:
+      "NOTICE TO TENANTS: From next Monday, the car park will be reserved for permit holders only between 7 a.m. and 7 p.m. Permits are available from the management office on production of your tenancy agreement. Vehicles without a permit may be clamped.",
+    prompt: "How can a tenant obtain a parking permit?",
+    options: [
+      "By showing their tenancy agreement at the management office",
+      "By applying online before Monday",
+      "By asking the car-park attendant",
+      "Permits are sent automatically",
+    ],
+    correctIndex: 0,
+    explanation: "The notice states permits are available from the management office 'on production of your tenancy agreement'.",
+    timeSeconds: 60,
+  },
+  {
+    id: "linguaskill-listening-2",
+    examType: "Linguaskill",
+    section: "Reading & Listening",
+    type: "multiple-choice",
+    difficulty: "easy",
+    tags: ["listening", "detail"],
+    audioScript:
+      "Woman: I'd like to change my appointment on Thursday, if possible. Man: Of course. We have Friday at ten thirty or Monday at two fifteen. Woman: Friday is difficult — I work until twelve. Monday afternoon suits me much better. Man: Monday at two fifteen, then. I'll send a confirmation by text.",
+    prompt: "When is the woman's new appointment?",
+    options: ["Thursday", "Friday at 10:30", "Monday at 2:15", "Monday at 12:00"],
+    correctIndex: 2,
+    explanation: "She rejects Friday (she works until twelve) and accepts 'Monday afternoon' — Monday at 2:15.",
+    timeSeconds: 60,
+  },
+  {
+    id: "linguaskill-writing-1",
+    examType: "Linguaskill",
+    section: "Writing",
+    type: "writing-sample",
+    difficulty: "medium",
+    tags: ["email", "register"],
+    prompt:
+      "Write an email (at least 100 words) to your manager: explain that a project report will be two days late, give the reason (a supplier delay), state what you have already completed, and confirm the new delivery date.",
+    modelAnswer:
+      "Model email: 'Dear Ms Patel, I am writing to let you know that the quarterly project report will be ready on Thursday rather than Tuesday as planned. The delay is due to our data supplier, who delivered the sales figures three days late. Please be assured that the analysis sections are complete; I am now finalising the charts and summary. I will send the full report by 5 p.m. on Thursday and can share the completed sections sooner if helpful. I apologise for any inconvenience. Kind regards, …' Note the professional register, clear reason, evidence of progress, and a firm new date.",
+    explanation:
+      "Linguaskill Writing rewards task completion (all four content points), organisation, and appropriate workplace register within the word guidance.",
+    timeSeconds: 1500,
+  },
+  {
+    id: "lsat-logic-3",
+    examType: "LSAT",
+    section: "Logical Reasoning",
+    type: "reading-mcq",
+    difficulty: "hard",
+    tags: ["assumption"],
+    passage:
+      "Councillor: Our town should copy Millfield's approach to traffic. After Millfield introduced bus-only lanes, city-centre congestion fell by 20%. Our town is about the same size, so introducing bus-only lanes here will reduce our congestion too.",
+    prompt: "The argument assumes that:",
+    options: [
+      "Millfield's congestion fell because of the bus-only lanes",
+      "Our town has the same mayor as Millfield",
+      "Bus-only lanes are cheaper than road widening",
+      "Congestion is the town's most serious problem",
+    ],
+    correctIndex: 0,
+    explanation:
+      "The reasoning moves from correlation (lanes introduced, then congestion fell) to a prescription. It requires the causal assumption that the lanes produced the fall; the similarity in town size alone does not establish that.",
+    timeSeconds: 150,
+  },
+  {
+    id: "lsat-reading-2",
+    examType: "LSAT",
+    section: "Reading Comprehension",
+    type: "reading-mcq",
+    difficulty: "hard",
+    tags: ["main-point"],
+    passage:
+      "Early copyright law protected printers, not authors: its purpose was to grant monopolies that made publishing economically viable. Only in the eighteenth century did the author's moral claim to their work become the standard justification. Modern debates often invoke the author-based rationale even for works — databases, software, corporate manuals — where the printer-style economic rationale fits better.",
+    prompt: "Which statement best expresses the passage's main point?",
+    options: [
+      "Copyright should be abolished",
+      "The justification for copyright has shifted over time, and the older rationale sometimes fits modern works better",
+      "Authors have always been the focus of copyright law",
+      "Printers invented the concept of authorship",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The passage traces a shift (printer monopoly → authorial claim) and notes the mismatch when the newer rationale is applied to corporate/technical works. That is option B.",
+    timeSeconds: 180,
+  },
+  {
+    id: "languagecert-reading-2",
+    examType: "LanguageCert",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "medium",
+    tags: ["reading", "detail"],
+    passage:
+      "The community library will extend its opening hours from October. It will open until 8 p.m. on Tuesdays and Thursdays to serve students preparing for examinations, while Saturday hours remain unchanged. A new study room with twelve places can be booked online up to one week in advance.",
+    prompt: "Which days will have longer opening hours?",
+    options: ["Mondays and Wednesdays", "Tuesdays and Thursdays", "Fridays and Saturdays", "Every weekday"],
+    correctIndex: 1,
+    explanation: "Extended hours apply on 'Tuesdays and Thursdays'; Saturdays are explicitly unchanged.",
+    timeSeconds: 60,
+  },
+  {
+    id: "languagecert-listening-2",
+    examType: "LanguageCert",
+    section: "Listening",
+    type: "fill-blanks",
+    difficulty: "easy",
+    tags: ["listening", "times"],
+    audioScript:
+      "Thank you for calling Riverside Dental Practice. Our opening hours are Monday to Friday, eight thirty to five thirty, and Saturday nine to one. For emergencies outside these hours, please call the number on our website. If you would like to book a check-up, press one.",
+    prompt: "Complete the note: Saturday opening hours: ______ to 1 p.m. (Write the time as a word.)",
+    correctAnswer: "nine|9",
+    explanation: "The recording states Saturday hours are 'nine to one'.",
+    timeSeconds: 45,
+  },
+  {
+    id: "act-english-2",
+    examType: "ACT",
+    section: "English",
+    type: "standard-english",
+    difficulty: "medium",
+    tags: ["punctuation", "concision"],
+    prompt:
+      "Choose the best version: 'The hikers, who had been walking since dawn, they finally reached the summit at noon.'",
+    options: [
+      "NO CHANGE",
+      "The hikers, who had been walking since dawn, finally reached the summit at noon.",
+      "The hikers who had been walking since dawn they finally reached the summit at noon.",
+      "The hikers, who had been walking since dawn finally, reached the summit at noon.",
+    ],
+    correctIndex: 1,
+    explanation:
+      "The original repeats the subject ('The hikers … they'), which is ungrammatical. Removing the redundant pronoun while keeping the correctly punctuated relative clause gives the standard version.",
+    timeSeconds: 60,
+  },
+  {
+    id: "act-science-2",
+    examType: "ACT",
+    section: "Science",
+    type: "data-interpretation",
+    difficulty: "medium",
+    tags: ["data", "variables"],
+    passage:
+      "A student investigated how temperature affects the rate at which sugar dissolves in water. She used 100 mL of water and 10 g of sugar at 10°C, 30°C and 50°C, stirring each mixture at the same speed. Dissolving times were 180 s, 95 s and 40 s respectively.",
+    prompt: "In this experiment, the independent variable is:",
+    options: ["Dissolving time", "Volume of water", "Water temperature", "Stirring speed"],
+    correctIndex: 2,
+    explanation:
+      "Temperature is what she deliberately changed (10/30/50°C); dissolving time is the measured outcome, and volume and stirring speed were kept constant as controls.",
+    timeSeconds: 90,
+  },
+  {
+    id: "placement-grammar-2",
+    examType: "Placement",
+    section: "Grammar",
+    type: "complete-the-sentence",
+    difficulty: "easy",
+    tags: ["grammar", "present-perfect"],
+    prompt: "Complete the sentence with ONE word: 'I have lived in this city ______ 2019.'",
+    correctAnswer: "since",
+    explanation: "Present perfect with a starting point in time (2019) takes 'since'; 'for' is used with durations (for six years).",
+    timeSeconds: 30,
+  },
+  {
+    id: "placement-vocab-2",
+    examType: "Placement",
+    section: "Vocabulary",
+    type: "vocabulary-in-context",
+    difficulty: "medium",
+    tags: ["vocabulary"],
+    prompt: "Choose the word closest in meaning to 'essential':",
+    options: ["Optional", "Necessary", "Expensive", "Temporary"],
+    correctIndex: 1,
+    explanation: "'Essential' means absolutely necessary; 'optional' is its near-opposite in this set.",
+    timeSeconds: 30,
+  },
+  {
+    id: "placement-reading-2",
+    examType: "Placement",
+    section: "Reading",
+    type: "reading-mcq",
+    difficulty: "easy",
+    tags: ["reading", "detail"],
+    passage:
+      "Greenwood Adult College offers evening classes in computing, languages and art. Classes run from September to June, and fees can be paid in three instalments. Students over sixty receive a 25% discount on all courses except one-to-one tuition.",
+    prompt: "Who can get a 25% discount?",
+    options: ["All students", "Students paying in instalments", "Students over sixty", "Students taking art classes"],
+    correctIndex: 2,
+    explanation: "The discount applies to 'students over sixty', except for one-to-one tuition.",
+    timeSeconds: 60,
+  },
+  {
+    id: "visa-speaking-6",
+    examType: "VisaInterview",
+    section: "Speaking",
+    type: "speaking-sample",
+    difficulty: "medium",
+    tags: ["credibility", "finances"],
+    prompt:
+      "Visa officer: 'How will you fund your studies, and who is your sponsor?' Answer as you would in the interview (speak 1–2 minutes).",
+    modelAnswer:
+      "Model answer hint: name the sponsor and relationship, their occupation and approximate income, where the funds are held and for how long, and the total available versus the first-year cost. Sample: 'My father is my sponsor. He has run a wholesale textile business for fifteen years, earning around £38,000 a year after tax. The funds — just over £31,000 — have been held in his account at Sonali Bank for the past four months, which covers my first-year tuition of £16,500 plus living costs. I have the bank statements and his business documents with my application.' Specific, consistent figures are what make the answer credible.",
+    explanation:
+      "Officers listen for a coherent funding story: sponsor identity, legitimate income source, seasoned funds, and arithmetic that covers tuition + maintenance. Vague answers ('my family is rich') invite refusal.",
+    timeSeconds: 120,
+  },
+  {
+    id: "visa-speaking-7",
+    examType: "VisaInterview",
+    section: "Speaking",
+    type: "speaking-sample",
+    difficulty: "hard",
+    tags: ["credibility", "future-plans"],
+    prompt:
+      "Visa officer: 'What will you do after you complete this course?' Answer as you would in the interview (speak 1–2 minutes).",
+    modelAnswer:
+      "Model answer hint: give a concrete, plausible plan tied to the course and to real opportunities. Sample: 'After completing my MSc in Data Analytics, I plan to return to Dhaka and join the analytics team of a bank or telecoms company — both sectors are hiring data specialists, and my current employer has said they would welcome me back into a senior analyst role. In the longer term I want to build a data consultancy for local manufacturers, who currently have almost no access to that expertise.' Plans that connect the course, named sectors and existing ties are far more credible than 'I have not decided yet'.",
+    explanation:
+      "The officer is testing genuine-student credibility: a specific post-study plan that uses the qualification and reflects real home-country demand demonstrates purpose; vagueness or only-UK plans weaken credibility.",
+    timeSeconds: 120,
+  },
+  {
+    id: "oietc-reading-2",
+    examType: "OIETC",
+    section: "Reading",
+    type: "true-false-not-given",
+    difficulty: "medium",
+    tags: ["reading", "fact-check"],
+    passage:
+      "Norway's sovereign wealth fund, built from oil and gas revenues, is the largest of its kind in the world. By law, the government may spend only the fund's expected real return — currently estimated at three percent — rather than the capital itself. The rule is intended to preserve the fund for future generations after petroleum income declines.",
+    prompt: "Statement: The Norwegian government may spend the fund's capital whenever it needs to balance the budget.",
+    options: ["True", "False", "Not Given"],
+    correctIndex: 1,
+    explanation:
+      "The passage states the government may spend 'only the fund's expected real return … rather than the capital itself', so the statement contradicts the text: False.",
+    timeSeconds: 75,
+  },
+
 ];
 
 // =============================================================================
@@ -2561,6 +3492,16 @@ export const EXAM_SECTIONS: Record<
     { name: "Reading", duration: 3600, questionCount: 20 },
     { name: "Writing", duration: 2700, questionCount: 1 },
     { name: "Speaking", duration: 1200, questionCount: 2 },
+  ],
+  TOEIC: [
+    { name: "Listening", duration: 2700, questionCount: 100 },
+    { name: "Reading", duration: 4500, questionCount: 100 },
+  ],
+  Cambridge: [
+    { name: "Reading", duration: 4500, questionCount: 52 },
+    { name: "Writing", duration: 4800, questionCount: 2 },
+    { name: "Listening", duration: 2400, questionCount: 30 },
+    { name: "Speaking", duration: 1080, questionCount: 4 },
   ],
   IELTS: [
     { name: "Listening", duration: 1800, questionCount: 40 },
@@ -2644,6 +3585,17 @@ export const EXAM_SECTIONS: Record<
   VisaInterview: [
     { name: "Credibility Interview", duration: 600, questionCount: 5 },
   ],
+  // ALO internal assessments (platform's own tests, not external exams).
+  CounselorAssessment: [
+    { name: "Reading", duration: 2100, questionCount: 10 },
+    { name: "Writing", duration: 900, questionCount: 1 },
+    { name: "Speaking", duration: 600, questionCount: 1 },
+  ],
+  DocumentReadiness: [
+    { name: "Reading", duration: 900, questionCount: 9 },
+    { name: "Writing", duration: 600, questionCount: 1 },
+    { name: "Speaking", duration: 300, questionCount: 1 },
+  ],
 };
 
 // =============================================================================
@@ -2683,6 +3635,8 @@ export const QUESTION_COUNT_BY_EXAM: Record<ExamType, number> = {
   Duolingo: QUESTIONS.filter((q) => q.examType === "Duolingo").length,
   OIETC: QUESTIONS.filter((q) => q.examType === "OIETC").length,
   OET: QUESTIONS.filter((q) => q.examType === "OET").length,
+  TOEIC: QUESTIONS.filter((q) => q.examType === "TOEIC").length,
+  Cambridge: QUESTIONS.filter((q) => q.examType === "Cambridge").length,
   // CBT expansion (Task 1-cbt)
   SAT: QUESTIONS.filter((q) => q.examType === "SAT").length,
   GRE: QUESTIONS.filter((q) => q.examType === "GRE").length,
@@ -2694,4 +3648,6 @@ export const QUESTION_COUNT_BY_EXAM: Record<ExamType, number> = {
   Linguaskill: QUESTIONS.filter((q) => q.examType === "Linguaskill").length,
   Placement: QUESTIONS.filter((q) => q.examType === "Placement").length,
   VisaInterview: QUESTIONS.filter((q) => q.examType === "VisaInterview").length,
+  CounselorAssessment: QUESTIONS.filter((q) => q.examType === "CounselorAssessment").length,
+  DocumentReadiness: QUESTIONS.filter((q) => q.examType === "DocumentReadiness").length,
 };

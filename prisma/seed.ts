@@ -36,6 +36,8 @@ const EXAM_TYPES = [
   { code: 'MCAT', name: 'MCAT', category: 'Academic' },
   { code: 'VISA-INTERVIEW', name: 'Visa Interview Practice', category: 'Visa & Interview' },
   { code: 'ALO-PLACEMENT', name: 'ALO English Placement Test', category: 'ALO Internal' },
+  { code: 'COUNSELOR-ASSESSMENT', name: 'Counselor Assessment Test', category: 'ALO Internal' },
+  { code: 'DOCUMENT-READINESS', name: 'Document Readiness Test', category: 'ALO Internal' },
 ]
 
 async function main() {

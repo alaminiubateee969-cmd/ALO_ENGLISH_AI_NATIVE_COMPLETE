@@ -924,6 +924,80 @@ const BLUEPRINTS: ExamBlueprint[] = [
     },
     false,
   ),
+
+  // ── ALO internal: counselor assessment ──────────────────────────────────
+  bp(
+    "COUNSELOR-ASSESSMENT",
+    "Counselor Assessment Test",
+    "2026.1",
+    60,
+    [
+      {
+        id: "READING",
+        name: "Country, visa & process knowledge",
+        durationMin: 35,
+        questionTypes: ["READING_MCQ", "MULTIPLE_CHOICE", "TRUE_FALSE_NOT_GIVEN", "FILL_BLANK"],
+        notes: "Knowledge of destinations, visa routes and the ALO application workflow.",
+      },
+      {
+        id: "WRITING",
+        name: "Counselor scenario response",
+        durationMin: 15,
+        questionTypes: ["WRITING_TASK2", "ESSAY"],
+        notes: "Written guidance for a student scenario. Assessed for accuracy and honest tone.",
+      },
+      {
+        id: "SPEAKING",
+        name: "Mock counseling conversation",
+        durationMin: 10,
+        questionTypes: ["SPEAKING"],
+        notes: "Transcript-based feedback only.",
+      },
+    ],
+    { scale: "Internal 0–100", note: "ALO's own staff assessment. The result is an internal training measure, not an external qualification." },
+    {
+      label: "ALO Education product definition",
+      url: "https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE",
+      checkedAt: BLUEPRINT_CHECKED_AT,
+    },
+  ),
+
+  // ── ALO internal: document readiness ────────────────────────────────────
+  bp(
+    "DOCUMENT-READINESS",
+    "Document Readiness Test",
+    "2026.1",
+    30,
+    [
+      {
+        id: "READING",
+        name: "Document requirements knowledge",
+        durationMin: 15,
+        questionTypes: ["READING_MCQ", "MULTIPLE_CHOICE", "TRUE_FALSE_NOT_GIVEN", "FILL_BLANK"],
+        notes: "What a complete application file contains, and common rejection causes.",
+      },
+      {
+        id: "WRITING",
+        name: "Document summary note",
+        durationMin: 10,
+        questionTypes: ["WRITING_TASK2", "ESSAY"],
+        notes: "Summarise your own file. Assessed for completeness and internal consistency.",
+      },
+      {
+        id: "SPEAKING",
+        name: "Document interview",
+        durationMin: 5,
+        questionTypes: ["SPEAKING"],
+        notes: "Explain your application file aloud. Transcript-based feedback only.",
+      },
+    ],
+    { scale: "Internal checklist %", note: "ALO's own readiness check. It does not inspect or verify real documents." },
+    {
+      label: "ALO Education product definition",
+      url: "https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE",
+      checkedAt: BLUEPRINT_CHECKED_AT,
+    },
+  ),
 ];
 
 // ─── Access ────────────────────────────────────────────────────────────────

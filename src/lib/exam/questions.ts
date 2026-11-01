@@ -43,13 +43,28 @@ export function withDefaultOptions<Q extends { type: string; options: string | n
 }
 
 /**
- * Listening `passage` fields contain the source transcript used by TTS. They
- * are authoring/scoring data, not student-facing exam content: returning them
- * during an active attempt reveals the audio script. Reading passages remain
- * available because they are part of the actual reading task.
+ * Listening `passage` fields contain the source transcript used by TTS.
+ *
+ * When the question has real audio attached (`audioUrl` set — only the
+ * generate+verify pipeline sets it), the transcript is scoring material:
+ * returning it during an active attempt would let the student read the
+ * script instead of listening, so it is withheld.
+ *
+ * When the question has NO audio on this deployment, withholding the
+ * transcript as well would leave the student with neither audio nor
+ * script — an unanswerable question. The transcript is then the
+ * disclosed practice fallback (the client labels it "Listening Script
+ * (no audio for this question)"), matching the selection layer's
+ * transcript-fallback mode. See `listeningAudioRequired` in
+ * ./selection.ts for the strict-mode switch.
+ *
+ * Reading passages are always available: they are the task itself.
  */
-export function redactListeningTranscript<Q extends { section: string; passage?: string | null }>(q: Q): Q {
+export function redactListeningTranscript<
+  Q extends { section: string; passage?: string | null; audioUrl?: string | null },
+>(q: Q): Q {
   if (q.section.toUpperCase() !== "LISTENING" || q.passage == null) return q;
+  if (!q.audioUrl || q.audioUrl.trim() === "") return q; // transcript fallback: no audio to protect
   return { ...q, passage: null };
 }
 

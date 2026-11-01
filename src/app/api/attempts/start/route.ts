@@ -183,6 +183,7 @@ export async function POST(req: Request): Promise<Response> {
         practiceSetId,
         questionCount: outcome.selection.questionIds.length,
         shortage: outcome.selection.shortage?.reason ?? null,
+        listeningAudioMissingCount: outcome.selection.listeningAudioMissingCount,
         completedAttempts: outcome.completedAttempts,
         quotaLimit: outcome.quota.totalAllowed,
       },
@@ -199,6 +200,13 @@ export async function POST(req: Request): Promise<Response> {
         },
         clock: computeClock(outcome.attempt),
         questions: { ids: outcome.selection.questionIds, count: outcome.selection.questionIds.length },
+        // Listening media disclosure: >0 means those questions are served
+        // with the transcript fallback because no verified audio asset
+        // exists on this deployment yet. The client shows a banner.
+        media: {
+          listeningAudioMissingCount: outcome.selection.listeningAudioMissingCount,
+          transcriptFallback: outcome.selection.listeningAudioMissingCount > 0,
+        },
         shortage: outcome.selection.shortage,
         quota: outcome.quota,
       },
