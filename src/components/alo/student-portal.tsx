@@ -206,9 +206,11 @@ function StudentTests({ onStart, onSelectExam }: { onStart: () => void; onSelect
     const map: Record<string, ExamType> = {
       "IELTS-A": "IELTS", "IELTS-G": "IELTS", "IELTS-UKVI": "IELTS",
       "PTE-A": "PTE", "TOEFL-iBT": "TOEFL", "DUOLINGO": "Duolingo", "OIETC": "OIETC",
+      "OET": "OET", "TOEIC": "TOEIC", "CAMBRIDGE": "Cambridge",
       "SAT": "SAT", "GRE": "GRE", "GMAT": "GMAT", "ACT": "ACT", "LSAT": "LSAT",
       "MCAT": "MCAT", "LANGUAGECERT": "LanguageCert", "LINGUASKILL": "Linguaskill",
-      "ALO-PLACEMENT": "Placement", "VISA-INTERVIEW": "VisaInterview", "OET": "IELTS",
+      "ALO-PLACEMENT": "Placement", "VISA-INTERVIEW": "VisaInterview",
+      "COUNSELOR-ASSESSMENT": "CounselorAssessment", "DOCUMENT-READINESS": "DocumentReadiness",
     };
     const qt = map[code];
     return qt ? QUESTIONS.filter((q) => q.examType === qt).length : 0;
@@ -236,9 +238,10 @@ function StudentTests({ onStart, onSelectExam }: { onStart: () => void; onSelect
               <div className="mt-2 flex items-center gap-3 text-[11px] text-alo-faint">
                 <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{e.duration}</span>
                 <span className="flex items-center gap-1"><Award className="h-3 w-3" />{e.scale}</span>
+                {qc > 0 && <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" />{qc} practice questions</span>}
               </div>
               {e.available ? (
-                <a href="/practice-test"><Button className="mt-3 w-full h-10 rounded-xl bg-alo-blue text-white hover:bg-[#004a9e] text-sm">Start Practice Test<ChevronRight className="ml-1 h-4 w-4" /></Button></a>
+                <a href={e.examTypeCode ? `/practice-test?examType=${encodeURIComponent(e.examTypeCode)}` : "/practice-test"}><Button className="mt-3 w-full h-10 rounded-xl bg-alo-blue text-white hover:bg-[#004a9e] text-sm">Start Practice Test<ChevronRight className="ml-1 h-4 w-4" /></Button></a>
               ) : (
                 <Button disabled className="mt-3 w-full h-10 rounded-xl bg-slate-200 text-slate-500 text-sm">Not yet available</Button>
               )}

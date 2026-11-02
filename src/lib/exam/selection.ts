@@ -35,12 +35,43 @@ export type SelectionResult = {
   questionIds: string[];
   /** Questions in the set that carry no answer key and were excluded. */
   ungradeableCount: number;
+  /**
+   * Gradeable LISTENING questions served without a READY verified audio
+   * asset. In transcript-fallback mode (the default) these questions are
+   * still served — the student reads the listening script — and the count
+   * is surfaced to the client and the audit log so the gap is disclosed,
+   * never silent. In strict mode selection throws instead (see
+   * {@link listeningAudioRequired}).
+   */
+  listeningAudioMissingCount: number;
   requiredCount: number;
   eligibleCount: number;
   poolSize: number;
   reusedQuestionIds: string[];
   shortage: ShortageInfo | null;
 };
+
+/**
+ * Should a listening question without verified audio block the attempt?
+ *
+ * Strict mode (`EXAM_REQUIRE_LISTENING_AUDIO=1`) refuses to start any
+ * paper whose listening questions lack a READY audio asset. That is the
+ * right posture for a deployment that has run `npm run audio:generate`
+ * and wants real-exam fidelity. It is the wrong default for every other
+ * deployment: this repository ships zero audio assets, so under a strict
+ * default NO paper containing a listening question could ever start on a
+ * fresh install — the exam system would be present but unusable.
+ *
+ * The default is therefore transcript fallback: serve the question, show
+ * the listening script (see `redactListeningTranscript`), and report the
+ * missing-audio count in the selection result. Audio generation remains
+ * available (`npm run audio:generate` + `audio:verify`) and any operator
+ * who completes it can flip strict mode on.
+ */
+export function listeningAudioRequired(): boolean {
+  const raw = process.env.EXAM_REQUIRE_LISTENING_AUDIO?.trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes";
+}
 
 /** Thrown when the bank cannot supply the server-selected session count. */
 export class QuestionShortageError extends Error {
@@ -89,6 +120,12 @@ type SelectionArgs = {
   count?: number;
   /** Ignore questions used in the student's previous attempts on this set. */
   excludePreviouslySeen?: boolean;
+  /**
+   * Refuse papers whose listening questions lack READY audio instead of
+   * serving them with the transcript fallback. Defaults to
+   * {@link listeningAudioRequired} (env-driven, default off).
+   */
+  requireListeningAudio?: boolean;
 };
 
 /**
@@ -101,6 +138,7 @@ export async function selectQuestions({
   practiceSetId,
   count,
   excludePreviouslySeen = true,
+  requireListeningAudio = listeningAudioRequired(),
 }: SelectionArgs): Promise<SelectionResult> {
   const pool = await db.question.findMany({
     where: { practiceSetId },
@@ -122,8 +160,15 @@ export async function selectQuestions({
   const ungradeable = pool.filter((q) => !hasAnswerKey(q));
   const gradeable = pool.filter((q) => hasAnswerKey(q));
   const listeningAudioUnavailable = gradeable.filter((q) => !hasReadyListeningAudio(q));
-  if (listeningAudioUnavailable.length > 0) {
+  if (listeningAudioUnavailable.length > 0 && requireListeningAudio) {
     throw new ListeningAudioNotReadyError(listeningAudioUnavailable.length);
+  }
+  const listeningAudioMissingCount = listeningAudioUnavailable.length;
+  if (listeningAudioMissingCount > 0) {
+    console.warn(
+      `[selection] ${listeningAudioMissingCount} listening question(s) have no READY audio asset; ` +
+        "serving with transcript fallback (set EXAM_REQUIRE_LISTENING_AUDIO=1 to block instead).",
+    );
   }
   if (ungradeable.length > 0) {
     console.warn(
@@ -170,6 +215,7 @@ export async function selectQuestions({
     return {
       questionIds: eligibleIds.slice(0, requiredCount),
       ungradeableCount: ungradeable.length,
+      listeningAudioMissingCount,
       requiredCount,
       eligibleCount: eligibleIds.length,
       poolSize: poolIds.length,
@@ -185,6 +231,7 @@ export async function selectQuestions({
   return {
     questionIds: served,
     ungradeableCount: ungradeable.length,
+    listeningAudioMissingCount,
     requiredCount,
     eligibleCount: eligibleIds.length,
     poolSize: poolIds.length,

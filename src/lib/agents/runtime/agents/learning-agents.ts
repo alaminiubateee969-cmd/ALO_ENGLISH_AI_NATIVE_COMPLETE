@@ -581,8 +581,9 @@ const DAILY_AGENT: AgentDefinitionSpec = {
     });
 
     let order = 0;
+    const createdQuestionIds: string[] = [];
     for (const question of selected) {
-      await db.question.create({
+      const created = await db.question.create({
         data: {
           practiceSetId: set.id,
           section: question.section,
@@ -596,7 +597,9 @@ const DAILY_AGENT: AgentDefinitionSpec = {
           points: 1,
           order: order,
         },
+        select: { id: true },
       });
+      createdQuestionIds.push(created.id);
       order += 1;
     }
 
@@ -604,7 +607,7 @@ const DAILY_AGENT: AgentDefinitionSpec = {
       action: "question.publish",
       subject: `Daily practice set for ${day}`,
       summary: `${selected.length} item(s) for ${userId}, selected from the learner's unseen pool. The set is inactive until approved.`,
-      payload: { practiceSetId: set.id, examTypeCode: firstCode, userId, day },
+      payload: { practiceSetId: set.id, examTypeCode: firstCode, userId, day, questionIds: createdQuestionIds },
       requestedBy: typeof ctx.input.requestedBy === "string" ? ctx.input.requestedBy : null,
     });
 
@@ -630,7 +633,7 @@ const DAILY_AGENT: AgentDefinitionSpec = {
     await ctx.artifact({
       kind: "plan",
       ref: set.id,
-      payload: { practiceSetId: set.id, questionIds: selected.map((q) => q.id), day, userId },
+      payload: { practiceSetId: set.id, questionIds: createdQuestionIds, sourceQuestionIds: selected.map((q) => q.id), day, userId },
       provenance: { provider: "deterministic", model: "daily-agent/1.0.0" },
     });
     await ctx.log("daily.scheduled", `${selected.length} item(s) scheduled for ${day}`, {

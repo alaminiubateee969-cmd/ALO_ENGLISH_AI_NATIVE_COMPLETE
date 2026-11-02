@@ -40,6 +40,7 @@ const ENV_SCHEMA: EnvVar[] = [
   { key: 'UPLOAD_DIR', required: false, description: 'Upload directory (defaults to <data root>/upload)' },
   { key: 'BACKUP_DIR', required: false, description: 'Backup directory (defaults to <data root>/db/backup)' },
   { key: 'LANGUAGETOOL_URL', required: false, description: 'Optional self-hosted LanguageTool endpoint for writing-practice grammar feedback (empty = disabled)' },
+  { key: 'EXAM_REQUIRE_LISTENING_AUDIO', required: false, description: 'Set to "1" to block attempts whose listening questions lack a verified READY audio asset (default: serve them with the disclosed transcript fallback)' },
   { key: 'WHATSAPP_APP_SECRET', required: false, description: 'Meta app secret for WhatsApp Cloud webhook signature verification (empty = webhooks refused)' },
   { key: 'META_APP_SECRET', required: false, description: 'Meta app secret for Messenger and Instagram webhook verification' },
   { key: 'SMS_WEBHOOK_SECRET', required: false, description: 'Shared secret for SMS provider webhook verification' },

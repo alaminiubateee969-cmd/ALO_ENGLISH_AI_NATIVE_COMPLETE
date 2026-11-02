@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Clock, Flag, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Clock, Flag, ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
+import { questionInputKind, parseQuestionOptions, longTextWordTarget } from "@/lib/exam/question-ui";
 
 /** Key used to survive a page refresh within the same browser tab session. */
 const ATTEMPT_STORAGE_KEY = "alo.activeAttemptId";
@@ -41,6 +42,12 @@ export default function PracticeTestPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
+  /** Server-graded objective summary (correct/total per section) from submit. */
+  const [objective, setObjective] = useState<{
+    correct: number;
+    total: number;
+    sections: { section: string; correct: number; total: number }[];
+  } | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [testStarted, setTestStarted] = useState(false);
 
@@ -186,6 +193,7 @@ export default function PracticeTestPage() {
       const data = await res.json();
       if (data.success) {
         setResult(data.data.result);
+        setObjective(data.data.objective ?? null);
         setTestStarted(false);
         setExpiresAt(null);
         window.sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
@@ -398,7 +406,9 @@ export default function PracticeTestPage() {
             {result.status === "SCORED" ? "Practice feedback ready" : "Attempt submitted — no numeric result"}
           </h1>
           <p className="text-slate-600 mb-6">
-            Listening and reading indicators reflect answer accuracy only. Writing suggestions are non-scored and unvalidated. Speaking is not scored because this attempt does not attach a recording for acoustic assessment.
+            Auto-graded questions are scored on the server against the stored answer keys. The 0–9 practice indicator covers
+            listening/reading accuracy only and is not an official score conversion. Writing and speaking responses receive
+            qualitative feedback below — no band or grade is issued for them.
           </p>
 
           {/* Overall Score */}
@@ -430,6 +440,31 @@ export default function PracticeTestPage() {
             <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Writing</p><p className="text-lg font-semibold">Feedback only</p></div>
             <div className="rounded-lg border p-4 text-center"><p className="text-xs text-slate-500">Speaking</p><p className="text-lg font-semibold">{hasSpeakingEvaluation ? "Feedback only" : "Not scored"}</p></div>
           </div>
+
+          {/* Objective accuracy — the server-graded right/wrong summary.
+              Shown for every exam family (not only Listening/Reading), so
+              SAT/GRE/placement-style papers get a concrete result even
+              though the 0–9 practice indicator only covers L/R. */}
+          {objective && objective.total > 0 && (
+            <div className="mb-8 rounded-xl border border-slate-200 p-6">
+              <h2 className="text-xl font-bold mb-2">Objective answers</h2>
+              <p className="mb-4 text-sm text-slate-600">
+                You answered <span className="font-bold text-slate-900">{objective.correct} of {objective.total}</span> auto-graded
+                questions correctly ({Math.round((objective.correct / objective.total) * 100)}%).
+              </p>
+              <div className="space-y-2">
+                {objective.sections.map((section) => (
+                  <div key={section.section} className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-2 text-sm">
+                    <span className="font-medium text-slate-700">{section.section}</span>
+                    <span className="text-slate-600">
+                      {section.correct}/{section.total} correct
+                      {section.total > 0 ? ` (${Math.round((section.correct / section.total) * 100)}%)` : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* The platform's own evaluation of the subjective sections. */}
           {Array.isArray(result.evaluations) && result.evaluations.length > 0 && (
@@ -533,6 +568,9 @@ export default function PracticeTestPage() {
   // TEST-TAKING SCREEN
   if (activeSet && testStarted && currentQ) {
     const answeredInSection = sectionQuestions.filter((q) => answers[q.id]).length;
+    const listeningWithoutAudio = questions.filter(
+      (q) => q.section.toUpperCase() === "LISTENING" && !q.audioUrl,
+    ).length;
     return (
       <div className="min-h-screen bg-slate-50">
         {/* Top bar */}
@@ -566,6 +604,15 @@ export default function PracticeTestPage() {
         <div className="mx-auto flex max-w-7xl gap-4 px-4 py-4">
           {/* Left: Question area */}
           <div className="flex-1">
+            {listeningWithoutAudio > 0 && (
+              <div className="mb-4 flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>
+                  Audio is not available for {listeningWithoutAudio} listening question{listeningWithoutAudio === 1 ? "" : "s"} on this
+                  deployment yet, so the listening script is shown instead. Your answers are graded exactly the same way.
+                </p>
+              </div>
+            )}
             {/* Section tabs */}
             <div className="mb-4 flex gap-2">
               {sections.map((section, i) => {
@@ -646,86 +693,84 @@ export default function PracticeTestPage() {
 
               <p className="mb-4 text-slate-700">{currentQ.prompt}</p>
 
-              {/* Answer input by type */}
-              {(currentQ.type === "MULTIPLE_CHOICE" || currentQ.type === "TRUE_FALSE_NOT_GIVEN" || currentQ.type === "MATCHING") && currentQ.options && (
-                <div className="space-y-2">
-                  {JSON.parse(currentQ.options).map((opt: string, idx: number) => (
-                    <label
-                      key={idx}
-                      className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition ${
-                        answers[currentQ.id] === String(idx) ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name={currentQ.id}
-                        value={idx}
-                        checked={answers[currentQ.id] === String(idx)}
+              {/* Answer input by canonical question type (see @/lib/exam/question-ui).
+                  Every recognised type maps to a control; an options-type question
+                  that somehow ships without options still gets a text box, so no
+                  served question can ever be unanswerable. */}
+              {(() => {
+                const kind = questionInputKind(currentQ.type);
+                const parsedOptions = parseQuestionOptions(currentQ.options);
+                const wordCount = (answers[currentQ.id] || "").trim().split(/\s+/).filter(Boolean).length;
+                if (kind === "options" && parsedOptions.length > 0) {
+                  return (
+                    <div className="space-y-2">
+                      {parsedOptions.map((opt, idx) => (
+                        <label
+                          key={idx}
+                          className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition ${
+                            answers[currentQ.id] === String(idx) ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={currentQ.id}
+                            value={idx}
+                            checked={answers[currentQ.id] === String(idx)}
+                            onChange={(e) => setAnswer(currentQ.id, e.target.value)}
+                            className="h-4 w-4"
+                          />
+                          <span className="font-medium text-slate-700">{String.fromCharCode(65 + idx)}.</span>
+                          <span className="text-slate-700">{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  );
+                }
+                if (kind === "long-text") {
+                  const target = longTextWordTarget(currentQ.type, currentQ.wordLimit);
+                  return (
+                    <div>
+                      <textarea
+                        value={answers[currentQ.id] || ""}
                         onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                        className="h-4 w-4"
+                        rows={12}
+                        className="w-full rounded-md border border-slate-300 p-3 text-sm"
+                        placeholder={`Write your response here... (aim for at least ${target} words)`}
                       />
-                      <span className="font-medium text-slate-700">{String.fromCharCode(65 + idx)}.</span>
-                      <span className="text-slate-700">{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              {(currentQ.type === "FILL_BLANK" || currentQ.type === "SENTENCE_COMPLETION" || currentQ.type === "SHORT_ANSWER") && (
-                <input
-                  type="text"
-                  value={answers[currentQ.id] || ""}
-                  onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                  className="w-full rounded-md border border-slate-300 p-3 text-sm"
-                  placeholder="Type your answer..."
-                />
-              )}
-
-              {currentQ.type === "ESSAY" && (
-                <div>
-                  <textarea
+                      <p className="mt-1 text-xs text-slate-400">
+                        {wordCount} words / {target} suggested
+                      </p>
+                    </div>
+                  );
+                }
+                if (kind === "speaking") {
+                  return (
+                    <div>
+                      <p className="mb-2 rounded-lg bg-yellow-50 p-3 text-sm text-yellow-700">
+                        Type your speaking response transcript below (in a real exam, you would speak aloud). For recorded speaking practice with an AI examiner, open the Live Speaking page from your dashboard.
+                      </p>
+                      <textarea
+                        value={answers[currentQ.id] || ""}
+                        onChange={(e) => setAnswer(currentQ.id, e.target.value)}
+                        rows={6}
+                        className="w-full rounded-md border border-slate-300 p-3 text-sm"
+                        placeholder="Type your response here..."
+                      />
+                      <p className="mt-1 text-xs text-slate-400">{wordCount} words</p>
+                    </div>
+                  );
+                }
+                // kind === "text", or an options-type question without usable options.
+                return (
+                  <input
+                    type="text"
                     value={answers[currentQ.id] || ""}
                     onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                    rows={12}
                     className="w-full rounded-md border border-slate-300 p-3 text-sm"
-                    placeholder={`Write your essay here... (minimum ${currentQ.wordLimit || 250} words)`}
+                    placeholder="Type your answer..."
                   />
-                  <p className="mt-1 text-xs text-slate-400">
-                    {(answers[currentQ.id] || "").trim().split(/\s+/).filter(Boolean).length} words {currentQ.wordLimit ? `/ ${currentQ.wordLimit} required` : ""}
-                  </p>
-                </div>
-              )}
-
-              {currentQ.type === "CHART_DESCRIPTION" && (
-                <div>
-                  <textarea
-                    value={answers[currentQ.id] || ""}
-                    onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                    rows={10}
-                    className="w-full rounded-md border border-slate-300 p-3 text-sm"
-                    placeholder={`Describe the chart... (minimum ${currentQ.wordLimit || 150} words)`}
-                  />
-                  <p className="mt-1 text-xs text-slate-400">
-                    {(answers[currentQ.id] || "").trim().split(/\s+/).filter(Boolean).length} words {currentQ.wordLimit ? `/ ${currentQ.wordLimit} required` : ""}
-                  </p>
-                </div>
-              )}
-
-              {currentQ.type === "SPEAKING" && (
-                <div>
-                  <p className="mb-2 rounded-lg bg-yellow-50 p-3 text-sm text-yellow-700">
-                    Type your speaking response transcript below (in a real exam, you would speak aloud):
-                  </p>
-                  <textarea
-                    value={answers[currentQ.id] || ""}
-                    onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                    rows={6}
-                    className="w-full rounded-md border border-slate-300 p-3 text-sm"
-                    placeholder="Type your response here..."
-                  />
-                  <p className="mt-1 text-xs text-slate-400">{(answers[currentQ.id] || "").trim().split(/\s+/).filter(Boolean).length} words</p>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Navigation */}

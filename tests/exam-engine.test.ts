@@ -204,6 +204,7 @@ describe("Question API safety", () => {
       section: "LISTENING",
       type: "MULTIPLE_CHOICE",
       passage: "This is the hidden listening transcript.",
+      audioUrl: "/audio/listening/l1.mp3",
       options: null,
     });
     const reading = toStudentQuestion({
@@ -218,6 +219,20 @@ describe("Question API safety", () => {
     expect(reading.passage).toBe("This is the reading passage students must read.");
     expect(Object.keys(listening)).not.toContain("correctAnswer");
     expect(Object.keys(listening)).not.toContain("correctIndex");
+  });
+
+  test("a listening question with no audio keeps its transcript as the disclosed fallback", () => {
+    // No audioUrl: withholding the script as well would make the question
+    // unanswerable. The client labels this "Listening Script (no audio)".
+    const listening = toStudentQuestion({
+      id: "l2",
+      section: "LISTENING",
+      type: "MULTIPLE_CHOICE",
+      passage: "This is the fallback listening script.",
+      audioUrl: null,
+      options: null,
+    });
+    expect(listening.passage).toBe("This is the fallback listening script.");
   });
 });
 
@@ -242,7 +257,7 @@ describe("Listening media gates", () => {
     })).toBe(true);
   });
 
-  test("a gradeable listening question without ready media blocks attempt selection", async () => {
+  test("a gradeable listening question without ready media blocks attempt selection in strict mode", async () => {
     const fakeDb = {
       question: {
         findMany: async () => [{
@@ -258,10 +273,36 @@ describe("Listening media gates", () => {
       },
       attemptQuestion: { findMany: async () => [] },
     };
-    await expect(selectQuestions({ db: fakeDb as never, userId: "user-1", practiceSetId: "set-1" })).rejects.toMatchObject({
+    await expect(
+      selectQuestions({ db: fakeDb as never, userId: "user-1", practiceSetId: "set-1", requireListeningAudio: true }),
+    ).rejects.toMatchObject({
       code: "LISTENING_AUDIO_NOT_READY",
       questionCount: 1,
     });
+  });
+
+  test("by default the same question is served with the missing-audio count disclosed", async () => {
+    // A fresh install ships zero audio assets. Serving the paper with the
+    // transcript fallback (and reporting the gap) is what keeps every
+    // listening exam startable; strict mode remains opt-in per deployment.
+    const fakeDb = {
+      question: {
+        findMany: async () => [{
+          id: "listen-1",
+          section: "LISTENING",
+          type: "MULTIPLE_CHOICE",
+          audioUrl: null,
+          audioAsset: null,
+          correctAnswer: null,
+          correctIndex: 0,
+          correctIndices: null,
+        }],
+      },
+      attemptQuestion: { findMany: async () => [] },
+    };
+    const selection = await selectQuestions({ db: fakeDb as never, userId: "user-1", practiceSetId: "set-1" });
+    expect(selection.questionIds).toEqual(["listen-1"]);
+    expect(selection.listeningAudioMissingCount).toBe(1);
   });
 });
 

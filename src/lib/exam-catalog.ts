@@ -61,7 +61,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Authentic IELTS-style question formats", "Band estimate per skill + overall", "Writing Task 1 & 2 evaluation", "Full 3-part speaking interview simulation"],
   },
   {
-    id: "ielts-general", name: "IELTS General Training", slug: "ielts-general", category: "english", examTypeCode: "IELTS-A", available: true,
+    id: "ielts-general", name: "IELTS General Training", slug: "ielts-general", category: "english", examTypeCode: "IELTS-G", available: true,
     styleLabel: "IELTS-style practice test", badge: "General", accent: "blue",
     tagline: "General reading, letter writing & essay",
     description: "IELTS-style General Training practice with everyday reading passages, letter writing Task 1 and essay Task 2.",
@@ -76,7 +76,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["General reading passages", "Letter writing Task 1", "Essay Task 2", "Band estimate"],
   },
   {
-    id: "ielts-ukvi", name: "IELTS UKVI", slug: "ielts-ukvi", category: "english", examTypeCode: "IELTS-A", available: true,
+    id: "ielts-ukvi", name: "IELTS UKVI", slug: "ielts-ukvi", category: "english", examTypeCode: "IELTS-UKVI", available: true,
     styleLabel: "IELTS-style practice test", badge: "UK Visa", accent: "royal",
     tagline: "UKVI secure test guidance + practice disclaimer",
     description: "UKVI-specific IELTS-style practice with secure test guidance and clear practice-only disclaimers.",
@@ -199,6 +199,32 @@ export const EXAM_MODULES: ExamModule[] = [
       { name: "Speaking", detail: "Recorded responses" },
     ],
     highlights: ["Adaptive multi-level", "CEFR placement", "Business & general variants", "Fast estimate"],
+  },
+  {
+    id: "toeic", name: "TOEIC", slug: "toeic", category: "english", examTypeCode: "TOEIC", available: true,
+    styleLabel: "TOEIC-style practice test", badge: "Workplace", accent: "green",
+    tagline: "Workplace listening & reading practice",
+    description: "TOEIC-style listening and reading practice with workplace scenarios — meetings, announcements, emails and reports.",
+    duration: "2h 00m", scale: "10–990",
+    sections: [
+      { name: "Listening", detail: "Photographs, Q–Response, conversations, talks" },
+      { name: "Reading", detail: "Incomplete sentences, text completion, comprehension" },
+    ],
+    highlights: ["Workplace English scenarios", "Listening + reading score estimate", "Business vocabulary focus"],
+  },
+  {
+    id: "cambridge", name: "Cambridge English", slug: "cambridge", category: "english", examTypeCode: "CAMBRIDGE", available: true,
+    styleLabel: "Cambridge-style practice test", badge: "CEFR Graded", accent: "royal",
+    tagline: "Reading & Use of English, writing, listening, speaking",
+    description: "Cambridge English (B2 First)–style practice across Reading & Use of English, Writing, Listening and Speaking with CEFR-aligned feedback.",
+    duration: "3h 30m", scale: "CEFR A2–C1",
+    sections: [
+      { name: "Reading & Use of English", detail: "Cloze + comprehension" },
+      { name: "Writing", detail: "Essay + article/report" },
+      { name: "Listening", detail: "Interviews + monologues" },
+      { name: "Speaking", detail: "Interview + collaborative task" },
+    ],
+    highlights: ["Use of English drills", "CEFR-aligned estimate", "Essay evaluation", "Speaking interview practice"],
   },
   {
     id: "alo-placement", name: "ALO English Placement Test", slug: "alo-placement-test", category: "english", examTypeCode: "ALO-PLACEMENT", available: true,
@@ -439,7 +465,7 @@ export const EXAM_MODULES: ExamModule[] = [
 
   // ===== ALO INTERNAL =====
   {
-    id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examTypeCode: null, available: false,
+    id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examTypeCode: "COUNSELOR-ASSESSMENT", available: true,
     styleLabel: "ALO Internal practice test", badge: "Internal", accent: "blue",
     tagline: "Assess counselor knowledge & process",
     description: "Internal ALO test to assess counselor knowledge of countries, universities, visas and ALO process.",
@@ -478,7 +504,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Adaptive", "CEFR placement", "5-minute option", "Prep plan input"],
   },
   {
-    id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examTypeCode: null, available: false,
+    id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examTypeCode: "DOCUMENT-READINESS", available: true,
     styleLabel: "ALO Internal practice test", badge: "Checklist", accent: "green",
     tagline: "Checklist for application documents",
     description: "An interactive checklist test verifying that a student's documents are application-ready.",

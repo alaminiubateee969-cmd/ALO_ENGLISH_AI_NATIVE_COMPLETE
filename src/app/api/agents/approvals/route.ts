@@ -130,11 +130,22 @@ export async function POST(req: Request): Promise<Response> {
       } else {
         const spec = registeredAgents().find((a) => a.code === "AGENT-QUALITY-GATE-03");
         if (spec) {
-          const violations = validateAgainstSchema(
-            { examTypeCode, items: payload.items ?? [], action: "publish", approvalId, practiceSetId },
-            spec.inputSchema,
-          );
-          if (violations.length === 0) {
+          const publishInput = {
+            examTypeCode,
+            items: Array.isArray(payload.items) ? payload.items : [],
+            // Approvals that materialised their questions up front (e.g. the
+            // daily practice agent) carry questionIds instead of draft items.
+            questionIds: Array.isArray(payload.questionIds) ? payload.questionIds : [],
+            action: "publish",
+            approvalId,
+            practiceSetId,
+          };
+          const violations = validateAgainstSchema(publishInput, spec.inputSchema);
+          if (violations.length > 0) {
+            publishBlockedReason =
+              `The publish job input failed schema validation: ${violations.slice(0, 3).join("; ")}` +
+              (violations.length > 3 ? ` (+${violations.length - 3} more)` : "");
+          } else {
             const definition = await db.agentDefinition.findUnique({
               where: { code: "AGENT-QUALITY-GATE-03" },
               select: { id: true },
@@ -142,7 +153,7 @@ export async function POST(req: Request): Promise<Response> {
             if (definition) {
               const enqueued = await enqueueJob(
                 definition.id,
-                { examTypeCode, items: payload.items ?? [], action: "publish", approvalId, practiceSetId },
+                publishInput,
                 { idempotencyKey: `publish:${approvalId}`, idempotencyScope: "question.publish" },
               );
               publishJobId = enqueued.id;

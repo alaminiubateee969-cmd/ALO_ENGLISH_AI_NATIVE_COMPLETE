@@ -275,10 +275,19 @@ describe("Attempt engine — listening media gate against a real database", () =
     await db.practiceSet.delete({ where: { id: setId } });
   });
 
-  test("a listening item without a READY verified asset blocks selection", async () => {
+  test("by default the item is served with the missing-audio count disclosed", async () => {
+    // Transcript-fallback mode: a deployment that has not generated audio
+    // yet must still be able to start the paper. The gap is reported, not
+    // hidden — and strict mode (below) remains available per deployment.
+    const selection = await selectQuestions({ db, userId: userA.id, practiceSetId: setId });
+    expect(selection.questionIds).toEqual([questionId]);
+    expect(selection.listeningAudioMissingCount).toBe(1);
+  });
+
+  test("a listening item without a READY verified asset blocks selection in strict mode", async () => {
     let thrown: ListeningAudioNotReadyError | null = null;
     try {
-      await selectQuestions({ db, userId: userA.id, practiceSetId: setId });
+      await selectQuestions({ db, userId: userA.id, practiceSetId: setId, requireListeningAudio: true });
     } catch (err) {
       thrown = err as ListeningAudioNotReadyError;
     }

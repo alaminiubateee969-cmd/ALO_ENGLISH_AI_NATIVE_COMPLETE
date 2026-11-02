@@ -122,6 +122,7 @@ function MockTestDemo() {
 
   if (submitted) {
     const pct = Math.round((score / total) * 100);
+    const level = pct >= 100 ? "Excellent" : pct >= 75 ? "Strong" : pct >= 50 ? "Developing" : "Keep Practising";
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-6 alo-shadow-sm">
         <div className="flex flex-col items-center text-center">
@@ -131,7 +132,7 @@ function MockTestDemo() {
           <div className="mt-5 grid grid-cols-3 gap-3 w-full max-w-sm">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><div className="text-2xl font-extrabold text-alo-navy">{score}/{total}</div><div className="text-[10px] text-alo-faint">Correct</div></div>
             <div className="rounded-xl border border-alo-blue/20 bg-alo-soft-blue p-3"><div className="text-2xl font-extrabold text-alo-blue">{pct}%</div><div className="text-[10px] text-alo-faint">Accuracy</div></div>
-            <div className="rounded-xl border border-alo-orange/20 bg-alo-soft-orange p-3"><div className="text-2xl font-extrabold text-alo-orange">~7.0</div><div className="text-[10px] text-alo-faint">Band est.</div></div>
+            <div className="rounded-xl border border-alo-orange/20 bg-alo-soft-orange p-3"><div className="text-base leading-8 font-extrabold text-alo-orange">{level}</div><div className="text-[10px] text-alo-faint">Practice level</div></div>
           </div>
           <div className="mt-4 w-full text-left space-y-2 max-h-48 overflow-y-auto alo-scroll pr-2">
             {SAMPLE_QUESTIONS.map((q, i) => {

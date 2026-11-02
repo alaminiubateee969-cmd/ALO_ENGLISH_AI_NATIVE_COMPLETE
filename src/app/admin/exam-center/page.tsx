@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DashboardShell, DashboardCard, DashboardTable, useApi } from "@/components/site/dashboard-shell";
+import { ExamContentManager } from "@/components/alo/exam-content-manager";
 import { BookOpen, FileText, Users, TrendingUp } from "lucide-react";
 
 const NAV = [
@@ -55,6 +56,8 @@ function ExamCenterContent() {
         Counts above are live database counts for active practice sets only. A non-zero count does not establish a full-length bank, current specification alignment, audio playback, or scoring validity.
       </div>
 
+      <ExamContentManager />
+
       {/* API Endpoints */}
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
         <h3 className="font-semibold mb-2">Exam API Endpoints</h3>
@@ -68,6 +71,10 @@ function ExamCenterContent() {
             ["/api/attempts/submit", "POST", "STUDENT", "Submit; objective indicators + non-scored writing suggestions"],
             ["/api/attempts", "GET", "STUDENT", "View attempt history"],
             ["/api/admin/stats", "GET", "ADMIN", "Platform statistics"],
+            ["/api/admin/practice-sets", "GET/POST", "ADMIN", "List & create practice sets (drafts included)"],
+            ["/api/admin/practice-sets/[id]", "PATCH/DELETE", "ADMIN", "Activate/deactivate/update; delete only when no attempts"],
+            ["/api/admin/practice-sets/[id]/questions", "GET/POST", "ADMIN", "Author questions with answer-key validation"],
+            ["/api/admin/questions/[id]", "PATCH/DELETE", "ADMIN", "Edit/delete questions (attempts keep frozen snapshots)"],
             ["/api/agents/status", "GET", "ADMIN/SUPER_ADMIN", "Static agent registration inventory; readiness is not verified"],
           ]}
         />

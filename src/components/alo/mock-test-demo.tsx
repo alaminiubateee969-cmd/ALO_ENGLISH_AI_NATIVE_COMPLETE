@@ -71,6 +71,7 @@ export function AloMockTestDemo() {
 
   if (submitted) {
     const pct = Math.round((score / total) * 100);
+    const level = pct >= 100 ? "Excellent" : pct >= 75 ? "Strong" : pct >= 50 ? "Developing" : "Keep Practising";
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-6 lg:p-8 shadow-sm">
         <div className="flex flex-col items-center text-center">
@@ -90,8 +91,8 @@ export function AloMockTestDemo() {
               <div className="text-xs text-slate-500 mt-0.5">Accuracy</div>
             </div>
             <div className="rounded-xl border border-alo-orange/20 bg-alo-soft-orange p-4">
-              <div className="text-3xl font-extrabold text-alo-orange">~7.0</div>
-              <div className="text-xs text-slate-500 mt-0.5">Band est.</div>
+              <div className="text-xl leading-9 font-extrabold text-alo-orange">{level}</div>
+              <div className="text-xs text-slate-500 mt-0.5">Practice level</div>
             </div>
           </div>
 
