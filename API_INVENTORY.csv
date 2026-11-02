@@ -2,6 +2,10 @@ Path,Methods,Auth,Runtime,Source
 /api,GET,none declared,nodejs,src/app/api/route.ts
 /api/admin/analytics,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/analytics/route.ts
 /api/admin/integrations,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/integrations/route.ts
+/api/admin/practice-sets,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/practice-sets/route.ts
+/api/admin/practice-sets/{id},GET PATCH DELETE,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/practice-sets/[id]/route.ts
+/api/admin/practice-sets/{id}/questions,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/practice-sets/[id]/questions/route.ts
+/api/admin/questions/{id},GET PATCH DELETE,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/questions/[id]/route.ts
 /api/admin/seo/audit,GET,role:ADMIN+SUPER_ADMIN+MARKETING_MANAGER,nodejs,src/app/api/admin/seo/audit/route.ts
 /api/admin/settings,GET POST,role:ADMIN,nodejs,src/app/api/admin/settings/route.ts
 /api/admin/stats,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/stats/route.ts
