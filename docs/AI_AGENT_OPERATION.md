@@ -12,12 +12,12 @@ The API uses HMAC-signed session cookies issued by `POST /api/auth/login`.
 
 ```bash
 # Log in once, keep the cookie jar for every later call
-curl -c agent.jar -X POST https://english.aloeducation.com/api/auth/login \
+curl -c agent.jar -X POST https://english.alolabs.net/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"agent-ops@aloeducation.com","password":"…"}'
 
 # Every subsequent request carries the session
-curl -b agent.jar https://english.aloeducation.com/api/auth/me
+curl -b agent.jar https://english.alolabs.net/api/auth/me
 ```
 
 Practical rules for an agent operator:

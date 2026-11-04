@@ -172,7 +172,7 @@ export function AloAmbassador() {
               <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Your referral link</div>
               <div className="flex items-center gap-2 rounded-lg bg-alo-navy/60 border border-white/10 px-3 py-2">
                 <Link2 className="h-4 w-4 text-alo-orange shrink-0" />
-                <span className="text-xs text-slate-200 truncate font-mono">english.aloeducation.com/r/AMB-0042</span>
+                <span className="text-xs text-slate-200 truncate font-mono">english.alolabs.net/r/AMB-0042</span>
                 <Button className="ml-auto h-7 rounded-md bg-alo-orange px-2 text-[10px] text-white hover:bg-[#d2460f]">Copy</Button>
               </div>
             </div>
@@ -229,7 +229,7 @@ export function AloCrmIntegration() {
 
             <div className="mt-6 grid sm:grid-cols-2 gap-3">
               {[
-                { t: "Auto lead creation", d: "source = english.aloeducation.com" },
+                { t: "Auto lead creation", d: "source = english.alolabs.net" },
                 { t: "Score sync", d: "Latest mock to CRM timeline" },
                 { t: "Counselor tasks", d: "Auto follow-up after each attempt" },
                 { t: "Results visibility", d: "Counselors see every attempt & result" },
@@ -254,7 +254,7 @@ export function AloCrmIntegration() {
                 <div className="grid h-9 w-9 place-items-center rounded-xl bg-alo-blue text-white text-xs font-bold">EN</div>
                 <div>
                   <div className="text-sm font-bold text-alo-navy">English Platform</div>
-                  <div className="text-[11px] text-slate-500">english.aloeducation.com</div>
+                  <div className="text-[11px] text-slate-500">english.alolabs.net</div>
                 </div>
               </div>
               <RefreshCw className="h-4 w-4 text-alo-blue animate-spin-slow" />

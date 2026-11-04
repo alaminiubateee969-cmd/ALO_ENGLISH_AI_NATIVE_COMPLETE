@@ -105,7 +105,7 @@ WHY: DNS must point to the server before Caddy can provision Let's Encrypt.
 
 COMMAND:
 ```bash
-dig english.aloeducation.com
+dig english.alolabs.net
 ```
 
 Verify the A record points to this server's IP. Port 443 must be open:

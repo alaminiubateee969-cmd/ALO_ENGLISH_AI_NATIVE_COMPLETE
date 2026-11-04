@@ -329,7 +329,7 @@ export function PublicAmbassador({ onEnter }: { onEnter: () => void }) {
               <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Your referral link</div>
               <div className="flex items-center gap-2 rounded-lg bg-alo-navy/60 border border-white/10 px-3 py-2">
                 <KeyRound className="h-4 w-4 text-alo-orange shrink-0" />
-                <span className="text-xs text-slate-200 truncate font-mono">english.aloeducation.com/r/AMB-0042</span>
+                <span className="text-xs text-slate-200 truncate font-mono">english.alolabs.net/r/AMB-0042</span>
                 <Button className="ml-auto h-7 rounded-md bg-alo-orange px-2 text-[10px] text-white hover:bg-[#cc3f10]">Copy</Button>
               </div>
             </div>
@@ -353,7 +353,7 @@ export function PublicCrmIntegration() {
             <p className="mt-4 text-base md:text-lg leading-8 text-alo-muted">Every registration creates a CRM lead. Mock attempts, scores, feedback, voucher usage and counseling bookings sync automatically. If CRM is down, data saves locally and retries via cron.</p>
             <div className="mt-6 grid sm:grid-cols-2 gap-3">
               {[
-                { t: "Auto lead creation", d: "source = english.aloeducation.com" },
+                { t: "Auto lead creation", d: "source = english.alolabs.net" },
                 { t: "Score sync", d: "Latest mock to CRM timeline" },
                 { t: "Counselor tasks", d: "Auto follow-up after each attempt" },
                 { t: "Results visibility", d: "Counselors see every attempt & result" },
@@ -368,7 +368,7 @@ export function PublicCrmIntegration() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <div className="grid h-9 w-9 place-items-center rounded-xl bg-alo-blue text-white text-xs font-bold">EN</div>
-                <div><div className="text-sm font-bold text-alo-navy">English Platform</div><div className="text-[11px] text-alo-faint">english.aloeducation.com</div></div>
+                <div><div className="text-sm font-bold text-alo-navy">English Platform</div><div className="text-[11px] text-alo-faint">english.alolabs.net</div></div>
               </div>
               <RefreshCw className="h-4 w-4 text-alo-blue" />
               <div className="flex items-center gap-2">
@@ -465,7 +465,7 @@ export function PublicLeadCapture() {
     setSubmitting(true);
     try {
       const referralCode = new URLSearchParams(window.location.search).get("ref") || undefined;
-      const res = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, source: "english.aloeducation.com", referralCode }) });
+      const res = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, source: "english.alolabs.net", referralCode }) });
       const data = await res.json();
       if (res.ok && data.success) { toast({ title: "Counseling request received!", description: "An ALO Education advisor will contact you." }); setForm({ name: "", email: "", phone: "", exam: "", country: "", message: "" }); }
       else toast({ title: "Request could not be sent", description: data.message || "Please check your details and try again.", variant: "destructive" });

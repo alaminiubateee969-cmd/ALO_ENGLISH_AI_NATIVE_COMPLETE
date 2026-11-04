@@ -7,6 +7,7 @@ import { Users, GraduationCap, FileText, TrendingUp, BookOpen, Award, Bot, Activ
 const NAV = [
   { label: "Dashboard", href: "/super-admin/dashboard" },
   { label: "Admin Panel", href: "/admin/dashboard" },
+  { label: "Software Factory", href: "/factory" },
   { label: "AI Agents", href: "/admin/agents" },
   { label: "Health Check", href: "/super-admin/health" },
   { label: "Audit Logs", href: "/admin/crm/audit-logs" },

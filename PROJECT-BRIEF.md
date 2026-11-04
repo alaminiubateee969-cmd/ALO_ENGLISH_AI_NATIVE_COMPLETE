@@ -6,7 +6,7 @@
 
 ## What it is
 
-**ALO English** (english.aloeducation.com) is a complete, AI-native English-test-preparation and study-abroad CRM platform. Students practise every major computer-based English exam in one place — completely free, unlimited, 24/7; counsellors run the full lead-to-enrolment pipeline; partners refer and earn; and the whole business can be operated either through the dashboards or entirely by an AI agent over the API.
+**ALO English** (english.alolabs.net) is a complete, AI-native English-test-preparation and study-abroad CRM platform. Students practise every major computer-based English exam in one place — completely free, unlimited, 24/7; counsellors run the full lead-to-enrolment pipeline; partners refer and earn; and the whole business can be operated either through the dashboards or entirely by an AI agent over the API.
 
 ## The 20 exam types covered
 

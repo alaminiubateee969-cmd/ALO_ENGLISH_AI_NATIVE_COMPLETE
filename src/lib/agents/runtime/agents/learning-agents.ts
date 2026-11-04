@@ -76,7 +76,7 @@ async function gatherLearnerRecord(userId: string): Promise<LearnerRecord> {
     select: { attemptId: true, questionId: true, answer: true },
   });
 
-  const questions = await db.question.findMany({
+  const questions: Array<Omit<GradableQuestion, "points">> = await db.question.findMany({
     where: { id: { in: [...new Set(attemptQuestions.map((q) => q.questionId))] } },
     select: {
       id: true,

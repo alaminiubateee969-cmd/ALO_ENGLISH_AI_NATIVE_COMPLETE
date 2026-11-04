@@ -33,7 +33,7 @@ A complete map of every file in this project, organized by purpose.
 | `Makefile` | Workflow shortcuts (`make help` for all commands) |
 | `server.js` | Production entry point for the standalone build |
 
-## Documentation (91 files)
+## Documentation (94 files)
 
 | File | Purpose |
 |---|---|
@@ -48,11 +48,11 @@ A complete map of every file in this project, organized by purpose.
 | `API_DOCUMENTATION.md` | API documentation |
 | `VALIDATION-REPORT.md` | Production readiness report |
 | `PROJECT-INDEX.md` | This file |
-| `docs/` | 80 documents (including the archived guides) |
+| `docs/` | 83 documents (including the archived guides) |
 
-## Source — App Router (111 API routes, 48 pages, 3 layout)
+## Source — App Router (127 API routes, 49 pages, 3 layout)
 
-API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`, `teacher`, `teachers`, `webhooks`.
+API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`, `teacher`, `teachers`, `webhooks`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -73,6 +73,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/exam` | 1 |
 | `api/exam-types` | 1 |
 | `api/examiners` | 1 |
+| `api/factory` | 16 |
 | `api/grammar` | 1 |
 | `api/health` | 1 |
 | `api/lead` | 1 |
@@ -89,13 +90,13 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/teacher` | 1 |
 | `api/teachers` | 2 |
 | `api/webhooks` | 1 |
-| **total** | **111** |
+| **total** | **127** |
 
 ## Source — Libraries
 
 | Path | Purpose |
 |---|---|
-| `src/lib/` (36 modules) | `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth.ts`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db.ts`, `env.ts`, `exam`, `exam-catalog.ts`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `utils.ts`, `validation.ts`, `writing` |
+| `src/lib/` (37 modules) | `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth.ts`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db.ts`, `env.ts`, `exam`, `exam-catalog.ts`, `factory`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `utils.ts`, `validation.ts`, `writing` |
 
 ## Source — Middleware
 
@@ -120,32 +121,32 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `src/hooks/` | Shared React hooks |
 
-## Database (64 models, 0 enums, 15 migrations)
+## Database (82 models, 0 enums, 16 migrations)
 
 | Path | Purpose |
 |---|---|
-| `prisma/schema.prisma` | 64 models |
-| `prisma/migrations/` | 15 migration folders |
+| `prisma/schema.prisma` | 82 models |
+| `prisma/migrations/` | 16 migration folders |
 | `prisma/seed.mjs`, `prisma/seed-rbac.ts` | Core data + RBAC seeds |
 | `prisma/seed-sample-bank.mjs` | Guarded synthetic sample bank (disposable databases only) |
 
-## Scripts (28 files)
+## Scripts (33 files)
 
 | Path | Purpose |
 |---|---|
-| `scripts/` | `agent-worker.mjs`, `audit-with-rea.sh`, `backup.sh`, `bootstrap-admin.ts`, `check-manifest.mjs`, `check-schema-migrations.mjs`, `daily-question-pipeline.mjs`, `ensure-prisma-client.mjs`, `finalize-standalone.mjs`, `generate-daily-questions.ts`, `generate-favicon.mjs`, `generate-inventories.mjs`, `generate-listening-audio.mjs`, `generate-missing-migration.sh`, `generate-project-index.mjs`, `healthcheck.sh`, `install.sh`, `listening-audio-utils.mjs`, `restore-drill.sh`, `restore.sh`, `rollback.sh`, `smoke-standalone.mjs`, `update.sh`, `validate-content.mjs`, `validate-question-bank.ts`, `validate-question-provenance.mjs`, `verify-listening-audio.mjs`, `verify.sh` |
+| `scripts/` | `agent-worker.mjs`, `audit-source-questions.mjs`, `audit-with-rea.sh`, `backup.sh`, `bootstrap-admin.ts`, `check-manifest.mjs`, `check-schema-migrations.mjs`, `daily-question-pipeline.mjs`, `ensure-prisma-client.mjs`, `factory-acceptance.ts`, `finalize-standalone.mjs`, `generate-daily-questions.ts`, `generate-favicon.mjs`, `generate-inventories.mjs`, `generate-listening-audio.mjs`, `generate-missing-migration.sh`, `generate-project-index.mjs`, `healthcheck.sh`, `import-question-bank.mjs`, `initialize-exam-types.mjs`, `install.sh`, `lib`, `listening-audio-utils.mjs`, `restore-drill.sh`, `restore.sh`, `rollback.sh`, `smoke-standalone.mjs`, `update.sh`, `validate-content.mjs`, `validate-question-bank.ts`, `validate-question-provenance.mjs`, `verify-listening-audio.mjs`, `verify.sh` |
 
-## Server Configuration (5 files)
-
-| Path | Purpose |
-|---|---|
-| `server-config/` | `Caddyfile.production`, `README.md`, `alo-english.nginx`, `alo-english.service`, `sudo-policy` |
-
-## Tests (43 files)
+## Server Configuration (6 files)
 
 | Path | Purpose |
 |---|---|
-| `tests/` | `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `ai-teachers.test.ts`, `analytics.test.ts`, `assistant.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `blog.test.ts`, `communication-hub.test.ts`, `consent.test.ts`, `copy-style.test.ts`, `crud-scope.test.ts`, `diagram-catalogue.test.ts`, `document-storage.test.ts`, `exam-attempt.test.ts`, `exam-completeness.test.ts`, `exam-engine.test.ts`, `grammar.test.ts`, `integrations.test.ts`, `lead-score.test.ts`, `marketing-skills.test.ts`, `media-fetcher.test.ts`, `outbound.test.ts`, `paths.test.ts`, `pipeline.test.ts`, `provider-payload.test.ts`, `question-provenance.test.ts`, `question-ui.test.ts`, `question-validation.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `review-queue.test.ts`, `seed-sample-guard.test.ts`, `seo-audit.test.ts`, `seo-routes.test.ts`, `sitemap.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts`, `webhook-ingest.test.ts`, `webhook-signature.test.ts` |
+| `server-config/` | `Caddyfile.production`, `README.md`, `alo-english-agent-worker.cron`, `alo-english.nginx`, `alo-english.service`, `sudo-policy` |
+
+## Tests (46 files)
+
+| Path | Purpose |
+|---|---|
+| `tests/` | `agent-worker-auth.test.ts`, `agent-workforce.test.ts`, `ai-evaluation-layer.test.ts`, `ai-evaluation.test.ts`, `ai-teachers.test.ts`, `analytics.test.ts`, `assistant.test.ts`, `attempt-quota.test.ts`, `audio-assets.test.ts`, `audio-input.test.ts`, `audio-path.test.ts`, `blog.test.ts`, `communication-hub.test.ts`, `consent.test.ts`, `content-import.test.ts`, `copy-style.test.ts`, `crud-scope.test.ts`, `diagram-catalogue.test.ts`, `document-storage.test.ts`, `exam-attempt.test.ts`, `exam-completeness.test.ts`, `exam-engine.test.ts`, `factory.test.ts`, `grammar.test.ts`, `integrations.test.ts`, `lead-score.test.ts`, `marketing-skills.test.ts`, `media-fetcher.test.ts`, `outbound.test.ts`, `paths.test.ts`, `pipeline.test.ts`, `provider-payload.test.ts`, `question-provenance.test.ts`, `question-ui.test.ts`, `question-validation.test.ts`, `rbac.test.ts`, `referral-marketing.test.ts`, `review-queue.test.ts`, `seed-sample-guard.test.ts`, `seo-audit.test.ts`, `seo-routes.test.ts`, `sitemap.test.ts`, `smoke.test.ts`, `speaking-recorder.test.ts`, `webhook-ingest.test.ts`, `webhook-signature.test.ts` |
 
 ## CI/CD (2 workflows)
 
@@ -167,11 +168,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 845 |
-| Prisma models | 64 |
-| API routes | 111 |
-| Pages | 48 |
-| Migrations | 15 |
-| Test files | 43 |
-| Scripts | 28 |
+| Tracked files | 885 |
+| Prisma models | 82 |
+| API routes | 127 |
+| Pages | 49 |
+| Migrations | 16 |
+| Test files | 46 |
+| Scripts | 33 |
 | Environment variables (template) | 31 |

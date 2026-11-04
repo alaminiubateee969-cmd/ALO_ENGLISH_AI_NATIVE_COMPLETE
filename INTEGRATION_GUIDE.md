@@ -44,9 +44,9 @@ All external provider integrations require account-owner authorization on the pr
 
 ## Webhook Endpoints
 When provider authorization is complete, configure webhooks to point to:
-- WhatsApp: `https://english.aloeducation.com/api/webhooks/whatsapp`
-- Facebook: `https://english.aloeducation.com/api/webhooks/facebook`
-- Instagram: `https://english.aloeducation.com/api/webhooks/instagram`
+- WhatsApp: `https://english.alolabs.net/api/webhooks/whatsapp`
+- Facebook: `https://english.alolabs.net/api/webhooks/facebook`
+- Instagram: `https://english.alolabs.net/api/webhooks/instagram`
 
 ## Integration Health
 Monitor integration status via: `GET /api/agents/status`
