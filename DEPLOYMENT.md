@@ -10,7 +10,7 @@
 > infrastructure you control yourself — a VPS with systemd, Caddy and Bun. It is
 > kept working and CI still validates its scripts and config files, but:
 >
-> - it is **not** what `english.aloeducation.com` runs on;
+> - it is **not** what `english.alolabs.net` runs on;
 > - GitHub Actions **never** deploys anywhere (`.github/workflows/deploy.yml` is
 >   CI and release-record only, and `scripts/check-manifest.mjs` fails the build
 >   if an SSH/PM2/rsync directive is added to any workflow);

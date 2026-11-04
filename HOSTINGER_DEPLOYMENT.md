@@ -2,7 +2,7 @@
 
 **This is the authoritative production deployment guide.**
 
-Production is `https://english.aloeducation.com`, deployed automatically by
+Production is `https://english.alolabs.net`, deployed automatically by
 Hostinger from the `main` branch of
 `alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE`. Nothing in GitHub
 Actions deploys; Actions only gates and records (see
@@ -30,7 +30,7 @@ npx prisma migrate deploy        (first deploy, and after any schema change)
    ↓
 node server.js                   → .next/standalone/server.js
    ↓
-https://english.aloeducation.com
+https://english.alolabs.net
 ```
 
 The host runs only `npm install` and `npm run build`. npm runs `prebuild`,
@@ -41,7 +41,7 @@ panel's build command**.
 
 ## Panel settings
 
-hPanel → Hosting → `english.aloeducation.com` → Advanced → Node.js
+hPanel → Hosting → `english.alolabs.net` → Advanced → Node.js
 
 | Setting | Value |
 | --- | --- |
@@ -49,7 +49,7 @@ hPanel → Hosting → `english.aloeducation.com` → Advanced → Node.js
 | Package manager | **npm** |
 | Application root | `/` (repository root) |
 | Application entry file | **`server.js`** |
-| Application URL | `https://english.aloeducation.com` |
+| Application URL | `https://english.alolabs.net` |
 
 hPanel → Website → Git → Configure
 
@@ -83,7 +83,7 @@ hPanel → Node.js → Configuration → Environment Variables
 | `NODE_ENV` | `production` | Yes |
 | `HOSTNAME` | `0.0.0.0` | Yes — anything else and the proxy cannot reach the app |
 | `PORT` / `APP_PORT` | `3000` | Yes |
-| `APP_URL` | `https://english.aloeducation.com` | Yes |
+| `APP_URL` | `https://english.alolabs.net` | Yes |
 | `DATABASE_URL` | `file:/ABSOLUTE/PATH/db/production.db` | Yes — **must be absolute** |
 | `APP_DATA_DIR` | `/ABSOLUTE/PATH` outside the release directory | Strongly recommended |
 | `AUTH_SECRET` | `openssl rand -base64 48` (32+ characters) | Yes |
@@ -167,7 +167,7 @@ files are not regenerated.
 ## Verify a release
 
 ```bash
-curl https://english.aloeducation.com/api/health
+curl https://english.alolabs.net/api/health
 ```
 
 Expected: `{"status":"healthy","version":"1.0.0","checks":{"database":"connected","examTypes":20}}`

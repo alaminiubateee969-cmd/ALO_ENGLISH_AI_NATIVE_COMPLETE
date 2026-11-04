@@ -26,7 +26,7 @@ type EnvVar = {
 
 const ENV_SCHEMA: EnvVar[] = [
   { key: 'NODE_ENV', required: false, default: 'production', description: 'Application environment (production|development|test)', validate: (v) => ['production', 'development', 'test'].includes(v) },
-  { key: 'APP_URL', required: false, default: 'https://english.aloeducation.com', description: 'Public application URL' },
+  { key: 'APP_URL', required: false, default: 'https://english.alolabs.net', description: 'Public application URL' },
   { key: 'APP_PORT', required: false, default: '3000', description: 'Application port (3000)' },
   { key: 'PORT', required: false, description: 'Application port (set by Hostinger)' },
   { key: 'DATABASE_URL', required: true, description: 'Database connection string (SQLite file:/absolute/path or MySQL mysql://...)' },

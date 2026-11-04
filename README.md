@@ -7,7 +7,7 @@
 [![Prisma](https://img.shields.io/badge/Prisma-6-indigo.svg)](https://www.prisma.io/)
 [![CI](https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE/actions/workflows/ci.yml/badge.svg)](https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE/actions/workflows/ci.yml)
 
-**Configured production hostname:** `https://english.aloeducation.com` — availability, current release, database, and deployment ownership have not been independently verified in this audit.
+**Configured production hostname:** `https://english.alolabs.net` — availability, current release, database, and deployment ownership have not been independently verified in this audit.
 
 ## What is in this repository
 
@@ -17,6 +17,7 @@
 - Practice-only writing suggestions and speaking-conversation/transcription routes. These are not publisher-scored results; see the capability limits below.
 - Study-material/RAG and learning-agent code. Provider availability, data quality, and production operation are not verified.
 - Scripts for database checks, inventories, backups, listening-audio generation, and validation.
+- An additive BDTECH360 `/factory` control plane for private template/module versions, configuration-driven company definitions, controlled shared provisioning, explicit tenant membership, releases and scoped backup. End-to-end acceptance is currently blocked; it is not a production-ready application generator.
 
 The exam catalog contains metadata for multiple products; metadata does **not** establish that a complete, current, licensed question bank exists. Legacy synthetic seed scripts are not part of the production seed command and now refuse to run unless explicitly opted into a clearly named disposable test/sample SQLite database.
 
@@ -47,6 +48,13 @@ Read the nine current audit reports in [`docs/`](./docs/):
 - [Regression checklist](./docs/REGRESSION_CHECKLIST.md)
 
 These reports distinguish repository evidence from database, provider, legal, browser, and production evidence. A feature is not release-ready merely because a route, UI, seed declaration, or integration stub exists.
+
+BDTECH360 factory references:
+
+- [Control Center architecture, security and operating limits](./docs/BDTECH360_FACTORY_CONTROL_CENTER.md)
+- [Factory gap analysis](./docs/BDTECH360_FACTORY_GAP_ANALYSIS.md)
+- [Actual A–H acceptance results and blockers](./BDTECH360_FACTORY_ACCEPTANCE_REPORT.md)
+- [ALO production recovery report](./PRODUCTION_RECOVERY_REPORT.md)
 
 ## Local development
 

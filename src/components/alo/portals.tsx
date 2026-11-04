@@ -782,7 +782,7 @@ function AmbassadorDashboard({ onNavigate }: { onNavigate: (p: string) => void }
           <div className="flex items-center justify-between mb-3"><div className="text-sm font-bold text-alo-navy">Your Referral Link</div><Button size="sm" className="h-8 rounded-lg bg-alo-orange text-white hover:bg-[#cc3f10]">Copy</Button></div>
           <div className="flex items-center gap-2 rounded-lg bg-alo-navy/5 border border-slate-200 px-3 py-2.5">
             <Link2 className="h-4 w-4 text-alo-orange shrink-0" />
-            <span className="text-sm text-alo-navy truncate font-mono">english.aloeducation.com/r/AMB-0042</span>
+            <span className="text-sm text-alo-navy truncate font-mono">english.alolabs.net/r/AMB-0042</span>
           </div>
           <Button onClick={() => onNavigate("referrals")} variant="ghost" className="mt-3 text-alo-blue text-sm p-0 h-auto">View all referrals<ChevronRight className="h-4 w-4" /></Button>
         </div>

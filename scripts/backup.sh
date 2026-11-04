@@ -58,14 +58,33 @@ mkdir -p "$BACKUP_DIR"
 # ─── Collect files ─────────────────────────────────────────────────────
 echo "▸ Creating backup: $BACKUP_NAME"
 
-# Database (use sqlite3 .backup for consistency if available, else copy).
+# Database: always use SQLite's online-backup operation. Never fall back to
+# copying a live DB file: a cp image can omit WAL pages or capture a partial
+# transaction and is not a restorable production backup.
 DB_BACKUP="$TMP_DIR/database.db"
 if command -v sqlite3 &>/dev/null; then
-  sqlite3 "$DB_PATH" ".backup '$DB_BACKUP'" 2>/dev/null || cp "$DB_PATH" "$DB_BACKUP"
+  sqlite3 "$DB_PATH" ".backup '$DB_BACKUP'"
 else
-  cp "$DB_PATH" "$DB_BACKUP"
+  SOURCE_DB="$DB_PATH" DESTINATION_DB="$DB_BACKUP" node -e '
+    const { DatabaseSync } = require("node:sqlite");
+    const db = new DatabaseSync(process.env.SOURCE_DB, { readOnly: true });
+    const quote = String.fromCharCode(39);
+    const destination = quote + process.env.DESTINATION_DB.replaceAll(quote, quote + quote) + quote;
+    db.exec(`VACUUM INTO ${destination}`);
+    const result = db.prepare("PRAGMA integrity_check").get();
+    if (Object.values(result)[0] !== "ok") throw new Error("source integrity_check failed");
+    db.close();
+  '
 fi
-echo "  ✓ Database copied"
+# Prove that the copied image, not just the source, opens and is intact.
+RESTORED_DB="$DB_BACKUP" node -e '
+  const { DatabaseSync } = require("node:sqlite");
+  const db = new DatabaseSync(process.env.RESTORED_DB, { readOnly: true });
+  const result = db.prepare("PRAGMA integrity_check").get();
+  if (Object.values(result)[0] !== "ok") throw new Error("backup integrity_check failed");
+  db.close();
+'
+echo "  ✓ Consistent database backup created and integrity-checked"
 
 # Environment file (without revealing contents in logs).
 if [[ -f "$PROJECT_ROOT/.env" ]]; then

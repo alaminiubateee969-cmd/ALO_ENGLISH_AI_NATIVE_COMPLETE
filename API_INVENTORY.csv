@@ -82,6 +82,22 @@ Path,Methods,Auth,Runtime,Source
 /api/exam-types,GET,public intended (allowlist; verify handler),nodejs,src/app/api/exam-types/route.ts
 /api/exam/analytics,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/exam/analytics/route.ts
 /api/examiners,GET,public intended (allowlist; verify handler),nodejs,src/app/api/examiners/route.ts
+/api/factory/applications/{id},GET PATCH,none declared,nodejs,src/app/api/factory/applications/[id]/route.ts
+/api/factory/applications/{id}/activate,POST,none declared,nodejs,src/app/api/factory/applications/[id]/activate/route.ts
+/api/factory/applications/{id}/backup,POST,none declared,nodejs,src/app/api/factory/applications/[id]/backup/route.ts
+/api/factory/applications/{id}/provision,POST,none declared,nodejs,src/app/api/factory/applications/[id]/provision/route.ts
+/api/factory/applications/{id}/releases,POST,none declared,nodejs,src/app/api/factory/applications/[id]/releases/route.ts
+/api/factory/applications/{id}/rollback,POST,none declared,nodejs,src/app/api/factory/applications/[id]/rollback/route.ts
+/api/factory/applications/{id}/validate,POST,none declared,nodejs,src/app/api/factory/applications/[id]/validate/route.ts
+/api/factory/changes,POST,none declared,nodejs,src/app/api/factory/changes/route.ts
+/api/factory/companies,POST,none declared,nodejs,src/app/api/factory/companies/route.ts
+/api/factory/modules,POST,none declared,nodejs,src/app/api/factory/modules/route.ts
+/api/factory/modules/{id}/versions,POST,none declared,nodejs,src/app/api/factory/modules/[id]/versions/route.ts
+/api/factory/overview,GET,none declared,nodejs,src/app/api/factory/overview/route.ts
+/api/factory/templates,POST,none declared,nodejs,src/app/api/factory/templates/route.ts
+/api/factory/templates/{id}/versions,POST,none declared,nodejs,src/app/api/factory/templates/[id]/versions/route.ts
+/api/factory/tenant/contacts,GET POST,none declared,nodejs,src/app/api/factory/tenant/contacts/route.ts
+/api/factory/tenant/contacts/{id},GET PATCH,none declared,nodejs,src/app/api/factory/tenant/contacts/[id]/route.ts
 /api/grammar/check,POST,none declared,nodejs,src/app/api/grammar/check/route.ts
 /api/health,GET,public intended (allowlist; verify handler),nodejs,src/app/api/health/route.ts
 /api/lead,POST,public intended (allowlist; verify handler),nodejs,src/app/api/lead/route.ts

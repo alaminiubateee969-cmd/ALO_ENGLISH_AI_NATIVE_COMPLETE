@@ -3,7 +3,7 @@
 # Production is deployed by Hostinger's automatic Git deployment:
 #   push to main → Hostinger pulls → npm install → npm run build
 #                → npx prisma migrate deploy → node server.js
-#                → https://english.aloeducation.com
+#                → https://english.alolabs.net
 #
 # Nothing in this repository can push to production, and that is deliberate.
 # This workflow previously deployed over SSH with a process manager to a VPS at
@@ -31,13 +31,13 @@ on:
   workflow_dispatch:
     inputs:
       enforce_live_probe:
-        description: "Fail the run if https://english.aloeducation.com/api/health is not healthy"
+        description: "Fail the run if https://english.alolabs.net/api/health is not healthy"
         type: boolean
         default: true
 
 env:
   NODE_VERSION: "22"
-  APP_URL: "https://english.aloeducation.com"
+  APP_URL: "https://english.alolabs.net"
 
 jobs:
   readiness:
@@ -48,7 +48,7 @@ jobs:
     # secret is needed and nothing is pushed from here; this is an audit trail.
     environment:
       name: production
-      url: https://english.aloeducation.com
+      url: https://english.alolabs.net
 
     steps:
       - name: Checkout
@@ -105,8 +105,9 @@ jobs:
             echo "PORT=3000"
             echo "APP_URL=$APP_URL_VALUE"
             echo "DATABASE_URL=file:/ABSOLUTE/PATH/db/production.db   # must be absolute"
-            echo "APP_DATA_DIR=/ABSOLUTE/PATH                          # survives a redeploy"
-            echo "AUTH_SECRET=<openssl rand -base64 48>"
+          echo "APP_DATA_DIR=/ABSOLUTE/PATH                          # survives a redeploy"
+          echo "EXAM_REQUIRE_LISTENING_AUDIO=true                  # no transcript-only listening exams"
+          echo "AUTH_SECRET=<openssl rand -base64 48>"
             echo '```'
             echo
             echo "### First deploy only"

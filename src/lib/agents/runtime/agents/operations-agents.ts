@@ -472,7 +472,7 @@ const SECURITY_AGENT: AgentDefinitionSpec = {
       select: { answer: true, questionId: true },
       take: 5000,
     });
-    const keyQuestions = await db.question.findMany({
+    const keyQuestions: Array<{ id: string; correctAnswer: string | null }> = await db.question.findMany({
       where: { id: { in: [...new Set(answers.map((a) => a.questionId))].slice(0, 2000) } },
       select: { id: true, correctAnswer: true },
     });

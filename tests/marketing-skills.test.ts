@@ -78,7 +78,7 @@ describe('buildSkillPrompt', () => {
     audience: 'students preparing for a UK master’s application',
     knownFacts: ['Practice sets are listed in the active catalog'],
     callToAction: 'Book a consultation',
-    url: 'https://english.aloeducation.com/book-consultation',
+    url: 'https://english.alolabs.net/book-consultation',
   };
 
   test('is deterministic for identical input', () => {
@@ -169,7 +169,7 @@ describe('safe-claims checker', () => {
         facts: 'Practice sets are listed in the active catalog',
         tone: 'clear and encouraging',
         callToAction: 'Explore practice tests',
-        url: 'https://english.aloeducation.com/exam-prep',
+        url: 'https://english.alolabs.net/exam-prep',
       });
 
       const violations = findUnsafeClaims(draft);

@@ -119,12 +119,12 @@ describe('site origin resolution', () => {
   test('falls back to the production hostname when unset', () => {
     delete process.env.APP_URL;
     delete process.env.NEXTAUTH_URL;
-    expect(resolveSiteUrl()).toBe('https://english.aloeducation.com');
+    expect(resolveSiteUrl()).toBe('https://english.alolabs.net');
   });
 
   test('ignores a malformed URL instead of throwing', () => {
     process.env.APP_URL = 'not a url';
     delete process.env.NEXTAUTH_URL;
-    expect(resolveSiteUrl()).toBe('https://english.aloeducation.com');
+    expect(resolveSiteUrl()).toBe('https://english.alolabs.net');
   });
 });

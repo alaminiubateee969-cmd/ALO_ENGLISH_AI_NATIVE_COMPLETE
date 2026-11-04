@@ -57,10 +57,10 @@ describe('Listening audio asset validation', () => {
     try {
       const expected = join(publicDir, 'audio', 'listening', 'q1.mp3');
       await writeFile(expected, fakeMp3());
-      expect(resolvePublicListeningFile('/audio/listening/q1.mp3', publicDir, 'https://english.aloeducation.com')).toBe(expected);
-      expect(resolvePublicListeningFile('https://evil.example/audio/listening/q1.mp3', publicDir, 'https://english.aloeducation.com')).toBeNull();
-      expect(resolvePublicListeningFile('/audio/listening/%2e%2e/%2e%2e/secret.mp3', publicDir, 'https://english.aloeducation.com')).toBeNull();
-      expect(resolvePublicListeningFile('/upload/audio/q1.mp3', publicDir, 'https://english.aloeducation.com')).toBeNull();
+      expect(resolvePublicListeningFile('/audio/listening/q1.mp3', publicDir, 'https://english.alolabs.net')).toBe(expected);
+      expect(resolvePublicListeningFile('https://evil.example/audio/listening/q1.mp3', publicDir, 'https://english.alolabs.net')).toBeNull();
+      expect(resolvePublicListeningFile('/audio/listening/%2e%2e/%2e%2e/secret.mp3', publicDir, 'https://english.alolabs.net')).toBeNull();
+      expect(resolvePublicListeningFile('/upload/audio/q1.mp3', publicDir, 'https://english.alolabs.net')).toBeNull();
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -100,7 +100,7 @@ describe('Listening audio asset validation', () => {
     });
     try {
       const counts = await runAudioVerification(prisma as never, {
-        baseUrl: 'https://english.aloeducation.com',
+        baseUrl: 'https://english.alolabs.net',
         publicDir,
       });
       expect(counts).toEqual({ eligible: 2, verified: 1, failed: 1 });

@@ -24,6 +24,7 @@ import { ok, unauthorized, badRequest, withErrorHandler } from "@/lib/responses"
 import { requireAuth } from "@/lib/auth";
 import { drainQueue, syncAgentDefinitions, registeredAgents } from "@/lib/agents/runtime/runtime";
 import { queueStats } from "@/lib/agents/runtime/queue";
+import { hasValidWorkerToken } from "@/lib/agents/worker-auth";
 import "@/lib/agents/runtime";
 
 export const runtime = "nodejs";
@@ -38,11 +39,7 @@ export async function POST(req: Request): Promise<Response> {
     const agentCode = typeof body.agentCode === "string" ? body.agentCode : null;
 
     // ── Authorisation ────────────────────────────────────────────────────
-    const token = (process.env.AGENT_WORKER_TOKEN || "").trim();
-    const provided = req.headers.get("x-agent-worker-token")?.trim() ?? "";
-    const tokenAccepted = token.length > 0 && provided.length > 0 && provided === token;
-
-    if (!tokenAccepted) {
+    if (!hasValidWorkerToken(req)) {
       const user = await requireAuth();
       if (!ADMIN_ROLES.has(user.role)) {
         return unauthorized("Administrator role required to run the agent worker");
@@ -71,10 +68,7 @@ export async function POST(req: Request): Promise<Response> {
 /** GET — the queue's current state, for the admin monitor. */
 export async function GET(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
-    const token = (process.env.AGENT_WORKER_TOKEN || "").trim();
-    const provided = req.headers.get("x-agent-worker-token")?.trim() ?? "";
-    const tokenAccepted = token.length > 0 && provided.length > 0 && provided === token;
-    if (!tokenAccepted) {
+    if (!hasValidWorkerToken(req)) {
       const user = await requireAuth();
       if (!ADMIN_ROLES.has(user.role)) {
         return unauthorized("Administrator role required");

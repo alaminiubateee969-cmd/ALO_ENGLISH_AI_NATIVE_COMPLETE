@@ -12,13 +12,14 @@
   "installSubDirectory": "/",
   "environmentVariables": {
     "NODE_ENV": "production",
-    "APP_URL": "https://english.aloeducation.com",
+    "APP_URL": "https://english.alolabs.net",
     "APP_PORT": "3000",
     "PORT": "3000",
     "HOSTNAME": "0.0.0.0",
     "DATABASE_URL": "SET_AN_ABSOLUTE_PATH_IN_THE_PANEL__file:/home/<user>/alo-data/db/production.db",
     "AUTH_SECRET": "GENERATE_WITH__openssl_rand_-base64_48",
     "APP_DATA_DIR": "SET_AN_ABSOLUTE_PATH_IN_THE_PANEL__outside_the_release_directory",
+    "EXAM_REQUIRE_LISTENING_AUDIO": "true",
     "AI_ENABLED": "false"
   },
   "_environmentNotes": {
