@@ -68,7 +68,7 @@ export default function Marketing({ navigate }: Nav) {
   const [facts, setFacts] = useState(DEFAULT_MARKETING_FACTS);
   const [tone, setTone] = useState("clear and encouraging");
   const [callToAction, setCallToAction] = useState("Explore practice tests");
-  const [url, setUrl] = useState("https://english.aloeducation.com/practice-test");
+  const [url, setUrl] = useState("https://english.alolabs.net/practice-test");
   const [content, setContent] = useState("");
   const [drafts, setDrafts] = useState<CampaignDraft[]>([]);
   const [copied, setCopied] = useState(false);

@@ -1,24 +1,24 @@
 Directory,Files,Purpose
 .github,7,CI and deployment-readiness workflows
 .zscripts,6,Local dev/build/start helpers for the optional self-managed path
-(root),70,"Application config, entry point and top-level documentation"
+(root),72,"Application config, entry point and top-level documentation"
 cpanel-production,137,"Legacy PHP deliverables, served to SUPER_ADMIN by /api/deliverable*"
 db,1,Runtime database directory (contents git-ignored)
 deploy,4,
-docs,84,"Architecture decisions, audits and archived documentation"
+docs,87,"Architecture decisions, audits and archived documentation"
 download,1,Runtime downloads (contents git-ignored)
 examples,2,"Reference examples, not part of the build"
 mini-services,4,"Optional standalone sidecar services, not deployed by default"
-prisma,30,"Schema, migrations and seed scripts — the only way to provision prod"
+prisma,31,"Schema, migrations and seed scripts — the only way to provision prod"
 public,32,"Static assets, copied into .next/standalone by the build"
-scripts,28,"Build, verification, backup and seeding tooling"
-server-config,5,"Optional self-managed deployment (systemd, Caddy, nginx)"
+scripts,33,"Build, verification, backup and seeding tooling"
+server-config,6,"Optional self-managed deployment (systemd, Caddy, nginx)"
 src,1,"TypeScript sources outside app/, components/, hooks/ and lib/"
-src/app,166,"App Router: pages, layouts and API route handlers"
-src/components,115,"React components (alo/, ai-os/, site/, ui/ shadcn primitives)"
+src/app,183,"App Router: pages, layouts and API route handlers"
+src/components,116,"React components (alo/, ai-os/, site/, ui/ shadcn primitives)"
 src/hooks,2,Client hooks
-src/lib,104,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
-tests,44,bun test suites run by CI
+src/lib,111,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
+tests,47,bun test suites run by CI
 upload,1,Runtime uploads (contents git-ignored)
 vendor,1,
-TOTAL,845,Tracked and intended worktree content for a deploy
+TOTAL,885,Tracked and intended worktree content for a deploy

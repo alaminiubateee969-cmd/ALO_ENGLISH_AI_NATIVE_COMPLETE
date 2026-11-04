@@ -1,0 +1,9 @@
+# Host-specific template — installing this file is an operator action.
+# Keep secrets in /home/aloedu/.alo-english-agent-worker.env (mode 0600), not here.
+# Required values in that file:
+#   AGENT_WORKER_TOKEN=<same strong secret as the app>
+#   AGENT_WORKER_URL=http://127.0.0.1:3000
+#   AGENT_WORKER_LOG=/home/aloedu/alo-english-logs/agent-worker.log
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+*/5 * * * * aloedu cd /home/aloedu/projects/ALO_ENGLISH_AI_NATIVE_COMPLETE && /usr/bin/flock -n /tmp/alo-english-agent-worker.lock /bin/bash -c 'set -a; source /home/aloedu/.alo-english-agent-worker.env; set +a; node scripts/agent-worker.mjs --once --max 20'

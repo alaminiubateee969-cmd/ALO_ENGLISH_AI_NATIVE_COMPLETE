@@ -37,7 +37,7 @@ describe('sitemap route', () => {
     expect(entries).toHaveLength(INDEXABLE_PUBLIC_ROUTES.length);
 
     for (const entry of entries) {
-      expect(entry.url.startsWith('https://english.aloeducation.com')).toBe(true);
+      expect(entry.url.startsWith('https://english.alolabs.net')).toBe(true);
       expect(entry.changeFrequency).toBeDefined();
       expect(entry.priority).toBeGreaterThan(0);
       expect(entry.lastModified).toBeInstanceOf(Date);
@@ -48,7 +48,7 @@ describe('sitemap route', () => {
   test('renders the home page as the bare origin, with no trailing slash', () => {
     delete process.env.APP_URL;
     const entries = sitemap();
-    expect(entries[0].url).toBe('https://english.aloeducation.com');
+    expect(entries[0].url).toBe('https://english.alolabs.net');
   });
 
   test('never includes a private or API path', () => {

@@ -24,7 +24,7 @@ const SCRIPT_DIR = fileURLToPath(new URL('../.audio-scripts/', import.meta.url))
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const PUBLIC_DIR = join(ROOT, 'public');
 const AUDIO_DIR = join(PUBLIC_DIR, 'audio', 'listening');
-const PUBLIC_ORIGIN = process.env.AUDIO_PUBLIC_ORIGIN || process.env.APP_URL || 'https://english.aloeducation.com';
+const PUBLIC_ORIGIN = process.env.AUDIO_PUBLIC_ORIGIN || process.env.APP_URL || 'https://english.alolabs.net';
 const VOICES = [
   'en-US-GuyNeural',
   'en-US-JennyNeural',

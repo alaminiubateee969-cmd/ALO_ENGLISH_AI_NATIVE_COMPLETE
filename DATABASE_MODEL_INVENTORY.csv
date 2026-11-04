@@ -63,3 +63,21 @@ AgentApproval,AI Agent Workforce,14,2,id (@id),"@@index(status,createdAt); @@ind
 AgentMetric,AI Agent Workforce,15,1,"id (@id); @@unique(agentId,day)",@@index(day)
 ExamBlueprint,AI Agent Workforce,9,0,"id (@id); @@unique(examTypeCode,version)",@@index(examTypeCode)
 DailyQuestionRun,AI Agent Workforce,15,0,"id (@id); @@unique(day,examTypeCode)",@@index(day)
+FactoryCompany,BDTECH360 Private Software Factory,10,4,id (@id); slug (@unique),"@@index(relationship,status)"
+FactoryTemplate,BDTECH360 Private Software Factory,9,2,id (@id); slug (@unique),"@@index(category,status)"
+FactoryTemplateVersion,BDTECH360 Private Software Factory,13,4,"id (@id); @@unique(templateId,version)",@@index(status)
+FactoryModule,BDTECH360 Private Software Factory,8,1,id (@id); slug (@unique),-
+FactoryModuleVersion,BDTECH360 Private Software Factory,10,2,"id (@id); @@unique(moduleId,version)",@@index(status)
+FactoryTemplateModule,BDTECH360 Private Software Factory,5,2,"id (@id); @@unique(templateVersionId,moduleVersionId)",@@index(moduleVersionId)
+FactoryApplication,BDTECH360 Private Software Factory,15,9,id (@id); domain (@unique),"@@index(companyId,status); @@index(templateVersionId)"
+FactoryConfigRevision,BDTECH360 Private Software Factory,8,1,"id (@id); @@unique(applicationId,revision)",-
+FactoryMembership,BDTECH360 Private Software Factory,7,1,"id (@id); @@unique(companyId,userId)","@@index(userId,status)"
+FactoryProvisioningRun,BDTECH360 Private Software Factory,8,1,id (@id),"@@index(applicationId,startedAt)"
+FactoryDeployment,BDTECH360 Private Software Factory,8,1,"id (@id); @@unique(applicationId,environment)",@@index(status)
+FactoryRelease,BDTECH360 Private Software Factory,10,2,"id (@id); @@unique(applicationId,version)","@@index(templateVersionId,status)"
+FactoryApproval,BDTECH360 Private Software Factory,9,1,id (@id),"@@index(applicationId,status)"
+FactoryBackup,BDTECH360 Private Software Factory,10,1,id (@id),"@@index(applicationId,createdAt)"
+FactoryIntegration,BDTECH360 Private Software Factory,9,0,"id (@id); @@unique(companyId,providerKey)","@@index(companyId,status)"
+FactoryChangeRequest,BDTECH360 Private Software Factory,10,1,id (@id),"@@index(status,kind)"
+FactoryAuditEvent,BDTECH360 Private Software Factory,8,2,id (@id),"@@index(companyId,createdAt); @@index(applicationId,createdAt); @@index(actorUserId,createdAt)"
+FactoryContact,BDTECH360 Private Software Factory,9,1,id (@id),"@@index(companyId,email); @@index(companyId,name)"

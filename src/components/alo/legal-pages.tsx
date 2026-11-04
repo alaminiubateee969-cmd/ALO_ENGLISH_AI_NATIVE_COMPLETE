@@ -26,7 +26,7 @@ const LEGAL_CONTENT: Record<LegalPage, { title: string; icon: any; content: { h:
     title: "Terms of Service",
     icon: FileText,
     content: [
-      { h: "1. Acceptance of Terms", p: ["By using the ALO English Test Platform (english.aloeducation.com), you agree to these Terms of Service.", "If you do not agree, please do not use the platform."] },
+      { h: "1. Acceptance of Terms", p: ["By using the ALO English Test Platform (english.alolabs.net), you agree to these Terms of Service.", "If you do not agree, please do not use the platform."] },
       { h: "2. Practice Platform Only", p: ["This is a practice platform. All tests, scores, feedback, and certificates are practice estimates only.", "Not official exam results. No guarantee that questions will appear in real exam.", "Official exam results are issued only by authorised test providers (IELTS, PTE, TOEFL, Duolingo, OIETC, OET, SAT, GRE, GMAT, LSAT, MCAT, ACT).", "We do not claim official partnership with any test provider unless supported by written authorization."] },
       { h: "3. Free & Unlimited Access", p: ["Every exam, mock test and practice feature is free and unlimited for every registered learner, 24/7.", "There is no paid tier, no quota and nothing to purchase.", "Usage is recorded on our backend for score history and analytics.", "Creating multiple accounts to mislead analytics is prohibited and may result in account suspension."] },
       { h: "4. Original Content", p: ["All questions, passages, audio scripts, and prompts are 100% original content.", "We do not use official exam questions, leaked questions, or copyrighted content.", "Users may not copy, redistribute, or republish platform content."] },

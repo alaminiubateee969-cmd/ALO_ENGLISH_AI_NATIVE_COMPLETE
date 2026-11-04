@@ -29,8 +29,6 @@
  * moves on. There is no read-then-write window.
  */
 
-import { Prisma } from "@prisma/client";
-
 import { db } from "@/lib/db";
 import type { EnqueueOptions, JobErrorKind } from "./types";
 
@@ -116,7 +114,7 @@ export async function enqueueJob(
   } catch (error) {
     // A concurrent enqueue of the same idempotency key wins the unique
     // constraint. Return that job rather than failing the caller.
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
       if (scope && key) {
         const existing = await db.agentJob.findFirst({
           where: { idempotencyScope: scope, idempotencyKey: key },

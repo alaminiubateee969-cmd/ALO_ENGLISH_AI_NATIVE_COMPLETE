@@ -178,7 +178,7 @@ if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
   echo "═══════════════════════════════════════════════════════════"
   echo "  Hostinger deploys automatically from $BRANCH. Pushing starts"
   echo "  a production build within seconds: npm install, npm run build,"
-  echo "  then the app restarts on https://english.aloeducation.com."
+  echo "  then the app restarts on https://english.alolabs.net."
   echo ""
   echo "  There is no approval step and no staging environment."
   echo "═══════════════════════════════════════════════════════════"
@@ -213,7 +213,7 @@ if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
   echo "  Watch the deploy:"
   echo "    https://github.com/$(git config --get remote.origin.url | sed -E 's#(https://github.com/|git@github.com:)##; s#\.git$##')/actions"
   echo "  Then verify:"
-  echo "    curl https://english.aloeducation.com/api/health"
+  echo "    curl https://english.alolabs.net/api/health"
   echo ""
   echo "  See HOSTINGER_DEPLOYMENT.md → \"Verify a release\"."
 fi

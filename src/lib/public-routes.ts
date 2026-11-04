@@ -69,6 +69,7 @@ export const NON_INDEXABLE_PREFIXES: readonly string[] = [
   '/partner',
   '/employee',
   '/super-admin',
+  '/factory',
   '/practice-test',
   '/live-exam',
   '/login',
@@ -92,7 +93,7 @@ export function resolveSiteUrl(): string {
       // fall through to the default below
     }
   }
-  return 'https://english.aloeducation.com';
+  return 'https://english.alolabs.net';
 }
 
 /** True when a path is excluded from crawling by NON_INDEXABLE_PREFIXES. */

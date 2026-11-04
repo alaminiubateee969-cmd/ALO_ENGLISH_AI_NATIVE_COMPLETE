@@ -1543,3 +1543,328 @@ model DailyQuestionRun {
   @@unique([day, examTypeCode])
   @@index([day])
 }
+
+// ═══ BDTECH360 Private Software Factory ═══════════════════════════════
+// The factory control plane is deliberately separate from tenant business
+// records. Global platform administrators do not implicitly receive tenant
+// membership or access to customer data.
+
+model FactoryCompany {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  legalName     String
+  relationship  String   // PARENT|SISTER|CLIENT|INTERNAL
+  industry      String
+  status        String   @default("ACTIVE") // ACTIVE|SUSPENDED|RETIRED
+  contractStatus String  @default("INTERNAL")
+  supportStatus String   @default("STANDARD")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  applications FactoryApplication[]
+  memberships  FactoryMembership[]
+  contacts     FactoryContact[]
+  auditEvents  FactoryAuditEvent[]
+
+  @@index([relationship, status])
+}
+
+model FactoryTemplate {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  category    String
+  description String
+  status      String   @default("DRAFT") // DRAFT|ACTIVE|RETIRED
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions FactoryTemplateVersion[]
+  changes  FactoryChangeRequest[]
+
+  @@index([category, status])
+}
+
+model FactoryTemplateVersion {
+  id                 String   @id @default(cuid())
+  templateId         String
+  version            String
+  status             String   @default("DRAFT") // DRAFT|APPROVED|RETIRED
+  configurationSchema String
+  navigation         String
+  workflows          String
+  acceptanceTests    String
+  releaseNotes       String
+  sourceCommit       String?
+  approvedBy         String?
+  approvedAt         DateTime?
+  createdAt          DateTime @default(now())
+
+  template     FactoryTemplate          @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  moduleLinks  FactoryTemplateModule[]
+  applications FactoryApplication[]
+  releases     FactoryRelease[]
+
+  @@unique([templateId, version])
+  @@index([status])
+}
+
+model FactoryModule {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  category    String
+  description String
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions FactoryModuleVersion[]
+}
+
+model FactoryModuleVersion {
+  id             String   @id @default(cuid())
+  moduleId       String
+  version        String
+  status         String   @default("APPROVED")
+  capabilities   String
+  dependencies   String
+  compatibility  String
+  acceptanceTests String
+  releaseNotes   String
+  createdAt      DateTime @default(now())
+
+  module       FactoryModule           @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  templateLinks FactoryTemplateModule[]
+
+  @@unique([moduleId, version])
+  @@index([status])
+}
+
+model FactoryTemplateModule {
+  id                String   @id @default(cuid())
+  templateVersionId String
+  moduleVersionId   String
+  required          Boolean  @default(true)
+  configuration     String   @default("{}")
+
+  templateVersion FactoryTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
+  moduleVersion   FactoryModuleVersion   @relation(fields: [moduleVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([templateVersionId, moduleVersionId])
+  @@index([moduleVersionId])
+}
+
+model FactoryApplication {
+  id                 String   @id @default(cuid())
+  companyId          String
+  templateVersionId  String
+  name               String
+  deploymentModel    String   // SHARED_TENANT|DEDICATED
+  status             String   @default("DRAFT") // DRAFT|VALIDATED|PROVISIONING|TEST_FAILED|STAGING|AWAITING_APPROVAL|LIVE|DEGRADED|ROLLED_BACK|RETIRED
+  configuration      String
+  branding           String
+  currentReleaseId   String?
+  domain             String?  @unique
+  healthStatus       String   @default("UNKNOWN")
+  lastHealthCheckAt  DateTime?
+  createdBy          String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company         FactoryCompany          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  templateVersion FactoryTemplateVersion  @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+  revisions       FactoryConfigRevision[]
+  provisioningRuns FactoryProvisioningRun[]
+  deployments     FactoryDeployment[]
+  releases        FactoryRelease[]
+  approvals       FactoryApproval[]
+  backups         FactoryBackup[]
+  auditEvents     FactoryAuditEvent[]
+
+  @@index([companyId, status])
+  @@index([templateVersionId])
+}
+
+model FactoryConfigRevision {
+  id            String   @id @default(cuid())
+  applicationId String
+  revision      Int
+  configuration String
+  branding      String
+  reason        String
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  application FactoryApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, revision])
+}
+
+model FactoryMembership {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  role      String   // COMPANY_ADMIN|OPERATOR|VIEWER
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company FactoryCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([userId, status])
+}
+
+model FactoryProvisioningRun {
+  id            String   @id @default(cuid())
+  applicationId String
+  status        String   // RUNNING|PASSED|TEST_FAILED|BLOCKED
+  checks        String
+  error         String?
+  startedBy     String
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+
+  application FactoryApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, startedAt])
+}
+
+model FactoryDeployment {
+  id            String   @id @default(cuid())
+  applicationId String
+  environment   String   // STAGING|PRODUCTION
+  status        String   // READY|BLOCKED|DEPLOYED|DEGRADED|ROLLED_BACK
+  adapter       String
+  details       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application FactoryApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, environment])
+  @@index([status])
+}
+
+model FactoryRelease {
+  id                String   @id @default(cuid())
+  applicationId     String
+  templateVersionId String
+  version           String
+  status            String    // STAGING|ACTIVE|SUPERSEDED|ROLLED_BACK
+  releaseNotes      String
+  impactAssessment  String
+  rollbackPlan      String
+  createdBy         String
+  createdAt         DateTime @default(now())
+
+  application     FactoryApplication     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  templateVersion FactoryTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([applicationId, version])
+  @@index([templateVersionId, status])
+}
+
+model FactoryApproval {
+  id            String   @id @default(cuid())
+  applicationId String
+  action        String   // ACTIVATE|UPGRADE|ROLLBACK|RETIRE
+  status        String   @default("PENDING")
+  requestedBy   String
+  decidedBy     String?
+  note          String?
+  createdAt     DateTime @default(now())
+  decidedAt     DateTime?
+
+  application FactoryApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, status])
+}
+
+model FactoryBackup {
+  id            String   @id @default(cuid())
+  applicationId String
+  location      String
+  sha256        String
+  byteSize      Int
+  integrity     String
+  definitionPath String
+  status        String   // VERIFIED|FAILED
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  application FactoryApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+}
+
+model FactoryIntegration {
+  id            String   @id @default(cuid())
+  companyId     String
+  providerKey   String
+  status        String   @default("DISABLED") // DISABLED|CONFIGURED|ERROR
+  credentialRef String?
+  configuration String   @default("{}")
+  lastCheckedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, providerKey])
+  @@index([companyId, status])
+}
+
+model FactoryChangeRequest {
+  id          String   @id @default(cuid())
+  templateId  String?
+  kind        String   // BUG|FEATURE|SECURITY|CUSTOMIZATION
+  title       String
+  description String
+  disposition String   // SHARED_CORE|REUSABLE_MODULE|CONFIGURATION|CLIENT_EXTENSION|UNDECIDED
+  status      String   @default("OPEN") // OPEN|IN_REVIEW|APPROVED|IMPLEMENTED|REJECTED
+  requestedBy String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  template FactoryTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([status, kind])
+}
+
+model FactoryAuditEvent {
+  id            String   @id @default(cuid())
+  companyId     String?
+  applicationId String?
+  actorUserId   String
+  action        String
+  resource      String
+  metadata      String?
+  createdAt     DateTime @default(now())
+
+  company     FactoryCompany?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  application FactoryApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([applicationId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+// First tenant-scoped reusable business module. It is intentionally small:
+// its purpose is to enforce and test the same boundary later modules must use.
+model FactoryContact {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  email       String?
+  phone       String?
+  notes       String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company FactoryCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, email])
+  @@index([companyId, name])
+}

@@ -226,7 +226,7 @@ async function callOpenAiCompatible(
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
-      ...(provider === "openrouter" ? { "HTTP-Referer": process.env.APP_URL || "https://english.aloeducation.com" } : {}),
+      ...(provider === "openrouter" ? { "HTTP-Referer": process.env.APP_URL || "https://english.alolabs.net" } : {}),
     },
     body: JSON.stringify(body),
     signal,
