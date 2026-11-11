@@ -87,7 +87,7 @@ export async function provisionApplication(applicationId: string, actorUserId: s
     const [scopedApplication, crossCompanyApplication, latestRevision] = await Promise.all([
       tx.factoryApplication.count({ where: { id: applicationId, companyId: application.companyId } }),
       tx.factoryApplication.count({ where: { id: applicationId, companyId: { not: application.companyId } } }),
-      tx.factoryConfigurationRevision.findFirst({
+      tx.factoryConfigRevision.findFirst({
         where: { applicationId, revision: application.revisions[0]?.revision ?? -1 },
         select: { id: true, configuration: true },
       }),

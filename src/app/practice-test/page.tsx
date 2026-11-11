@@ -7,6 +7,7 @@ import {
   collectDeviceFingerprint,
   TAB_SWITCH_WARNING_THRESHOLD,
   TAB_SWITCH_AUTO_SUBMIT_THRESHOLD,
+  type DeviceFingerprint,
 } from "@/lib/exam/device-fingerprint-client";
 
 /** Key used to survive a page refresh within the same browser tab session. */
@@ -365,10 +366,10 @@ export default function PracticeTestPage() {
       // server can stamp it onto the attempt atomically. Failures are
       // non-fatal: a student on a browser that blocks canvas/WebGL still
       // gets to start; the attempt simply has no device trail.
-      let devicePayload: Awaited<ReturnType<typeof collectDeviceFingerprint>>["fingerprint"] | undefined;
+      let devicePayload: DeviceFingerprint | undefined;
       try {
         const collected = await collectDeviceFingerprint();
-        devicePayload = collected.fingerprint;
+        devicePayload = collected;
       } catch {
         // SSR or unsupported browser — the start API tolerates a missing
         // fingerprint and proceeds without device verification.
