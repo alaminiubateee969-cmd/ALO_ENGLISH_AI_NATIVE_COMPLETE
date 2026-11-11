@@ -11,28 +11,48 @@ export function DashboardShell({
   title,
   nav,
   role,
+  roles,
   children,
 }: {
   title: string;
   nav: NavItem[];
-  role: string;
+  /** A single permitted role. Prefer `roles` when more than one may open the screen. */
+  role?: string;
+  /**
+   * Every role that may open this screen. Needed because the CRM's permissions
+   * are not a hierarchy: a counsellor and a super admin both resolve review
+   * entries, and an exact-match check on one role would lock one of them out.
+   */
+  roles?: string[];
   children: React.ReactNode;
 }) {
+  const allowedRoles = roles ?? (role ? [role] : []);
+  const allowedLabel = allowedRoles.join(", ");
   const router = useRouter();
   const [user, setUser] = useState<{ name?: string; email: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) setUser(data.data.user);
-        else router.push("/login");
+        if (!data.success) {
+          router.replace("/login");
+          return;
+        }
+        if (allowedRoles.length > 0 && !allowedRoles.includes(data.data.user.role)) {
+          setAccessDenied(true);
+          return;
+        }
+        setUser(data.data.user);
       })
-      .catch(() => router.push("/login"))
+      .catch(() => router.replace("/login"))
       .finally(() => setLoading(false));
-  }, [router]);
+    // The dependency is the joined label rather than the array: a fresh array
+    // literal on every render would re-run this check in a loop.
+  }, [router, allowedRoles.length, allowedLabel]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -47,6 +67,19 @@ export function DashboardShell({
     );
   }
 
+  if (accessDenied) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <div className="max-w-md rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-slate-900">Access denied</h1>
+          <p className="mt-2 text-sm text-slate-600">This dashboard is restricted to {allowedLabel} accounts.</p>
+          <Link href="/" className="mt-4 inline-flex min-h-11 items-center font-medium text-blue-700 underline underline-offset-2">
+            Return to the home page
+          </Link>
+        </div>
+      </main>
+    );
+  }
   if (!user) return null;
 
   return (

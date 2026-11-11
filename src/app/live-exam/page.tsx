@@ -3,28 +3,22 @@
 /**
  * src/app/live-exam/page.tsx
  *
- * Real-Time Live Voice AI Examiner — the flagship feature.
+ * Session-only conversational speaking practice.
  *
- * This page conducts a REAL conversational AI speaking exam:
- *   1. Student clicks "Start Exam" → examiner greets (TTS voice)
- *   2. Student clicks "Record" → speaks into microphone (MediaRecorder)
- *   3. Audio uploaded → ASR transcribes speech → text sent to LLM
- *   4. LLM generates examiner's next response → TTS synthesizes voice
- *   5. Examiner speaks (audio playback + avatar speaking animation)
- *   6. State machine advances: Introduction → Part 1 → Part 2 → Part 3 → Closing
- *   7. On completion → scores recorded → redirect to results
+ * This page records audio in the browser, sends it to the configured speech
+ * recognition service for a transcript, and requests a conversational reply.
+ * It does not create a persisted exam attempt or produce a speaking score.
+ *   1. Student starts a practice conversation with synthetic voice.
+ *   2. Browser captures a short audio clip and submits it for transcription.
+ *   3. The transcript is sent to a configured conversational response service.
+ *   4. The response is played using generated or browser speech.
+ *   5. Turns and recording URLs exist only in the current browser session.
  *
- * Uses:
- *   - /api/speaking/transcribe   (STT via z-ai-web-dev-sdk)
- *   - /api/speaking/examiner-respond (LLM + TTS)
- *   - /api/speaking/examiner-voice (TTS only)
- *   - /api/examiners (get examiner persona)
- *   - ExaminerStateMachine (turn-taking)
- *   - ConversationMemory (context)
- *   - FollowUpEngine (context-aware questions)
+ * This is not a scored test. Provider processing and retention are governed
+ * by the configured service; learners should not submit sensitive information.
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ExaminerAvatar } from "@/components/exam/ExaminerAvatar";
@@ -44,16 +38,22 @@ type Turn = {
 
 type ExamPhase = "not-started" | "greeting" | "awaiting-student" | "recording" | "transcribing" | "examiner-responding" | "examiner-speaking" | "completed";
 
+// Browser capability reads for useSyncExternalStore. The server snapshot stays
+// optimistic so server HTML and the hydration render agree.
+const subscribeToNothing = () => () => {};
+const isMicSupported = () => SpeakingRecorder.isSupported();
+const isMicSupportedOnServer = () => true;
+
 const STATE_LABELS: Record<string, string> = {
-  introduction: "Introduction",
-  part1_questions: "Part 1: Interview",
-  part2_instructions: "Part 2: Cue Card",
-  part2_preparation: "Part 2: Preparation",
-  part2_long_turn: "Part 2: Long Turn",
-  part2_followup: "Part 2: Follow-up",
-  part3_discussion: "Part 3: Discussion",
-  closing: "Closing",
-  completed: "Completed",
+  introduction: "Speaking practice: Introduction",
+  part1_questions: "Speaking practice: Conversation",
+  part2_instructions: "Speaking practice: Topic prompt",
+  part2_preparation: "Speaking practice: Preparation",
+  part2_long_turn: "Speaking practice: Longer response",
+  part2_followup: "Speaking practice: Follow-up",
+  part3_discussion: "Speaking practice: Broader discussion",
+  closing: "Speaking practice: Closing",
+  completed: "Conversation complete",
 };
 
 export default function LiveExamPage() {
@@ -61,146 +61,47 @@ export default function LiveExamPage() {
 
   const [examiner, setExaminer] = useState<AIExaminer>(AI_EXAMINERS[1]);
   const [phase, setPhase] = useState<ExamPhase>("not-started");
+  const [typedAnswer, setTypedAnswer] = useState("");
   const [currentState, setCurrentState] = useState<string>("introduction");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string>("");
-  const [micSupported, setMicSupported] = useState(true);
-
   const recorderRef = useRef<SpeakingRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingUrlsRef = useRef<string[]>([]);
 
-  // Check microphone support on mount
-  useEffect(() => {
-    if (!SpeakingRecorder.isSupported()) {
-      setMicSupported(false);
-      setError("Your browser does not support microphone recording. Please use Chrome, Firefox, or Edge.");
-    }
+  // Microphone support is a browser capability, so it is read through
+  // useSyncExternalStore: the server snapshot stays optimistic (true) to keep
+  // hydration stable, then React re-reads the real value after hydration.
+  const micSupported = useSyncExternalStore(
+    subscribeToNothing,
+    isMicSupported,
+    isMicSupportedOnServer
+  );
+
+  // ─── Browser speech synthesis fallback (if TTS API fails) ─────────────
+  const speakWithBrowser = useCallback((text: string) => {
+    if (!text || typeof window === "undefined" || !window.speechSynthesis) return;
+    setPhase("examiner-speaking");
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.onend = () => {
+      setPhase((prev) => (prev === "examiner-speaking" ? "awaiting-student" : prev));
+    };
+    window.speechSynthesis.speak(utterance);
   }, []);
 
-  // ─── Start the exam: greet the student ─────────────────────────────────
-  const startExam = useCallback(async () => {
-    setError("");
-    setPhase("greeting");
-    setTurns([]);
-
-    try {
-      // Fetch examiner greeting via examiner-respond API (no transcript needed)
-      const response = await fetch("/api/speaking/examiner-respond", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          transcript: "",
-          history: [],
-          currentState: "introduction",
-          examinerId: examiner.id,
-        }),
+  // ─── Play examiner audio ──────────────────────────────────────────────
+  const playExaminerAudio = useCallback((audioUrl: string) => {
+    setPhase("examiner-speaking");
+    if (audioRef.current) {
+      audioRef.current.src = audioUrl;
+      audioRef.current.play().catch(() => {
+        // Autoplay blocked — show play button
+        speakWithBrowser("");
       });
-
-      if (!response.ok) throw new Error("Failed to start exam");
-      const data = await response.json();
-
-      if (!data.success) throw new Error(data.message || "Failed to start exam");
-
-      const greetingTurn: Turn = {
-        role: "examiner",
-        text: data.data.text,
-        timestamp: new Date().toISOString(),
-        audioUrl: data.data.audioBase64
-          ? `data:${data.data.audioMimeType || "audio/wav"};base64,${data.data.audioBase64}`
-          : undefined,
-      };
-
-      setTurns([greetingTurn]);
-      setCurrentState(data.data.nextState || "introduction");
-
-      // Play examiner voice
-      if (greetingTurn.audioUrl) {
-        playExaminerAudio(greetingTurn.audioUrl);
-      } else {
-        // Use browser speech synthesis as fallback
-        speakWithBrowser(greetingTurn.text);
-      }
-
-      // After greeting, listen for student
-      setTimeout(() => setPhase("awaiting-student"), 1000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start exam");
-      setPhase("not-started");
-    }
-  }, [examiner]);
-
-  // ─── Start recording student speech ──────────────────────────────────
-  const startRecording = useCallback(async () => {
-    setError("");
-    setPhase("recording");
-
-    try {
-      const recorder = new SpeakingRecorder({ maxDurationMs: 120000, minDurationMs: 3000 });
-      recorderRef.current = recorder;
-      await recorder.startRecording();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Microphone access failed");
-      setPhase("awaiting-student");
     }
   }, []);
-
-  // ─── Stop recording and process student speech ───────────────────────
-  const stopRecording = useCallback(async () => {
-    const recorder = recorderRef.current;
-    if (!recorder) return;
-
-    try {
-      const recording: RecordingResult = await recorder.stopRecording();
-
-      // Create a student turn with the audio for immediate feedback
-      const studentTurn: Turn = {
-        role: "student",
-        text: "[Transcribing...]",
-        timestamp: new Date().toISOString(),
-        audioUrl: recording.url,
-      };
-      setTurns((prev) => [...prev, studentTurn]);
-      setPhase("transcribing");
-
-      // Convert blob to base64 for STT API
-      const audioBase64 = await blobToBase64(recording.blob);
-
-      // Call STT API
-      const sttResponse = await fetch("/api/speaking/transcribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ audioBase64 }),
-      });
-
-      if (!sttResponse.ok) throw new Error("Transcription failed");
-      const sttData = await sttResponse.json();
-
-      if (!sttData.success) throw new Error(sttData.message || "Transcription failed");
-
-      const transcript = sttData.data.transcript || "";
-
-      // Update student turn with transcript
-      setTurns((prev) =>
-        prev.map((t, i) =>
-          i === prev.length - 1 ? { ...t, text: transcript || "[No speech detected]" } : t
-        )
-      );
-
-      if (!transcript || transcript.length < 5) {
-        // If no speech detected, ask examiner to repeat
-        setError("I couldn't hear you clearly. Please try speaking again.");
-        setPhase("awaiting-student");
-        return;
-      }
-
-      // Get examiner response
-      await getExaminerResponse(transcript);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Recording processing failed");
-      setPhase("awaiting-student");
-    }
-  }, [turns]);
 
   // ─── Get examiner's response (LLM + TTS) ─────────────────────────────
   const getExaminerResponse = useCallback(
@@ -264,30 +165,165 @@ export default function LiveExamPage() {
     [turns, currentState, examiner.id]
   );
 
-  // ─── Play examiner audio ──────────────────────────────────────────────
-  const playExaminerAudio = useCallback((audioUrl: string) => {
-    setPhase("examiner-speaking");
-    if (audioRef.current) {
-      audioRef.current.src = audioUrl;
-      audioRef.current.play().catch(() => {
-        // Autoplay blocked — show play button
-        speakWithBrowser("");
-      });
-    }
-  }, []);
+  // ─── Start the exam: greet the student ─────────────────────────────────
+  const startExam = useCallback(async () => {
+    setError("");
+    setPhase("greeting");
+    recordingUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    recordingUrlsRef.current = [];
+    setTurns([]);
 
-  // ─── Browser speech synthesis fallback (if TTS API fails) ─────────────
-  const speakWithBrowser = useCallback((text: string) => {
-    if (!text || typeof window === "undefined" || !window.speechSynthesis) return;
-    setPhase("examiner-speaking");
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-    utterance.onend = () => {
-      setPhase((prev) => (prev === "examiner-speaking" ? "awaiting-student" : prev));
+    try {
+      // Fetch examiner greeting via examiner-respond API (no transcript needed)
+      const response = await fetch("/api/speaking/examiner-respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript: "",
+          history: [],
+          currentState: "introduction",
+          examinerId: examiner.id,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to start exam");
+      const data = await response.json();
+
+      if (!data.success) throw new Error(data.message || "Failed to start exam");
+
+      const greetingTurn: Turn = {
+        role: "examiner",
+        text: data.data.text,
+        timestamp: new Date().toISOString(),
+        audioUrl: data.data.audioBase64
+          ? `data:${data.data.audioMimeType || "audio/wav"};base64,${data.data.audioBase64}`
+          : undefined,
+      };
+
+      setTurns([greetingTurn]);
+      setCurrentState(data.data.nextState || "introduction");
+
+      // Play examiner voice
+      if (greetingTurn.audioUrl) {
+        playExaminerAudio(greetingTurn.audioUrl);
+      } else {
+        // Use browser speech synthesis as fallback
+        speakWithBrowser(greetingTurn.text);
+      }
+
+      // After greeting, listen for student
+      setTimeout(() => setPhase("awaiting-student"), 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start exam");
+      setPhase("not-started");
+    }
+  }, [examiner]);
+
+  const processRecording = useCallback(async (recording: RecordingResult) => {
+    recordingUrlsRef.current.push(recording.url);
+    const studentTurn: Turn = {
+      role: "student",
+      text: "[Transcribing...]",
+      timestamp: new Date().toISOString(),
+      audioUrl: recording.url,
     };
-    window.speechSynthesis.speak(utterance);
-  }, []);
+    setTurns((prev) => [...prev, studentTurn]);
+    setPhase("transcribing");
+
+    try {
+      const audioBase64 = await blobToBase64(recording.blob);
+      const sttResponse = await fetch("/api/speaking/transcribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audioBase64 }),
+      });
+
+      if (!sttResponse.ok) throw new Error("Transcription failed");
+      const sttData = await sttResponse.json();
+      if (!sttData.success) throw new Error(sttData.message || "Transcription failed");
+
+      const transcript = typeof sttData.data?.transcript === "string" ? sttData.data.transcript : "";
+      setTurns((prev) => prev.map((turn, index) =>
+        index === prev.length - 1 ? { ...turn, text: transcript || "[No speech detected]" } : turn
+      ));
+
+      if (sttData.data?.providerAvailable === false) {
+        setError("Voice transcription is not configured on this deployment — you can still practise by typing your answer below.");
+        setPhase("awaiting-student");
+        return;
+      }
+
+      if (!transcript || transcript.length < 5) {
+        setError("I couldn't hear you clearly. Please try speaking again — or type your answer below.");
+        setPhase("awaiting-student");
+        return;
+      }
+
+      await getExaminerResponse(transcript);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Recording processing failed");
+      setPhase("awaiting-student");
+    }
+  }, [getExaminerResponse]);
+
+  // ─── Start recording student speech ──────────────────────────────────
+  const startRecording = useCallback(async () => {
+    setError("");
+    setPhase("recording");
+
+    try {
+      const recorder = new SpeakingRecorder({
+        maxDurationMs: 120_000,
+        minDurationMs: 3_000,
+        onMaxDuration: (recording) => {
+          setError("The 2-minute recording limit was reached; the captured audio is being transcribed.");
+          void processRecording(recording);
+        },
+        onError: (message) => {
+          setError(message);
+          setPhase("awaiting-student");
+        },
+      });
+      recorderRef.current = recorder;
+      await recorder.startRecording();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Microphone access failed");
+      setPhase("awaiting-student");
+    }
+  }, [processRecording]);
+
+  // ─── Stop recording and process student speech ───────────────────────
+  const stopRecording = useCallback(async () => {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+
+    try {
+      const recording = await recorder.stopRecording();
+      await processRecording(recording);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Recording processing failed");
+      setPhase("awaiting-student");
+    }
+  }, [processRecording]);
+
+  // ─── Typed-answer fallback ────────────────────────────────────────────
+  // Always available: accessibility, quiet environments, and deployments
+  // with no speech-to-text provider configured. It feeds the exact same
+  // examiner pipeline as spoken answers.
+  const submitTypedAnswer = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      const text = typedAnswer.trim();
+      if (!text || phase !== "awaiting-student") return;
+      setTypedAnswer("");
+      setTurns((prev) => [
+        ...prev,
+        { role: "student", text, timestamp: new Date().toISOString() },
+      ]);
+      await getExaminerResponse(text);
+    },
+    [typedAnswer, phase, getExaminerResponse],
+  );
 
   // ─── Cleanup on unmount ───────────────────────────────────────────────
   useEffect(() => {
@@ -295,9 +331,8 @@ export default function LiveExamPage() {
       if (recorderRef.current) {
         recorderRef.current.cancelRecording();
       }
-      if (recordingStreamRef.current) {
-        recordingStreamRef.current.getTracks().forEach((t) => t.stop());
-      }
+      recordingUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      recordingUrlsRef.current = [];
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -322,10 +357,10 @@ export default function LiveExamPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Live AI Speaking Examiner
+              Speaking Conversation Practice
             </h1>
             <p className="mt-1 text-sm text-slate-600">
-              Real-time conversational AI English speaking test with voice
+              Session-only conversation practice. No saved attempt, official score, or acoustic pronunciation evaluation is produced.
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={() => router.back()}>
@@ -364,7 +399,7 @@ export default function LiveExamPage() {
         {phase === "not-started" && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Choose Your AI Examiner</CardTitle>
+              <CardTitle>Choose a conversation practice guide</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -421,7 +456,7 @@ export default function LiveExamPage() {
 
                 {/* State progress */}
                 <div className="mt-6 w-full">
-                  <p className="mb-2 text-xs font-medium text-slate-500">Test Progress</p>
+                  <p className="mb-2 text-xs font-medium text-slate-500">Conversation flow</p>
                   <div className="flex flex-col gap-1">
                     {Object.entries(STATE_LABELS).map(([key, label]) => {
                       const stateOrder = Object.keys(STATE_LABELS);
@@ -535,6 +570,20 @@ export default function LiveExamPage() {
                           <Mic className="h-7 w-7" />
                         </Button>
                         <p className="text-xs text-slate-400">Click to start speaking</p>
+                        <form onSubmit={submitTypedAnswer} className="mt-2 flex w-full max-w-xl gap-2">
+                          <input
+                            type="text"
+                            value={typedAnswer}
+                            onChange={(e) => setTypedAnswer(e.target.value)}
+                            placeholder="…or type your answer here"
+                            aria-label="Type your answer"
+                            maxLength={2000}
+                            className="min-h-11 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-400 focus:outline-none"
+                          />
+                          <Button type="submit" variant="outline" className="min-h-11" disabled={!typedAnswer.trim()}>
+                            Send
+                          </Button>
+                        </form>
                       </>
                     )}
 
@@ -577,18 +626,13 @@ export default function LiveExamPage() {
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
                           <CheckCircle2 className="h-8 w-8 text-emerald-600" />
                         </div>
-                        <p className="text-lg font-bold text-slate-900">Speaking Test Complete!</p>
-                        <p className="text-center text-sm text-slate-600">
-                          Your conversation has been recorded for evaluation. You can now close this page or return to the dashboard.
+                        <p className="text-lg font-bold text-slate-900">Conversation practice complete</p>
+                        <p className="max-w-xl text-center text-sm text-slate-600">
+                          This session was not saved as an exam attempt and no score was generated. Audio was sent to the configured speech-recognition service; data retention depends on that provider. Do not use this practice flow for sensitive recordings.
                         </p>
-                        <div className="flex gap-2">
-                          <Button onClick={() => router.push("/student/exam-history")} variant="outline">
-                            View History
-                          </Button>
-                          <Button onClick={() => router.push("/student/dashboard")}>
-                            Go to Dashboard
-                          </Button>
-                        </div>
+                        <Button onClick={() => router.push("/student/dashboard")}>
+                          Return to dashboard
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -606,7 +650,7 @@ export default function LiveExamPage() {
               onClick={startExam}
               className="h-14 gap-2 bg-rose-500 px-8 text-base hover:bg-rose-600"
             >
-              <Play className="h-5 w-5" /> Start Live Speaking Test
+              <Play className="h-5 w-5" /> Start conversation practice
             </Button>
           </div>
         )}

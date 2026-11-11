@@ -1,0 +1,161 @@
+# =============================================================================
+# ALO ECOSYSTEM — CANONICAL DOMAIN REGISTRY (Single Source of Truth, §5/§13)
+# Generated: 2026-09-18 | Inspector: Arena Agent (inspection mode)
+# STATUS LANGUAGE (§174): VERIFIED | OBSERVED | CONFIGURED | NOT VERIFIED |
+#                         UNKNOWN | BLOCKED | FAILED | WARNING | OWNER ACTION REQUIRED
+# Every value below carries its evidence status. Nothing is marked VERIFIED
+# without evidence gathered in this inspection.
+# =============================================================================
+
+registry_meta:
+  generated: "2026-09-18"
+  source_repository: alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE
+  source_commit: 8121f0362ed5560531a91570cef82263f006b1b2
+  inspection_mode: true
+  live_probes_possible: https-only (platform-side fetch; no raw DNS/SSH from sandbox)
+
+domains:
+  - domain: english.aloeducation.com
+    service_id: alo-english
+    application: ALO English Test Platform (Next.js 16 standalone)
+    repository: alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE
+    branch: main
+    commit: 8121f0362ed5560531a91570cef82263f006b1b2   # VERIFIED local == origin/main
+    runtime: Node.js 22 + Bun 1.3 (CONFIGURED)
+    app_port_reported: 3016        # from .github/workflows/deploy.yml (CONFIGURED)
+    app_port_alt: 3000             # from README/server-config docs (CONFIGURED, alternative architecture)
+    port_status: CONFLICT-RESOLVED-IN-FAVOR-OF-3016-BY-CD-PIPELINE; live bind NOT VERIFIED
+    bind_address: 127.0.0.1        # deploy.yml CONFIGURED
+    process_manager: PM2 (deploy.yml) | systemd (server-config) — two architectures CONFIGURED
+    process_name: alo-english
+    deployment_path: $VPS_PATH (GitHub secret — UNKNOWN from here) | /opt/alo-english (docs)
+    reverse_proxy: UNKNOWN live (nginx/1.20.1 observed on sibling domain aloeducation.com)
+    tls: OBSERVED serving HTTPS successfully (health fetch OK) — issuer/expiry NOT VERIFIED
+    database: SQLite via Prisma (CONFIGURED in code) — live DB drift OBSERVED (examTypes 12 vs seed 20)
+    sidecar: mini-services/examiner-stream on 3003 (CONFIGURED in code; NOT started by deploy.yml — WARNING)
+    health_endpoint: /api/health   # VERIFIED live 200 healthy 2026-09-18T01:04Z
+    owner: OWNER ACTION REQUIRED (confirm technical owner)
+    status: LIVE-HEALTHY / SHA-UNVERIFIED
+
+  - domain: aloeducation.com
+    service_id: alo-education-main
+    application: UNKNOWN (main education site)
+    repository: UNKNOWN — separate repo required
+    app_port_reported: 3044        # reported only — NOT VERIFIED
+    live_check: FAILED 502 Bad Gateway (nginx/1.20.1) observed 2026-09-18 — LIVE INCIDENT
+    status: DOWN — OWNER ACTION REQUIRED
+
+  - domain: learn.aloeducation.com
+    service_id: UNKNOWN
+    app_port_reported: 3017
+    live_check: FAILED (fetch error; DNS/TLS/upstream indistinguishable)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: alolabs.net
+    service_id: UNKNOWN
+    app_port_reported: 3011
+    live_check: OBSERVED reachable over HTTPS but response body EMPTY; app UNKNOWN
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: hosting.alolabs.net
+    service_id: UNKNOWN
+    app_port_reported: 3012
+    live_check: FAILED (fetch error)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: agents.alolabs.net
+    service_id: UNKNOWN
+    app_port_reported: 3013
+    live_check: FAILED (fetch error)
+    ai_extra_inspection_required: true   # §2.3
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: panel.alolabs.net
+    service_id: UNKNOWN
+    app_port_reported: 3014
+    live_check: FAILED (fetch error)
+    privileged_infrastructure_assumption: true   # §2.4 — strong auth/MFA/audit required
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: marketing.alolabs.net
+    service_id: UNKNOWN
+    app_port_reported: 3029
+    live_check: FAILED (fetch error)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: markting.alolabs.net
+    service_id: ALIAS-CANDIDATE
+    classification: SUSPECTED TYPO — NOT created (§2.16)
+    live_check: FAILED (fetch error; existence UNCONFIRMED)
+    action: owner to confirm at DNS provider; do NOT provision
+    status: UNKNOWN — OWNER ACTION REQUIRED
+
+  - domain: alaminn.info
+    service_id: UNKNOWN
+    app_port_reported: 3018
+    isolation_note: personal brand — must not access other apps' secrets (§2.8)
+    live_check: FAILED (fetch error)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: icla-global.com
+    service_id: UNKNOWN
+    app_port_reported: 3019
+    live_check: OBSERVED 200 — WordPress + Elementor; page essentially empty ("Archives")
+    status: LIVE (near-empty) / stack NOT VERIFIED in detail
+
+  - domain: icla-global.in
+    service_id: UNKNOWN
+    app_port_reported: 3020
+    live_check: FAILED (fetch error)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: bdtech360.com
+    service_id: UNKNOWN
+    app_port_reported: 3021
+    live_check: OBSERVED 200 — "TECH360" marketing/CRM site; PUBLIC AI chat agent present
+    ai_extra_inspection_required: true   # §2.11 — public agent chatbot observed
+    repository: UNKNOWN — separate repo required
+    status: LIVE / agent security review PENDING
+
+  - domain: ecotechbd.com
+    service_id: UNKNOWN
+    app_port_reported: 3022
+    live_check: FAILED (fetch error)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: neelacholcityagro.com
+    service_id: UNKNOWN
+    app_port_reported: 3023
+    live_check: FAILED (fetch error)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+  - domain: uninotary.com
+    service_id: UNKNOWN
+    app_port_reported: 3024
+    live_check: FAILED (fetch error)
+    status: NOT VERIFIED — OWNER ACTION REQUIRED
+
+port_map_reported:            # ALL VALUES REPORTED/CONFIGURED — none live-VERIFIED except notes
+  "3011": alolabs.net
+  "3012": hosting.alolabs.net
+  "3013": agents.alolabs.net
+  "3014": panel.alolabs.net
+  "3016": english.aloeducation.com   # matches deploy.yml APP_PORT (CONFIGURED)
+  "3017": learn.aloeducation.com
+  "3018": alaminn.info
+  "3019": icla-global.com
+  "3020": icla-global.in
+  "3021": bdtech360.com
+  "3022": ecotechbd.com
+  "3023": neelacholcityagro.com
+  "3024": uninotary.com
+  "3029": marketing.alolabs.net
+  "3044": aloeducation.com
+  "3000": alo-english ALTERNATIVE doc architecture (systemd/Caddy path) — CONFLICT FLAG
+  "3003": alo-english examiner-stream sidecar (CONFIGURED in code)
+  "81":   sandbox Caddyfile XTransformPort proxy — MUST NOT deploy publicly (SECURITY)
+
+ssh_note: >
+  Application ports are NOT SSH ports (§9). SSH ports for every host are UNKNOWN
+  from this environment. deploy.yml reads VPS_SSH_PORT from GitHub secrets.
+  No SSH port may be inferred from the table above.

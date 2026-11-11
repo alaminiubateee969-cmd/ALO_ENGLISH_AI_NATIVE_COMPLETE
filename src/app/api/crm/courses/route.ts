@@ -12,6 +12,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  universityId: z.string().cuid(),
   level: z.string().optional(),
   duration: z.string().optional(),
   tuitionFee: z.number().optional(),

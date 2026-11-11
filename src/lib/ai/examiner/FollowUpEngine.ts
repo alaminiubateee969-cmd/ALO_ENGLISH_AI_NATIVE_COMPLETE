@@ -187,8 +187,8 @@ export class FollowUpEngine {
    */
   static getOpeningQuestion(): string {
     const openings = [
-      "Good morning/afternoon. My name is [Examiner Name]. Can you tell me your full name, please?",
-      "Hello, welcome to the speaking test. Could you tell me your name?",
+      "Hello, I'm an AI speaking-practice guide. Could you introduce yourself?",
+      "Welcome to conversation practice. What would you like me to call you?",
     ];
     return openings[0];
   }

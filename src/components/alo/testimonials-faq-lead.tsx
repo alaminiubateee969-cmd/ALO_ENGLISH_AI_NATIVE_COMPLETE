@@ -23,7 +23,7 @@ const FAQS = [
   { q: "How much does your service cost?", a: "Your first counseling session is 100% free. Many of our services — including university shortlisting, application drafting and scholarship matching — are included when you apply through us. Some premium services like 1:1 interview coaching and priority visa support have transparent fees, always shared upfront." },
   { q: "Which countries do you help students apply to?", a: "We support applications to the UK, Canada, Australia, USA, Ireland, New Zealand and Dubai (UAE). Each destination has dedicated counselors, visa specialists and scholarship experts." },
   { q: "Do you help with scholarships?", a: "Yes. We match you to merit, need-based and country-specific scholarships and help you craft winning essays. Our students have secured over ৳12 crore in scholarships including Chevening, Commonwealth, Fulbright and university merit awards." },
-  { q: "Can you help with English test preparation?", a: "Yes. Our English Test Platform offers IELTS, PTE, TOEFL, Duolingo, OIETC and OET mock tests, speaking practice with the ALO Speaking Evaluator, and writing feedback. ALO Education registered students get 3 free mock tests." },
+  { q: "Can you help with English test preparation?", a: "Yes. Our English Test Platform offers IELTS, PTE, TOEFL, Duolingo, OIETC and OET mock tests, speaking practice with the ALO Speaking Evaluator, and writing feedback — all free and unlimited." },
   { q: "What is your visa success rate?", a: "97%. Our visa specialists handle documentation, financial proof, SOPs and interview preparation. Every visa file is reviewed by senior counselors before submission." },
   { q: "Do you offer pre-departure support?", a: "Yes. We help with accommodation booking, airport pickup, banking, SIM cards, orientation briefings and connecting you with senior students already at your destination." },
   { q: "How does the AI Copilot work?", a: "The ALO AI Admissions Assistant helps you search courses, draft your SOP, audit your CV, practice interviews and plan your career path — 24/7 in Bangla and English. It's always supervised by certified human counselors who review and finalize every recommendation." },
@@ -106,16 +106,17 @@ export function AloLeadCapture() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, source: "aloeducation.com" }) });
+      const referralCode = new URLSearchParams(window.location.search).get("ref") || undefined;
+      const res = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, source: "aloeducation.com", referralCode }) });
       const data = await res.json();
-      if (data.ok) {
-        toast({ title: "Consultation request received!", description: "An ALO Education advisor will contact you within 24 hours." });
+      if (res.ok && data.success) {
+        toast({ title: "Consultation request received!", description: "An ALO Education advisor will contact you." });
         setForm({ name: "", email: "", phone: "", exam: "", country: "", intake: "", message: "" });
       } else {
-        toast({ title: "Saved locally", description: "Your request was saved and will be synced." });
+        toast({ title: "Request could not be sent", description: data.message || "Please check your details and try again.", variant: "destructive" });
       }
     } catch {
-      toast({ title: "Saved locally", description: "Your request was saved and will be synced." });
+      toast({ title: "Network error", description: "Your request was not submitted. Please try again.", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }

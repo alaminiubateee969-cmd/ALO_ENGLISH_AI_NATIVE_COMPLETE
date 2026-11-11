@@ -16,6 +16,12 @@ export type AuditAction =
   | 'EXAM_START'
   | 'EXAM_SUBMIT'
   | 'SCORE_GENERATED'
+  | 'PRACTICE_SET_CREATE'
+  | 'PRACTICE_SET_UPDATE'
+  | 'PRACTICE_SET_DELETE'
+  | 'QUESTION_CREATE'
+  | 'QUESTION_UPDATE'
+  | 'QUESTION_DELETE'
   | 'ADMIN_SETTINGS_UPDATE'
   | 'ADMIN_USER_UPDATE'
   | 'BACKUP_CREATED'
@@ -39,7 +45,6 @@ export type AuditAction =
   | 'NOTIFICATIONS_CREATE'
   | 'USERS_CREATE'
   | 'COMMISSIONS_CREATE'
-  | 'AUDIT-LOGS_CREATE'
   | 'LEADS_UPDATE'
   | 'STUDENTS_UPDATE'
   | 'PARTNERS_UPDATE'
@@ -57,7 +62,6 @@ export type AuditAction =
   | 'NOTIFICATIONS_UPDATE'
   | 'USERS_UPDATE'
   | 'COMMISSIONS_UPDATE'
-  | 'AUDIT-LOGS_UPDATE'
   | 'LEADS_DELETE'
   | 'STUDENTS_DELETE'
   | 'PARTNERS_DELETE'
@@ -69,13 +73,24 @@ export type AuditAction =
   | 'BRANCHES_DELETE'
   | 'DEPARTMENTS_DELETE'
   | 'DOCUMENTS_DELETE'
+  /** A document was read or an attempt to read it was refused. */
+  | 'DOCUMENTS_DOWNLOAD'
+  /** An outbound message was queued, refused, deferred, sent or failed. */
+  | 'MESSAGES_SEND'
+  /** A delivery receipt from a provider was applied to a message. */
+  | 'MESSAGES_RECEIPT'
+  /** A consent decision was recorded in the register, or a capture was promoted. */
+  | 'CONSENT_RECORD'
+  /** A review-queue entry was linked, dismissed or deferred. */
+  | 'REVIEW_RESOLVE'
+  /** A human approved or rejected a queued agent proposal. */
+  | 'AGENT_APPROVAL_DECIDED'
   | 'MESSAGES_DELETE'
   | 'TASKS_DELETE'
   | 'APPOINTMENTS_DELETE'
   | 'NOTIFICATIONS_DELETE'
   | 'USERS_DELETE'
   | 'COMMISSIONS_DELETE'
-  | 'AUDIT-LOGS_DELETE'
   // Phase 1: RBAC + Multi-tenancy audit actions
   | 'ROLE_CREATED'
   | 'ROLE_UPDATED'
@@ -90,7 +105,10 @@ export type AuditAction =
   | 'USER_CREATED'
   | 'USER_UPDATED'
   | 'USER_DISABLED'
-  | 'USER_ENABLED';
+  | 'USER_ENABLED'
+  | 'BLOG_POST_CREATED'
+  | 'BLOG_POST_PUBLISHED'
+  | 'BLOG_POST_UPDATED';
 
 /**
  * Record an audit log entry.

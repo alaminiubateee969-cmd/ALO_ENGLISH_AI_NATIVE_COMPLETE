@@ -5,19 +5,23 @@
  * and the exported function must be named `proxy` (not `middleware`).
  * (Verified: Next.js 16.1.3 source code checks `middlewareModule.proxy || middlewareModule.middleware`)
  *
- * This proxy:
- *   1. Applies security headers to every response
- *   2. Protects /app/* and /api/* routes (redirects unauthenticated users)
- *   3. Allows explicitly public routes
+ * This proxy applies security headers. It does not authenticate users or
+ * redirect protected routes; every API handler must enforce auth/authorization,
+ * and page-level checks are presentation only. The route lists below document
+ * the intended public surface and are consumed by the inventory generator.
  *
  * Public routes (no auth required):
  *   /, /login, /register, /forgot-password, /reset-password
  *   /destinations, /course-finder, /universities, /scholarships
- *   /services, /language-prep, /resources, /events
+ *   /services, /language-prep, /exam-prep, /resources, /events
  *   /contact, /book-consultation, /ask-handbook
- *   /privacy-policy, /terms, /cookie-policy, /portals
+ *   /privacy-policy, /terms, /cookie-policy, /portals, /blog (and /blog/<slug>)
  *   /api/auth/*, /api/health, /api/lead, /api/rag/ask, /api/rag/materials (GET)
- *   /api/exam-types, /api/practice-sets, /api/examiners, /api/agents/status
+ *   /api/exam-types, /api/practice-sets, /api/examiners
+ *   /api/webhooks/*  (public endpoint, but NOT unauthenticated: every request
+ *                     must carry a valid provider HMAC signature, checked in the
+ *                     route before any database work. See
+ *                     src/lib/crm/webhook-signature.ts and docs/COMMUNICATION_HUB.md.)
  *   /_next/*, /favicon.ico, /public/*
  */
 
@@ -38,6 +42,11 @@ const PUBLIC_PAGES = new Set([
   '/scholarships',
   '/services',
   '/language-prep',
+  // "/exam-prep" is public content: it is linked from the site header, the
+  // footer and /resources, and it only reads the public exam-types API. It was
+  // missing from this list, which made it absent from ROUTE_INVENTORY.csv and
+  // caused tests/sitemap.test.ts to fail once the sitemap was generated.
+  '/exam-prep',
   '/resources',
   '/events',
   '/contact',
@@ -47,6 +56,10 @@ const PUBLIC_PAGES = new Set([
   '/terms',
   '/cookie-policy',
   '/portals',
+  // The blog index is public. Individual posts live at /blog/<slug> and are
+  // reached by crawling the index; the proxy list is exact-match, so the prefix
+  // is documented in the header comment rather than here.
+  '/blog',
 ]);
 
 const PUBLIC_API_PATTERNS = [
@@ -58,30 +71,14 @@ const PUBLIC_API_PATTERNS = [
   /^\/api\/exam-types$/,
   /^\/api\/practice-sets$/,
   /^\/api\/examiners$/,
-  /^\/api\/agents\/status$/,
+  /^\/api\/webhooks\/.+/,      // signature-verified inbound providers (see route)
+  /^\/api\/analytics\/events$/, // anonymous beacon; aggregate counters only, rate limited,
+                                 // and nothing about a visitor is stored (src/lib/analytics/events.ts)
 ];
-
-function isPublicRoute(pathname: string): boolean {
-  // Public pages
-  if (PUBLIC_PAGES.has(pathname)) return true;
-
-  // Public API patterns
-  for (const pattern of PUBLIC_API_PATTERNS) {
-    if (pattern.test(pathname)) return true;
-  }
-
-  // Static assets
-  if (pathname.startsWith('/_next/') || pathname.startsWith('/favicon') || pathname.includes('/public/')) {
-    return true;
-  }
-
-  return false;
-}
 
 // ─── Proxy Handler ────────────────────────────────────────────────────────
 
-export function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export function proxy(_req: NextRequest) {
   const res = NextResponse.next();
 
   // ─── Security Headers ──────────────────────────────────────────────────
@@ -89,7 +86,8 @@ export function proxy(req: NextRequest) {
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.headers.set('X-DNS-Prefetch-Control', 'off');
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
+  // Microphone access is required only by the same-origin speaking practice routes.
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), interest-cohort=()');
 
   // HSTS only in production (behind HTTPS proxy)
   if (process.env.NODE_ENV === 'production') {
@@ -117,15 +115,8 @@ export function proxy(req: NextRequest) {
     );
   }
 
-  // ─── Route Protection ──────────────────────────────────────────────────
-  // Only protect API routes at proxy level (pages are protected client-side)
-  // API routes that are public will return 401 if not authenticated — but
-  // we let the route handler decide (it has the full session logic).
-  //
-  // For page routes, we let the client-side redirect handle it (the dashboard
-  // pages check auth and redirect to /login). This avoids edge-runtime DB
-  // access limitations.
-
+  // Authentication and role/ownership checks are enforced by route handlers;
+  // this edge proxy intentionally does not make access-control decisions.
   return res;
 }
 

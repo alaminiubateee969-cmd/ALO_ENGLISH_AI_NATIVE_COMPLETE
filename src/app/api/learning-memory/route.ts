@@ -1,5 +1,9 @@
 /**
- * GET /api/learning-memory — Get student's weakness profile for personalized practice.
+ * GET /api/learning-memory — read-only practice focus suggestions.
+ *
+ * Only current deterministic listening/reading indicators are considered.
+ * Historical subjective scores, confidence, and previously generated memories
+ * are not used because their provenance and calibration are not verified.
  */
 
 import { db } from "@/lib/db";
@@ -13,81 +17,51 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   return withErrorHandler(async () => {
     const user = await requireAuth();
-
     const scores = await db.score.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, providerUsed: "deterministic_objective" },
       orderBy: { createdAt: "desc" },
       take: 10,
+      select: { overall: true, listening: true, reading: true },
     });
 
     if (scores.length === 0) {
       return ok({
-        weaknesses: [],
-        message: "Take practice tests to get personalized recommendations.",
-        totalTests: 0,
-      }, "No learning history yet");
+        practiceFocus: [],
+        message: "Submit an attempt with objective listening or reading questions to see non-calibrated practice focus suggestions.",
+        objectiveIndicatorCount: 0,
+        disclosure: "These suggestions use a simple threshold on generic practice indicators; they are not validated learning diagnoses or official scores.",
+      }, "No objective practice history available");
     }
 
-    const weaknesses: Array<{ area: string; type: string; avgScore: number; occurrences: number }> = [];
-    const sections = ["listening", "reading", "writing", "speaking"] as const;
+    const practiceFocus: Array<{
+      section: "listening" | "reading";
+      averageIndicator: number;
+      attempts: number;
+      suggestion: string;
+    }> = [];
 
-    for (const section of sections) {
-      const sectionScores = scores
-        .map((s) => (s as any)[section])
-        .filter((v): v is number => v !== null && v !== undefined && v > 0);
-
-      if (sectionScores.length > 0) {
-        const avg = sectionScores.reduce((a, b) => a + b, 0) / sectionScores.length;
-        if (avg < 6.0) {
-          weaknesses.push({
-            area: section,
-            type: section === "writing" || section === "speaking" ? "PRODUCTION" : "RECEPTION",
-            avgScore: Math.round(avg * 10) / 10,
-            occurrences: sectionScores.length,
-          });
-        }
+    for (const section of ["listening", "reading"] as const) {
+      const values = scores
+        .map((score) => score[section])
+        .filter((value): value is number => value !== null && Number.isFinite(value));
+      if (values.length === 0) continue;
+      const averageIndicator = Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
+      if (averageIndicator < 6) {
+        practiceFocus.push({
+          section,
+          averageIndicator,
+          attempts: values.length,
+          suggestion: section === "listening"
+            ? "Review missed listening questions and practise note-taking with authorized materials."
+            : "Review missed reading questions and practise locating evidence in the passage.",
+        });
       }
     }
 
-    const memories = await db.learningMemory.findMany({
-      where: { userId: user.id, resolvedAt: null },
-      orderBy: { occurrences: "desc" },
-    });
-
-    for (const w of weaknesses) {
-      await db.learningMemory.upsert({
-        where: { userId_weaknessArea: { userId: user.id, weaknessArea: w.area } },
-        update: { occurrences: { increment: 1 }, lastSeenAt: new Date() },
-        create: {
-          userId: user.id,
-          weaknessArea: w.area,
-          weaknessType: w.type,
-          occurrences: 1,
-        },
-      });
-    }
-
-    const recommendations: string[] = [];
-    for (const w of weaknesses) {
-      if (w.area === "writing") recommendations.push("Practice timed writing essays focusing on task achievement and coherence.");
-      if (w.area === "speaking") recommendations.push("Practice speaking with cue cards and record yourself for fluency improvement.");
-      if (w.area === "listening") recommendations.push("Listen to English podcasts daily and practice note-taking.");
-      if (w.area === "reading") recommendations.push("Practice skimming and scanning techniques with timed reading exercises.");
-    }
-
     return ok({
-      weaknesses,
-      memories: memories.map((m) => ({
-        area: m.weaknessArea,
-        type: m.weaknessType,
-        occurrences: m.occurrences,
-        lastSeen: m.lastSeenAt,
-      })),
-      recommendations,
-      totalTests: scores.length,
-      avgOverall: scores.length > 0
-        ? Math.round((scores.reduce((sum, s) => sum + s.overall, 0) / scores.length) * 10) / 10
-        : 0,
-    }, "Learning memory retrieved");
+      practiceFocus,
+      objectiveIndicatorCount: scores.length,
+      disclosure: "Simple, unvalidated practice focus suggestions from objective answer accuracy only; not a learning diagnosis or official score.",
+    }, "Practice focus suggestions retrieved");
   });
 }

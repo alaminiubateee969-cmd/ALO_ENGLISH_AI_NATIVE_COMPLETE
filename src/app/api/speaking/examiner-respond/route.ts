@@ -1,35 +1,62 @@
 import { generateExaminerResponse, generateExaminerVoice } from "@/lib/ai/examiner/ExaminerEngine";
 import type { ExaminerState, ConversationTurn } from "@/lib/ai/examiner/ExaminerEngine";
 import { requireAuth } from "@/lib/auth";
-import { ok, badRequest } from "@/lib/responses";
+import { rateLimit } from "@/lib/rate-limit";
+import { ok, badRequest, payloadTooLarge, rateLimited } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
+import { RequestBodyTooLargeError, readJsonWithLimit } from "@/lib/http/read-json-with-limit";
 import { z } from "zod";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export async function POST(req: Request) {
+const MAX_REQUEST_BYTES = 128 * 1024;
+const STATES = [
+  "introduction",
+  "part1_questions",
+  "part2_instructions",
+  "part2_preparation",
+  "part2_long_turn",
+  "part2_followup",
+  "part3_discussion",
+  "closing",
+  "completed",
+] as const;
+
+const schema = z.object({
+  transcript: z.string().max(4_000),
+  history: z.array(z.object({
+    role: z.enum(["examiner", "student"]),
+    text: z.string().max(4_000),
+    timestamp: z.string().max(64),
+  })).max(12).optional(),
+  currentState: z.enum(STATES),
+  examinerId: z.string().max(64).optional(),
+});
+
+export async function POST(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
     const user = await requireAuth();
-    const body = await req.json().catch(() => null);
-    if (!body) return badRequest("Invalid JSON");
-    const schema = z.object({
-      transcript: z.string(),
-      history: z.array(z.object({
-        role: z.enum(["examiner", "student"]),
-        text: z.string(),
-        timestamp: z.string(),
-      })).optional(),
-      currentState: z.string(),
-      examinerId: z.string().optional(),
-    });
+    if (!rateLimit(`speaking-respond:${user.id}`, 30, 60 * 60).allowed) {
+      return rateLimited("Speaking practice request limit reached. Try again later.");
+    }
+
+    let body: unknown;
+    try {
+      body = await readJsonWithLimit(req, MAX_REQUEST_BYTES);
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError) {
+        return payloadTooLarge("Speaking practice request is too large");
+      }
+      return badRequest("Invalid JSON body");
+    }
+
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid");
+    if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid speaking practice request");
 
     const { transcript, history = [], currentState, examinerId } = parsed.data;
 
-    // Generate examiner response using LLM (with Bengali accent awareness)
     const response = await generateExaminerResponse(
       transcript,
       history as ConversationTurn[],
@@ -37,7 +64,6 @@ export async function POST(req: Request) {
       examinerId
     );
 
-    // Generate examiner voice using TTS (mapped to persona voice)
     let audioBase64 = "";
     let audioMimeType = "audio/wav";
     try {
@@ -45,7 +71,7 @@ export async function POST(req: Request) {
       audioBase64 = voiceResult.audioBase64;
       audioMimeType = voiceResult.mimeType;
     } catch {
-      // TTS failed — return text only, frontend can use browser speech synthesis as fallback
+      // TTS is optional; the client can fall back to browser speech synthesis.
       console.error("[examiner-respond] TTS generation failed");
     }
 
@@ -56,6 +82,6 @@ export async function POST(req: Request) {
       nextState: response.nextState,
       isComplete: response.isComplete,
       topic: response.topic,
-    }, "Examiner response generated");
+    }, "Practice response generated");
   });
 }

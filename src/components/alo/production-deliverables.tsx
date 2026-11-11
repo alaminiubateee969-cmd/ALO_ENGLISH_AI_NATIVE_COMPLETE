@@ -116,7 +116,7 @@ export function ProductionDeliverables() {
           <ShieldCheck className="h-5 w-5 text-alo-success mt-0.5 shrink-0" />
           <div>
             <div className="text-sm font-bold text-alo-navy">17/17 production QA checks PASS</div>
-            <p className="text-xs text-alo-muted mt-0.5">Backend-enforced free quota · RBAC · CSRF · audit logs · private storage blocked · weekly update no auto-publish · original content only · no official exam questions · no fake examiner wording.</p>
+            <p className="text-xs text-alo-muted mt-0.5">Free unlimited practice (24/7) · RBAC · CSRF · audit logs · private storage blocked · weekly update no auto-publish · original content only · no official exam questions · no fake examiner wording.</p>
           </div>
         </div>
 

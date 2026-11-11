@@ -147,6 +147,16 @@ const ROLES: RoleDef[] = [
     ],
   },
   {
+    slug: "TEACHER",
+    name: "Teacher",
+    description: "ALO teaching staff. Views students and their exam results, and guides practice — no CRM write access.",
+    permissions: [
+      "dashboard.view",
+      "students.view",
+      "exams.view",
+    ],
+  },
+  {
     slug: "COUNSELLOR",
     name: "Counselor",
     description: "Student counseling. Manage own leads, students, applications.",

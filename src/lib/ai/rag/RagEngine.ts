@@ -3,8 +3,8 @@
  *
  * RAG (Retrieval-Augmented Generation) Engine — ExamCite-style.
  *
- * Allows students to ask questions about study materials and get
- * AI-generated answers grounded in the source content (no hallucinations).
+ * Allows users to ask about public study materials. Retrieved context is sent
+ * to a configured model; the answer can still be incomplete or hallucinated.
  *
  * Used by:
  *   /api/rag/ask — ask a question
@@ -19,7 +19,6 @@ export type RagAnswer = {
   answer: string;
   citedFrom: string | null;
   materialTitle: string | null;
-  confidence: "high" | "medium" | "low";
   chunksUsed: number;
 };
 
@@ -54,7 +53,6 @@ export class RagEngine {
         answer: "I don't have study material covering that topic yet. Please try asking about IELTS, TOEFL, PTE, grammar, vocabulary, or upload relevant study material.",
         citedFrom: null,
         materialTitle: null,
-        confidence: "low",
         chunksUsed: 0,
       };
     }
@@ -65,7 +63,6 @@ export class RagEngine {
       answer: answer.text,
       citedFrom: context.chunks[0]?.substring(0, 200) + "...",
       materialTitle: context.materialTitle,
-      confidence: answer.confidence,
       chunksUsed: context.chunks.length,
     };
   }
@@ -130,8 +127,7 @@ export class RagEngine {
     question: string,
     contextChunks: string[],
     materialTitle: string | null
-  ): Promise<{ text: string; confidence: "high" | "medium" | "low" }> {
-    const zai = await getZAI();
+  ): Promise<{ text: string }> {
     const context = contextChunks.join("\n\n---\n\n");
 
     const systemPrompt = `You are an AI study assistant for ALO Education. Answer the student's question using ONLY the provided study material context.
@@ -149,6 +145,11 @@ Context:
 ${context}`;
 
     try {
+      // Created inside the try on purpose: with no AI provider configured,
+      // ZAI.create() throws. The catch below then returns the retrieved
+      // context itself as an extractive answer, so the public study chat
+      // keeps working (grounded in the library) instead of returning a 500.
+      const zai = await getZAI();
       const completion = await zai.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
@@ -158,17 +159,27 @@ ${context}`;
       });
 
       const text = completion.choices[0]?.message?.content || "I couldn't generate an answer. Please try rephrasing your question.";
-      const confidence: "high" | "medium" | "low" =
-        contextChunks.length >= 3 ? "high" : contextChunks.length >= 1 ? "medium" : "low";
-
-      return { text, confidence };
+      return { text };
     } catch (err) {
-      console.error("[RagEngine] LLM failed:", err);
+      console.error("[RagEngine] LLM unavailable, returning grounded extract:", err);
+      const extract = contextChunks.slice(0, 2).map((c) => c.trim()).join("\n\n").slice(0, 1200);
       return {
-        text: "I'm having trouble generating an answer right now. Please try again later.",
-        confidence: "low",
+        text: extract
+          ? `Here is what the study materials say:\n\n${extract}`
+          : "I don't have enough information to answer that.",
       };
     }
+  }
+
+  /**
+   * Public retrieval wrapper so other engines (the AI teachers) can ground
+   * their answers in the same study-material library with the same scoring.
+   */
+  static async retrieve(
+    question: string,
+    category?: string,
+  ): Promise<{ chunks: string[]; materialTitle: string | null }> {
+    return this.retrieveContext(question, undefined, category);
   }
 
   static async uploadMaterial(params: {

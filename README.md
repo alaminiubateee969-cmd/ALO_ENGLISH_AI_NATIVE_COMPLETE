@@ -1,280 +1,110 @@
-# ALO Education English Test Platform
+# ALO Education English Practice & CRM Platform
 
-> Production-ready English proficiency exam platform with real-time AI voice examiner, daily learning loop, and self-building agents.
+> A Next.js application codebase for English-test practice, learner resources, partner referrals, and CRM workflows. **Production and exam-content readiness have not been verified.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-indigo.svg)](https://www.prisma.io/)
-[![Tests](https://img.shields.io/badge/tests-60%2F60%20pass-brightgreen.svg)](#tests)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![CI](https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE/actions/workflows/ci.yml/badge.svg)](https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE/actions/workflows/ci.yml)
 
-**Live URL:** `https://english.aloeducation.com`
+**Configured production hostname:** `https://english.alolabs.net` — availability, current release, database, and deployment ownership have not been independently verified in this audit.
 
----
+## What is in this repository
 
-## Overview
+- Next.js App Router pages and API handlers for learner, partner, admin, and CRM workflows.
+- Prisma schema and migrations for accounts, attempts, scores, quotas, CRM records, and related records.
+- Server-side attempt creation, question freezing, autosave/resume, deadline calculation, ownership checks, and deterministic objective grading.
+- Practice-only writing suggestions and speaking-conversation/transcription routes. These are not publisher-scored results; see the capability limits below.
+- Study-material/RAG and learning-agent code. Provider availability, data quality, and production operation are not verified.
+- Scripts for database checks, inventories, backups, listening-audio generation, and validation.
+- An additive BDTECH360 `/factory` control plane for private template/module versions, configuration-driven company definitions, controlled shared provisioning, explicit tenant membership, releases and scoped backup. End-to-end acceptance is currently blocked; it is not a production-ready application generator.
 
-A comprehensive English proficiency exam platform serving 12,500+ students. Features 20 exam types (IELTS, TOEFL, PTE, Duolingo, OET, Cambridge, GRE, GMAT, SAT, ACT, LSAT, MCAT, and more) with 510+ real exam-aligned questions, a real-time AI voice examiner, daily learning loop, and self-building specialist agents.
+The exam catalog contains metadata for multiple products; metadata does **not** establish that a complete, current, licensed question bank exists. Legacy synthetic seed scripts are not part of the production seed command and now refuse to run unless explicitly opted into a clearly named disposable test/sample SQLite database.
 
-### Key Features
+## Capability and verification limits
 
-- **20 Exam Types** — IELTS, TOEFL, PTE, Duolingo, OET, Cambridge, GRE, GMAT, SAT, ACT, LSAT, MCAT, Visa Interview, and more
-- **510+ Real Questions** — Every question follows the official exam format
-- **Real-Time Voice AI Examiner** — 5 Bengali AI examiner personas with STT + TTS + LLM
-- **Daily Learning Loop** — System learns from every exam and improves daily
-- **Self-Building Agents** — AI creates new specialist agents based on performance gaps
-- **RBAC + Multi-Tenancy** — 9 system roles, 44 permissions, team isolation
-- **RAG Handbook** — Free AI study chat (no signup required)
-- **CRM** — 18 entities, full CRUD, audit logging
+| Area | Current code-level capability | Not established by this repository audit |
+| --- | --- | --- |
+| Exam attempts | Server creates persisted attempts, freezes questions, derives deadlines from server timestamps, checks ownership, and grades supported objective answer keys. | Production DB/question counts, end-to-end behavior against a generated Prisma client, official-length coverage, and score calibration. |
+| Scores | Listening/reading practice indicators are calculated from objective answer accuracy. Responses disclose that they are not official scores. | Publisher-equivalent conversion tables, validated bands, human-rating calibration, or official results. |
+| Writing | Local text heuristics return generic revision suggestions; no numeric writing score is persisted or returned. | Rubric-based IELTS/TOEFL/PTE/OET/etc. grading or human-validated feedback. |
+| Speaking | Practice chat, TTS, and an ASR transcription route exist. | Securely persisted attempt recordings, acoustic/prosody analysis, pronunciation scoring, accent assessment, or numeric speaking results. Regional accent variation must not be treated as an error. |
+| Listening media | A guarded generator validates MP3 structure/size before recording a local URL in the database. | Existing database asset counts, rights to scripts/voices, deployment availability, successful HTTP delivery, and browser playback. |
+| Quotas/payments | Free-attempt/quota code exists. Payment-history reads are user-scoped. | Merchant credentials, checkout, signed webhooks, refunds, or provider-confirmed credits. Purchase POST is deliberately disabled and returns 503 without creating a payment or credit. |
+| Authentication/security | HMAC session-cookie and route-level auth/role/ownership helpers exist; public inputs have some validation and rate limits. | Production secret configuration, server-side session revocation, full route-by-route security testing, MFA, and deployed headers. |
+| CRM | CRUD routes, role checks, scoping helpers, and pure scope tests exist. | Database-backed isolation tests or verification against production student/CRM records. |
+| Deployment/operations | Hostinger-related build/deployment instructions and CI workflows exist in source. | A successful current deployment, live health probe, backup/restore exercise, or production migration approval. |
 
----
+Read the nine current audit reports in [`docs/`](./docs/):
 
-## Quick Start (Local Development)
+- [Feature gap register](./docs/FEATURE_GAP_REGISTER.md)
+- [Reference integration matrix](./docs/REFERENCE_INTEGRATION_MATRIX.md)
+- [Exam coverage report](./docs/EXAM_COVERAGE_REPORT.md)
+- [Audio coverage report](./docs/AUDIO_COVERAGE_REPORT.md)
+- [AI evaluation report](./docs/AI_EVALUATION_REPORT.md)
+- [Payment verification](./docs/PAYMENT_VERIFICATION.md)
+- [Security audit](./docs/SECURITY_AUDIT.md)
+- [Production deployment report](./docs/PRODUCTION_DEPLOYMENT_REPORT.md)
+- [Regression checklist](./docs/REGRESSION_CHECKLIST.md)
 
-```bash
-# 1. Install dependencies
-bun install
+These reports distinguish repository evidence from database, provider, legal, browser, and production evidence. A feature is not release-ready merely because a route, UI, seed declaration, or integration stub exists.
 
-# 2. Set up environment
-cp .env.example .env
-# Edit .env — set AUTH_SECRET (run: openssl rand -base64 48)
+BDTECH360 factory references:
 
-# 3. Set up database
-bun run db:push
-bun run prisma:seed
+- [Control Center architecture, security and operating limits](./docs/BDTECH360_FACTORY_CONTROL_CENTER.md)
+- [Factory gap analysis](./docs/BDTECH360_FACTORY_GAP_ANALYSIS.md)
+- [Actual A–H acceptance results and blockers](./BDTECH360_FACTORY_ACCEPTANCE_REPORT.md)
+- [ALO production recovery report](./PRODUCTION_RECOVERY_REPORT.md)
 
-# 4. Start dev server
-bun run dev
-# → http://localhost:3000
-```
+## Local development
 
----
-
-## Deploy to VPS (server.aloeducation.com)
-
-### Option A: PM2 + Nginx (Recommended)
-
-```bash
-# 1. SSH into your VPS
-ssh root@115.187.18.239
-
-# 2. Install Node.js + Bun + PM2
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
-curl -fsSL https://bun.sh/install | bash
-npm install -g pm2
-
-# 3. Clone the repo
-cd /var/www
-git clone https://github.com/YOUR_USERNAME/alo-education-english.git
-cd alo-education-english
-
-# 4. Install + build
-bun install
-cp .env.example .env
-# Edit .env — set AUTH_SECRET and DATABASE_URL
-bun run db:push
-bun run prisma:seed
-
-# 5. Build for production
-bun run build
-
-# 6. Start with PM2
-pm2 start ecosystem.config.js --name alo-english
-pm2 save
-pm2 startup
-
-# 7. Set up Nginx reverse proxy
-cp server-config/alo-english.nginx /etc/nginx/sites-available/alo-english
-ln -s /etc/nginx/sites-available/alo-english /etc/nginx/sites-enabled/
-nginx -t && systemctl reload nginx
-
-# 8. SSL certificate (free via Let's Encrypt)
-certbot --nginx -d english.aloeducation.com -d www.english.aloeducation.com
-```
-
-### Option B: cPanel (WHM Panel)
-
-1. Log in to WHM: `http://115.187.18.239:2087`
-2. Create a Node.js app in cPanel
-3. Set the app root to `/home/username/alo-english`
-4. Set the startup file to `server.js`
-5. Upload the project files (from the zip)
-6. Install dependencies: `bun install`
-7. Run database setup: `bun run db:push && bun run prisma:seed`
-8. Set environment variables in cPanel → "Environment Variables"
-9. Start the app
-
----
-
-## Push to GitHub
+Use Node.js 22 and a disposable local database. Never point migration, seed, test, or validation commands at production data.
 
 ```bash
-# 1. Initialize git (if not already)
-git init
-git add .
-git commit -m "ALO Education English Test Platform — production ready"
-
-# 2. Create a repo on GitHub: https://github.com/new
-#    Name: alo-education-english
-#    Private: recommended
-
-# 3. Add remote and push
-git remote add origin https://github.com/YOUR_USERNAME/alo-education-english.git
-git branch -M main
-git push -u origin main
+npm install
+cp .env.example .env.local
+# Set AUTH_SECRET to a random value of at least 32 characters.
+# Set DATABASE_URL to an explicitly disposable local SQLite database.
+npm run db:generate
+npm run db:migrate:dev
+npm run prisma:seed
+npm run dev
 ```
 
-### Auto-deploy on push (GitHub Actions)
+`npm run prisma:seed` creates core metadata (admin account, exam-type rows, settings, and quota); it does not create a question bank. The legacy sample question seeders are guarded and are not production content. Do not use them to represent official exams. An empty question bank is a blocker, not an invitation to substitute generated or mock questions.
 
-The included `.github/workflows/deploy.yml` automatically deploys to your VPS when you push to `main`.
+Useful checks (run only with the required local tooling and a disposable database where applicable):
 
-**Setup:**
-1. Go to your GitHub repo → Settings → Secrets and variables → Actions
-2. Add these secrets:
-   - `VPS_HOST` = `115.187.18.239`
-   - `VPS_USER` = `root`
-   - `VPS_SSH_KEY` = your SSH private key (for the VPS)
-   - `VPS_PATH` = `/var/www/alo-education-english`
-3. Push to `main` → the workflow deploys automatically
+```bash
+npm run lint
+npm run typecheck
+npm test
+DATABASE_URL="file:$PWD/prisma/ci-test.db" npm run content:validate
+npm run build
+```
 
----
+`content:validate` blocks if `DATABASE_URL` is absent and checks database answer-key shape/non-empty content; it does not prove official-format coverage, content licensing, or audio playback. `npm test` requires Bun. Prisma-dependent checks require a generated Prisma client and a safe database.
 
-## Features
+## Security and data handling
 
-### Real Exam Engine
-- 9 exam types: IELTS, TOEFL, PTE, Duolingo, GRE, GMAT, SAT, ACT, ALO Placement
-- 395 real questions in the database
-- Timer, question palette, section navigation
-- Free quota (3 ALO students / 1 public)
+- Student attempt/question/result routes must enforce ownership server-side; correct answers are omitted from active-attempt responses.
+- Role checks and CRM query scoping are implemented at handlers/helpers, not by the edge proxy. See the security report for residual risks and unverified routes.
+- Session cookies are stateless HMAC tokens with a 24-hour lifetime; individual server-side session revocation is not implemented.
+- Password recovery is intentionally unavailable until a verified email-delivery integration exists. No reset token is issued or logged.
+- Do not place credentials or production data in Git. `.env` was removed from the index in this change; the local file was not read. Since it existed in repository history, rotate any real credential that may ever have been present. Git history was not rewritten.
+- Do not apply production migrations without a reviewed, restorable backup and operator approval.
 
-### Real-Time Voice AI Examiner
-- 5 Bengali AI examiner personas (AI-generated avatars)
-- Real microphone recording (MediaRecorder API)
-- Speech-to-Text (z-ai-web-dev-sdk ASR)
-- Context-aware LLM responses (z-ai-web-dev-sdk chat completions)
-- Text-to-Speech voice synthesis (z-ai-web-dev-sdk TTS)
-- IELTS Part 1/2/3 state machine
-- Bengali-accent-aware evaluation
+## Deployment
 
-### Daily Learning Loop
-- Analyzes all exams from the last 24 hours
-- Extracts insights per agent (weaknesses, strengths, confidence)
-- Stores learnings in `AgentLearning` table
-- Updates student learning memory
-- Generates recommendations
+The repository contains Hostinger-oriented build and deployment instructions, but this audit does not verify the live host, its environment variables, its database, or the current release. Do not interpret a passing local check or configured GitHub workflow as proof of deployment. See [`HOSTINGER_DEPLOYMENT.md`](./HOSTINGER_DEPLOYMENT.md) and [`docs/PRODUCTION_DEPLOYMENT_REPORT.md`](./docs/PRODUCTION_DEPLOYMENT_REPORT.md).
 
-### Self-Building Agents
-- Creates new specialist agents based on performance gaps
-- Speaking Coach, Writing Coach, Listening Coach, Reading Coach
-- Tracks all agent evolutions in `AgentEvolution` table
-- Updates specialist performance after each exam
+## Inventories and references
 
-### Exam Orchestrator
-- Verifies all 9 exam types have questions
-- Ensures daily question sets are generated
-- Post-exam hook triggers learning loop automatically
-- Recommends exams based on student weaknesses
+The root `*_INVENTORY.csv` files are generated from checked-in source with:
 
-### CRM
-- 18 entities, 36 API routes, full CRUD
-- Leads, students, partners, applications, universities, courses, scholarships
+```bash
+npm run inventories
+npm run inventories:check
+```
 
----
-
-## Tech Stack
-
-- **Framework:** Next.js 16 with App Router
-- **Language:** TypeScript 5
-- **Database:** Prisma ORM (SQLite for dev, MySQL for production)
-- **Styling:** Tailwind CSS 4 + shadcn/ui
-- **AI:** z-ai-web-dev-sdk (ASR, TTS, LLM, image generation)
-- **Auth:** Session-based with bcrypt
-- **Process Manager:** PM2 (production)
-- **Reverse Proxy:** Nginx
-
----
-
-## API Routes (69 total)
-
-### Auth
-- `POST /api/auth/register` — Create student account
-- `POST /api/auth/login` — Login
-- `POST /api/auth/logout` — Logout
-- `GET /api/auth/me` — Current user
-- `POST /api/auth/forgot-password` — Request reset
-- `POST /api/auth/reset-password` — Reset with token
-
-### Exam
-- `GET /api/exam-types` — List all exam types
-- `GET /api/practice-sets` — List practice sets
-- `GET /api/questions?practiceSetId=X` — Get questions
-- `POST /api/attempts/start` — Start exam
-- `POST /api/attempts/save` — Autosave
-- `POST /api/attempts/submit` — Submit + AI evaluation
-
-### Live Voice Examiner
-- `POST /api/speaking/transcribe` — STT (speech to text)
-- `POST /api/speaking/examiner-respond` — LLM + TTS response
-- `POST /api/speaking/examiner-voice` — TTS only
-
-### AI Learning
-- `GET /api/learning/dashboard` — Learning dashboard data
-- `GET /api/learning/orchestrator` — Exam status report
-- `POST /api/learning/orchestrator` — Generate daily question sets
-- `GET /api/learning/daily` — Recent learnings
-- `POST /api/learning/daily` — Run daily learning loop (admin)
-
-### CRM (18 entities × CRUD)
-- `/api/crm/leads`, `/api/crm/students`, `/api/crm/partners`, etc.
-
----
-
-## Pages (28 total)
-
-### Public
-- `/` — Homepage
-- `/destinations`, `/course-finder`, `/universities`, `/scholarships`
-- `/services`, `/language-prep`, `/resources`, `/events`
-- `/contact`, `/book-consultation`
-- `/privacy-policy`, `/terms`, `/cookie-policy`
-
-### Auth
-- `/login`, `/register`, `/forgot-password`, `/reset-password`
-
-### Dashboards
-- `/student/dashboard` — Student portal with exam history
-- `/partner/dashboard` — Partner portal
-- `/employee/dashboard` — Employee portal
-- `/admin/dashboard` — Admin overview
-- `/admin/exam-center` — Exam management
-- `/admin/learning` — AI Learning Center
-- `/super-admin/dashboard` — Super admin
-
-### Exam
-- `/practice-test` — Written exam interface
-- `/live-exam` — Real-time voice AI examiner
-- `/student/exam-history` — Past results
-
----
-
-## Database Models (34 total)
-
-### Auth & RBAC
-User, PasswordReset, Branch, Department
-
-### CRM
-Lead, Student, Partner, Commission, Country, University, Course, Scholarship, Application, Document, Message, Notification, Task, Appointment, TimelineEntry, AuditLog, Setting
-
-### Exam
-ExamType, PracticeSet, Question, Attempt, Score, FreeQuota, Payment, DailyQuestionSet
-
-### AI Learning
-LearningMemory, AgentLearning, AgentEvolution, ExamAnalytics, AgentSpecialist
-
----
-
-## License
-
-Proprietary — ALO Education. All rights reserved.
+They are source inventories, not proof of runtime authorization or deployed data. Official specification links and the disposition of the supplied reference repository are in [`docs/REFERENCE_INTEGRATION_MATRIX.md`](./docs/REFERENCE_INTEGRATION_MATRIX.md).

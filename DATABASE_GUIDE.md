@@ -4,50 +4,79 @@
 SQLite via Prisma ORM (single-server deployment)
 
 ## Schema Location
-`prisma/schema.prisma` — 25 models
+`prisma/schema.prisma` — 46 models (48 tables created across 8 migrations)
 
 ## Models Overview
 
-### Authentication (4)
-- User: email, passwordHash, role, status, branchId, departmentId
-- Branch: name, address, phone, timezone
-- Department: name, branchId
-- PasswordReset: userId, token, expiresAt
+The authoritative, machine-checked list is `DATABASE_MODEL_INVENTORY.csv`, which
+is regenerated from `prisma/schema.prisma` by `npm run inventories` and
+verified in CI by `npm run inventories:check`. The summary below groups all
+**46** models by domain.
+
+### Authentication & Access (7)
+- `User` — email, passwordHash, role, status, branchId, departmentId
+- `Branch` — name, address, phone, timezone
+- `Department` — name, branchId
+- `PasswordReset` — userId, token, expiresAt
+- `Session` — userId, token, expiresAt
+- `Team` / `TeamMember` — tenant grouping and membership
+- `Role` / `Permission` / `RolePermission` — RBAC
 
 ### CRM Core (4)
-- Lead: name, email, phone, source, status, counselorId
-- Student: name, email, phone, nationality, passportNumber
-- Partner: organizationName, commissionRate
-- Commission: partnerId, studentId, amount, status
+- `Lead` — name, email, phone, source, status, counselorId
+- `Student` — name, email, phone, nationality, passportNumber
+- `Partner` — organizationName, commissionRate
+- `Commission` — partnerId, studentId, amount, status
 
 ### Education Catalog (4)
-- Country: name, code, flag
-- University: name, countryId, city, isPublished
-- Course: universityId, name, level, tuitionFee
-- Scholarship: universityId, name, amount, deadline
+- `Country` — name, code, flag
+- `University` — name, countryId, city, isPublished
+- `Course` — universityId, name, level, tuitionFee
+- `Scholarship` — universityId, name, amount, deadline
 
 ### Applications & Documents (2)
-- Application: studentId, courseId, status, assignedTo
-- Document: studentId, type, fileName, ocrStatus
+- `Application` — studentId, courseId, status, assignedTo
+- `Document` — studentId, type, fileName, ocrStatus
 
 ### Communications (2)
-- Message: channel, direction, body, leadId, studentId
-- Notification: userId, title, body, readAt
+- `Message` — channel, direction, body, leadId, studentId
+- `Notification` — userId, title, body, readAt
 
 ### Workflow (3)
-- Task: title, status, priority, dueDate, assigneeId
-- Appointment: title, startTime, endTime, studentId
-- TimelineEntry: entityType, entityId, action
+- `Task` — title, status, priority, dueDate, assigneeId
+- `Appointment` — title, startTime, endTime, studentId
+- `TimelineEntry` — entityType, entityId, action
 
 ### Audit & Config (2)
-- AuditLog: userId, action, resource, ipAddress
-- Setting: key, value
+- `AuditLog` — userId, action, resource, ipAddress
+- `Setting` — key, value
 
-### Exam Platform (4)
-- ExamType: code, name, category
-- PracticeSet: examTypeId, title, durationMin
-- Attempt: userId, practiceSetId, status
-- Score: attemptId, overall, confidence, providerUsed
+### Exam Platform (14)
+- `ExamType` — code, name, category
+- `PracticeSet` — examTypeId, title, durationMin
+- `Attempt` — userId, practiceSetId, status
+- `AttemptQuestion` — the frozen question set of one attempt
+- `AttemptAnswer` — the learner's answers to those questions
+- `AttemptEvaluation` — the platform's own evaluation agent's result, one row
+  per attempt and section (`WRITING` / `SPEAKING`), with the provider that
+  produced it and whether the local rule engine was used as a fallback
+- `Score` — attemptId, overall, confidence, providerUsed
+- `Question` / `QuestionOption` — the question bank
+- `QuestionAudioAsset` — listening audio metadata and its verification state
+- `FreeQuota` — the free-attempt allowance
+- `Payment` — payment records
+- `DailyQuestionSet` — the daily generation job's output
+
+### AI & Learning (5)
+- `LearningMemory` — per-learner learning state
+- `AgentLearning` — per-agent learning state
+- `AgentEvolution` — agent version history
+- `ExamAnalytics` — aggregate exam analytics
+- `AgentSpecialist` — the agent registry's specialist records
+
+### Content & Chat (2)
+- `StudyMaterial` — the RAG corpus
+- `ChatSession` — the handbook chat's sessions
 
 ## Migration Commands
 ```bash

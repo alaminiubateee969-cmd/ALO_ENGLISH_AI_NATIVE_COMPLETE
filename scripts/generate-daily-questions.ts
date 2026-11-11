@@ -1,24 +1,33 @@
 /**
- * scripts/generate-daily-questions.ts — Cron job for daily question generation.
+ * scripts/generate-daily-questions.ts
  *
- * Run this script daily to generate fresh questions for each exam type.
- * Uses the QuestionGeneratorAgent (AGENT-QGEN-01).
+ * The original daily question-generation entry point.
  *
- * Usage:
- *   bun run scripts/generate-daily-questions.ts
+ * It used to write hard-coded template content straight into live practice
+ * sets with no review gate, which is why it was disabled. It now refuses to
+ * do that, and points at the pipeline that replaced it.
  *
- * Cron (run at 2 AM daily):
- *   0 2 * * * cd /opt/alo-english/current && bun run scripts/generate-daily-questions.ts >> shared/logs/daily-questions.log 2>&1
+ * THE REPLACEMENT
+ * ───────────────
+ * The daily pipeline is `scripts/daily-question-pipeline.mjs`, driven by the
+ * Question Generation and Question Quality Gate agents. It produces original,
+ * blueprint-aligned drafts, checks them, and raises them for human approval.
+ * It never publishes anything by itself.
+ *
+ * Run:  npm run agents:daily
+ *
+ * This file remains as the named entry point because CI, the Makefile and
+ * existing operator runbooks refer to it. It performs no database writes.
  */
 
-import { generateAllDailyQuestions } from '../src/lib/agents/QuestionGeneratorAgent';
-
-async function main() {
-  await generateAllDailyQuestions();
-  process.exit(0);
-}
-
-main().catch((e) => {
-  console.error('❌ Daily question generation failed:', e);
-  process.exit(1);
-});
+console.error(
+  "BLOCKED: this script no longer generates content. Automatic generation into live " +
+    "practice sets without a review gate is not permitted, and the hard-coded templates it " +
+    "used to write have been removed.\n" +
+    "Use the reviewed pipeline instead:\n" +
+    "  npm run agents:daily\n" +
+    "It drives the Question Generation and Question Quality Gate agents, which produce " +
+    "original drafts, check them, and raise them for a human approval. Nothing is published " +
+    "until an administrator approves it.",
+);
+process.exitCode = 1;

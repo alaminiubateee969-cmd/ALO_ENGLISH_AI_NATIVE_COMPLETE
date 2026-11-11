@@ -1,52 +1,50 @@
-Method,Path,Auth,Description
-GET/POST,/admin/settings,varies,API route
-GET/POST,/admin/stats,varies,API route
-GET/POST,/agents/status,varies,API route
-GET/POST,/attempts,varies,API route
-GET/POST,/attempts/start,varies,API route
-GET/POST,/attempts/submit,varies,API route
-GET/POST,/auth/login,varies,API route
-GET/POST,/auth/logout,varies,API route
-GET/POST,/auth/me,varies,API route
-GET/POST,/auth/register,varies,API route
-GET/POST,/crm/applications/[id],varies,API route
-GET/POST,/crm/applications,varies,API route
-GET/POST,/crm/appointments/[id],varies,API route
-GET/POST,/crm/appointments,varies,API route
-GET/POST,/crm/branches/[id],varies,API route
-GET/POST,/crm/branches,varies,API route
-GET/POST,/crm/commissions/[id],varies,API route
-GET/POST,/crm/commissions,varies,API route
-GET/POST,/crm/countries/[id],varies,API route
-GET/POST,/crm/countries,varies,API route
-GET/POST,/crm/courses/[id],varies,API route
-GET/POST,/crm/courses,varies,API route
-GET/POST,/crm/departments/[id],varies,API route
-GET/POST,/crm/departments,varies,API route
-GET/POST,/crm/documents/[id],varies,API route
-GET/POST,/crm/documents,varies,API route
-GET/POST,/crm/leads/[id],varies,API route
-GET/POST,/crm/leads,varies,API route
-GET/POST,/crm/messages/[id],varies,API route
-GET/POST,/crm/messages,varies,API route
-GET/POST,/crm/notifications/[id],varies,API route
-GET/POST,/crm/notifications,varies,API route
-GET/POST,/crm/partners/[id],varies,API route
-GET/POST,/crm/partners,varies,API route
-GET/POST,/crm/scholarships/[id],varies,API route
-GET/POST,/crm/scholarships,varies,API route
-GET/POST,/crm/students/[id],varies,API route
-GET/POST,/crm/students,varies,API route
-GET/POST,/crm/tasks/[id],varies,API route
-GET/POST,/crm/tasks,varies,API route
-GET/POST,/crm/universities/[id],varies,API route
-GET/POST,/crm/universities,varies,API route
-GET/POST,/crm/users/[id],varies,API route
-GET/POST,/crm/users,varies,API route
-GET/POST,/deliverable,varies,API route
-GET/POST,/deliverables,varies,API route
-GET/POST,/exam-types,varies,API route
-GET/POST,/health,varies,API route
-GET/POST,/lead,varies,API route
-GET/POST,/practice-sets,varies,API route
-GET/POST,,varies,API route
+/admin/agents,not public allowlisted; page guard required,static shell + client,src/app/admin/agents/page.tsx
+/admin/analytics,not public allowlisted; page guard required,static shell + client,src/app/admin/analytics/page.tsx
+/admin/crm/{entity},not public allowlisted; page guard required,static shell + client,src/app/admin/crm/[entity]/page.tsx
+/admin/dashboard,not public allowlisted; page guard required,static shell + client,src/app/admin/dashboard/page.tsx
+/admin/exam-center,not public allowlisted; page guard required,static shell + client,src/app/admin/exam-center/page.tsx
+/admin/learning,not public allowlisted; page guard required,static shell + client,src/app/admin/learning/page.tsx
+/admin/seo,not public allowlisted; page guard required,static shell + client,src/app/admin/seo/page.tsx
+/admin/settings,not public allowlisted; page guard required,static shell + client,src/app/admin/settings/page.tsx
+/ask-handbook,public (page allowlist),static shell + client,src/app/ask-handbook/page.tsx
+/blog,public (page allowlist),dynamic (per request),src/app/blog/page.tsx
+/blog/{slug},not public allowlisted; page guard required,dynamic (per request),src/app/blog/[slug]/page.tsx
+/book-consultation,public (page allowlist),static (prerendered),src/app/book-consultation/page.tsx
+/contact,public (page allowlist),static (prerendered),src/app/contact/page.tsx
+/cookie-policy,public (page allowlist),static (prerendered),src/app/cookie-policy/page.tsx
+/course-finder,public (page allowlist),static (prerendered),src/app/course-finder/page.tsx
+/destinations,public (page allowlist),static (prerendered),src/app/destinations/page.tsx
+/employee/consent,not public allowlisted; page guard required,static shell + client,src/app/employee/consent/page.tsx
+/employee/crm/{entity},not public allowlisted; page guard required,static shell + client,src/app/employee/crm/[entity]/page.tsx
+/employee/dashboard,not public allowlisted; page guard required,static shell + client,src/app/employee/dashboard/page.tsx
+/employee/lead-priority,not public allowlisted; page guard required,static shell + client,src/app/employee/lead-priority/page.tsx
+/employee/pipeline,not public allowlisted; page guard required,static shell + client,src/app/employee/pipeline/page.tsx
+/employee/review-queue,not public allowlisted; page guard required,static shell + client,src/app/employee/review-queue/page.tsx
+/events,public (page allowlist),static (prerendered),src/app/events/page.tsx
+/exam-prep,public (page allowlist),static shell + client,src/app/exam-prep/page.tsx
+/factory,not public allowlisted; page guard required,static (prerendered),src/app/factory/page.tsx
+/forgot-password,public (page allowlist),static (prerendered),src/app/forgot-password/page.tsx
+/language-prep,public (page allowlist),static (prerendered),src/app/language-prep/page.tsx
+/live-exam,not public allowlisted; page guard required,static shell + client,src/app/live-exam/page.tsx
+/login,public (page allowlist),static (prerendered),src/app/login/page.tsx
+/page.tsx,not public allowlisted; page guard required,static (prerendered),src/app/page.tsx
+/partner/dashboard,not public allowlisted; page guard required,static shell + client,src/app/partner/dashboard/page.tsx
+/partner/marketing,not public allowlisted; page guard required,static (prerendered),src/app/partner/marketing/page.tsx
+/portals,public (page allowlist),static (prerendered),src/app/portals/page.tsx
+/practice-test,not public allowlisted; page guard required,static shell + client,src/app/practice-test/page.tsx
+/privacy-policy,public (page allowlist),static (prerendered),src/app/privacy-policy/page.tsx
+/register,public (page allowlist),static (prerendered),src/app/register/page.tsx
+/reset-password,public (page allowlist),static (prerendered),src/app/reset-password/page.tsx
+/resources,public (page allowlist),static (prerendered),src/app/resources/page.tsx
+/scholarships,public (page allowlist),static (prerendered),src/app/scholarships/page.tsx
+/services,public (page allowlist),static (prerendered),src/app/services/page.tsx
+/student/ai-teachers,not public allowlisted; page guard required,static shell + client,src/app/student/ai-teachers/page.tsx
+/student/dashboard,not public allowlisted; page guard required,static shell + client,src/app/student/dashboard/page.tsx
+/student/exam-history,not public allowlisted; page guard required,static shell + client,src/app/student/exam-history/page.tsx
+/student/materials,not public allowlisted; page guard required,static shell + client,src/app/student/materials/page.tsx
+/super-admin/dashboard,not public allowlisted; page guard required,static shell + client,src/app/super-admin/dashboard/page.tsx
+/super-admin/health,not public allowlisted; page guard required,static shell + client,src/app/super-admin/health/page.tsx
+/teacher/dashboard,not public allowlisted; page guard required,static shell + client,src/app/teacher/dashboard/page.tsx
+/terms,public (page allowlist),static (prerendered),src/app/terms/page.tsx
+/universities,public (page allowlist),static (prerendered),src/app/universities/page.tsx
+Path,Access,Rendering,Source

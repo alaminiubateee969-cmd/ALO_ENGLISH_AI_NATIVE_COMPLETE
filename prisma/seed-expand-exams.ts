@@ -1,22 +1,12 @@
 /**
- * prisma/seed-expand-exams.ts
- *
- * Expands the under-counted exams to full-length real mock tests matching
- * official exam formats:
- *
- *   IELTS General Training: 40 reading + 2 writing + 3 speaking = 45 questions
- *   IELTS UKVI: 20 listening + 20 reading + 1 writing + 1 speaking = 42 questions
- *   OET: 24 listening + 24 reading + 1 writing + 2 speaking = 51 questions
- *   Cambridge B2 First: 30 reading + 2 writing + 8 listening + 4 speaking = 44 questions
- *   LanguageCert: 20 reading + 2 writing + 10 listening + 3 speaking = 35 questions
- *   Linguaskill: 20 reading + 2 writing + 10 listening + 3 speaking = 35 questions
- *   OIETC: 20 reading + 2 writing + 10 listening + 3 speaking = 35 questions
- *   TOEIC: 50 listening + 50 reading = 100 questions
- *   LSAT: 24 reading + 1 writing = 25 questions
- *   MCAT: 20 reading + 1 writing = 21 questions
- *   Visa Interview: 10 speaking + 1 writing = 11 questions
+ * LEGACY SYNTHETIC SAMPLE SCRIPT. Earlier comments claimed full-length counts
+ * and official-format alignment; those claims were not verified and are
+ * withdrawn. This script is guarded to explicitly opted-in disposable
+ * test/sample databases and must not create production exam content.
  */
 
+import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
+assertSafeSampleSeedTarget();
 import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 
@@ -43,6 +33,23 @@ async function addQuestions(examCode: string, questions: Q[]) {
   let order = existing + 1;
 
   for (const q of questions) {
+    const type = q.type.toUpperCase();
+    let options = q.options || null;
+    let correctIndex = q.correctIndex ?? null;
+    let correctAnswer = q.correctAnswer || null;
+    if ((type === "TRUE_FALSE_NOT_GIVEN" || type === "TRUE_FALSE") && !options) {
+      const labels = type === "TRUE_FALSE" ? ["True", "False"] : ["True", "False", "Not Given"];
+      options = JSON.stringify(labels);
+      if (correctIndex === null && correctAnswer) {
+        const norm = String(correctAnswer).toUpperCase().replace(/[^A-Z]/g, "");
+        const map: Record<string, number> = { T: 0, TRUE: 0, YES: 0, Y: 0, F: 1, FALSE: 1, NO: 1, N: 1, NG: 2, NOTGIVEN: 2 };
+        correctIndex = map[norm] ?? null;
+      }
+    }
+    let correctIndices = (q as any).correctIndices || null;
+    if (type === "MATCHING" && !correctIndices && correctIndex !== null) {
+      correctIndices = JSON.stringify([correctIndex]);
+    }
     await db.question.create({
       data: {
         practiceSetId: ps.id,
@@ -50,9 +57,10 @@ async function addQuestions(examCode: string, questions: Q[]) {
         type: q.type,
         prompt: q.prompt,
         passage: q.passage || null,
-        options: q.options || null,
-        correctAnswer: q.correctAnswer || null,
-        correctIndex: q.correctIndex ?? null,
+        options,
+        correctAnswer,
+        correctIndex,
+        correctIndices,
         wordLimit: q.wordLimit || null,
         points: 1,
         order: order++,
@@ -204,6 +212,16 @@ const OET_EXTRA: Q[] = [
 
 // ═══ Cambridge B2 First — Expand (10 more) ══════════════════════════════
 
+/**
+ * Shared open-cloze passage. Every gap question repeats it so that each one
+ * is answerable on its own: a question that shows "Gap 2:" with no context
+ * cannot be answered, and the bank auditor rejects prompts that short.
+ */
+const CAMBRIDGE_OPEN_CLOZE =
+  "Open cloze: For many people, working from home has become ___1___ new normal. " +
+  "Studies show that remote workers are, ___2___ average, 13% more productive than office workers. " +
+  "However, some struggle ___3___ loneliness and lack of motivation.";
+
 const CAMBRIDGE_EXTRA: Q[] = [
   // Reading & Use of English
   { section: "READING", type: "MULTIPLE_CHOICE", order: 7,
@@ -221,18 +239,20 @@ const CAMBRIDGE_EXTRA: Q[] = [
     correctAnswer: "FALSE",
   },
   { section: "READING", type: "MULTIPLE_CHOICE", order: 10,
-    passage: "Open cloze: For many people, working from home has become ___1___ new normal. Studies show that remote workers are, ___2___ average, 13% more productive than office workers. However, some struggle ___3___ loneliness and lack of motivation.",
-    prompt: "Gap 1:",
+    passage: CAMBRIDGE_OPEN_CLOZE,
+    prompt: "Gap 1 — complete the sentence: \"For many people, working from home has become ___ new normal.\"",
     options: JSON.stringify(["a", "the", "an", "some"]),
     correctIndex: 1,
   },
   { section: "READING", type: "MULTIPLE_CHOICE", order: 11,
-    prompt: "Gap 2:",
+    passage: CAMBRIDGE_OPEN_CLOZE,
+    prompt: "Gap 2 — complete the sentence: \"Studies show that remote workers are, ___ average, 13% more productive than office workers.\"",
     options: JSON.stringify(["in", "at", "on", "for"]),
     correctIndex: 2,
   },
   { section: "READING", type: "MULTIPLE_CHOICE", order: 12,
-    prompt: "Gap 3:",
+    passage: CAMBRIDGE_OPEN_CLOZE,
+    prompt: "Gap 3 — complete the sentence: \"However, some struggle ___ loneliness and lack of motivation.\"",
     options: JSON.stringify(["with", "by", "from", "about"]),
     correctIndex: 0,
   },

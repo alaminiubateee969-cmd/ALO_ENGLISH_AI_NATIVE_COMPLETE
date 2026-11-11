@@ -46,11 +46,17 @@ export async function GET(req: Request): Promise<Response> {
           submittedAt: a.submittedAt,
           examType: a.practiceSet.examType,
           practiceSet: { title: a.practiceSet.title },
-          score: a.score
+          score: a.score?.providerUsed === 'deterministic_objective'
             ? {
                 overall: a.score.overall,
-                confidence: a.score.confidence,
+                listening: a.score.listening,
+                reading: a.score.reading,
+                writing: null,
+                speaking: null,
+                confidence: null,
+                confidenceCalibrated: false,
                 providerUsed: a.score.providerUsed,
+                isOfficialScore: false,
               }
             : null,
         })),

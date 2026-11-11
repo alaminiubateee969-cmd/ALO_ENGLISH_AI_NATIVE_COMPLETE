@@ -23,7 +23,7 @@ export const EXAM_MODULES = [
 ];
 
 export const PRICING_PLANS = [
-  { id: "free", name: "Free Trial", price: "৳0", period: "one-time", description: "Start free — no card required.", features: ["1 free mock (public students)", "3 free mocks for ALO students", "Smart Score estimate", "Basic writing feedback", "Result report download"], cta: "Start Free Practice", highlighted: false },
+  { id: "free", name: "Free Forever", price: "৳0", period: "unlimited", description: "Everything is free — no card, no quota, no expiry.", features: ["Unlimited free mock tests — every exam", "Unlimited AI speaking practice (24/7)", "Smart Score estimate", "Writing feedback", "Result report download", "Full study-material library"], cta: "Start Free Practice", highlighted: true },
   { id: "single", name: "Single Mock Test", price: "৳499", period: "per test", description: "Buy one full mock test on demand.", features: ["1 full-length mock test", "Any exam type", "Full Smart Score report", "Writing + speaking feedback", "Downloadable PDF report", "Email report delivery"], cta: "Buy Single Mock", highlighted: false },
   { id: "bundle", name: "5 Mock Test Bundle", price: "৳1,999", period: "5 tests", description: "Best value for serious preparation.", features: ["5 full-length mock tests", "Mix any exam types", "Full Smart Score each", "Priority feedback", "Personalised study plan", "CRM counselor sync", "1:1 review session"], cta: "Buy Bundle & Save 20%", highlighted: true, badge: "Best Value" },
   { id: "prep", name: "English Prep Course", price: "Custom", period: "cohort", description: "Full guided preparation with teachers.", features: ["Unlimited mocks during course", "Live classes with teachers", "1:1 speaking practice", "Writing correction by examiners", "Personal counselor + plan", "Visa & admission guidance"], cta: "Talk to ALO Advisor", highlighted: false },
@@ -31,7 +31,7 @@ export const PRICING_PLANS = [
 
 export const FAQS = [
   { q: "Are these official exam questions?", a: "No. All questions are 100% original, exam-aligned practice written by ALO Education. They mimic official-style structure, skill coverage and difficulty but are not official exam content. No guarantee of real-exam repetition. Scores are practice estimates only." },
-  { q: "How many free mock tests can I take?", a: "ALO Education registered students receive 3 free mock tests total. New visitors receive 1 free mock test. Quota is enforced securely on our backend using verified email, phone, device and session — refreshing the browser will not reset it." },
+  { q: "How many free mock tests can I take?", a: "Unlimited. Every exam, every mock test, every practice feature — including AI speaking practice and the study-material library — is completely free, 24/7, for registered students and visitors alike. There is no quota and nothing to pay." },
   { q: "Are the scores official?", a: "No. ALO Education practice tests are preparation tools only. Scores are estimates produced by our Smart Score Engine and examiner review. Official exam results are issued only by authorised test providers (IELTS, PTE, TOEFL, Duolingo, OIETC, OET)." },
   { q: "How does partner-student benefit work?", a: "A partner student gets English test benefits only if they have an active ALO application (statuses: Application Draft through Visa File Created). Default benefits: 3 mock test vouchers, 1 speaking practice, 1 writing evaluation, 1 study plan, 1 document checklist. No active application = no free voucher." },
   { q: "Can I download my results and recordings?", a: "Yes. Every completed mock produces a downloadable PDF report. Speaking recordings and writing submissions are auth-gated — only you can download your own files. Admins and examiners access only what RBAC permits, fully audit-logged." },
@@ -41,13 +41,13 @@ export const FAQS = [
 export const TESTIMONIALS = [
   { name: "Tania Islam", role: "IELTS Academic · Dhaka", score: "Band 7.5", quote: "The mock tests felt exactly like the real exam. The Smart Score report pinpointed my weak areas in reading, and my band jumped from 6.0 to 7.5 in six weeks.", initials: "TI" },
   { name: "Mahin Chowdhury", role: "PTE Academic · Chittagong", score: "Score 79", quote: "Speaking practice with the ALO Speaking Evaluator was a game changer. I improved my fluency and the repeat-sentence drills were spot on.", initials: "MC" },
-  { name: "Nusrat Jahan", role: "Duolingo · Sylhet", score: "Score 135", quote: "Being an ALO student I got 3 free mocks. The adaptive practice and writing feedback were exactly what I needed.", initials: "NJ" },
+  { name: "Nusrat Jahan", role: "Duolingo · Sylhet", score: "Score 135", quote: "Unlimited free mocks meant I could practise every day until test day. The adaptive practice and writing feedback were exactly what I needed.", initials: "NJ" },
   { name: "Rakib Hasan", role: "TOEFL iBT · Rajshahi", score: "Score 104", quote: "The integrated writing and speaking tasks were realistic. The downloadable report helped my counselor build a perfect study plan.", initials: "RH" },
 ];
 
 /* ===== Student Portal data ===== */
 export const STUDENT_KPIS = [
-  { label: "Mock tests available", value: "2", sub: "of 3 free", icon: "vouchers", color: "orange" },
+  { label: "Mock tests available", value: "∞", sub: "unlimited, free 24/7", icon: "vouchers", color: "orange" },
   { label: "Tests attempted", value: "5", sub: "this quarter", icon: "tests", color: "blue" },
   { label: "Best score", value: "7.5", sub: "IELTS band", icon: "award", color: "blue" },
   { label: "Avg practice score", value: "7.0", sub: "+1.2 lift", icon: "trend", color: "orange" },
@@ -197,7 +197,7 @@ export const TRUST_STATS = [
 ];
 
 export const JOURNEY_STEPS = [
-  { step: "01", title: "Register free", desc: "Create your account in 30 seconds. Verify ALO Student ID to unlock 3 free mocks." },
+  { step: "01", title: "Register free", desc: "Create your account in 30 seconds. Everything is free and unlimited from the first login." },
   { step: "02", title: "Pick an exam", desc: "IELTS, PTE, TOEFL, Duolingo, OIETC, OET or ALO Placement — full-length or section practice." },
   { step: "03", title: "Take the mock", desc: "Real timer, question palette, autosave, listening audio, writing editor, speaking recorder." },
   { step: "04", title: "Get feedback", desc: "Smart Score estimate, skill breakdown, writing & speaking feedback, downloadable PDF report." },
@@ -210,12 +210,12 @@ export const CRM_SYNC_FIELDS = [
 ];
 
 export const FREE_QUOTA_RULES = [
-  { rule: "ALO student = 3 free mocks", desc: "Verified via ALO Student ID, CRM sync, or admin mark" },
-  { rule: "Public student = 1 free mock", desc: "Tracked by email + phone + device + session" },
+  { rule: "Everything free, unlimited", desc: "Every exam, mock and practice feature — for every learner, 24/7" },
+  { rule: "No payment needed", desc: "There is no paid tier; nothing is ever locked behind a purchase" },
   { rule: "Backend-enforced", desc: "Cannot be bypassed by refreshing browser" },
-  { rule: "Admin can override", desc: "Add extra quota, scholarships, counselor-approved access" },
-  { rule: "Audit-logged", desc: "Every free quota usage logged with IP & user agent" },
-  { rule: "CRM-visible", desc: "Counselors see quota & results in CRM timeline" },
+  { rule: "Admin can override", desc: "Grant scholarships, counselor-approved access and guided support" },
+  { rule: "Audit-logged", desc: "Every attempt and score logged with IP & user agent" },
+  { rule: "CRM-visible", desc: "Counselors see results in the CRM timeline" },
 ];
 
 export const PRACTICE_DISCLAIMER = "This is original exam-aligned practice for preparation only. Scores are practice estimates. Not official exam content. No guarantee of real-exam repetition.";

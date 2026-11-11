@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Privacy Policy" };
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "How ALO Education collects, uses and keeps personal information, what we never do with it, and how to ask us to correct or remove it.",
+};
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 prose prose-slate">

@@ -1,0 +1,245 @@
+/**
+ * POST /api/webhooks/[provider] — inbound message ingestion.
+ *
+ * Providers: whatsapp_cloud | meta_messenger | instagram | sms_provider
+ *
+ * This route is public by necessity and therefore treats its input as hostile:
+ *
+ *   1. The signature is verified against the raw body BEFORE the JSON is parsed
+ *      or any database work happens. An unverified request is rejected with 401
+ *      and nothing is written.
+ *   2. Duplicate deliveries are detected by idempotency key, so a provider that
+ *      retries five times creates one student, one message and one document.
+ *   3. Every response is quick. Providers retry on timeout, and a retry storm is
+ *      exactly what duplicate protection exists to absorb.
+ *
+ * It does NOT trust the payload for identity: sender details feed the matching
+ * rules, and an ambiguous match becomes a review-queue entry rather than an
+ * attachment to someone else's record.
+ *
+ * Configuration (see .env.example):
+ *   WHATSAPP_APP_SECRET, META_APP_SECRET, SMS_WEBHOOK_SECRET
+ *   WHATSAPP_VERIFY_TOKEN (GET handshake)
+ *
+ * Without the relevant secret the route answers 503: unconfigured, not open.
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { badRequest, serviceUnavailable, unauthorized, withErrorHandler } from '@/lib/responses';
+import { db } from '@/lib/db';
+import { audit } from '@/lib/audit';
+import { ASSISTANT_AUTHOR, runAfterHoursAssistant } from '@/lib/crm/assistant-runner';
+import { deliverOutbound } from '@/lib/crm/outbound';
+import { prismaOutboundStore } from '@/lib/crm/prisma-outbound-store';
+import { defaultAdapterFor } from '@/lib/crm/outbound-providers';
+import { normalizePhone } from '@/lib/crm/identity';
+import { ingestInboundMessage, type InboundAttachment, type InboundMessage } from '@/lib/crm/ingest';
+import { prismaIngestStore } from '@/lib/crm/prisma-store';
+import type { ProviderId } from '@/lib/crm/automation';
+import { verifyWebhookSignature } from '@/lib/crm/webhook-signature';
+import { normaliseDeliveryReceipts, normaliseProviderPayload, type ProviderPayload } from '@/lib/crm/provider-payload';
+import { collectInboundAttachments } from '@/lib/crm/media-fetcher';
+import { applyDeliveryReceipt } from '@/lib/crm/outbound';
+import { prismaReceiptStore } from '@/lib/crm/prisma-outbound-store';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * Run the after-hours assistant for one ingested message.
+ *
+ * Deliberately narrow: it needs a student (consent cannot be checked without
+ * one), it records nothing when the planner says silence, and a HANDOFF is
+ * recorded on the conversation as needing human review rather than being
+ * dropped — the whole value of the assistant is knowing what it did NOT answer.
+ */
+async function maybeRunAssistant(
+  normalised: { channel: string; externalThreadId: string | null; body: string },
+  outcome: Extract<Awaited<ReturnType<typeof ingestInboundMessage>>, { status: 'PROCESSED' }>,
+): Promise<{ status: string; code: string; reason: string } | null> {
+  if (!outcome.studentId) return null;
+
+  const [student, repliesThisConversation, serviceWithdrawn] = await Promise.all([
+    db.student.findUnique({ where: { id: outcome.studentId }, select: { phone: true, deletedAt: true } }),
+    db.messageOutbox.count({ where: { conversationId: outcome.conversationId, status: 'SENT', createdBy: ASSISTANT_AUTHOR } }),
+    db.communicationConsent
+      .count({ where: { studentId: outcome.studentId, purpose: 'SERVICE', status: { in: ['WITHDRAWN', 'DENIED'] } } })
+      .then((count) => count > 0),
+  ]);
+  if (!student || student.deletedAt) return null;
+
+  const result = await runAfterHoursAssistant(
+    {
+      conversationId: outcome.conversationId,
+      channel: normalised.channel,
+      studentId: outcome.studentId,
+      recipientHandle: normalizePhone(student.phone ?? '') || normalised.externalThreadId,
+      body: normalised.body,
+      repliesThisConversation,
+      serviceWithdrawn,
+    },
+    { deliver: (draft) => deliverOutbound(draft, { store: prismaOutboundStore, adapterFor: (adapterProvider) => defaultAdapterFor(adapterProvider) }) },
+  );
+
+  if (result.status === 'HANDOFF') {
+    // Recorded on the conversation so the review queue shows a question the
+    // assistant deliberately left for a person.
+    await db.conversation.update({
+      where: { id: outcome.conversationId },
+      data: { needsReview: true, reviewReason: `After-hours assistant did not answer: ${result.plan.reason}` },
+    });
+  }
+
+  return { status: result.status, code: result.plan.code, reason: result.plan.reason };
+}
+
+/** Body ceiling. A webhook carrying more is not a chat message. */
+const MAX_WEBHOOK_BYTES = 2 * 1024 * 1024;
+
+/** GET — Meta's subscription handshake. Echoes the challenge only on a match. */
+export async function GET(req: NextRequest, { params }: { params: Promise<{ provider: string }> }): Promise<Response> {
+  const { provider } = await params;
+  const url = new URL(req.url);
+  const mode = url.searchParams.get('hub.mode');
+  const token = url.searchParams.get('hub.verify_token');
+  const challenge = url.searchParams.get('hub.challenge');
+
+  if (provider === 'sms_provider' || provider === 'internal') {
+    return serviceUnavailable(`${provider} does not use a verification handshake.`);
+  }
+
+  const expected = process.env.WHATSAPP_VERIFY_TOKEN?.trim();
+  if (!expected) {
+    // Fails closed: an unconfigured deployment must not confirm a subscription.
+    return serviceUnavailable('WHATSAPP_VERIFY_TOKEN is not configured; the webhook subscription cannot be verified.');
+  }
+  if (mode !== 'subscribe' || !token || token !== expected) {
+    return unauthorized('Verification token did not match.');
+  }
+
+  return new NextResponse(challenge ?? '', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+}
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ provider: string }> }): Promise<Response> {
+  return withErrorHandler(async () => {
+    const { provider } = await params;
+
+    // ── 1. Size, then signature, over the exact bytes received. ─────────────
+    const rawBody = await req.text();
+    if (rawBody.length > MAX_WEBHOOK_BYTES) {
+      return badRequest('Webhook payload exceeds the accepted size.');
+    }
+
+    const verification = verifyWebhookSignature(provider, rawBody, req.headers);
+    if (!verification.verified) {
+      // Record nothing on an unverified request — not even a rejection row,
+      // which would let an attacker fill the event table.
+      const status = verification.code === 'NOT_CONFIGURED' ? 503 : 401;
+      const message = `${verification.code}: ${verification.reason}`;
+      return status === 503 ? serviceUnavailable(message) : unauthorized(message);
+    }
+
+    let payload: ProviderPayload;
+    try {
+      payload = JSON.parse(rawBody) as ProviderPayload;
+    } catch {
+      return badRequest('Webhook body is not valid JSON.');
+    }
+
+    // Providers report delivery progress through the same endpoint, so this is
+    // read first: a status callback is not "an event we ignore", it is the only
+    // way a message we sent stops saying merely "sent" and starts reflecting
+    // what the student actually experienced.
+    const receipts = normaliseDeliveryReceipts(provider, payload);
+    const receiptResults = receipts.length
+      ? await Promise.all(receipts.map((receipt) => applyDeliveryReceipt(receipt, prismaReceiptStore)))
+      : [];
+
+    const normalised = normaliseProviderPayload(provider, payload);
+    if (!normalised) {
+      // Acknowledged either way: an event with nothing we consume must return
+      // 200, or the provider retries forever.
+      return NextResponse.json(
+        {
+          received: true,
+          processed: false,
+          receipts: receiptResults.length > 0 ? receiptResults : undefined,
+          reason: receipts.length > 0 ? 'Delivery receipts applied.' : 'No inbound message in this event.',
+        },
+        { status: 200 },
+      );
+    }
+
+    // Media bytes are referenced by the webhook, never carried in it. They are
+    // fetched here with the provider's access token — see ./media-fetcher for
+    // what that client refuses to do. Without a token the message is still
+    // recorded, and every attachment is reported as uncollected rather than
+    // dropped silently. A fetch that fails never fails the message.
+    const collected = normalised.mediaRefs.length
+      ? await collectInboundAttachments(provider as ProviderId, normalised.mediaRefs)
+      : { attachments: [] as InboundAttachment[], rejected: [], uncollected: [] as string[] };
+
+    const attachments = collected.attachments;
+    const uncollectedMedia = collected.uncollected;
+
+    const message: InboundMessage = {
+      provider: provider as ProviderId,
+      channel: normalised.channel,
+      externalEventId: normalised.externalEventId,
+      externalThreadId: normalised.externalThreadId,
+      providerMessageId: normalised.providerMessageId,
+      senderId: normalised.senderId,
+      senderName: normalised.senderName,
+      senderPhone: normalised.senderPhone,
+      body: normalised.body,
+      occurredAt: normalised.occurredAt,
+      attachments,
+      prefetchRejected: collected.rejected,
+      signatureVerified: true,
+      payload,
+    };
+
+    const outcome = await ingestInboundMessage(message, prismaIngestStore);
+
+    // ── The after-hours assistant, if it is switched on. ────────────────────
+    // Off by default: enabling it takes a deliberate ASSISTANT_ENABLED=true, and
+    // even then it only answers outside office hours, from reviewed answers, with
+    // the disclosure attached — and it goes silent for anything that touches an
+    // admission, scholarship, visa or score outcome.
+    let assistant: { status: string; code: string; reason: string } | null = null;
+    if (outcome.status === 'PROCESSED' && process.env.ASSISTANT_ENABLED === 'true') {
+      assistant = await maybeRunAssistant(normalised, outcome);
+    }
+
+    if (receiptResults.length > 0) {
+      // Same event carried both. Both are handled; neither is skipped.
+      await audit('MESSAGES_RECEIPT', {
+        resource: `Webhook:${provider}`,
+        metadata: { applied: receiptResults.filter((result) => result.status === 'APPLIED').length, seen: receiptResults.length },
+      });
+    }
+
+    if (outcome.status === 'REJECTED') {
+      return badRequest(outcome.reason);
+    }
+
+    // A duplicate is a success from the provider's point of view: it means the
+    // event was already handled, and it must stop retrying.
+    return NextResponse.json(
+      {
+        received: true,
+        processed: outcome.status === 'PROCESSED',
+        duplicate: outcome.status === 'DUPLICATE',
+        needsReview: outcome.status === 'PROCESSED' ? outcome.needsReview : undefined,
+        identityDecision: outcome.status === 'PROCESSED' ? outcome.identityDecision : undefined,
+        // Reported so an operator can see that media exists but was not stored,
+        // and why. Attachments that did arrive are PENDING_REVIEW documents.
+        uncollectedMedia: uncollectedMedia.length > 0 ? uncollectedMedia : undefined,
+        assistant: assistant ?? undefined,
+        attachmentsStored: outcome.status === 'PROCESSED' ? outcome.attachmentsStored.length : undefined,
+        attachmentsRejected: outcome.status === 'PROCESSED' && outcome.attachmentsRejected.length > 0 ? outcome.attachmentsRejected : undefined,
+      },
+      { status: 200 },
+    );
+  });
+}

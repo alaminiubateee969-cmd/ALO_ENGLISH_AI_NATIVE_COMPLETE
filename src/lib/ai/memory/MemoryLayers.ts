@@ -44,12 +44,12 @@ export async function getAttemptMemory(userId: string, limit: number = 10): Prom
   reading: number | null;
   writing: number | null;
   speaking: number | null;
-  confidence: number;
+  confidence: null;
   providerUsed: string;
   date: Date;
 }>> {
   const scores = await db.score.findMany({
-    where: { userId },
+    where: { userId, providerUsed: "deterministic_objective" },
     orderBy: { createdAt: "desc" },
     take: limit,
     select: {
@@ -57,9 +57,6 @@ export async function getAttemptMemory(userId: string, limit: number = 10): Prom
       overall: true,
       listening: true,
       reading: true,
-      writing: true,
-      speaking: true,
-      confidence: true,
       providerUsed: true,
       createdAt: true,
     },
@@ -69,9 +66,9 @@ export async function getAttemptMemory(userId: string, limit: number = 10): Prom
     overall: s.overall,
     listening: s.listening,
     reading: s.reading,
-    writing: s.writing,
-    speaking: s.speaking,
-    confidence: s.confidence,
+    writing: null,
+    speaking: null,
+    confidence: null,
     providerUsed: s.providerUsed,
     date: s.createdAt,
   }));

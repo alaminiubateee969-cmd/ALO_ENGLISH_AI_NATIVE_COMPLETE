@@ -12,17 +12,26 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
+  studentId: z.string().min(1),
+  courseId: z.string().min(1),
   intake: z.string().optional(),
   status: z.string().optional(),
   assignedTo: z.string().optional(),
   notes: z.string().optional(),
 });
 
+const updateSchema = z.object({
+  intake: z.string().optional(),
+  status: z.string().optional(),
+  assignedTo: z.string().optional(),
+  notes: z.string().optional(),
+}).partial();
+
 const config = {
   entityName: 'applications',
   roleName: 'COUNSELOR',
   createSchema,
-  updateSchema: createSchema.partial(),
+  updateSchema,
   searchableFields: ["status",],
   select: {
     id: true,

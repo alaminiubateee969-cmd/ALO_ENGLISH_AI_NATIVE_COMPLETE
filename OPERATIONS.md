@@ -101,7 +101,7 @@ Caddy handles this automatically. Verify:
 COMMAND:
 ```bash
 sudo systemctl status caddy
-curl -sI https://english.aloeducation.com/ | head -5
+curl -sI https://english.alolabs.net/ | head -5
 ```
 
 ### Test rollback procedure

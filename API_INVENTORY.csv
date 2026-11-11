@@ -1,52 +1,128 @@
-Method,Path,Auth,Description
-GET/POST,/admin/settings,varies,API endpoint
-GET/POST,/admin/stats,varies,API endpoint
-GET/POST,/agents/status,varies,API endpoint
-GET/POST,/attempts,varies,API endpoint
-GET/POST,/attempts/start,varies,API endpoint
-GET/POST,/attempts/submit,varies,API endpoint
-GET/POST,/auth/login,varies,API endpoint
-GET/POST,/auth/logout,varies,API endpoint
-GET/POST,/auth/me,varies,API endpoint
-GET/POST,/auth/register,varies,API endpoint
-GET/POST,/crm/applications/[id],varies,API endpoint
-GET/POST,/crm/applications,varies,API endpoint
-GET/POST,/crm/appointments/[id],varies,API endpoint
-GET/POST,/crm/appointments,varies,API endpoint
-GET/POST,/crm/branches/[id],varies,API endpoint
-GET/POST,/crm/branches,varies,API endpoint
-GET/POST,/crm/commissions/[id],varies,API endpoint
-GET/POST,/crm/commissions,varies,API endpoint
-GET/POST,/crm/countries/[id],varies,API endpoint
-GET/POST,/crm/countries,varies,API endpoint
-GET/POST,/crm/courses/[id],varies,API endpoint
-GET/POST,/crm/courses,varies,API endpoint
-GET/POST,/crm/departments/[id],varies,API endpoint
-GET/POST,/crm/departments,varies,API endpoint
-GET/POST,/crm/documents/[id],varies,API endpoint
-GET/POST,/crm/documents,varies,API endpoint
-GET/POST,/crm/leads/[id],varies,API endpoint
-GET/POST,/crm/leads,varies,API endpoint
-GET/POST,/crm/messages/[id],varies,API endpoint
-GET/POST,/crm/messages,varies,API endpoint
-GET/POST,/crm/notifications/[id],varies,API endpoint
-GET/POST,/crm/notifications,varies,API endpoint
-GET/POST,/crm/partners/[id],varies,API endpoint
-GET/POST,/crm/partners,varies,API endpoint
-GET/POST,/crm/scholarships/[id],varies,API endpoint
-GET/POST,/crm/scholarships,varies,API endpoint
-GET/POST,/crm/students/[id],varies,API endpoint
-GET/POST,/crm/students,varies,API endpoint
-GET/POST,/crm/tasks/[id],varies,API endpoint
-GET/POST,/crm/tasks,varies,API endpoint
-GET/POST,/crm/universities/[id],varies,API endpoint
-GET/POST,/crm/universities,varies,API endpoint
-GET/POST,/crm/users/[id],varies,API endpoint
-GET/POST,/crm/users,varies,API endpoint
-GET/POST,/deliverable,varies,API endpoint
-GET/POST,/deliverables,varies,API endpoint
-GET/POST,/exam-types,varies,API endpoint
-GET/POST,/health,varies,API endpoint
-GET/POST,/lead,varies,API endpoint
-GET/POST,/practice-sets,varies,API endpoint
-GET/POST,,varies,API endpoint
+Path,Methods,Auth,Runtime,Source
+/api,GET,none declared,nodejs,src/app/api/route.ts
+/api/admin/analytics,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/analytics/route.ts
+/api/admin/integrations,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/integrations/route.ts
+/api/admin/practice-sets,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/practice-sets/route.ts
+/api/admin/practice-sets/{id},GET PATCH DELETE,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/practice-sets/[id]/route.ts
+/api/admin/practice-sets/{id}/questions,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/practice-sets/[id]/questions/route.ts
+/api/admin/questions/{id},GET PATCH DELETE,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/questions/[id]/route.ts
+/api/admin/seo/audit,GET,role:ADMIN+SUPER_ADMIN+MARKETING_MANAGER,nodejs,src/app/api/admin/seo/audit/route.ts
+/api/admin/settings,GET POST,role:ADMIN,nodejs,src/app/api/admin/settings/route.ts
+/api/admin/stats,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/admin/stats/route.ts
+/api/agents/approvals,GET POST,authenticated,nodejs,src/app/api/agents/approvals/route.ts
+/api/agents/jobs,GET POST,authenticated,nodejs,src/app/api/agents/jobs/route.ts
+/api/agents/metrics,GET,authenticated,nodejs,src/app/api/agents/metrics/route.ts
+/api/agents/status,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/agents/status/route.ts
+/api/agents/worker/run,GET POST,authenticated,nodejs,src/app/api/agents/worker/run/route.ts
+/api/analytics/events,POST,public intended (allowlist; verify handler),nodejs,src/app/api/analytics/events/route.ts
+/api/attempts,GET,authenticated,nodejs,src/app/api/attempts/route.ts
+/api/attempts/{id},GET,authenticated,nodejs,src/app/api/attempts/[id]/route.ts
+/api/attempts/{id}/evaluation,GET,authenticated,nodejs,src/app/api/attempts/[id]/evaluation/route.ts
+/api/attempts/active,GET,authenticated,nodejs,src/app/api/attempts/active/route.ts
+/api/attempts/save,POST,authenticated,nodejs,src/app/api/attempts/save/route.ts
+/api/attempts/start,POST,authenticated,nodejs,src/app/api/attempts/start/route.ts
+/api/attempts/submit,POST,authenticated,nodejs,src/app/api/attempts/submit/route.ts
+/api/audio,GET,authenticated,nodejs,src/app/api/audio/route.ts
+/api/auth/forgot-password,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/forgot-password/route.ts
+/api/auth/login,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/login/route.ts
+/api/auth/logout,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/logout/route.ts
+/api/auth/me,GET,public intended (allowlist; verify handler),nodejs,src/app/api/auth/me/route.ts
+/api/auth/register,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/register/route.ts
+/api/auth/reset-password,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/reset-password/route.ts
+/api/blog/posts,GET POST,role:ADMIN+SUPER_ADMIN+MARKETING_MANAGER,nodejs,src/app/api/blog/posts/route.ts
+/api/blog/posts/{slug},GET PATCH,role:multiple,nodejs,src/app/api/blog/posts/[slug]/route.ts
+/api/crm/applications,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/route.ts
+/api/crm/applications/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/[id]/route.ts
+/api/crm/appointments,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/route.ts
+/api/crm/appointments/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/[id]/route.ts
+/api/crm/assistant/reply,POST,none declared,nodejs,src/app/api/crm/assistant/reply/route.ts
+/api/crm/audit-logs,GET POST (writes answer 405),role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/audit-logs/route.ts
+/api/crm/audit-logs/{id},GET PUT DELETE (writes answer 405),role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/audit-logs/[id]/route.ts
+/api/crm/branches,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/branches/route.ts
+/api/crm/branches/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/branches/[id]/route.ts
+/api/crm/commissions,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/commissions/route.ts
+/api/crm/commissions/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/commissions/[id]/route.ts
+/api/crm/consent,GET POST,none declared,nodejs,src/app/api/crm/consent/route.ts
+/api/crm/countries,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/countries/route.ts
+/api/crm/countries/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/countries/[id]/route.ts
+/api/crm/courses,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/courses/route.ts
+/api/crm/courses/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/courses/[id]/route.ts
+/api/crm/departments,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/departments/route.ts
+/api/crm/departments/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/departments/[id]/route.ts
+/api/crm/documents,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/documents/route.ts
+/api/crm/documents/{id},GET PUT DELETE,none declared,nodejs,src/app/api/crm/documents/[id]/route.ts
+/api/crm/documents/{id}/download,GET,none declared,nodejs,src/app/api/crm/documents/[id]/download/route.ts
+/api/crm/leads,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/leads/route.ts
+/api/crm/leads/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/leads/[id]/route.ts
+/api/crm/leads/priority,GET,role:COUNSELOR+BRANCH_MANAGER+ADMIN+SUPER_ADMIN,nodejs,src/app/api/crm/leads/priority/route.ts
+/api/crm/messages,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/messages/route.ts
+/api/crm/messages/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/messages/[id]/route.ts
+/api/crm/messages/queue/run,POST,role:SUPER_ADMIN,nodejs,src/app/api/crm/messages/queue/run/route.ts
+/api/crm/messages/send,POST,none declared,nodejs,src/app/api/crm/messages/send/route.ts
+/api/crm/notifications,GET POST,role:STUDENT (shared CRUD helper),nodejs,src/app/api/crm/notifications/route.ts
+/api/crm/notifications/{id},GET PUT DELETE,role:STUDENT (shared CRUD helper),nodejs,src/app/api/crm/notifications/[id]/route.ts
+/api/crm/partners,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/partners/route.ts
+/api/crm/partners/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/partners/[id]/route.ts
+/api/crm/partners/{id}/user,PUT,role:ADMIN,nodejs,src/app/api/crm/partners/[id]/user/route.ts
+/api/crm/review-queue,GET,none declared,nodejs,src/app/api/crm/review-queue/route.ts
+/api/crm/review-queue/conversations/{id},POST,none declared,nodejs,src/app/api/crm/review-queue/conversations/[id]/route.ts
+/api/crm/review-queue/students/{id},POST,none declared,nodejs,src/app/api/crm/review-queue/students/[id]/route.ts
+/api/crm/scholarships,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/scholarships/route.ts
+/api/crm/scholarships/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/scholarships/[id]/route.ts
+/api/crm/students,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/students/route.ts
+/api/crm/students/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/students/[id]/route.ts
+/api/crm/tasks,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/tasks/route.ts
+/api/crm/tasks/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/tasks/[id]/route.ts
+/api/crm/universities,GET POST,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/universities/route.ts
+/api/crm/universities/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/universities/[id]/route.ts
+/api/crm/users,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/crm/users/route.ts
+/api/crm/users/{id},GET PUT DELETE,role:ADMIN+SUPER_ADMIN (shared CRUD helper),nodejs,src/app/api/crm/users/[id]/route.ts
+/api/deliverable,GET,role:SUPER_ADMIN,nodejs,src/app/api/deliverable/route.ts
+/api/deliverables,GET,role:SUPER_ADMIN,nodejs,src/app/api/deliverables/route.ts
+/api/exam-types,GET,public intended (allowlist; verify handler),nodejs,src/app/api/exam-types/route.ts
+/api/exam/analytics,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/exam/analytics/route.ts
+/api/examiners,GET,public intended (allowlist; verify handler),nodejs,src/app/api/examiners/route.ts
+/api/factory/applications/{id},GET PATCH,none declared,nodejs,src/app/api/factory/applications/[id]/route.ts
+/api/factory/applications/{id}/activate,POST,none declared,nodejs,src/app/api/factory/applications/[id]/activate/route.ts
+/api/factory/applications/{id}/backup,POST,none declared,nodejs,src/app/api/factory/applications/[id]/backup/route.ts
+/api/factory/applications/{id}/provision,POST,none declared,nodejs,src/app/api/factory/applications/[id]/provision/route.ts
+/api/factory/applications/{id}/releases,POST,none declared,nodejs,src/app/api/factory/applications/[id]/releases/route.ts
+/api/factory/applications/{id}/rollback,POST,none declared,nodejs,src/app/api/factory/applications/[id]/rollback/route.ts
+/api/factory/applications/{id}/validate,POST,none declared,nodejs,src/app/api/factory/applications/[id]/validate/route.ts
+/api/factory/changes,POST,none declared,nodejs,src/app/api/factory/changes/route.ts
+/api/factory/companies,POST,none declared,nodejs,src/app/api/factory/companies/route.ts
+/api/factory/modules,POST,none declared,nodejs,src/app/api/factory/modules/route.ts
+/api/factory/modules/{id}/versions,POST,none declared,nodejs,src/app/api/factory/modules/[id]/versions/route.ts
+/api/factory/overview,GET,none declared,nodejs,src/app/api/factory/overview/route.ts
+/api/factory/templates,POST,none declared,nodejs,src/app/api/factory/templates/route.ts
+/api/factory/templates/{id}/versions,POST,none declared,nodejs,src/app/api/factory/templates/[id]/versions/route.ts
+/api/factory/tenant/contacts,GET POST,none declared,nodejs,src/app/api/factory/tenant/contacts/route.ts
+/api/factory/tenant/contacts/{id},GET PATCH,none declared,nodejs,src/app/api/factory/tenant/contacts/[id]/route.ts
+/api/grammar/check,POST,none declared,nodejs,src/app/api/grammar/check/route.ts
+/api/health,GET,public intended (allowlist; verify handler),nodejs,src/app/api/health/route.ts
+/api/lead,POST,public intended (allowlist; verify handler),nodejs,src/app/api/lead/route.ts
+/api/learning-memory,GET,authenticated,nodejs,src/app/api/learning-memory/route.ts
+/api/learning/daily,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/learning/daily/route.ts
+/api/learning/dashboard,GET,authenticated,nodejs,src/app/api/learning/dashboard/route.ts
+/api/learning/orchestrator,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/learning/orchestrator/route.ts
+/api/linkis/health,GET,role:SUPER_ADMIN,nodejs,src/app/api/linkis/health/route.ts
+/api/linkis/jobs,GET POST,role:SUPER_ADMIN,nodejs,src/app/api/linkis/jobs/route.ts
+/api/partner/dashboard,GET,role:PARTNER,nodejs,src/app/api/partner/dashboard/route.ts
+/api/partner/profile,GET,role:PARTNER,nodejs,src/app/api/partner/profile/route.ts
+/api/payment,GET POST,authenticated,nodejs,src/app/api/payment/route.ts
+/api/practice-sets,GET,public intended (allowlist; verify handler),nodejs,src/app/api/practice-sets/route.ts
+/api/questions,GET,authenticated,nodejs,src/app/api/questions/route.ts
+/api/rag/ask,POST,public intended (allowlist; verify handler),nodejs,src/app/api/rag/ask/route.ts
+/api/rag/materials,GET POST,mixed: GET public; POST ADMIN+SUPER_ADMIN,nodejs,src/app/api/rag/materials/route.ts
+/api/rag/materials/{id},GET,none declared,nodejs,src/app/api/rag/materials/[id]/route.ts
+/api/rbac/permissions,GET,permission-based,nodejs,src/app/api/rbac/permissions/route.ts
+/api/rbac/roles,GET POST,permission-based,nodejs,src/app/api/rbac/roles/route.ts
+/api/rbac/team-members,GET POST DELETE,permission-based,nodejs,src/app/api/rbac/team-members/route.ts
+/api/rbac/teams,GET POST,permission-based,nodejs,src/app/api/rbac/teams/route.ts
+/api/speaking/examiner-respond,POST,authenticated,nodejs,src/app/api/speaking/examiner-respond/route.ts
+/api/speaking/examiner-voice,POST,authenticated,nodejs,src/app/api/speaking/examiner-voice/route.ts
+/api/speaking/transcribe,POST,authenticated,nodejs,src/app/api/speaking/transcribe/route.ts
+/api/teacher/overview,GET,authenticated,nodejs,src/app/api/teacher/overview/route.ts
+/api/teachers,GET,none declared,nodejs,src/app/api/teachers/route.ts
+/api/teachers/ask,POST,authenticated,nodejs,src/app/api/teachers/ask/route.ts
+/api/webhooks/{provider},GET POST,public intended (allowlist; verify handler),nodejs,src/app/api/webhooks/[provider]/route.ts

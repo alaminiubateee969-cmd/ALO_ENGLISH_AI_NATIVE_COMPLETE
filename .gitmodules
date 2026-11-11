@@ -1,0 +1,3 @@
+[submodule "vendor/linkis"]
+	path = vendor/linkis
+	url = https://github.com/apache/linkis.git

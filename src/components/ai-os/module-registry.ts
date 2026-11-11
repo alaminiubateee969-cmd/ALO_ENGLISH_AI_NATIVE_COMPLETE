@@ -44,7 +44,7 @@ export const MODULES: ModuleDef[] = [
   // HIDDEN MODULE — only visible to Super Admin and Country Manager
   {
     id: "english-test", name: "English Test Platform", icon: GraduationCap, color: "#0057B8",
-    desc: "english.aloeducation.com — full exam system (hidden, powered by AI OS)",
+    desc: "english.alolabs.net — full exam system (hidden, powered by AI OS)",
     category: "Hidden",
     hidden: true,
     allowedRoles: ["super_admin", "country_manager"],

@@ -44,6 +44,7 @@
     "examples",
     "skills",
     "tool-results",
-    "tests"
+    "tests",
+    "vendor"
   ]
 }

@@ -1,52 +1,37 @@
 /**
- * /api/learning/daily
+ * Legacy daily-learning endpoint is disabled.
  *
- * Run the daily learning loop.
- * Can be triggered by cron or manually.
- *
- * POST — runs the loop and returns results.
+ * Historical score/confidence inputs are not validated, and the former loop
+ * could mutate learning records, question analytics, and agent configuration.
+ * No such automatic changes are performed until a separately reviewed gate is
+ * implemented.
  */
 
-import { DailyLearningLoop } from "@/lib/ai/learning/DailyLearningLoop";
-import { requireAuth } from "@/lib/auth";
-import { ok, badRequest } from "@/lib/responses";
+import { requireRole } from "@/lib/auth";
+import { ok, serviceUnavailable } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
-import { z } from "zod";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
 
-export async function POST(req: Request) {
+const DISABLED_MESSAGE =
+  "Automatic learning and agent self-evolution are disabled until score calibration, data provenance, and change-approval controls are verified.";
+
+export async function POST(): Promise<Response> {
   return withErrorHandler(async () => {
-    const user = await requireAuth();
-    // Only admins/super-admins can trigger the learning loop
-    if (!["SUPER_ADMIN", "ADMIN"].includes(user.role)) {
-      return badRequest("Only admins can trigger the daily learning loop");
-    }
-
-    const body = await req.json().catch(() => ({}));
-    const schema = z.object({
-      daysBack: z.number().min(1).max(90).optional().default(1),
-    });
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) return badRequest(parsed.error.issues[0]?.message || "Invalid");
-
-    const result = await DailyLearningLoop.run(parsed.data.daysBack);
-    return ok(result, `Daily learning complete: ${result.examsAnalyzed} exams analyzed, ${result.insightsGenerated} insights generated`);
+    await requireRole("ADMIN", "SUPER_ADMIN");
+    return serviceUnavailable(DISABLED_MESSAGE);
   });
 }
 
-// GET — returns the latest learning results (read-only)
-export async function GET() {
+export async function GET(): Promise<Response> {
   return withErrorHandler(async () => {
-    await requireAuth();
-    const { db } = await import("@/lib/db");
-    // Return recent learnings
-    const recentLearnings = await db.agentLearning.findMany({
-      take: 20,
-      orderBy: { learnDate: "desc" },
-    });
-    return ok({ recentLearnings }, "Recent learnings retrieved");
+    await requireRole("ADMIN", "SUPER_ADMIN");
+    return ok({
+      status: "NOT_VERIFIED",
+      automatedChangesApplied: false,
+      historicalLearningRecordsExposed: false,
+      message: DISABLED_MESSAGE,
+    }, "Automatic learning is disabled");
   });
 }

@@ -1,99 +1,167 @@
-# GitHub Actions — Auto-deploy to VPS on push to main
+# .github/workflows/deploy.yml — deployment readiness, NOT a deployment.
 #
-# Repository: https://github.com/alaminiubateee969-cmd/ALO_ENGLISH_AI_NATIVE_COMPLETE
-# VPS: 115.187.18.239 (english.aloeducation.com)
+# Production is deployed by Hostinger's automatic Git deployment:
+#   push to main → Hostinger pulls → npm install → npm run build
+#                → npx prisma migrate deploy → node server.js
+#                → https://english.alolabs.net
 #
-# Setup:
-#   1. Go to repo Settings → Secrets and variables → Actions
-#   2. Add these secrets:
-#      - VPS_HOST: 115.187.18.239
-#      - VPS_USER: root
-#      - VPS_SSH_KEY: your SSH private key (cat ~/.ssh/id_rsa)
-#      - VPS_PATH: /var/www/alo-education-english
-#   3. Push to main → auto-deploys to VPS
+# Nothing in this repository can push to production, and that is deliberate.
+# This workflow previously deployed over SSH with a process manager to a VPS at
+# 115.187.18.239. That pipeline was retired: two competing deployment paths
+# means neither one is authoritative. Do not reintroduce it.
+#
+# What this workflow does instead, on every push to main:
+#   1. Runs the preflight gates that need no dependencies, no Prisma engine and
+#      no database, so a misconfigured main is reported within a minute rather
+#      than when the host build fails.
+#   2. Records a GitHub deployment against the `production` environment, so the
+#      repository keeps an auditable trail of what was published and when.
+#   3. Publishes a job summary containing the exact host settings this commit
+#      expects, and the checklist for confirming the release went live.
+#   4. Probes the live health endpoint. On a push this is informational —
+#      Hostinger is usually still building — so it cannot fail the run. On a
+#      manual dispatch it is an assertion, because then you are asking "is
+#      production healthy right now?".
 
-name: Deploy to VPS
+name: Deployment readiness (Hostinger)
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
+    inputs:
+      enforce_live_probe:
+        description: "Fail the run if https://english.alolabs.net/api/health is not healthy"
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: "22"
+  APP_URL: "https://english.alolabs.net"
 
 jobs:
-  deploy:
+  readiness:
+    name: Deploy readiness
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Creates a deployment record in the repository's Environments tab. No
+    # secret is needed and nothing is pushed from here; this is an audit trail.
+    environment:
+      name: production
+      url: https://english.alolabs.net
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install SSH key
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Both gates are dependency-free and deterministic. check-manifest also
+      # enforces that `build` still runs `next build --webpack`; dropping that
+      # flag is what makes every host deploy panic on src/app/globals.css.
+      - name: Preflight — repository manifest
+        run: node scripts/check-manifest.mjs
+
+      - name: Preflight — schema/migration parity
+        run: node scripts/check-schema-migrations.mjs
+
+      - name: Publish host settings for this commit
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          {
+            echo "## Hostinger deployment — what happens next"
+            echo
+            echo "Push to \`main\` triggers Hostinger's automatic Git deployment. This"
+            echo "workflow does not deploy; it verifies the commit is deployable and"
+            echo "records the release."
+            echo
+            echo "### Commands the host runs"
+            echo
+            echo '```'
+            echo "npm install"
+            echo "npm run build      # prebuild: prisma generate → next build --webpack → finalize-standalone"
+            echo '```'
+            echo
+            echo "### Panel settings this commit expects"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Branch | \`main\` |"
+            echo "| Auto Deployment | enabled |"
+            echo "| Node.js version | \`22\` |"
+            echo "| Package manager | \`npm\` |"
+            echo "| Application root | \`/\` |"
+            echo "| Entry file | \`server.js\` |"
+            echo "| Start command | \`npm start\` |"
+            echo "| Build command | \`npm run build\` |"
+            echo
+            echo "### Environment variables (set in the panel, never committed)"
+            echo
+            echo '```'
+            echo "NODE_ENV=production"
+            echo "HOSTNAME=0.0.0.0"
+            echo "PORT=3000"
+            echo "APP_URL=$APP_URL_VALUE"
+            echo "DATABASE_URL=file:/ABSOLUTE/PATH/db/production.db   # must be absolute"
+          echo "APP_DATA_DIR=/ABSOLUTE/PATH                          # survives a redeploy"
+          echo "EXAM_REQUIRE_LISTENING_AUDIO=true                  # no transcript-only listening exams"
+          echo "AUTH_SECRET=<openssl rand -base64 48>"
+            echo '```'
+            echo
+            echo "### First deploy only"
+            echo
+            echo '```'
+            echo "npx prisma migrate deploy"
+            echo "node prisma/seed.mjs"
+            echo '```'
+            echo
+            echo "### Verify the release"
+            echo
+            echo "- [ ] \`curl $APP_URL_VALUE/api/health\` returns \`{\"status\":\"healthy\",...}\`"
+            echo "- [ ] The home page renders **with styles** (an unstyled page means the"
+            echo "      stylesheet never made it into \`.next/standalone\`)"
+            echo "- [ ] Login works and a practice test starts"
+            echo
+            echo "Full guide: [\`HOSTINGER_DEPLOYMENT.md\`](https://github.com/${{ github.repository }}/blob/main/HOSTINGER_DEPLOYMENT.md)"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          APP_URL_VALUE: ${{ env.APP_URL }}
 
-      - name: Sync files to VPS
+      # Informational on push: Hostinger is normally still building when this
+      # runs, so a stale or unreachable site here is expected and must not fail
+      # the commit.
+      - name: Probe live site (informational)
+        if: github.event_name == 'push'
+        continue-on-error: true
         run: |
-          rsync -avz --delete \
-            --exclude 'node_modules' \
-            --exclude '.next' \
-            --exclude '.git' \
-            --exclude 'db/*.db' \
-            --exclude 'db/*.db-journal' \
-            --exclude '.env' \
-            --exclude 'upload' \
-            --exclude 'skills' \
-            --exclude 'tool-results' \
-            --exclude 'logs' \
-            -e "ssh -i ~/.ssh/id_rsa" \
-            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/
-
-      - name: Install + Build + Restart on VPS
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd ${{ secrets.VPS_PATH }}
-
-            # Install dependencies
-            bun install --frozen-lockfile || bun install
-
-            # Copy .env.example to .env if .env doesn't exist
-            if [ ! -f .env ]; then
-              cp .env.example .env
-              AUTH_SECRET=$(openssl rand -base64 48)
-              sed -i "s/REPLACE_WITH_RANDOM_32_CHAR_STRING/$AUTH_SECRET/" .env
-              echo "✅ .env created with generated AUTH_SECRET"
-            fi
-
-            # Generate Prisma client + push schema
-            bun run db:push
-
-            # Seed if database is empty
-            if [ ! -f db/custom.db ] || [ $(stat -c%s db/custom.db 2>/dev/null || echo 0) -lt 10000 ]; then
-              echo "🌱 Seeding database..."
-              bun run prisma:seed || true
-              bun run prisma:seed:rbac || true
-              bun run prisma:seed:exams || true
-            fi
-
-            # Build for production
-            bun run build
-
-            # Restart PM2
-            pm2 restart alo-english || pm2 start "node_modules/.bin/next start -p 3000" --name alo-english --cwd ${{ secrets.VPS_PATH }}
-            pm2 restart alo-examiner-stream || (cd mini-services/examiner-stream && bun install && pm2 start "bun run dev" --name alo-examiner-stream --cwd ${{ secrets.VPS_PATH }}/mini-services/examiner-stream)
-            pm2 save
-
-            echo "✅ Deployed successfully to ${{ secrets.VPS_HOST }}"
-          EOF
-
-      - name: Verify deployment
-        run: |
-          sleep 5
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://english.aloeducation.com || echo "000")
-          echo "HTTPS status: $HTTP_CODE"
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ Site is live!"
-          else
-            echo "⚠️  Site returned $HTTP_CODE — may still be starting up"
+          echo "Probing $APP_URL/api/health — Hostinger may still be building."
+          curl -fsS --max-time 20 "$APP_URL/api/health" | tee health.json || true
+          echo
+          if [ -s health.json ]; then
+            {
+              echo "### Live probe at ${{ github.sha }}"
+              echo '```json'
+              cat health.json
+              echo '```'
+              echo "_Informational only: Hostinger deploys asynchronously, so this may"
+              echo "still report the previous release._"
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      # An assertion on manual dispatch: you are asking whether production is
+      # healthy right now, so a failure is the answer you want.
+      - name: Probe live site (enforced)
+        if: github.event_name == 'workflow_dispatch' && inputs.enforce_live_probe
+        run: |
+          response=$(curl -fsS --max-time 20 "$APP_URL/api/health") || {
+            echo "::error ::$APP_URL/api/health did not respond"
+            exit 1
+          }
+          echo "$response"
+          echo "$response" | grep -q '"status":"healthy"' || {
+            echo "::error ::production reports unhealthy: $response"
+            exit 1
+          }
+          echo "✓ production is healthy"

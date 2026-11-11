@@ -1,39 +1,43 @@
 /**
- * GET    /api/crm/partners/[id] — Get partners by ID
- * PUT    /api/crm/partners/[id] — Update partners
- * DELETE /api/crm/partners/[id] — Delete partners
+ * GET    /api/crm/partners/[id] — Get partner by ID.
+ * PUT    /api/crm/partners/[id] — Update a partner.
+ * DELETE /api/crm/partners/[id] — Delete a partner.
  *
  * Auth: requires ADMIN role.
  */
 
-import { createGetByIdHandler, createUpdateHandler, createDeleteHandler } from '@/lib/crud';
-import { z } from 'zod';
+import { createGetByIdHandler, createUpdateHandler, createDeleteHandler } from "@/lib/crud";
+import { z } from "zod";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
-  email: z.string().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  commissionRate: z.number().optional(),
-  status: z.string().optional(),
-}).partial();
+  organizationName: z.string().trim().min(1).max(160).optional(),
+  contactName: z.string().trim().min(1).max(100).optional(),
+  email: z.string().email().max(254).optional(),
+  phone: z.string().max(30).optional(),
+  address: z.string().max(500).optional(),
+  commissionRate: z.number().min(0).max(100).optional(),
+  status: z.string().max(30).optional(),
+});
 
 const config = {
-  entityName: 'partners',
-  roleName: 'ADMIN',
+  entityName: "partners",
+  roleName: "ADMIN",
   createSchema: updateSchema,
   updateSchema,
   searchableFields: [],
   select: {
     id: true,
+    userId: true,
     organizationName: true,
     contactName: true,
     email: true,
     phone: true,
     status: true,
     commissionRate: true,
+    referralCode: true,
     createdAt: true,
   },
 };

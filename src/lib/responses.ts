@@ -35,6 +35,8 @@ export const ERROR_CODES = {
   CONFLICT: 'CONFLICT',
   UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
   RATE_LIMITED: 'RATE_LIMITED',
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
 
@@ -86,9 +88,25 @@ export function unprocessable(message: string): NextResponse<ApiError> {
   return NextResponse.json({ success: false, status: 422, message, error: ERROR_CODES.UNPROCESSABLE_ENTITY }, { status: 422 });
 }
 
+/** 413 Payload Too Large. */
+export function payloadTooLarge(message = 'Request body exceeds the allowed size'): NextResponse<ApiError> {
+  return NextResponse.json(
+    { success: false, status: 413, message, error: ERROR_CODES.PAYLOAD_TOO_LARGE },
+    { status: 413, headers: { 'Cache-Control': 'no-store' } }
+  );
+}
+
 /** 429 Too Many Requests. */
 export function rateLimited(message = 'Too many requests. Please try again later.'): NextResponse<ApiError> {
   return NextResponse.json({ success: false, status: 429, message, error: ERROR_CODES.RATE_LIMITED }, { status: 429 });
+}
+
+/** 503 Service Unavailable — a required provider/integration is not configured. */
+export function serviceUnavailable(message = 'This service is not configured yet'): NextResponse<ApiError> {
+  return NextResponse.json(
+    { success: false, status: 503, message, error: ERROR_CODES.SERVICE_UNAVAILABLE },
+    { status: 503, headers: { 'Cache-Control': 'no-store' } }
+  );
 }
 
 /** 500 Internal Server Error — never leak details. */

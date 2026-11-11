@@ -46,7 +46,7 @@ export function AloLanguagePrep({ onCta }: { onCta: () => void }) {
           </h2>
           <p className="mt-4 text-base md:text-lg leading-8 text-alo-muted">
             Full mock tests, speaking practice and writing feedback for IELTS, PTE, TOEFL, Duolingo,
-            OIETC and OET. ALO Education students get 3 free mock tests.
+            OIETC and OET — all free and unlimited.
           </p>
         </div>
 
@@ -73,8 +73,8 @@ export function AloLanguagePrep({ onCta }: { onCta: () => void }) {
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-alo-orange text-white"><GraduationCap className="h-5 w-5" /></div>
             <div>
-              <div className="text-sm font-bold text-alo-navy">Free mock test quota</div>
-              <div className="text-xs text-alo-muted">ALO Education students get <span className="font-bold text-alo-orange">3 free</span> · new visitors get <span className="font-bold text-alo-orange">1 free</span></div>
+              <div className="text-sm font-bold text-alo-navy">Free &amp; unlimited practice</div>
+              <div className="text-xs text-alo-muted">Every mock test is <span className="font-bold text-alo-orange">free &amp; unlimited</span> · 24/7 · no card required</div>
             </div>
           </div>
           <Button onClick={onCta} className="h-10 rounded-xl bg-alo-orange text-white hover:bg-[#cc3f10]">Verify ALO Student ID</Button>
@@ -122,6 +122,7 @@ function MockTestDemo() {
 
   if (submitted) {
     const pct = Math.round((score / total) * 100);
+    const level = pct >= 100 ? "Excellent" : pct >= 75 ? "Strong" : pct >= 50 ? "Developing" : "Keep Practising";
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-6 alo-shadow-sm">
         <div className="flex flex-col items-center text-center">
@@ -131,7 +132,7 @@ function MockTestDemo() {
           <div className="mt-5 grid grid-cols-3 gap-3 w-full max-w-sm">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><div className="text-2xl font-extrabold text-alo-navy">{score}/{total}</div><div className="text-[10px] text-alo-faint">Correct</div></div>
             <div className="rounded-xl border border-alo-blue/20 bg-alo-soft-blue p-3"><div className="text-2xl font-extrabold text-alo-blue">{pct}%</div><div className="text-[10px] text-alo-faint">Accuracy</div></div>
-            <div className="rounded-xl border border-alo-orange/20 bg-alo-soft-orange p-3"><div className="text-2xl font-extrabold text-alo-orange">~7.0</div><div className="text-[10px] text-alo-faint">Band est.</div></div>
+            <div className="rounded-xl border border-alo-orange/20 bg-alo-soft-orange p-3"><div className="text-base leading-8 font-extrabold text-alo-orange">{level}</div><div className="text-[10px] text-alo-faint">Practice level</div></div>
           </div>
           <div className="mt-4 w-full text-left space-y-2 max-h-48 overflow-y-auto alo-scroll pr-2">
             {SAMPLE_QUESTIONS.map((q, i) => {

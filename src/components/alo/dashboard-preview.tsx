@@ -33,7 +33,7 @@ export function AloDashboardPreview({ onOpenAuth }: { onOpenAuth: (mode: "login"
             Your entire prep journey in one place.
           </h2>
           <p className="mt-4 text-lg text-alo-muted leading-relaxed">
-            Track free quota, scores, speaking & writing feedback, recommended next steps,
+            Track scores, speaking & writing feedback, recommended next steps,
             counselor messages and downloadable reports — all in a premium dashboard.
           </p>
         </div>
@@ -196,7 +196,7 @@ export function AloDashboardPreview({ onOpenAuth }: { onOpenAuth: (mode: "login"
           <Button onClick={() => onOpenAuth("register")} className="h-12 px-8 rounded-xl bg-alo-orange text-white font-semibold hover:bg-[#d2460f]">
             Create your free dashboard
           </Button>
-          <p className="mt-2 text-xs text-slate-500">ALO students get 3 free mocks · public students get 1 free</p>
+          <p className="mt-2 text-xs text-slate-500">Every mock test is free and unlimited, 24/7</p>
         </div>
       </div>
     </section>

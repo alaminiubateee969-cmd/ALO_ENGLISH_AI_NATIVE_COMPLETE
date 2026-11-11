@@ -1,13 +1,15 @@
 /**
- * GET /api/questions?practiceSetId=xxx — Fetch questions for a practice set.
+ * GET /api/questions?attemptId=xxx — Fetch the frozen, redacted questions for
+ * an attempt owned by the authenticated caller.
  *
- * Returns questions grouped by section. Does NOT include correct answers
- * (security: students shouldn't see answers before submitting).
+ * There is deliberately no practiceSetId bypass: reading a set's question
+ * bank requires a quota-gated attempt created by /api/attempts/start.
  */
 
 import { db } from "@/lib/db";
-import { ok, badRequest } from "@/lib/responses";
+import { ok, badRequest, notFound, forbidden } from "@/lib/responses";
 import { withErrorHandler } from "@/lib/responses";
+import { loadAttemptQuestions } from "@/lib/exam/questions";
 import { requireAuth } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -15,41 +17,23 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request): Promise<Response> {
   return withErrorHandler(async () => {
-    // Phase 1: Require auth — students must be logged in to fetch questions
-    await requireAuth();
+    const user = await requireAuth();
+    const attemptId = new URL(req.url).searchParams.get("attemptId");
+    if (!attemptId) return badRequest("attemptId is required");
 
-    const url = new URL(req.url);
-    const practiceSetId = url.searchParams.get("practiceSetId");
-
-    if (!practiceSetId) {
-      return badRequest("practiceSetId is required");
-    }
-
-    const questions = await db.question.findMany({
-      where: { practiceSetId },
-      orderBy: { order: "asc" },
-      select: {
-        id: true,
-        section: true,
-        type: true,
-        prompt: true,
-        passage: true,
-        audioUrl: true,
-        options: true,
-        wordLimit: true,
-        points: true,
-        order: true,
-        // NOTE: correctAnswer and correctIndex are NOT included (security)
-      },
+    const attempt = await db.attempt.findUnique({
+      where: { id: attemptId },
+      select: { userId: true },
     });
+    if (!attempt) return notFound("Attempt not found");
+    if (attempt.userId !== user.id) return forbidden("You can only open your own attempt");
 
-    // Group by section
-    const bySection = questions.reduce((acc, q) => {
-      if (!acc[q.section]) acc[q.section] = [];
-      acc[q.section].push(q);
+    const questions = await loadAttemptQuestions(db, attemptId);
+    const bySection = questions.reduce((acc, question) => {
+      (acc[question.section] ??= []).push(question);
       return acc;
     }, {} as Record<string, typeof questions>);
 
-    return ok({ questions, bySection, total: questions.length }, "Questions retrieved");
+    return ok({ questions, bySection, total: questions.length, frozen: true }, "Questions retrieved");
   });
 }

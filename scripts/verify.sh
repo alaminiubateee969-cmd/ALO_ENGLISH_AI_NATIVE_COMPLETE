@@ -52,7 +52,7 @@ echo ""
 
 # ─── 1. Required files ─────────────────────────────────────────────────
 echo "▸ Required files"
-for f in package.json bun.lock tsconfig.json next.config.ts .env.example prisma/schema.prisma prisma/seed.ts; do
+for f in package.json bun.lock package-lock.json tsconfig.json next.config.ts postcss.config.mjs .env.example prisma/schema.prisma prisma/seed.ts server.js hostinger.json scripts/ensure-prisma-client.mjs scripts/finalize-standalone.mjs scripts/smoke-standalone.mjs src/lib/paths.ts; do
   if [[ -f "$PROJECT_ROOT/$f" ]]; then
     check "  $f exists" "PASS"
   else
@@ -134,6 +134,24 @@ if [[ -d "$PROJECT_ROOT/.next/static" ]]; then
 else
   check "  static assets exist" "FAIL"
 fi
+# `next build` does NOT copy these into .next/standalone; scripts/finalize-standalone.mjs
+# does. A build that skipped that step publishes an unstyled, asset-less site
+# while still reporting success, so assert the artifact rather than the build.
+if [[ -d "$PROJECT_ROOT/.next/standalone/.next/static" ]]; then
+  check "  standalone has client bundles" "PASS"
+else
+  check "  standalone has client bundles" "FAIL" "run: npm run build"
+fi
+if [[ -d "$PROJECT_ROOT/.next/standalone/public" ]]; then
+  check "  standalone has public assets" "PASS"
+else
+  check "  standalone has public assets" "FAIL" "run: npm run build"
+fi
+if [[ -f "$PROJECT_ROOT/.next/standalone/prisma/schema.prisma" ]]; then
+  check "  standalone has prisma schema" "PASS"
+else
+  check "  standalone has prisma schema" "FAIL" "run: npm run build"
+fi
 
 # ─── 8. Helper script syntax ───────────────────────────────────────────
 echo "▸ Helper script syntax"
@@ -159,7 +177,22 @@ for f in server-config/alo-english.service server-config/Caddyfile.production se
   fi
 done
 
-# ─── 10. Smoke test ────────────────────────────────────────────────────
+# ─── 10. Repository preflight ──────────────────────────────────────────
+# These two need no bun, no Prisma engine and no database, so they run even
+# when the rest of this gate is skipped.
+echo "▸ Repository preflight"
+if node "$PROJECT_ROOT/scripts/check-manifest.mjs" &>/dev/null; then
+  check "  manifest preflight" "PASS"
+else
+  check "  manifest preflight" "FAIL" "run: node scripts/check-manifest.mjs"
+fi
+if node "$PROJECT_ROOT/scripts/check-schema-migrations.mjs" &>/dev/null; then
+  check "  schema/migration parity" "PASS"
+else
+  check "  schema/migration parity" "FAIL" "run: node scripts/check-schema-migrations.mjs"
+fi
+
+# ─── 11. Unit smoke test ───────────────────────────────────────────────
 echo "▸ Smoke test"
 if command -v bun &>/dev/null; then
   if bun test "$PROJECT_ROOT/tests/smoke.test.ts" &>/dev/null 2>&1; then
@@ -169,6 +202,20 @@ if command -v bun &>/dev/null; then
   fi
 else
   check "  smoke test (bun not available)" "SKIP"
+fi
+
+# ─── 12. Artifact smoke test ───────────────────────────────────────────
+# Boots the built server and asserts it serves a styled page and a health
+# document. Only meaningful once a build exists; skipped otherwise.
+echo "▸ Artifact smoke test"
+if [[ -f "$PROJECT_ROOT/.next/standalone/server.js" ]]; then
+  if node "$PROJECT_ROOT/scripts/smoke-standalone.mjs" &>/dev/null; then
+    check "  built artifact serves traffic" "PASS"
+  else
+    check "  built artifact serves traffic" "FAIL" "run: node scripts/smoke-standalone.mjs"
+  fi
+else
+  check "  built artifact serves traffic (no build present)" "SKIP"
 fi
 
 # ─── Summary ───────────────────────────────────────────────────────────

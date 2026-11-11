@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { join, resolve, sep } from "path";
 import { requireRole } from "@/lib/rbac";
+import { getAppRoot } from "@/lib/paths";
 import { withErrorHandler } from "@/lib/responses";
 
-const ROOT = join(process.cwd(), "cpanel-production");
+// Resolved through src/lib/paths.ts: the generated standalone server chdir's
+// into .next/standalone, so process.cwd() is not the repository root at runtime.
+const ROOT = join(getAppRoot(), "cpanel-production");
 
 const SAFE_EXT = new Set(["md", "sql", "php", "htaccess", "env", "example", "txt", "json"]);
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB cap for inline serving

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Events", description: "University fairs, webinars, and information sessions." };
+export const metadata: Metadata = {
+  title: "Events and Information Sessions",
+  description: "University fairs, webinars and information sessions from ALO Education, with what each event covers and how to reserve a place.",
+};
 
 export default function EventsPage() {
   return (

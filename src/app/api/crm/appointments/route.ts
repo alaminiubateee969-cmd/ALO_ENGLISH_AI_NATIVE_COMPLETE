@@ -12,18 +12,32 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
-  description: z.string().optional(),
+  title: z.string().min(1).max(200),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  description: z.string().max(2000).optional(),
   studentId: z.string().optional(),
   leadId: z.string().optional(),
   assigneeId: z.string().optional(),
-  location: z.string().optional(),
+  location: z.string().max(300).optional(),
 });
+
+const updateSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  startTime: z.coerce.date().optional(),
+  endTime: z.coerce.date().optional(),
+  description: z.string().max(2000).optional(),
+  studentId: z.string().optional(),
+  leadId: z.string().optional(),
+  assigneeId: z.string().optional(),
+  location: z.string().max(300).optional(),
+}).partial();
 
 const config = {
   entityName: 'appointments',
   roleName: 'COUNSELOR',
   createSchema,
-  updateSchema: createSchema.partial(),
+  updateSchema,
   searchableFields: ["title","location",],
   select: {
     id: true,

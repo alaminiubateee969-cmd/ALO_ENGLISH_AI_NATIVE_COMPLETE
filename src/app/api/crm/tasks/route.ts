@@ -12,7 +12,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
-  description: z.string().optional(),
+  title: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
   priority: z.string().optional(),
   dueDate: z.coerce.date().optional(),
   assigneeId: z.string().optional(),

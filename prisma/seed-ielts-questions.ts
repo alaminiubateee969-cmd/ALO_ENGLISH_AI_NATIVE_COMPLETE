@@ -1,21 +1,18 @@
 /**
- * prisma/seed-ielts-questions.ts
- *
- * Seeds a complete IELTS Academic practice test with ALL question types:
- * - Listening: Section 1 (form completion), Section 2 (MC + map), Section 3 (MC + matching), Section 4 (fill-blank)
- * - Reading: Passage 1 (T/F/NG + fill-blank), Passage 2 (MC + matching headings), Passage 3 (MC + summary)
- * - Writing: Task 1 (chart description), Task 2 (essay)
- * - Speaking: Part 1, Part 2 (cue card), Part 3
- *
- * Total: 40 questions (like the real IELTS)
+ * LEGACY SAMPLE-SEED SCRIPT — synthetic IELTS-style development items only.
+ * The bank is not official/licensed, not a full-length IELTS test, and has not
+ * been validated for current task counts or timing. Guarded to disposable
+ * test/sample databases; do not use as production exam content.
  */
 
+import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
+assertSafeSampleSeedTarget();
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding complete IELTS practice test...');
+  console.log('Seeding guarded synthetic IELTS-style sample items...');
 
   const ielts = await prisma.examType.findUnique({ where: { code: 'IELTS-A' } });
   if (!ielts) {
@@ -35,8 +32,8 @@ async function main() {
   const set = await prisma.practiceSet.create({
     data: {
       examTypeId: ielts.id,
-      title: 'IELTS Academic — Full Mock Test (Computer-Delivered)',
-      description: 'Complete 4-section IELTS practice test with 40 questions. Listening (40 Q), Reading (40 Q), Writing (2 tasks), Speaking (3 parts). AI-scored with band descriptors.',
+      title: 'IELTS Academic — Synthetic Sample Set (not full-length)',
+      description: 'Short development fixture only; not official/licensed/full-length IELTS content and not AI-scored with calibrated band descriptors.',
       durationMin: 165,
       isActive: true,
     },

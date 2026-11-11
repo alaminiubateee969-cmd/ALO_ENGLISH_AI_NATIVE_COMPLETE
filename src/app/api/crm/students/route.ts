@@ -12,7 +12,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
-  email: z.string().optional(),
+  name: z.string().min(1).max(200),
+  email: z.string().email().optional(),
   phone: z.string().optional(),
   dateOfBirth: z.coerce.date().optional(),
   nationality: z.string().optional(),

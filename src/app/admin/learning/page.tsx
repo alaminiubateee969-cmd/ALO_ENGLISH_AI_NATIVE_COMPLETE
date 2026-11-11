@@ -61,6 +61,18 @@ type DailyResult = {
   recommendations: string[];
 } | null;
 
+async function fetchLearningData() {
+  const [dashRes, orchRes] = await Promise.all([
+    fetch("/api/learning/dashboard"),
+    fetch("/api/learning/orchestrator"),
+  ]);
+
+  return {
+    dashboard: dashRes.ok ? ((await dashRes.json()).data as Dashboard) : null,
+    orchestrator: orchRes.ok ? ((await orchRes.json()).data as OrchestratorReport) : null,
+  };
+}
+
 export default function AdminLearningPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [orchestrator, setOrchestrator] = useState<OrchestratorReport | null>(null);
@@ -71,18 +83,9 @@ export default function AdminLearningPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dashRes, orchRes] = await Promise.all([
-        fetch("/api/learning/dashboard"),
-        fetch("/api/learning/orchestrator"),
-      ]);
-      if (dashRes.ok) {
-        const d = await dashRes.json();
-        setDashboard(d.data);
-      }
-      if (orchRes.ok) {
-        const o = await orchRes.json();
-        setOrchestrator(o.data);
-      }
+      const { dashboard, orchestrator } = await fetchLearningData();
+      if (dashboard) setDashboard(dashboard);
+      if (orchestrator) setOrchestrator(orchestrator);
     } catch (err) {
       console.error("Failed to load learning data:", err);
     } finally {
@@ -90,8 +93,27 @@ export default function AdminLearningPage() {
     }
   };
 
+  // The initial fetch keeps its state updates inside promise callbacks rather
+  // than calling loadData() directly, which would set state during the effect.
   useEffect(() => {
-    loadData();
+    let cancelled = false;
+
+    fetchLearningData()
+      .then(({ dashboard, orchestrator }) => {
+        if (cancelled) return;
+        if (dashboard) setDashboard(dashboard);
+        if (orchestrator) setOrchestrator(orchestrator);
+      })
+      .catch((err) => {
+        if (!cancelled) console.error("Failed to load learning data:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const runDailyLoop = async () => {

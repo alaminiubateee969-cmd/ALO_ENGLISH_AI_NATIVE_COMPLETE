@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { readdir, stat } from "fs/promises";
 import { join, relative } from "path";
 import { requireRole } from "@/lib/rbac";
+import { getAppRoot } from "@/lib/paths";
 import { withErrorHandler } from "@/lib/responses";
 
-const ROOT = join(process.cwd(), "cpanel-production");
+// Resolved through src/lib/paths.ts: the generated standalone server chdir's
+// into .next/standalone, so process.cwd() is not the repository root at runtime.
+const ROOT = join(getAppRoot(), "cpanel-production");
 
 type Entry = {
   name: string;
@@ -54,7 +57,23 @@ export async function GET() {
         files: flat,
       });
     } catch {
-      return NextResponse.json({ ok: false, error: "Could not read production folder" }, { status: 500 });
+      // `cpanel-production/` is a separate legacy PHP project. It is excluded
+      // from the deployment artifact (see .github/workflows/ci.yml and
+      // scripts/install.sh), so on a production host this folder is expected to
+      // be absent. Report that honestly instead of a 500, which reads as a
+      // server fault rather than a missing optional bundle.
+      return NextResponse.json(
+        {
+          ok: false,
+          total_files: 0,
+          tree: [],
+          files: [],
+          error:
+            "The cpanel-production deliverable archive is not bundled with this deployment.",
+          expected_path: ROOT,
+        },
+        { status: 404 },
+      );
     }
   });
 }

@@ -63,7 +63,8 @@ export async function POST(req: Request): Promise<Response> {
     // Set session.
     await setSessionCookie(user.id);
 
-    // Update lastLoginAt + create a Session record (for revocation tracking)
+    // Update lastLoginAt. Sessions are currently stateless HMAC cookies; no
+    // server-side Session row is created or available for individual revocation.
     const userAgent = req.headers.get('user-agent') || null;
     await db.user.update({
       where: { id: user.id },

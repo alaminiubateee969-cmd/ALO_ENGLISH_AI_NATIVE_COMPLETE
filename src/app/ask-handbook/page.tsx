@@ -5,8 +5,8 @@
  *
  * AI Study Handbook — ExamCite-style free chat (no signup required).
  *
- * Students can ask any question about English exams (IELTS, TOEFL, PTE,
- * grammar, vocabulary) and get AI-powered answers grounded in study material.
+ * Users can ask about available public study materials. Model-generated
+ * answers may be incomplete or wrong; official providers remain authoritative.
  *
  * This page is PUBLIC — no login required.
  */
@@ -22,7 +22,6 @@ type Message = {
   content: string;
   citedFrom?: string | null;
   materialTitle?: string | null;
-  confidence?: "high" | "medium" | "low";
   timestamp: string;
 };
 
@@ -83,7 +82,6 @@ export default function AskHandbookPage() {
           content: data.data.answer,
           citedFrom: data.data.citedFrom,
           materialTitle: data.data.materialTitle,
-          confidence: data.data.confidence,
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
@@ -118,14 +116,14 @@ export default function AskHandbookPage() {
         <div className="mb-6 text-center">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
             <Sparkles className="h-4 w-4" />
-            Free · No Sign-Up · AI-Powered
+            Public · No Sign-Up · Provider availability required
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             AI Study Handbook
           </h1>
           <p className="mt-2 text-slate-600">
-            Ask any question about English exams — IELTS, TOEFL, PTE, grammar, vocabulary.
-            Get instant answers grounded in study material.
+            Ask about the public materials currently available. Generated answers may be incomplete
+            or inaccurate; confirm exam formats and requirements with official providers.
           </p>
         </div>
 
@@ -190,20 +188,7 @@ export default function AskHandbookPage() {
                       <div className="mt-2 flex items-center gap-2 border-t border-slate-200 pt-2 text-xs text-slate-500">
                         <BookOpen className="h-3 w-3" />
                         <span>Cited from: {msg.materialTitle}</span>
-                        {msg.confidence && (
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] ${
-                              msg.confidence === "high"
-                                ? "border-emerald-200 text-emerald-600"
-                                : msg.confidence === "medium"
-                                  ? "border-amber-200 text-amber-600"
-                                  : "border-red-200 text-red-600"
-                            }`}
-                          >
-                            {msg.confidence} confidence
-                          </Badge>
-                        )}
+
                       </div>
                     )}
                   </div>

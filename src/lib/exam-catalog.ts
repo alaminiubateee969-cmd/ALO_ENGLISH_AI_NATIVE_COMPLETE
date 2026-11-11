@@ -2,7 +2,6 @@
 // All exam names are referenced in "-style practice" form per compliance rules.
 // No official exam content reproduced. All practice questions are original.
 
-import type { ExamType } from "./question-bank";
 
 export type ExamCategory = "english" | "study-abroad" | "university" | "visa" | "alo-internal";
 
@@ -11,7 +10,12 @@ export type ExamModule = {
   name: string;
   slug: string;
   category: ExamCategory;
-  examType: ExamType | null; // null = no question bank yet (e.g., interview-only / internal)
+  /**
+   * Database ExamType.code (e.g. "IELTS-A", "ALO-PLACEMENT"). Null means no
+   * question bank exists yet, so the entry must stay `available: false`.
+   * Consumers map this code to the in-memory question-bank ExamType.
+   */
+  examTypeCode: string | null;
   styleLabel: string; // e.g., "IELTS-style practice test"
   badge: string;
   accent: "blue" | "orange" | "royal" | "green" | "purple";
@@ -22,6 +26,11 @@ export type ExamModule = {
   sections: { name: string; detail: string }[];
   highlights: string[];
   popular?: boolean;
+  /**
+   * false = internal/tooling entry that has no backend exam definition.
+   * Hidden from every public catalog so no student can enter a dead flow.
+   */
+  available?: boolean;
 };
 
 export const EXAM_CATEGORIES: { id: ExamCategory; name: string; description: string; icon: string }[] = [
@@ -35,7 +44,7 @@ export const EXAM_CATEGORIES: { id: ExamCategory; name: string; description: str
 export const EXAM_MODULES: ExamModule[] = [
   // ===== ENGLISH PROFICIENCY =====
   {
-    id: "ielts-academic", name: "IELTS Academic", slug: "ielts", category: "english", examType: "IELTS",
+    id: "ielts-academic", name: "IELTS Academic", slug: "ielts", category: "english", examTypeCode: "IELTS-A", available: true,
     styleLabel: "IELTS-style practice test", badge: "Most Popular", accent: "blue", popular: true,
     tagline: "Academic reading, Task 1 report & Task 2 essay",
     description: "Original IELTS-style academic practice covering all four skills with authentic question formats and band-score estimation.",
@@ -52,7 +61,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Authentic IELTS-style question formats", "Band estimate per skill + overall", "Writing Task 1 & 2 evaluation", "Full 3-part speaking interview simulation"],
   },
   {
-    id: "ielts-general", name: "IELTS General Training", slug: "ielts-general", category: "english", examType: "IELTS",
+    id: "ielts-general", name: "IELTS General Training", slug: "ielts-general", category: "english", examTypeCode: "IELTS-G", available: true,
     styleLabel: "IELTS-style practice test", badge: "General", accent: "blue",
     tagline: "General reading, letter writing & essay",
     description: "IELTS-style General Training practice with everyday reading passages, letter writing Task 1 and essay Task 2.",
@@ -67,7 +76,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["General reading passages", "Letter writing Task 1", "Essay Task 2", "Band estimate"],
   },
   {
-    id: "ielts-ukvi", name: "IELTS UKVI", slug: "ielts-ukvi", category: "english", examType: "IELTS",
+    id: "ielts-ukvi", name: "IELTS UKVI", slug: "ielts-ukvi", category: "english", examTypeCode: "IELTS-UKVI", available: true,
     styleLabel: "IELTS-style practice test", badge: "UK Visa", accent: "royal",
     tagline: "UKVI secure test guidance + practice disclaimer",
     description: "UKVI-specific IELTS-style practice with secure test guidance and clear practice-only disclaimers.",
@@ -82,7 +91,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["UKVI secure test guidance", "Practice-only disclaimer", "Band estimate for visa readiness"],
   },
   {
-    id: "pte", name: "PTE Academic", slug: "pte", category: "english", examType: "PTE",
+    id: "pte", name: "PTE Academic", slug: "pte", category: "english", examTypeCode: "PTE-A", available: true,
     styleLabel: "PTE-style practice test", badge: "Fast Results", accent: "orange", popular: true,
     tagline: "20 integrated question types, Smart Score Engine",
     description: "PTE-style integrated computer-based practice across Speaking & Writing, Reading, and Listening.",
@@ -105,7 +114,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["20 PTE-style question types", "Smart Score sub-skill breakdown", "Read aloud & repeat sentence", "Summarize + essay"],
   },
   {
-    id: "toefl", name: "TOEFL iBT", slug: "toefl", category: "english", examType: "TOEFL",
+    id: "toefl", name: "TOEFL iBT", slug: "toefl", category: "english", examTypeCode: "TOEFL-iBT", available: true,
     styleLabel: "TOEFL-style practice test", badge: "USA Focused", accent: "blue",
     tagline: "Integrated tasks & academic discussion",
     description: "TOEFL iBT-style practice with integrated tasks across reading, listening, speaking and writing.",
@@ -119,7 +128,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Integrated speaking & writing", "Academic discussion practice", "Campus lecture drills", "Score out of 120"],
   },
   {
-    id: "duolingo", name: "Duolingo English Test", slug: "duolingo", category: "english", examType: "Duolingo",
+    id: "duolingo", name: "Duolingo English Test", slug: "duolingo", category: "english", examTypeCode: "DUOLINGO", available: true,
     styleLabel: "Duolingo-style practice test", badge: "Adaptive", accent: "orange", popular: true,
     tagline: "Adaptive practice, 4 subscores",
     description: "Duolingo-style adaptive question practice across literacy, comprehension, conversation and production.",
@@ -137,7 +146,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Adaptive question-style practice", "4 subscore breakdown", "Speaking & writing samples", "Interactive reading"],
   },
   {
-    id: "oietc", name: "OIETC / Oxford ELLT", slug: "oietc", category: "english", examType: "OIETC",
+    id: "oietc", name: "OIETC / Oxford ELLT", slug: "oietc", category: "english", examTypeCode: "OIETC", available: true,
     styleLabel: "OIETC-style practice test", badge: "University Entry", accent: "royal",
     tagline: "Interview simulation + CEFR estimate",
     description: "OIETC and Oxford ELLT-style practice with reading, listening, writing and a speaking interview simulation.",
@@ -151,7 +160,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["CEFR level estimate", "Interview simulation", "Academic essay evaluation", "Reading & listening drills"],
   },
   {
-    id: "oet", name: "OET (Healthcare)", slug: "oet", category: "english", examType: null,
+    id: "oet", name: "OET (Healthcare)", slug: "oet", category: "english", examTypeCode: "OET", available: true,
     styleLabel: "OET-style practice test", badge: "Healthcare", accent: "blue",
     tagline: "Healthcare scenarios & clinical role-play",
     description: "OET-style practice with healthcare-specific scenarios across all four skills for nurses, doctors and allied health.",
@@ -165,7 +174,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Healthcare scenario practice", "Profession-specific writing", "Clinical role-play speaking", "Grade A–E estimate"],
   },
   {
-    id: "languagecert", name: "LanguageCert", slug: "languagecert", category: "english", examType: "LanguageCert",
+    id: "languagecert", name: "LanguageCert", slug: "languagecert", category: "english", examTypeCode: "LANGUAGECERT", available: true,
     styleLabel: "LanguageCert-style practice test", badge: "ESOL", accent: "green",
     tagline: "General & academic English ESOL practice",
     description: "LanguageCert-style ESOL practice covering all four skills with CEFR-aligned difficulty.",
@@ -179,7 +188,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["CEFR-aligned difficulty", "All four skills", "Academic & general tracks", "Score estimate"],
   },
   {
-    id: "linguaskill", name: "Cambridge Linguaskill", slug: "linguaskill", category: "english", examType: "Linguaskill",
+    id: "linguaskill", name: "Cambridge Linguaskill", slug: "linguaskill", category: "english", examTypeCode: "LINGUASKILL", available: true,
     styleLabel: "Linguaskill-style practice test", badge: "Cambridge", accent: "purple",
     tagline: "Adaptive multi-level English assessment",
     description: "Linguaskill-style adaptive practice across Reading & Listening, Writing, and Speaking with CEFR placement.",
@@ -192,7 +201,33 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Adaptive multi-level", "CEFR placement", "Business & general variants", "Fast estimate"],
   },
   {
-    id: "alo-placement", name: "ALO English Placement Test", slug: "alo-placement-test", category: "english", examType: "Placement",
+    id: "toeic", name: "TOEIC", slug: "toeic", category: "english", examTypeCode: "TOEIC", available: true,
+    styleLabel: "TOEIC-style practice test", badge: "Workplace", accent: "green",
+    tagline: "Workplace listening & reading practice",
+    description: "TOEIC-style listening and reading practice with workplace scenarios — meetings, announcements, emails and reports.",
+    duration: "2h 00m", scale: "10–990",
+    sections: [
+      { name: "Listening", detail: "Photographs, Q–Response, conversations, talks" },
+      { name: "Reading", detail: "Incomplete sentences, text completion, comprehension" },
+    ],
+    highlights: ["Workplace English scenarios", "Listening + reading score estimate", "Business vocabulary focus"],
+  },
+  {
+    id: "cambridge", name: "Cambridge English", slug: "cambridge", category: "english", examTypeCode: "CAMBRIDGE", available: true,
+    styleLabel: "Cambridge-style practice test", badge: "CEFR Graded", accent: "royal",
+    tagline: "Reading & Use of English, writing, listening, speaking",
+    description: "Cambridge English (B2 First)–style practice across Reading & Use of English, Writing, Listening and Speaking with CEFR-aligned feedback.",
+    duration: "3h 30m", scale: "CEFR A2–C1",
+    sections: [
+      { name: "Reading & Use of English", detail: "Cloze + comprehension" },
+      { name: "Writing", detail: "Essay + article/report" },
+      { name: "Listening", detail: "Interviews + monologues" },
+      { name: "Speaking", detail: "Interview + collaborative task" },
+    ],
+    highlights: ["Use of English drills", "CEFR-aligned estimate", "Essay evaluation", "Speaking interview practice"],
+  },
+  {
+    id: "alo-placement", name: "ALO English Placement Test", slug: "alo-placement-test", category: "english", examTypeCode: "ALO-PLACEMENT", available: true,
     styleLabel: "ALO Placement practice test", badge: "Internal", accent: "orange",
     tagline: "Study readiness score + counselor report",
     description: "ALO Education's internal English placement covering grammar, vocabulary, reading, listening, writing and speaking with a study readiness score.",
@@ -210,7 +245,7 @@ export const EXAM_MODULES: ExamModule[] = [
 
   // ===== STUDY ABROAD ENTRANCE =====
   {
-    id: "digital-sat", name: "Digital SAT", slug: "digital-sat", category: "study-abroad", examType: "SAT",
+    id: "digital-sat", name: "Digital SAT", slug: "digital-sat", category: "study-abroad", examTypeCode: "SAT", available: true,
     styleLabel: "SAT-style practice test", badge: "Digital", accent: "blue", popular: true,
     tagline: "Adaptive Reading/Writing + Math modules",
     description: "Digital SAT-style adaptive practice with Reading & Writing and two adaptive Math modules.",
@@ -223,7 +258,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Adaptive module structure", "Reading + Writing combined", "Math with calculator", "Score 400–1600 estimate"],
   },
   {
-    id: "act", name: "ACT", slug: "act", category: "study-abroad", examType: "ACT",
+    id: "act", name: "ACT", slug: "act", category: "study-abroad", examTypeCode: "ACT", available: true,
     styleLabel: "ACT-style practice test", badge: "USA", accent: "royal",
     tagline: "English, Math, Reading, Science + optional Writing",
     description: "ACT-style practice across English, Math, Reading and Science with an optional Writing essay.",
@@ -238,7 +273,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Four core subjects", "Science reasoning", "Optional essay", "Composite score 1–36"],
   },
   {
-    id: "gre", name: "GRE General Test", slug: "gre", category: "study-abroad", examType: "GRE",
+    id: "gre", name: "GRE General Test", slug: "gre", category: "study-abroad", examTypeCode: "GRE", available: true,
     styleLabel: "GRE-style practice test", badge: "Graduate", accent: "orange", popular: true,
     tagline: "Verbal, Quantitative & Analytical Writing",
     description: "GRE-style practice with Verbal Reasoning, Quantitative Reasoning and Analytical Writing.",
@@ -251,7 +286,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Text completion & sentence equivalence", "Quantitative comparison", "Data interpretation", "Verbal 130–170 + Quant 130–170"],
   },
   {
-    id: "gmat", name: "GMAT Focus", slug: "gmat", category: "study-abroad", examType: "GMAT",
+    id: "gmat", name: "GMAT Focus", slug: "gmat", category: "study-abroad", examTypeCode: "GMAT", available: true,
     styleLabel: "GMAT-style practice test", badge: "Business", accent: "blue",
     tagline: "Quant, Verbal & Data Insights",
     description: "GMAT Focus-style practice with Quantitative Reasoning, Verbal Reasoning and Data Insights.",
@@ -265,7 +300,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Data Insights section", "Critical reasoning", "Sentence correction", "Score 205–805 estimate"],
   },
   {
-    id: "lsat", name: "LSAT", slug: "lsat", category: "study-abroad", examType: "LSAT",
+    id: "lsat", name: "LSAT", slug: "lsat", category: "study-abroad", examTypeCode: "LSAT", available: true,
     styleLabel: "LSAT-style practice test", badge: "Law", accent: "purple",
     tagline: "Logical, analytical & reading comprehension",
     description: "LSAT-style practice with Logical Reasoning, Analytical Reasoning (logic games) and Reading Comprehension.",
@@ -279,7 +314,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Logic games practice", "Assumption & weaken", "Reading comprehension", "Score 120–180 estimate"],
   },
   {
-    id: "mcat", name: "MCAT", slug: "mcat", category: "study-abroad", examType: "MCAT",
+    id: "mcat", name: "MCAT", slug: "mcat", category: "study-abroad", examTypeCode: "MCAT", available: true,
     styleLabel: "MCAT-style practice test", badge: "Medical", accent: "royal",
     tagline: "Sciences + CARS for medical school",
     description: "MCAT-style practice across Chemical/Physical, CARS, Biological/Biochemical and Psychological/Social foundations.",
@@ -295,7 +330,7 @@ export const EXAM_MODULES: ExamModule[] = [
 
   // ===== UNIVERSITY INTERNAL =====
   {
-    id: "uni-english-placement", name: "University English Placement Test", slug: "university-placement-test", category: "university", examType: "Placement",
+    id: "uni-english-placement", name: "University English Placement Test", slug: "university-placement-test", category: "university", examTypeCode: "ALO-PLACEMENT", available: true,
     styleLabel: "University Placement practice test", badge: "University", accent: "green",
     tagline: "Place into the right English level",
     description: "University-style English placement test to determine the right course level for incoming students.",
@@ -309,7 +344,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["CEFR placement", "Diagnostic writing", "Grammar & vocabulary", "Level recommendation"],
   },
   {
-    id: "uni-math-placement", name: "University Math Placement Test", slug: "university-math-placement", category: "university", examType: "SAT",
+    id: "uni-math-placement", name: "University Math Placement Test", slug: "university-math-placement", category: "university", examTypeCode: "SAT", available: true,
     styleLabel: "University Math Placement practice test", badge: "University", accent: "blue",
     tagline: "Algebra, calculus & statistics readiness",
     description: "University-style math placement covering algebra, pre-calculus and introductory statistics.",
@@ -322,7 +357,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Algebra fundamentals", "Functions & graphs", "Basic probability", "Course placement"],
   },
   {
-    id: "foundation-entry", name: "Foundation Entry Test", slug: "foundation-entry-test", category: "university", examType: "Placement",
+    id: "foundation-entry", name: "Foundation Entry Test", slug: "foundation-entry-test", category: "university", examTypeCode: "ALO-PLACEMENT", available: true,
     styleLabel: "Foundation Entry practice test", badge: "Foundation", accent: "orange",
     tagline: "Entry for foundation pathway programs",
     description: "Foundation program entry test covering academic English, numeracy and study skills.",
@@ -335,7 +370,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Foundation readiness", "Academic English", "Study skills check", "Pathway recommendation"],
   },
   {
-    id: "pre-master-entry", name: "Pre-Master Entry Test", slug: "pre-master-entry-test", category: "university", examType: "Placement",
+    id: "pre-master-entry", name: "Pre-Master Entry Test", slug: "pre-master-entry-test", category: "university", examTypeCode: "ALO-PLACEMENT", available: true,
     styleLabel: "Pre-Master Entry practice test", badge: "Pre-Master", accent: "royal",
     tagline: "Entry for pre-master's pathway",
     description: "Pre-master's entry assessment covering academic writing, critical reading and quantitative reasoning.",
@@ -348,7 +383,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Academic writing", "Critical reading", "Quantitative reasoning", "Master's readiness"],
   },
   {
-    id: "scholarship-assessment", name: "Scholarship Assessment Test", slug: "scholarship-assessment-test", category: "university", examType: "Placement",
+    id: "scholarship-assessment", name: "Scholarship Assessment Test", slug: "scholarship-assessment-test", category: "university", examTypeCode: "ALO-PLACEMENT", available: true,
     styleLabel: "Scholarship Assessment practice test", badge: "Scholarship", accent: "purple",
     tagline: "Merit assessment for scholarship awards",
     description: "Scholarship assessment combining academic reasoning, written analysis and an interview prompt.",
@@ -363,7 +398,7 @@ export const EXAM_MODULES: ExamModule[] = [
 
   // ===== VISA & INTERVIEW =====
   {
-    id: "uk-credibility", name: "UK Credibility Interview", slug: "credibility-interview", category: "visa", examType: "VisaInterview",
+    id: "uk-credibility", name: "UK Credibility Interview", slug: "credibility-interview", category: "visa", examTypeCode: "VISA-INTERVIEW", available: true,
     styleLabel: "Credibility Interview practice", badge: "UK Visa", accent: "royal", popular: true,
     tagline: "Practice the UK student credibility interview",
     description: "Practice the UK student visa credibility interview with realistic question prompts and recording practice.",
@@ -376,7 +411,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Realistic credibility prompts", "Recording practice", "Confidence scoring", "Feedback tips"],
   },
   {
-    id: "cas-interview", name: "CAS Interview Practice", slug: "cas-interview", category: "visa", examType: "VisaInterview",
+    id: "cas-interview", name: "CAS Interview Practice", slug: "cas-interview", category: "visa", examTypeCode: "VISA-INTERVIEW", available: true,
     styleLabel: "CAS Interview practice", badge: "CAS", accent: "blue",
     tagline: "Confirmation of Acceptance for Studies interview",
     description: "Practice the university CAS interview used to confirm your acceptance for studies in the UK.",
@@ -389,7 +424,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["CAS-style prompts", "Speaking assessment", "Confidence scoring", "Improvement tips"],
   },
   {
-    id: "visa-interview", name: "Visa Interview Practice", slug: "visa-interview", category: "visa", examType: "VisaInterview",
+    id: "visa-interview", name: "Visa Interview Practice", slug: "visa-interview", category: "visa", examTypeCode: "VISA-INTERVIEW", available: true,
     styleLabel: "Visa Interview practice", badge: "Visa", accent: "orange",
     tagline: "General visa interview simulation",
     description: "Practice general student visa interview questions for any destination country.",
@@ -402,7 +437,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Multi-country prompts", "Recording practice", "Confidence scoring", "Feedback"],
   },
   {
-    id: "scholarship-interview", name: "Scholarship Interview Practice", slug: "scholarship-interview", category: "visa", examType: "VisaInterview",
+    id: "scholarship-interview", name: "Scholarship Interview Practice", slug: "scholarship-interview", category: "visa", examTypeCode: "VISA-INTERVIEW", available: true,
     styleLabel: "Scholarship Interview practice", badge: "Scholarship", accent: "purple",
     tagline: "Panel interview for scholarship awards",
     description: "Practice scholarship panel interview questions on leadership, goals and contribution.",
@@ -415,7 +450,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Panel-style prompts", "Leadership questions", "Recording practice", "Confidence scoring"],
   },
   {
-    id: "admission-interview", name: "University Admission Interview", slug: "admission-interview", category: "visa", examType: "VisaInterview",
+    id: "admission-interview", name: "University Admission Interview", slug: "admission-interview", category: "visa", examTypeCode: "VISA-INTERVIEW", available: true,
     styleLabel: "Admission Interview practice", badge: "Admission", accent: "green",
     tagline: "University admission interview simulation",
     description: "Practice university admission interview questions covering motivation, fit and academic background.",
@@ -430,7 +465,7 @@ export const EXAM_MODULES: ExamModule[] = [
 
   // ===== ALO INTERNAL =====
   {
-    id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examType: null,
+    id: "counselor-assessment", name: "Counselor Assessment Test", slug: "counselor-assessment-test", category: "alo-internal", examTypeCode: "COUNSELOR-ASSESSMENT", available: true,
     styleLabel: "ALO Internal practice test", badge: "Internal", accent: "blue",
     tagline: "Assess counselor knowledge & process",
     description: "Internal ALO test to assess counselor knowledge of countries, universities, visas and ALO process.",
@@ -443,7 +478,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Counselor onboarding", "Process knowledge", "Score + certification", "Internal only"],
   },
   {
-    id: "student-readiness", name: "Student Readiness Test", slug: "student-readiness-test", category: "alo-internal", examType: "Placement",
+    id: "student-readiness", name: "Student Readiness Test", slug: "student-readiness-test", category: "alo-internal", examTypeCode: "ALO-PLACEMENT", available: true,
     styleLabel: "ALO Internal practice test", badge: "Internal", accent: "orange",
     tagline: "Are you ready to apply abroad?",
     description: "Internal ALO test measuring a student's readiness to begin applications abroad.",
@@ -456,7 +491,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Readiness score", "Gap analysis", "Counselor handoff", "Action plan"],
   },
   {
-    id: "english-diagnostic", name: "English Level Diagnostic", slug: "english-level-diagnostic", category: "alo-internal", examType: "Placement",
+    id: "english-diagnostic", name: "English Level Diagnostic", slug: "english-level-diagnostic", category: "alo-internal", examTypeCode: "ALO-PLACEMENT", available: true,
     styleLabel: "ALO Internal practice test", badge: "Diagnostic", accent: "royal",
     tagline: "Quick CEFR level check",
     description: "A quick adaptive diagnostic to place students at the right CEFR level for prep planning.",
@@ -469,7 +504,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Adaptive", "CEFR placement", "5-minute option", "Prep plan input"],
   },
   {
-    id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examType: null,
+    id: "document-readiness", name: "Document Readiness Test", slug: "document-readiness-test", category: "alo-internal", examTypeCode: "DOCUMENT-READINESS", available: true,
     styleLabel: "ALO Internal practice test", badge: "Checklist", accent: "green",
     tagline: "Checklist for application documents",
     description: "An interactive checklist test verifying that a student's documents are application-ready.",
@@ -482,7 +517,7 @@ export const EXAM_MODULES: ExamModule[] = [
     highlights: ["Document checklist", "Missing-item alerts", "Counselor handoff", "Application-ready flag"],
   },
   {
-    id: "visa-readiness", name: "Visa Readiness Test", slug: "visa-readiness-test", category: "alo-internal", examType: "VisaInterview",
+    id: "visa-readiness", name: "Visa Readiness Test", slug: "visa-readiness-test", category: "alo-internal", examTypeCode: "VISA-INTERVIEW", available: true,
     styleLabel: "ALO Internal practice test", badge: "Visa", accent: "purple",
     tagline: "Ready for your visa interview?",
     description: "An internal ALO test to verify a student is ready for their visa interview — documents, finances and interview prep.",
@@ -517,3 +552,8 @@ export const CBT_QUESTION_TYPES = [
   "Drag & drop matching", "Matching headings", "Matching sentence endings", "Reorder paragraphs",
   "Numeric answer", "Code / text input", "Case study", "Scenario-based", "File upload", "Image-based",
 ];
+
+/** Modules with a working backend exam definition — safe to advertise. */
+export const PUBLISHED_EXAM_MODULES: ExamModule[] = EXAM_MODULES.filter(
+  (e) => e.available !== false
+);

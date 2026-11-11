@@ -12,8 +12,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
-  senderName: z.string().optional(),
-  senderHandle: z.string().optional(),
+  channel: z.enum(['WHATSAPP', 'FACEBOOK', 'INSTAGRAM', 'EMAIL', 'SMS', 'WEBCHAT', 'PORTAL', 'INTERNAL']),
+  direction: z.enum(['INBOUND', 'OUTBOUND']),
+  body: z.string().min(1).max(10000),
+  senderName: z.string().max(200).optional(),
+  senderHandle: z.string().max(300).optional(),
   recipientName: z.string().optional(),
   recipientHandle: z.string().optional(),
   leadId: z.string().optional(),
