@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Mail, Lock, User, Phone, ShieldCheck, Sparkles, GraduationCap, Briefcase, Users, LayoutDashboard, ChevronRight, Check } from "lucide-react";
+import { X, Mail, Lock, User, Phone, ShieldCheck, Sparkles, GraduationCap, Briefcase, Users, LayoutDashboard, ChevronRight, Check, IdCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,11 @@ export function AloAuthModal() {
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState<Role>("student");
   const [submitting, setSubmitting] = useState(false);
+  // Educational ID is required to register as a student (the platform is
+  // gated — not public). Tracked here so the modal's demo handler can
+  // validate it and the field is visible to the user, mirroring the real
+  // /register page form in src/components/site/auth-forms.tsx.
+  const [educationalId, setEducationalId] = useState("");
 
   useEffect(() => {
     if (authOpen) {
@@ -37,16 +42,30 @@ export function AloAuthModal() {
 
   if (!authOpen) return null;
 
+  const isStudentRegister = authMode === "register" && selectedRole === "student";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isStudentRegister && !educationalId.trim()) {
+      toast({
+        title: "Educational ID required",
+        description:
+          "The ALO exam platform is not public. Students can only register with the educational ID issued by their branch or counselor.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
       toast({
         title: `${authMode === "login" ? "Login" : "Account created"} (demo)`,
-        description: `Entering ${ROLES.find((r) => r.id === selectedRole)?.name}. No real auth in this preview.`,
+        description: `Entering ${ROLES.find((r) => r.id === selectedRole)?.name}${
+          isStudentRegister && educationalId ? ` · Edu ID ${educationalId.toUpperCase()}` : ""
+        }. No real auth in this preview — use the /register page for a real account.`,
       });
       enterPortal(selectedRole);
+      setEducationalId("");
     }, 700);
   };
 
@@ -121,6 +140,30 @@ export function AloAuthModal() {
                     <Input id="phone" placeholder="+880…" className="h-11 rounded-xl border-slate-200 pl-9" />
                   </div>
                 </div>
+              </div>
+            )}
+            {isStudentRegister && (
+              <div className="space-y-1.5">
+                <Label htmlFor="educationalId" className="text-xs font-semibold text-alo-navy">
+                  Educational ID <span className="text-alo-orange">*</span>
+                </Label>
+                <div className="relative">
+                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-alo-faint" />
+                  <Input
+                    id="educationalId"
+                    value={educationalId}
+                    onChange={(e) => setEducationalId(e.target.value)}
+                    required
+                    placeholder="e.g. ALO-2026-0001"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="h-11 rounded-xl border-slate-200 pl-9 uppercase tracking-wide"
+                  />
+                </div>
+                <p className="text-[11px] text-alo-faint leading-relaxed">
+                  The exam platform is gated. Students register with the educational ID issued by their ALO branch — 3 free mock tests are granted per exam type against this ID.
+                </p>
               </div>
             )}
             <div className="space-y-1.5">

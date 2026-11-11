@@ -108,7 +108,12 @@ export type AuditAction =
   | 'USER_ENABLED'
   | 'BLOG_POST_CREATED'
   | 'BLOG_POST_PUBLISHED'
-  | 'BLOG_POST_UPDATED';
+  | 'BLOG_POST_UPDATED'
+  // Device verification + proctoring (anti-cheating) audit actions.
+  // Recorded by the proctoring endpoint when a tab-switch / window-blur
+  // event crosses a threshold; never blocks a start, but persists the
+  // posture signal so a human reviewer can spot repeat offenders.
+  | 'EXAM_TAB_SWITCH';
 
 /**
  * Record an audit log entry.

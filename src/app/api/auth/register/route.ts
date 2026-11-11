@@ -27,6 +27,30 @@ const schema = z.object({
    * is not consent, so nothing is written unless it is explicitly true.
    */
   marketingConsent: z.boolean().optional(),
+  /**
+   * Educational ID issued by ALO Education. Required for STUDENT accounts —
+   * the platform is NOT public, so a learner cannot register without one.
+   * The validation matches the official ID format: 4–32 chars, uppercase
+   * letters + digits, dashes allowed (case-insensitive on input, stored
+   * uppercased). Optional for staff/partner self-registration, but if
+   * supplied it must be unique across all users.
+   */
+  educationalId: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(
+      /^[A-Z0-9][A-Z0-9-]{2,31}$/,
+      "Educational ID must be 3–32 chars: letters, digits or dashes (starts with a letter or digit).",
+    )
+    .optional(),
+  /**
+   * Optional role hint. The server still pins every self-registration to
+   * "STUDENT" — staff accounts are created by a SUPER_ADMIN via the
+   * bootstrap or RBAC routes — so this field is accepted for forward-compat
+   * but ignored.
+   */
+  role: z.string().max(32).optional(),
 });
 
 /**
@@ -54,13 +78,32 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const { email, password, name } = parsed.data;
+    const educationalId = parsed.data.educationalId || null;
     const referralCode = parsed.data.referralCode ? normalizeReferralCode(parsed.data.referralCode) : null;
     if (parsed.data.referralCode && !referralCode) {
       return badRequest("Referral code is invalid");
     }
 
+    // STUDENT accounts require an educational ID — the platform is gated,
+    // not public. Staff/partner self-registration is allowed without one
+    // (those accounts are typically created by a SUPER_ADMIN anyway).
+    if (!educationalId) {
+      return badRequest(
+        "Educational ID is required. The ALO exam platform is not public — students register with the ID issued by their counselor or branch.",
+      );
+    }
+
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) return conflict("An account with this email already exists");
+
+    // Educational ID uniqueness is enforced by the schema (`@unique`), but a
+    // pre-check returns a clearer message than the raw P2002 below.
+    const existingById = await db.user.findUnique({ where: { educationalId } });
+    if (existingById) {
+      return conflict(
+        "An account with this educational ID already exists. If you have forgotten your password, use the reset link, or contact your branch.",
+      );
+    }
 
     const partner = referralCode
       ? await db.partner.findUnique({
@@ -82,8 +125,9 @@ export async function POST(req: Request): Promise<Response> {
           passwordHash: hashPassword(password),
           role: "STUDENT",
           status: "ACTIVE",
+          educationalId,
         },
-        select: { id: true, email: true, name: true, role: true },
+        select: { id: true, email: true, name: true, role: true, educationalId: true },
       });
 
       let leadId: string | null = null;
@@ -160,9 +204,14 @@ export async function POST(req: Request): Promise<Response> {
       metadata: {
         ...(partner ? { attribution: "REFERRAL", partnerId: partner.id } : {}),
         marketingConsent,
+        educationalId: user.educationalId ?? null,
+        role: user.role,
       },
     });
 
-    return created({ user }, "Account created successfully");
+    return created(
+      { user, educationalId: user.educationalId ?? null },
+      "Account created successfully",
+    );
   });
 }

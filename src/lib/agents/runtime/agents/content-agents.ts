@@ -20,7 +20,8 @@
  */
 
 import { db } from "@/lib/db";
-import { selectQuestions, persistSelection, ListeningAudioNotReadyError, QuestionShortageError } from "@/lib/exam/selection";
+import { ListeningAudioNotReadyError, QuestionShortageError } from "@/lib/exam/selection";
+import { selectQuestionsWithAntiRepeat, persistAntiRepeatSelection } from "@/lib/exam/anti-repeat";
 import { deadlineFor } from "@/lib/exam/timer";
 import { complete } from "@/lib/ai/providers/ai-provider";
 import { getBlueprint } from "@/lib/agents/runtime/blueprints";
@@ -111,7 +112,11 @@ const ORCHESTRATOR: AgentDefinitionSpec = {
 
     let selection;
     try {
-      selection = await selectQuestions({ db, userId, practiceSetId });
+      // Route through the anti-repeat system: today's 5 daily variants
+      // are generated idempotently, the student is assigned an unseen
+      // variant (or the least-recently-seen fallback), and the on-screen
+      // question order is re-shuffled per attempt.
+      selection = await selectQuestionsWithAntiRepeat(db, userId, practiceSetId);
     } catch (error) {
       if (error instanceof ListeningAudioNotReadyError) {
         await ctx.log("orchestrator.audio_not_ready", error.message, undefined, "warn");
@@ -149,7 +154,13 @@ const ORCHESTRATOR: AgentDefinitionSpec = {
       select: { id: true, startedAt: true, expiresAt: true, durationMin: true },
     });
 
-    await persistSelection({ db, attemptId: attempt.id, questionIds: selection.questionIds });
+    // Persist the per-attempt shuffled question order AND record the
+    // variant exposure so the next start avoids drawing the same variant.
+    await persistAntiRepeatSelection(db, {
+      attemptId: attempt.id,
+      userId,
+      selection,
+    });
 
     // The section split is what the result screen and the analytics agent
     // both need, so it is computed once here and stored with the attempt.
@@ -175,6 +186,13 @@ const ORCHESTRATOR: AgentDefinitionSpec = {
         sections,
         startedAt: attempt.startedAt.toISOString(),
         expiresAt: attempt.expiresAt?.toISOString() ?? null,
+        // Anti-repeat bookkeeping so the artifact records which daily
+        // variant this attempt drew and whether it was fresh.
+        antiRepeat: {
+          variantIndex: selection.variantIndex,
+          isFreshVariant: selection.isFreshVariant,
+          dailySetDate: selection.dailySetDate,
+        },
       },
       provenance: { provider: "deterministic", model: "exam-orchestrator/1.0.0" },
     });
@@ -183,6 +201,8 @@ const ORCHESTRATOR: AgentDefinitionSpec = {
       attemptId: attempt.id,
       questionCount: selection.questionIds.length,
       examTypeCode: practiceSet.examType.code,
+      variantIndex: selection.variantIndex,
+      isFreshVariant: selection.isFreshVariant,
     });
 
     return {

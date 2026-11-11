@@ -31,6 +31,11 @@ export async function GET(): Promise<Response> {
         expiresAt: true,
         durationMin: true,
         attemptNumber: true,
+        // Proctoring fields so the resume path can show the existing
+        // tab-switch count without an extra round-trip.
+        deviceId: true,
+        tabSwitchCount: true,
+        lastTabSwitchAt: true,
         practiceSet: {
           select: {
             id: true,
@@ -58,6 +63,11 @@ export async function GET(): Promise<Response> {
           attemptNumber: attempt.attemptNumber,
           practiceSetId: attempt.practiceSetId,
           practiceSet: attempt.practiceSet,
+          proctoring: {
+            deviceId: attempt.deviceId,
+            tabSwitchCount: attempt.tabSwitchCount,
+            lastTabSwitchAt: attempt.lastTabSwitchAt,
+          },
         },
         clock: computeClock(attempt),
         questions,

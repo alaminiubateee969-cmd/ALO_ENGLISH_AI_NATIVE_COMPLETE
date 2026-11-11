@@ -1,22 +1,31 @@
 /** Quota helpers shared by attempt creation and the learner quota summary. */
 
-type QuotaDb = Pick<typeof import("@/lib/db").db, "freeQuota">;
+import { db as defaultDb } from "@/lib/db";
+
+type QuotaDb = Pick<typeof defaultDb, "freeQuota">;
 
 /**
- * Platform policy (2026-10-27): every exam, mock and practice feature is free
- * and unlimited, 24/7 — for students, ALO members and visitors alike. There is
- * no paid tier and no attempt ceiling.
+ * Platform policy (user spec): each student gets **3 free mock tests per
+ * exam type** using their educational ID, then additional tests require
+ * payment. Free quota is tracked per (userId, examTypeCode) — not globally
+ * — so a student can sit 3 IELTS-A and 3 TOEFL without paying.
  *
- * The FreeQuota row is still kept (and `attemptsUsed` still incremented) so
- * usage analytics keep working, but the limit is set to a value no learner can
- * reach in practice, which makes the quota gate structurally unable to block
- * anyone. Kept below Prisma's Int32 ceiling (2,147,483,647).
+ * The legacy "unlimited free" limit (2 billion) was retired when this file
+ * was rewritten for the per-exam-type gate; existing FreeQuota rows were
+ * dropped during the migration so the new (userId, examTypeCode) compound
+ * key starts from a clean slate.
  */
-export const FREE_PRACTICE_LIMIT = 2_000_000_000;
+export const FREE_PRACTICE_LIMIT = 3;
 
+/**
+ * Default free attempt limit for a given role. Students get the standard 3
+ * per exam type; staff/admin roles bypass the gate by getting a very large
+ * ceiling (kept below Prisma's Int32 max so the conditional update in
+ * {@link reserveQuotaAttempt} cannot overflow on a 32-bit DB column).
+ */
 export function freeAttemptLimitForRole(role: string): number {
-  // Role kept for signature compatibility; the free plan is unlimited for all.
-  void role;
+  const r = (role || "").toUpperCase();
+  if (r === "SUPER_ADMIN" || r === "ADMIN") return 2_000_000_000;
   return FREE_PRACTICE_LIMIT;
 }
 
@@ -33,10 +42,12 @@ export function quotaSummary(input: {
   attemptsUsed: number;
   attemptsLimit: number;
   paidAttempts: number;
+  examTypeCode?: string;
 }) {
   const totalAllowed = Math.max(0, input.attemptsLimit) + Math.max(0, input.paidAttempts);
   const attemptsUsed = Math.max(0, input.attemptsUsed);
   return {
+    examTypeCode: input.examTypeCode ?? null,
     attemptsUsed,
     freeLimit: Math.max(0, input.attemptsLimit),
     paidAttempts: Math.max(0, input.paidAttempts),
@@ -51,11 +62,25 @@ export function quotaSummary(input: {
  * called inside the same transaction as attempt creation and question freeze
  * so failed starts roll back the reservation and concurrent starts cannot
  * exceed the available quota.
+ *
+ * Per-exam-type: the conditional update keys on (userId, examTypeCode) so
+ * a student burning their last IELTS-A slot cannot also consume the last
+ * TOEFL slot in the same transaction.
  */
-export async function reserveQuotaAttempt(db: QuotaDb, userId: string, totalAllowed: number): Promise<boolean> {
+export async function reserveQuotaAttempt(
+  db: QuotaDb,
+  userId: string,
+  totalAllowed: number,
+  examTypeCode: string,
+): Promise<boolean> {
   if (!Number.isSafeInteger(totalAllowed) || totalAllowed <= 0) return false;
+  if (!examTypeCode) return false;
   const result = await db.freeQuota.updateMany({
-    where: { userId, attemptsUsed: { lt: totalAllowed } },
+    where: {
+      userId,
+      examTypeCode,
+      attemptsUsed: { lt: totalAllowed },
+    },
     data: { attemptsUsed: { increment: 1 } },
   });
   return result.count === 1;

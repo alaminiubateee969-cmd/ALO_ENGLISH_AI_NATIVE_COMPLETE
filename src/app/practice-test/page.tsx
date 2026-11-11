@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Clock, Flag, ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
+import { Clock, Flag, ArrowLeft, ArrowRight, Check, Info, ShieldAlert, MonitorSmartphone } from "lucide-react";
 import { questionInputKind, parseQuestionOptions, longTextWordTarget } from "@/lib/exam/question-ui";
+import {
+  collectDeviceFingerprint,
+  TAB_SWITCH_WARNING_THRESHOLD,
+  TAB_SWITCH_AUTO_SUBMIT_THRESHOLD,
+} from "@/lib/exam/device-fingerprint-client";
 
 /** Key used to survive a page refresh within the same browser tab session. */
 const ATTEMPT_STORAGE_KEY = "alo.activeAttemptId";
@@ -50,6 +55,20 @@ export default function PracticeTestPage() {
   } | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [testStarted, setTestStarted] = useState(false);
+
+  // ─── Anti-cheating: tab-switch / window-blur detection ───────────────
+  // Proctoring posture (matches a real proctored exam): the browser
+  // listens to `visibilitychange` (tab switch) and `window.blur` (focus
+  // lost to another app) and POSTs the current count to
+  // /api/attempts/:id/proctoring on every event. At 3 events the UI shows
+  // a warning toast; at 5 it auto-submits. The persisted `tabSwitchCount`
+  // is the source of truth, but the local ref tracks it without waiting
+  // for the round-trip so the auto-submit fires immediately on the 5th
+  // event (the POST is fire-and-forget; the server catches up).
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [showTabSwitchWarning, setShowTabSwitchWarning] = useState(false);
+  const tabSwitchCountRef = useRef(0);
+  const proctoringInFlightRef = useRef(false);
 
   // ─── Server-authoritative clock + autosave plumbing ──────────────────
   // `expiresAt` is the server's deadline. The browser only interpolates
@@ -154,6 +173,14 @@ export default function PracticeTestPage() {
         setTimeLeft(restored.clock.remainingSec);
         skewRef.current = new Date(restored.clock.serverNow).getTime() - Date.now();
         setTestStarted(true);
+        // Resume the proctoring counter from the persisted value so a
+        // refresh after a tab-switch event keeps the count and does not
+        // "reset" the learner's posture trail. The server's count is the
+        // source of truth; the local ref mirrors it.
+        const resumedCount = restoredAttempt.proctoring?.tabSwitchCount ?? 0;
+        tabSwitchCountRef.current = resumedCount;
+        setTabSwitchCount(resumedCount);
+        setShowTabSwitchWarning(resumedCount >= TAB_SWITCH_WARNING_THRESHOLD);
         const matchingExam = examTypes.find((examType) => examType.code === set.examType.code);
         if (matchingExam) setSelectedExam(matchingExam.id);
       } catch {
@@ -255,14 +282,103 @@ export default function PracticeTestPage() {
     };
   }, [testStarted, expiresAt, attemptId, submitTest]);
 
+  // ─── Anti-cheating: visibilitychange + window blur listeners ──────────
+  // Attached only while a test is in progress. Each event:
+  //   1. Increments the local tab-switch count (mirrored in a ref so the
+  //      auto-submit on the 5th event fires immediately, before the server
+  //      round-trip completes).
+  //   2. POSTs the new count to /api/attempts/:id/proctoring. Fire-and-
+  //      forget: the persisted value is the source of truth, but a dropped
+  //      POST is tolerated — the next event re-sends the full count and
+  //      the server's monotonic max() catches up.
+  //   3. Shows a warning toast when the count crosses 3.
+  //   4. Triggers submitTest() when the count reaches 5, like a real
+  //      proctored exam that auto-submits on the 5th focus-loss event.
+  useEffect(() => {
+    if (!testStarted || !attemptId) return;
+
+    const recordTabSwitch = (eventType: "visibilitychange" | "blur" | "focusloss") => {
+      // visibilitychange fires on both "leaving" and "returning" — only
+      // count the "leaving" half (document hidden), so a single round
+      // trip away and back counts as one event, not two.
+      if (eventType === "visibilitychange" && document.visibilityState === "visible") return;
+
+      const next = tabSwitchCountRef.current + 1;
+      tabSwitchCountRef.current = next;
+      setTabSwitchCount(next);
+
+      if (next >= TAB_SWITCH_WARNING_THRESHOLD) {
+        setShowTabSwitchWarning(true);
+      }
+
+      // Fire-and-forget POST. Avoid re-entrancy: if a previous POST is
+      // still in flight, skip the new one — the next event will resend
+      // the (now higher) count and the server's monotonic max catches up.
+      if (!proctoringInFlightRef.current) {
+        proctoringInFlightRef.current = true;
+        fetch(`/api/attempts/${attemptId}/proctoring`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tabSwitchCount: next,
+            eventType,
+            clientTimestamp: Date.now(),
+          }),
+          // `keepalive: true` so the POST still completes if the tab is
+          // being closed — the proctoring trail is the audit trail.
+          keepalive: true,
+        })
+          .catch(() => {
+            // Offline or 5xx: tolerated. The next event re-sends the
+            // full count; the server's monotonic max catches up.
+          })
+          .finally(() => {
+            proctoringInFlightRef.current = false;
+          });
+      }
+
+      // Auto-submit at the threshold (matches a real proctored exam).
+      if (next >= TAB_SWITCH_AUTO_SUBMIT_THRESHOLD) {
+        // submitTest() is idempotent (double-submit guard), so calling it
+        // here is safe even if the timer or the submit button already
+        // fired it.
+        void submitTest();
+      }
+    };
+
+    const onVisibility = () => recordTabSwitch("visibilitychange");
+    const onBlur = () => recordTabSwitch("blur");
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [testStarted, attemptId, submitTest]);
+
   async function startTest(set: PracticeSet) {
     setSubmitting(true);
     setError("");
     try {
+      // Collect the device fingerprint BEFORE the start POST so the
+      // server can stamp it onto the attempt atomically. Failures are
+      // non-fatal: a student on a browser that blocks canvas/WebGL still
+      // gets to start; the attempt simply has no device trail.
+      let devicePayload: Awaited<ReturnType<typeof collectDeviceFingerprint>>["fingerprint"] | undefined;
+      try {
+        const collected = await collectDeviceFingerprint();
+        devicePayload = collected.fingerprint;
+      } catch {
+        // SSR or unsupported browser — the start API tolerates a missing
+        // fingerprint and proceeds without device verification.
+        devicePayload = undefined;
+      }
+
       const res = await fetch("/api/attempts/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ practiceSetId: set.id }),
+        body: JSON.stringify({ practiceSetId: set.id, deviceFingerprint: devicePayload }),
       });
       const data = await res.json();
       if (data.success) {
@@ -274,6 +390,13 @@ export default function PracticeTestPage() {
         setTimeLeft(clock.remainingSec);
         setAttemptId(attempt.id);
         window.sessionStorage.setItem(ATTEMPT_STORAGE_KEY, attempt.id);
+
+        // Reset the proctoring counter on a fresh start (the persisted
+        // row defaults to 0; we mirror it here so the warning toast only
+        // fires on events observed in this session).
+        tabSwitchCountRef.current = 0;
+        setTabSwitchCount(0);
+        setShowTabSwitchWarning(false);
 
         // Fetch the question set frozen on this attempt.
         const qRes = await fetch(`/api/questions?attemptId=${attempt.id}`);
@@ -363,6 +486,10 @@ export default function PracticeTestPage() {
     setSaveError("");
     setCurrentSection(0);
     setCurrentQuestion(0);
+    // Reset proctoring state so a subsequent attempt starts clean.
+    tabSwitchCountRef.current = 0;
+    setTabSwitchCount(0);
+    setShowTabSwitchWarning(false);
   }
 
   function formatTime(sec: number) {
@@ -604,6 +731,33 @@ export default function PracticeTestPage() {
         <div className="mx-auto flex max-w-7xl gap-4 px-4 py-4">
           {/* Left: Question area */}
           <div className="flex-1">
+            {/* Anti-cheating banner — always shown during a live exam so the
+                posture is visible. The tab-switch count is mirrored from the
+                server (it round-trips on every event). At 3+ events the
+                banner flips to red and shows the warning copy; at 5 the
+                auto-submit fires elsewhere and this view transitions to the
+                result screen. */}
+            <div className={`mb-4 flex items-start gap-2 rounded-xl border p-3 text-sm ${
+              showTabSwitchWarning
+                ? "border-red-300 bg-red-50 text-red-800"
+                : "border-slate-200 bg-slate-50 text-slate-700"
+            }`}>
+              {showTabSwitchWarning ? (
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+              ) : (
+                <MonitorSmartphone className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+              )}
+              <p className="leading-relaxed">
+                <span className="font-semibold">Proctoring active.</span>{" "}
+                Tab switching, window blur and leaving this page are recorded.
+                You have used{" "}
+                <span className="font-bold">{tabSwitchCount}</span> of{" "}
+                <span className="font-bold">{TAB_SWITCH_AUTO_SUBMIT_THRESHOLD}</span> allowed focus-loss events
+                {showTabSwitchWarning && (
+                  <> — <span className="font-bold">do not switch tabs again or your attempt will be auto-submitted.</span></>
+                )}.
+              </p>
+            </div>
             {listeningWithoutAudio > 0 && (
               <div className="mb-4 flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
                 <Info className="mt-0.5 h-4 w-4 shrink-0" />

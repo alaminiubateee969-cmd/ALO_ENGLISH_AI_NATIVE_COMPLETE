@@ -81,6 +81,7 @@ export function RegisterForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [educationalId, setEducationalId] = useState("");
   const [password, setPassword] = useState("");
   // Never pre-ticked, and never required. The wording below names the exact
   // channels the server records consent for, because consent given for channels
@@ -96,6 +97,10 @@ export function RegisterForm() {
       setError("Password must be at least 12 characters");
       return;
     }
+    if (!educationalId.trim()) {
+      setError("Educational ID is required — the platform is not public.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
@@ -105,6 +110,7 @@ export function RegisterForm() {
           email,
           password,
           name,
+          educationalId: educationalId.trim(),
           referralCode: new URLSearchParams(window.location.search).get("ref") || undefined,
           marketingConsent,
         }),
@@ -128,6 +134,26 @@ export function RegisterForm() {
       <div>
         <label className="block text-sm font-medium mb-1">Full Name</label>
         <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" required />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Educational ID <span className="text-red-600">*</span>
+        </label>
+        <input
+          type="text"
+          value={educationalId}
+          onChange={(e) => setEducationalId(e.target.value)}
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm uppercase tracking-wide"
+          placeholder="e.g. ALO-2026-0001"
+          required
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          The exam platform is gated — you can only register with the educational ID issued by your ALO branch or counselor.
+          3 free mock tests are granted per exam type against this ID.
+        </p>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Email</label>

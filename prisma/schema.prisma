@@ -30,6 +30,15 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  /// Educational ID issued by ALO Education. Required for STUDENT accounts —
+  /// the platform is NOT public: a student cannot take a mock test without a
+  /// verified educational ID. Optional for staff/partner roles. Enforced in
+  /// the register API (src/app/api/auth/register/route.ts) and used as the
+  /// primary identifier for free-quota attribution.
+  /// `@unique` is safe with nullable fields in SQLite: multiple NULLs are
+  /// allowed, only non-null values must be distinct.
+  educationalId String? @unique
+
   branch       Branch?       @relation(fields: [branchId], references: [id])
   department   Department?   @relation(fields: [departmentId], references: [id])
   supervisor   User?         @relation("Supervisor", fields: [supervisorId], references: [id])
@@ -49,6 +58,7 @@ model User {
 
   attempts     Attempt[]
   scores       Score[]
+  certificates Certificate[]
 
   // Phase 1: RBAC + Multi-tenancy relations
   teamMembers  TeamMember[]
@@ -570,19 +580,41 @@ model Attempt {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  /// ── Device verification + anti-cheating (proctoring) ──
+  /// Short hash (16 chars) of the device fingerprint, used for the
+  /// "same device already took an exam" informational check. Set at start
+  /// from the client-supplied fingerprint payload.
+  deviceId        String?
+  /// Full fingerprint JSON (userAgent, screen, timezone, language, canvas
+  /// hash, etc.). Stored verbatim so an audit can re-derive `deviceId` and
+  /// inspect the original components. Capped at 4 KB by the start API.
+  deviceFingerprint String?
+  /// Number of tab-switch / window-blur events detected during the exam
+  /// (visibilitychange + blur). Persisted by POST /api/attempts/[id]/proctoring
+  /// on every event. Crossing 3 shows a warning, 5 triggers auto-submit.
+  tabSwitchCount   Int       @default(0)
+  /// Timestamp of the most recent tab-switch event recorded on the attempt.
+  lastTabSwitchAt  DateTime?
+
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   practiceSet PracticeSet @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
   score       Score?
+  /// 1:1 — one formal certificate is generated per submitted attempt.
+  certificate Certificate? @relation("AttemptCertificate")
   /// The question set frozen at attempt start. Reused on every resume so a
   /// refresh or a different device always yields the same questions.
   attemptQuestions AttemptQuestion[]
   answers     AttemptAnswer[]
   evaluations AttemptEvaluation[]
+  /// 1:1 — null until the attempt has been assigned a daily variant. Set
+  /// by {@link persistAntiRepeatSelection} during the start transaction.
+  variantExposure AttemptVariantExposure?
 
   @@index([userId])
   @@index([status])
   @@index([userId, practiceSetId])
   @@index([expiresAt])
+  @@index([deviceId])
 }
 
 /// Join table freezing the exact question set (and order) for one attempt.
@@ -669,6 +701,57 @@ model Score {
   @@index([userId])
 }
 
+// ═══ Completion Certificates ═════════════════════════════════════════════
+//
+// Every submitted attempt — passed or not — receives a formal completion
+// certificate. The certificate is generated server-side as a PDF, persisted on
+// disk, and emailed to the student. The `certificateNumber` is a verifiable,
+// human-readable identifier printed on the PDF and resolvable by the public
+// `/certificate/[id]` page.
+
+model Certificate {
+  id              String   @id @default(cuid())
+  /// Internal cuid, used in URLs and API routes.
+  /// Human-readable, verifiable number printed on the PDF: ALO-CERT-YYYY-NNNNNN.
+  certificateNumber String @unique
+  userId           String
+  attemptId        String  @unique
+  /// Snapshot of the ExamType.code at issue time (e.g. "IELTS-A", "PTE-A").
+  examTypeCode     String
+  /// Snapshot of the human-readable exam name (e.g. "IELTS Academic").
+  examTypeName     String
+  /// Overall practice indicator shown on the certificate. May be null for
+  /// exams with no objective section supported by the scorer; the certificate
+  /// still records participation.
+  overallScore     Float?
+  listeningScore   Float?
+  readingScore     Float?
+  writingScore     Float?
+  speakingScore    Float?
+  /// Whether the student asked to be connected to a counselor / educational
+  /// portal after seeing the certificate. Set by POST /api/certificate/[id]/express-interest.
+  interestedInCounseling Boolean @default(false)
+  /// When interest was expressed, a CRM lead is created automatically; this
+  /// records the lead id so the certificate page can show "request received".
+  interestedLeadId String?
+  interestedAt     DateTime?
+  /// Whether the certificate PDF was successfully emailed to the student.
+  emailedAt        DateTime?
+  /// Path (relative to the data root) of the generated PDF on disk.
+  filePath         String?
+  issuedAt         DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt Attempt  @relation("AttemptCertificate", fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([attemptId])
+  @@index([examTypeCode])
+  @@index([certificateNumber])
+}
+
 // ═══ Exam Questions ════════════════════════════════════════════════════
 
 model Question {
@@ -726,14 +809,29 @@ model QuestionAudioAsset {
 
 model FreeQuota {
   id           String   @id @default(cuid())
-  userId       String   @unique
+  /// Owning user. No longer globally unique: a student gets one row per
+  /// exam type, so (userId, examTypeCode) is the compound key.
+  userId       String
+  /// Exam type code (e.g. "IELTS-A", "TOEFL"). Mirrors ExamType.code so the
+  /// quota can be resolved from the practice set's examType join without an
+  /// extra lookup, and so the client can display "3 free IELTS-A tests left".
+  examTypeCode String
+  /// Persisted counter of attempts started against this (user, exam type).
+  /// Reconciled against Attempt rows on every start so a manual DB edit or
+  /// a deleted attempt cannot inflate the remaining quota silently.
   attemptsUsed Int      @default(0)
+  /// Free attempts allowed for this exam type before payment is required.
+  /// Platform policy (user spec): 3 free mock tests per exam type per
+  /// student, then payment kicks in.
   attemptsLimit Int     @default(3)
   isAloStudent Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  @@unique([userId, examTypeCode])
   @@index([userId])
+  @@index([examTypeCode])
+  @@index([userId, examTypeCode])
 }
 
 model Payment {
@@ -756,12 +854,69 @@ model DailyQuestionSet {
   id            String   @id @default(cuid())
   examTypeCode  String
   date          String   // YYYY-MM-DD
-  practiceSetId String
+  /// Legacy field kept for backward compatibility with older generator
+  /// scripts; the anti-repeat system stores variant question sets on
+  /// {@link DailyQuestionVariant} rows instead.
+  practiceSetId String?
   isGenerated   Boolean  @default(false)
   createdAt     DateTime @default(now())
 
+  variants      DailyQuestionVariant[]
+
   @@unique([examTypeCode, date])
   @@index([examTypeCode, date])
+}
+
+/// One of the 5 daily question-set variants generated for a
+/// (examTypeCode, date) pair. Each variant is a frozen, JSON-encoded list
+/// of question IDs drawn from the exam type's gradeable pool using a
+/// deterministic seed (so every student sees the same 5 variants today,
+/// but they differ from yesterday's and tomorrow's).
+model DailyQuestionVariant {
+  id            String   @id @default(cuid())
+  dailySetId    String
+  /// 1..5 — variant slot within the daily set.
+  variantIndex  Int
+  /// The source practice set the questions were drawn from. Recorded so a
+  /// variant can be re-derived later even if the practice set is renamed.
+  practiceSetId String
+  /// JSON-encoded `string[]` of question IDs in canonical (seeded) order.
+  /// The order served to any individual student is re-shuffled per attempt
+  /// in {@link selectQuestionsWithAntiRepeat}, so two attempts on the same
+  /// variant still see different question orders.
+  questionIds   String
+  questionCount Int
+  createdAt     DateTime @default(now())
+
+  dailySet      DailyQuestionSet        @relation(fields: [dailySetId], references: [id], onDelete: Cascade)
+  exposures     AttemptVariantExposure[]
+
+  @@unique([dailySetId, variantIndex])
+  @@index([dailySetId])
+}
+
+/// Per-user record of which {@link DailyQuestionVariant} an attempt used.
+///
+/// Unique on `(userId, variantId)` so a student is recorded as "having
+/// seen" a given variant at most once — the first attempt that draws that
+/// variant owns the exposure row, and any later attempt that re-draws the
+/// same variant (after cycling through all 5) leaves the original timestamp
+/// intact so the picker can identify the least-recently-seen variant.
+model AttemptVariantExposure {
+  id          String   @id @default(cuid())
+  userId      String
+  /// 1:1 with {@link Attempt}. An attempt records at most one variant
+  /// exposure; deleting the attempt cascades to this row.
+  attemptId   String   @unique
+  variantId   String
+  createdAt   DateTime @default(now())
+
+  variant     DailyQuestionVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  attempt     Attempt              @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, variantId])
+  @@index([userId])
+  @@index([variantId])
 }
 
 // ═══ Student Learning Memory ═════════════════════════════════════════
@@ -997,6 +1152,16 @@ model Session {
 /// The row is the allocation lock: increments happen in a transaction so two
 /// concurrent inbound messages can never receive the same code.
 model StudentIdSequence {
+  year      Int      @id
+  lastValue Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// Per-year counter for the human-readable certificate number
+/// (ALO-CERT-YYYY-NNNNNN). Same allocation-lock pattern as StudentIdSequence:
+/// the row is updated inside a transaction so two concurrent submissions can
+/// never receive the same certificate number.
+model CertificateSequence {
   year      Int      @id
   lastValue Int      @default(0)
   updatedAt DateTime @updatedAt

@@ -11,9 +11,17 @@
  *      actually prevents double submission and score manipulation
  *   5. only objective listening/reading evidence contributes to a numeric
  *      practice indicator; writing feedback is non-scored and speaking remains unscored
+ *   6. after a successful evaluation, a formal completion certificate is
+ *      generated automatically (regardless of result), persisted on disk, and
+ *      emailed to the student. The certificate id and public verification URL
+ *      are attached to the response so the client can deep-link to it.
  *
  * If the deadline has passed the attempt is still submitted (with whatever was
  * autosaved) — an expired exam is never left open.
+ *
+ * Certificate generation is best-effort: a failure there never rolls back the
+ * submission or blocks the score. The student can still retrieve the
+ * certificate later via POST /api/certificate/generate.
  */
 
 import { db } from "@/lib/db";
@@ -25,6 +33,8 @@ import { conductExam } from "@/lib/agents/ExamConductorAgent";
 import { computeClock } from "@/lib/exam/timer";
 import { loadAttemptAnswers } from "@/lib/exam/questions";
 import { gradeObjective, isSubjective, type GradableQuestion } from "@/lib/exam/grading";
+import { issueCertificateForAttempt, resolveStoragePath } from "@/lib/certificate/CertificateGenerator";
+import { queueEmail, buildCertificateEmail } from "@/lib/email/EmailService";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -191,6 +201,48 @@ export async function POST(req: Request): Promise<Response> {
         });
       }
 
+      // ── Auto-generate a formal completion certificate (regardless of result).
+      // ── Best-effort: a failure here never rolls back the submission.
+      let certificate: {
+        id: string;
+        certificateNumber: string;
+        publicUrl: string;
+        downloadUrl: string;
+        emailed: boolean;
+      } | null = null;
+      try {
+        const issued = await issueCertificateForAttempt(attemptId);
+        // Queue the certificate email to the file outbox (and stamp emailedAt).
+        const email = buildCertificateEmail({
+          studentName: issued.studentName,
+          studentEmail: issued.studentEmail,
+          examTypeName: issued.examTypeName,
+          certificateNumber: issued.certificateNumber,
+          verificationUrl: issued.verificationUrl,
+          overallScore: issued.overallScore,
+        });
+        if (issued.filePath) {
+          email.attachmentPath = resolveStoragePath(issued.filePath);
+          email.attachmentName = `${issued.certificateNumber}.pdf`;
+        }
+        email.certificateId = issued.id;
+        const queued = await queueEmail(email);
+        certificate = {
+          id: issued.id,
+          certificateNumber: issued.certificateNumber,
+          publicUrl: issued.verificationUrl,
+          downloadUrl: `/api/certificate/${issued.id}?format=pdf`,
+          emailed: queued.ok,
+        };
+      } catch (certErr) {
+        // The exam result stands. Log so an operator can regenerate the
+        // certificate via POST /api/certificate/generate later.
+        console.error(
+          "[exam-submit] certificate auto-generation failed:",
+          certErr instanceof Error ? certErr.message : "unknown error",
+        );
+      }
+
       return ok(
         {
           attempt: { id: attemptId, status: result.status, expiredAtSubmission: clock.expired },
@@ -200,6 +252,7 @@ export async function POST(req: Request): Promise<Response> {
             total: graded.objectiveTotal,
             sections: graded.sections,
           },
+          certificate,
         },
         "Exam evaluated"
       );

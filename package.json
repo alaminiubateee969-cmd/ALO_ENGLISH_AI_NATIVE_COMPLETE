@@ -2,7 +2,7 @@
   "name": "alo-english-test-platform",
   "version": "1.1.0",
   "private": true,
-  "description": "ALO English Test Platform \u2014 production-ready Next.js application for English exam practice.",
+  "description": "ALO English Test Platform — production-ready Next.js application for English exam practice.",
   "engines": {
     "node": ">=22.18.0"
   },
@@ -83,6 +83,7 @@
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@types/pdfkit": "^0.17.7",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -92,6 +93,7 @@
     "lucide-react": "^0.525.0",
     "next": "^16.1.1",
     "next-themes": "^0.4.6",
+    "pdfkit": "^0.20.2",
     "prisma": "^6.11.1",
     "react": "^19.0.0",
     "react-day-picker": "^9.8.0",

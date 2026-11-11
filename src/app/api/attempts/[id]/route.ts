@@ -37,6 +37,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         expiresAt: true,
         durationMin: true,
         attemptNumber: true,
+        // Device verification + proctoring fields, returned so the resume
+        // path can rebuild the proctoring UI (warning toast if the
+        // persisted count is already at/above the warning threshold).
+        deviceId: true,
+        tabSwitchCount: true,
+        lastTabSwitchAt: true,
         practiceSet: {
           select: {
             id: true,
@@ -67,6 +73,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
           attemptNumber: attempt.attemptNumber,
           practiceSetId: attempt.practiceSetId,
           practiceSet: attempt.practiceSet,
+          // Proctoring state, surfaced so the resume path can show the
+          // existing tab-switch count without an extra round-trip.
+          proctoring: {
+            deviceId: attempt.deviceId,
+            tabSwitchCount: attempt.tabSwitchCount,
+            lastTabSwitchAt: attempt.lastTabSwitchAt,
+          },
         },
         clock: computeClock(attempt),
         questions,
