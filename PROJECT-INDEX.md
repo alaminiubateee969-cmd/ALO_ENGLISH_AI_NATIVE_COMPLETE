@@ -127,12 +127,12 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `src/hooks/` | Shared React hooks |
 
-## Database (91 models, 0 enums, 16 migrations)
+## Database (91 models, 0 enums, 17 migrations)
 
 | Path | Purpose |
 |---|---|
 | `prisma/schema.prisma` | 91 models |
-| `prisma/migrations/` | 16 migration folders |
+| `prisma/migrations/` | 17 migration folders |
 | `prisma/seed.mjs`, `prisma/seed-rbac.ts` | Core data + RBAC seeds |
 | `prisma/seed-sample-bank.mjs` | Guarded synthetic sample bank (disposable databases only) |
 
@@ -174,11 +174,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 1013 |
+| Tracked files | 1014 |
 | Prisma models | 91 |
 | API routes | 139 |
 | Pages | 57 |
-| Migrations | 16 |
+| Migrations | 17 |
 | Test files | 46 |
 | Scripts | 34 |
 | Environment variables (template) | 31 |
