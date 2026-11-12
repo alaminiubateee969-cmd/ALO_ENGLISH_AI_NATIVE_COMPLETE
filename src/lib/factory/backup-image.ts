@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "@/lib/db-sync";
 
 export const FACTORY_BACKUP_FORMAT = "bdtech360-control-plane-v1";
 export type FactoryBackupObject = { kind: string; id: string; payload: unknown };

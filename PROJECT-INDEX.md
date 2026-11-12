@@ -102,7 +102,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Path | Purpose |
 |---|---|
-| `src/lib/` (42 modules) | `QuestionExposure.ts`, `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth`, `auth.ts`, `certificate`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db.ts`, `email`, `env.ts`, `exam`, `exam-catalog.ts`, `factory`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `study-tools`, `utils.ts`, `validation.ts`, `writing` |
+| `src/lib/` (43 modules) | `QuestionExposure.ts`, `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth`, `auth.ts`, `certificate`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db-sync.ts`, `db.ts`, `email`, `env.ts`, `exam`, `exam-catalog.ts`, `factory`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `study-tools`, `utils.ts`, `validation.ts`, `writing` |
 
 ## Source — Middleware
 
@@ -174,7 +174,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 1015 |
+| Tracked files | 1019 |
 | Prisma models | 91 |
 | API routes | 139 |
 | Pages | 57 |

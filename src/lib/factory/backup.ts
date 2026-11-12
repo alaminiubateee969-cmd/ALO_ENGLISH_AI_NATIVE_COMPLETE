@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "@/lib/db-sync";
 import { db } from "@/lib/db";
 import { getBackupDir } from "@/lib/paths";
 import { factoryAudit } from "./audit";

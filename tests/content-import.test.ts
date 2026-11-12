@@ -2,13 +2,22 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "../src/lib/db-sync";
 import { importQuestionBank, rollbackQuestionBank } from "../scripts/import-question-bank.mjs";
+
+// `bun test tests/` runs every file in one process, so a suite that mutates
+// process.env.DATABASE_URL poisons every DB-backed suite that loads afterwards
+// — the RBAC and agent-workforce suites create their PrismaClient at module
+// load time, and an unset DATABASE_URL makes them connect to an empty database.
+// Snapshot the runner's real value before any test runs and restore it after
+// each test, so the value the runner was invoked with survives this file.
+const SAVED_DATABASE_URL = process.env.DATABASE_URL;
 
 const roots: string[] = [];
 afterEach(() => {
   while (roots.length) rmSync(roots.pop()!, { recursive: true, force: true });
-  delete process.env.DATABASE_URL;
+  if (SAVED_DATABASE_URL === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = SAVED_DATABASE_URL;
 });
 
 function fixture() {

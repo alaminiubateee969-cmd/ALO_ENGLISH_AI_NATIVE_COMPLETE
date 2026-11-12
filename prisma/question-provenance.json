@@ -1,0 +1,726 @@
+{
+  "manifestVersion": 1,
+  "updatedAt": "2026-11-12",
+  "examTypes": [
+    {
+      "code": "IELTS-A",
+      "name": "IELTS Academic",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-IELTS-A",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 131,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "IELTS-G",
+      "name": "IELTS General Training",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-IELTS-G",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 25,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "IELTS-UKVI",
+      "name": "IELTS UKVI",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-IELTS-UKVI",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 5,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "PTE-A",
+      "name": "PTE Academic",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-PTE-A",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 50,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "TOEFL-iBT",
+      "name": "TOEFL iBT",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-TOEFL-iBT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 60,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "DUOLINGO",
+      "name": "Duolingo English Test",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-DUOLINGO",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 50,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "OET",
+      "name": "OET Healthcare",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-OET",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 17,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "LANGUAGECERT",
+      "name": "LanguageCert",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-LANGUAGECERT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 5,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "LINGUASKILL",
+      "name": "Cambridge Linguaskill",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-LINGUASKILL",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 5,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "OIETC",
+      "name": "OIETC Oxford ELLT",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-OIETC",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 5,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "TOEIC",
+      "name": "TOEIC",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-TOEIC",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 5,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "CAMBRIDGE",
+      "name": "Cambridge English",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-CAMBRIDGE",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 15,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "SAT",
+      "name": "Digital SAT",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-SAT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 17,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "GRE",
+      "name": "GRE General",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-GRE",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 42,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "GMAT",
+      "name": "GMAT Focus",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-GMAT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 22,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "ACT",
+      "name": "ACT",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-ACT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 11,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "LSAT",
+      "name": "LSAT",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-LSAT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 10,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "MCAT",
+      "name": "MCAT",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-MCAT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 12,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "VISA-INTERVIEW",
+      "name": "Visa Interview Practice",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-VISA-INTERVIEW",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 11,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    },
+    {
+      "code": "ALO-PLACEMENT",
+      "name": "ALO English Placement",
+      "contentOwner": "ALO Education",
+      "licence": {
+        "id": "ALO-ORIGINAL-ALO-PLACEMENT",
+        "name": "Original Work \u2014 Authored by ALO Education",
+        "url": "https://english.alolabs.net/licence",
+        "attributionRequired": true,
+        "attributionText": "Practice questions authored by ALO Education. Exam-aligned practice only \u2014 not official exam content."
+      },
+      "permission": {
+        "evidenceReference": "Self-authored original content created by ALO Education content team",
+        "grantedBy": "ALO Education Content Team",
+        "grantedOn": "2026-09-01",
+        "expiresOn": null
+      },
+      "officialFormat": {
+        "verified": true,
+        "sourceUrl": "https://www.ielts.org/about-the-test/test-format",
+        "checkedOn": "2026-09-01",
+        "notes": "Question structure verified against publicly available exam format descriptions. No official exam content reproduced."
+      },
+      "answerKeySource": "ALO Education Content Team \u2014 original answer keys written during question authoring",
+      "declaredCounts": {
+        "questionCount": 12,
+        "listeningWithVerifiedAudio": 0
+      },
+      "audioRights": {
+        "included": false,
+        "licenceId": "ALO-TTS-GENERATED",
+        "notes": "Audio files are TTS-synthesized by the platform using z-ai-web-dev-sdk, not sourced from official exam materials"
+      },
+      "reviewedBy": "ALO Education Engineering Team",
+      "reviewedOn": "2026-11-12"
+    }
+  ]
+}

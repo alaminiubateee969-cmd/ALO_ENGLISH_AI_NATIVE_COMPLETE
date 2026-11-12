@@ -12,7 +12,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "./lib/db-sync.mjs";
 import { validateProvenance } from "./validate-question-provenance.mjs";
 import {
   normalizePrompt,
