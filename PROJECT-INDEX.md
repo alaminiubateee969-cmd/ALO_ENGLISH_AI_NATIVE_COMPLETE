@@ -174,7 +174,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 1014 |
+| Tracked files | 1015 |
 | Prisma models | 91 |
 | API routes | 139 |
 | Pages | 57 |
