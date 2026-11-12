@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { StudentJourneyDiagram } from "@/components/site/student-journey-diagram";
+import { WebChat } from "@/components/alo/web-chat";
 
 export const metadata: Metadata = {
   // Rendered with the layout template as "… — ALO Education", which is 16
@@ -332,6 +333,9 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* Floating AI assistant — rule-based, "own AI", no paid LLM */}
+      <WebChat />
     </>
   );
 }

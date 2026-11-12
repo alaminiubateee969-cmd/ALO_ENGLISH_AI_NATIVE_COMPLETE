@@ -4,17 +4,18 @@
  * so this module deliberately returns no numeric speaking result.
  *
  * Transcripts stay in the local application and are not sent to an external
- * model by this module. This is generic feedback, not a validated exam rubric.
+ * model by this module. This is generic feedback from a local rule engine,
+ * not a validated exam rubric.
  */
 export type SpeakingEvaluation = {
   transcriptWordCount: number;
   improvementTips: string[];
-  providerUsed: 'local_transcript_rules';
+  providerUsed: 'local_rule_engine';
   disclaimer: string;
 };
 
 const DISCLAIMER =
-  'Generic transcript-only suggestions. No speaking score, pronunciation assessment, acoustic fluency measurement, or accent classification is produced.';
+  'Generic transcript-only suggestions from the local rule engine. No speaking score, pronunciation assessment, acoustic fluency measurement, or accent classification is produced.';
 
 export function evaluateSpeaking(transcript: string): SpeakingEvaluation {
   const normalized = transcript.trim().replace(/\s+/g, ' ');
@@ -24,7 +25,7 @@ export function evaluateSpeaking(transcript: string): SpeakingEvaluation {
   return {
     transcriptWordCount,
     improvementTips,
-    providerUsed: 'local_transcript_rules',
+    providerUsed: 'local_rule_engine',
     disclaimer: DISCLAIMER,
   };
 }

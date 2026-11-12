@@ -23,11 +23,20 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ExaminerAvatar } from "@/components/exam/ExaminerAvatar";
 import { SpeakingRecorder, type RecordingResult } from "@/lib/speech/SpeakingRecorder";
+import {
+  browserSpeak,
+  browserCancelSpeak,
+  browserListen,
+  isBrowserTTSSupported,
+  isBrowserSTTSupported,
+  loadBrowserVoices,
+  type BrowserRecognitionHandle,
+} from "@/lib/ai/examiner/BrowserVoiceEngine";
 import { AI_EXAMINERS, type AIExaminer } from "@/lib/agents/AIExaminers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mic, Square, Play, Loader2, ArrowLeft, AlertCircle, CheckCircle2, Volume2 } from "lucide-react";
+import { Mic, Square, Play, Loader2, ArrowLeft, AlertCircle, CheckCircle2, Volume2, Radio } from "lucide-react";
 
 type Turn = {
   role: "examiner" | "student";
@@ -43,6 +52,10 @@ type ExamPhase = "not-started" | "greeting" | "awaiting-student" | "recording" |
 const subscribeToNothing = () => () => {};
 const isMicSupported = () => SpeakingRecorder.isSupported();
 const isMicSupportedOnServer = () => true;
+const isBrowserTtsSupportedClient = () => isBrowserTTSSupported();
+const isBrowserTtsSupportedServer = () => true;
+const isBrowserSttSupportedClient = () => isBrowserSTTSupported();
+const isBrowserSttSupportedServer = () => false; // SSR pessimistic; hydrate upgrades to real value
 
 const STATE_LABELS: Record<string, string> = {
   introduction: "Speaking practice: Introduction",
@@ -65,9 +78,13 @@ export default function LiveExamPage() {
   const [currentState, setCurrentState] = useState<string>("introduction");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string>("");
+  const [liveTranscript, setLiveTranscript] = useState<string>("");
+  const [sttMode, setSttMode] = useState<"live" | "record">("live");
   const recorderRef = useRef<SpeakingRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recordingUrlsRef = useRef<string[]>([]);
+  const liveRecognitionRef = useRef<BrowserRecognitionHandle | null>(null);
+  const liveTranscriptRef = useRef<string>("");
 
   // Microphone support is a browser capability, so it is read through
   // useSyncExternalStore: the server snapshot stays optimistic (true) to keep
@@ -78,17 +95,59 @@ export default function LiveExamPage() {
     isMicSupportedOnServer
   );
 
-  // ─── Browser speech synthesis fallback (if TTS API fails) ─────────────
+  // Browser-native speech synthesis (TTS) and speech recognition (STT) are
+  // the PRIMARY voice path now — they're free, built into every modern
+  // browser, and require no external API. z-ai-web-dev-sdk TTS/ASR is an
+  // optional enhancement that the deployment opts into via
+  // EXAMINER_USE_LLM=true. Read both capabilities via useSyncExternalStore so
+  // the hydration render matches the server HTML (optimistic true for TTS,
+  // pessimistic false for STT).
+  const browserTtsSupported = useSyncExternalStore(
+    subscribeToNothing,
+    isBrowserTtsSupportedClient,
+    isBrowserTtsSupportedServer,
+  );
+  const browserSttSupported = useSyncExternalStore(
+    subscribeToNothing,
+    isBrowserSttSupportedClient,
+    isBrowserSttSupportedServer,
+  );
+
+  // Pick the STT mode once on mount: prefer live browser STT when supported,
+  // fall back to record+upload otherwise.
+  useEffect(() => {
+    if (browserSttSupported) {
+      setSttMode("live");
+    } else {
+      setSttMode("record");
+    }
+  }, [browserSttSupported]);
+
+  // Pre-load browser TTS voices (Chrome populates them async). Non-fatal.
+  useEffect(() => {
+    if (browserTtsSupported) {
+      void loadBrowserVoices();
+    }
+  }, [browserTtsSupported]);
+
+  // ─── Browser speech synthesis (PRIMARY TTS path) ────────────────────────
+  // The examiner-respond API returns text (+ optional audioBase64 from the
+  // z-ai SDK). When audioBase64 is empty (the default — EXAMINER_USE_LLM is
+  // unset), we read the text aloud with the browser's built-in
+  // SpeechSynthesis API. This is "own AI": free, built-in, no paid TTS.
   const speakWithBrowser = useCallback((text: string) => {
-    if (!text || typeof window === "undefined" || !window.speechSynthesis) return;
+    if (!text) return;
     setPhase("examiner-speaking");
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-    utterance.onend = () => {
-      setPhase((prev) => (prev === "examiner-speaking" ? "awaiting-student" : prev));
-    };
-    window.speechSynthesis.speak(utterance);
+    browserSpeak(text, {
+      rate: 0.95,
+      pitch: 1.0,
+      onEnd: () => {
+        setPhase((prev) => (prev === "examiner-speaking" ? "awaiting-student" : prev));
+      },
+      onError: () => {
+        setPhase((prev) => (prev === "examiner-speaking" ? "awaiting-student" : prev));
+      },
+    });
   }, []);
 
   // ─── Play examiner audio ──────────────────────────────────────────────
@@ -306,6 +365,95 @@ export default function LiveExamPage() {
     }
   }, [processRecording]);
 
+  // ─── Live browser STT (PRIMARY when SpeechRecognition is supported) ────
+  // browserListen() uses the browser's built-in SpeechRecognition API —
+  // free, in-browser, no audio upload, no paid ASR. We surface the live
+  // transcript so the student can see what the browser heard, and on the
+  // final result we send the transcript to the examiner-respond API.
+  const startLiveListening = useCallback(() => {
+    if (!browserSttSupported) {
+      setError("Your browser doesn't support live speech recognition. Use the record button or type your answer.");
+      setSttMode("record");
+      return;
+    }
+    setError("");
+    setLiveTranscript("");
+    liveTranscriptRef.current = "";
+    setPhase("recording");
+
+    const handle = browserListen({
+      lang: "en-US",
+      continuous: false,
+      interimResults: true,
+      maxDurationSec: 120,
+      onStart: () => {
+        // already in "recording" phase
+      },
+      onResult: (transcript, isFinal) => {
+        liveTranscriptRef.current = transcript;
+        setLiveTranscript(transcript);
+        if (isFinal && transcript.trim().length > 0) {
+          // Stop the recognizer and submit the final transcript.
+          if (liveRecognitionRef.current) {
+            liveRecognitionRef.current.stop();
+            liveRecognitionRef.current = null;
+          }
+          setLiveTranscript("");
+          // Push a synthetic student turn with the transcript text.
+          setTurns((prev) => [
+            ...prev,
+            { role: "student", text: transcript.trim(), timestamp: new Date().toISOString() },
+          ]);
+          void getExaminerResponse(transcript.trim());
+        }
+      },
+      onError: (err) => {
+        if (err === "not-allowed" || err === "service-not-allowed") {
+          setError("Microphone permission was denied. Allow mic access or type your answer below.");
+        } else if (err !== "no-speech" && err !== "aborted") {
+          setError(`Live transcription error: ${err}. You can still type your answer below.`);
+        }
+        liveRecognitionRef.current = null;
+        setPhase("awaiting-student");
+      },
+      onEnd: () => {
+        liveRecognitionRef.current = null;
+        // If we end without a final transcript, restore awaiting state.
+        if (liveTranscriptRef.current.trim().length === 0) {
+          setPhase("awaiting-student");
+        }
+      },
+    });
+
+    if (handle) {
+      liveRecognitionRef.current = handle;
+    } else {
+      setPhase("awaiting-student");
+    }
+  }, [browserSttSupported, getExaminerResponse]);
+
+  const stopLiveListening = useCallback(() => {
+    const handle = liveRecognitionRef.current;
+    if (handle) {
+      handle.stop();
+      liveRecognitionRef.current = null;
+    }
+    // If we have an interim transcript when the user stops manually, submit
+    // it as the final answer so their speech isn't lost.
+    const finalTranscript = liveTranscriptRef.current.trim();
+    setLiveTranscript("");
+    liveTranscriptRef.current = "";
+    if (finalTranscript.length > 0) {
+      setTurns((prev) => [
+        ...prev,
+        { role: "student", text: finalTranscript, timestamp: new Date().toISOString() },
+      ]);
+      void getExaminerResponse(finalTranscript);
+    } else {
+      setPhase("awaiting-student");
+    }
+  }, [getExaminerResponse]);
+
   // ─── Typed-answer fallback ────────────────────────────────────────────
   // Always available: accessibility, quiet environments, and deployments
   // with no speech-to-text provider configured. It feeds the exact same
@@ -333,9 +481,11 @@ export default function LiveExamPage() {
       }
       recordingUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       recordingUrlsRef.current = [];
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
+      if (liveRecognitionRef.current) {
+        liveRecognitionRef.current.abort();
+        liveRecognitionRef.current = null;
       }
+      browserCancelSpeak();
     };
   }, []);
 
@@ -556,20 +706,64 @@ export default function LiveExamPage() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center gap-4">
+                    {/* STT mode toggle (live vs record) — only when both paths are usable. */}
+                    {phase === "awaiting-student" && micSupported && browserSttSupported && (
+                      <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-medium">
+                        <button
+                          type="button"
+                          onClick={() => setSttMode("live")}
+                          className={`flex items-center gap-1 rounded-full px-3 py-1 transition-colors ${sttMode === "live" ? "bg-rose-500 text-white" : "text-slate-600 hover:text-slate-900"}`}
+                          aria-pressed={sttMode === "live"}
+                        >
+                          <Radio className="h-3 w-3" /> Live mic
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSttMode("record")}
+                          className={`flex items-center gap-1 rounded-full px-3 py-1 transition-colors ${sttMode === "record" ? "bg-rose-500 text-white" : "text-slate-600 hover:text-slate-900"}`}
+                          aria-pressed={sttMode === "record"}
+                        >
+                          <Mic className="h-3 w-3" /> Record
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Browser-native voice indicator banner */}
+                    {phase === "awaiting-student" && (
+                      <p className="text-center text-[11px] text-slate-400">
+                        Voice uses your browser&apos;s built-in speech engine — no paid API, no audio upload.
+                      </p>
+                    )}
+
                     {phase === "awaiting-student" && (
                       <>
                         <p className="text-center text-sm text-slate-600">
                           {examiner.name} is listening. Click the microphone and speak your answer.
                         </p>
-                        <Button
-                          size="lg"
-                          onClick={startRecording}
-                          className="h-16 w-16 rounded-full bg-rose-500 p-0 hover:bg-rose-600"
-                          aria-label="Start recording"
-                        >
-                          <Mic className="h-7 w-7" />
-                        </Button>
-                        <p className="text-xs text-slate-400">Click to start speaking</p>
+                        {sttMode === "live" && browserSttSupported ? (
+                          <Button
+                            size="lg"
+                            onClick={startLiveListening}
+                            className="h-16 w-16 rounded-full bg-rose-500 p-0 hover:bg-rose-600"
+                            aria-label="Start live listening"
+                          >
+                            <Mic className="h-7 w-7" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="lg"
+                            onClick={startRecording}
+                            className="h-16 w-16 rounded-full bg-rose-500 p-0 hover:bg-rose-600"
+                            aria-label="Start recording"
+                          >
+                            <Mic className="h-7 w-7" />
+                          </Button>
+                        )}
+                        <p className="text-xs text-slate-400">
+                          {sttMode === "live" && browserSttSupported
+                            ? "Click to start speaking — your speech is transcribed live"
+                            : "Click to start speaking"}
+                        </p>
                         <form onSubmit={submitTypedAnswer} className="mt-2 flex w-full max-w-xl gap-2">
                           <input
                             type="text"
@@ -590,16 +784,34 @@ export default function LiveExamPage() {
                     {isRecording && (
                       <>
                         <p className="text-center text-sm font-medium text-rose-600">
-                          ● Recording... Click stop when you finish speaking
+                          {sttMode === "live" && browserSttSupported
+                            ? "● Listening live… Click stop when you finish speaking"
+                            : "● Recording... Click stop when you finish speaking"}
                         </p>
-                        <Button
-                          size="lg"
-                          onClick={stopRecording}
-                          className="h-16 w-16 rounded-full bg-red-600 p-0 hover:bg-red-700 animate-pulse"
-                          aria-label="Stop recording"
-                        >
-                          <Square className="h-7 w-7" />
-                        </Button>
+                        {liveTranscript && (
+                          <p className="max-w-md rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-700">
+                            <span className="font-medium">Heard so far:</span> {liveTranscript}
+                          </p>
+                        )}
+                        {sttMode === "live" && browserSttSupported ? (
+                          <Button
+                            size="lg"
+                            onClick={stopLiveListening}
+                            className="h-16 w-16 rounded-full bg-red-600 p-0 hover:bg-red-700 animate-pulse"
+                            aria-label="Stop live listening"
+                          >
+                            <Square className="h-7 w-7" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="lg"
+                            onClick={stopRecording}
+                            className="h-16 w-16 rounded-full bg-red-600 p-0 hover:bg-red-700 animate-pulse"
+                            aria-label="Stop recording"
+                          >
+                            <Square className="h-7 w-7" />
+                          </Button>
+                        )}
                         <p className="text-xs text-slate-400">Click to stop and submit</p>
                       </>
                     )}
