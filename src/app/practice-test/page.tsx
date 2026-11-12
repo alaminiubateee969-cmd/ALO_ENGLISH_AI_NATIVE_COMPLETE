@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Clock, Flag, ArrowLeft, ArrowRight, Check, Info, ShieldAlert, MonitorSmartphone } from "lucide-react";
+import { Clock, Flag, ArrowLeft, ArrowRight, Check, Info, ShieldAlert, MonitorSmartphone, Calculator, LineChart as LineChartIcon } from "lucide-react";
 import { questionInputKind, parseQuestionOptions, longTextWordTarget } from "@/lib/exam/question-ui";
 import {
   collectDeviceFingerprint,
@@ -9,6 +9,20 @@ import {
   TAB_SWITCH_AUTO_SUBMIT_THRESHOLD,
   type DeviceFingerprint,
 } from "@/lib/exam/device-fingerprint-client";
+import { SplitScreenReading } from "@/components/exam/SplitScreenReading";
+import { OnScreenCalculator } from "@/components/exam/OnScreenCalculator";
+import { GraphingCalculator } from "@/components/exam/GraphingCalculator";
+import { AnswerEliminator } from "@/components/exam/AnswerEliminator";
+import {
+  MarkButton,
+  ReviewMarkedButton,
+  ReviewMarkedDialog,
+  type MarkedQuestion,
+} from "@/components/exam/MarkAndReview";
+import { AdaptiveEngine } from "@/components/exam/AdaptiveEngine";
+import { LockdownMode } from "@/components/exam/LockdownMode";
+import { ModuleBadge, ModuleIndicator, moduleForPosition } from "@/components/exam/ModuleIndicator";
+import { BandScoreReport } from "@/components/exam/BandScoreReport";
 
 /** Key used to survive a page refresh within the same browser tab session. */
 const ATTEMPT_STORAGE_KEY = "alo.activeAttemptId";
@@ -56,6 +70,21 @@ export default function PracticeTestPage() {
   } | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [testStarted, setTestStarted] = useState(false);
+
+  // ─── Exam-specific UI simulators ──────────────────────────────────────
+  // Each simulator is gated by the active exam family's code so the
+  // practice-test player renders the controls the candidate would see on
+  // the real test (calculator on GRE/GMAT, graphing calc on SAT, adaptive
+  // panel on DET, split-screen reading on IELTS, etc.).
+  const [lockdownEnabled, setLockdownEnabled] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  // Mark-for-review (GRE/GMAT POWERPREP feature) — distinct from the
+  // existing `flagged` set so both affordances can coexist without colliding.
+  const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
+  // Per-question eliminated option indices (SAT Bluebook feature).
+  const [eliminatedOptions, setEliminatedOptions] = useState<Record<string, Set<number>>>({});
 
   // ─── Anti-cheating: tab-switch / window-blur detection ───────────────
   // Proctoring posture (matches a real proctored exam): the browser
@@ -468,6 +497,48 @@ export default function PracticeTestPage() {
     });
   }
 
+  // ─── Mark & Review (GRE/GMAT POWERPREP) ───────────────────────────────
+  // Bookmark a question for the pre-submit review pass. Distinct from the
+  // existing `flag` so the candidate can use both affordances without one
+  // clobbering the other.
+  function toggleMark(qId: string) {
+    setMarkedForReview((prev) => {
+      const next = new Set(prev);
+      if (next.has(qId)) next.delete(qId);
+      else next.add(qId);
+      return next;
+    });
+  }
+
+  // ─── Answer eliminator (SAT Bluebook) ─────────────────────────────────
+  // Per-question strike-through layer over the option list. State is keyed
+  // by question id so eliminating an option on Q3 survives navigating to
+  // Q4 and back.
+  function toggleEliminate(qId: string, idx: number) {
+    setEliminatedOptions((prev) => {
+      const current = new Set(prev[qId] ?? []);
+      if (current.has(idx)) current.delete(idx);
+      else current.add(idx);
+      return { ...prev, [qId]: current };
+    });
+  }
+
+  // ─── Jump-to-question (used by the Mark & Review dialog) ──────────────
+  // Resolves a question id to its (sectionIndex, indexInSection) and
+  // navigates the player there.
+  function jumpToQuestionById(qId: string) {
+    const q = questions.find((x) => x.id === qId);
+    if (!q) return;
+    const sectionIdx = sections.indexOf(q.section);
+    if (sectionIdx < 0) return;
+    const idxInSection = questions
+      .filter((x) => x.section === q.section)
+      .findIndex((x) => x.id === qId);
+    if (idxInSection < 0) return;
+    setCurrentSection(sectionIdx);
+    setCurrentQuestion(idxInSection);
+  }
+
   function reset() {
     Object.values(pendingSaves.current).forEach((t) => clearTimeout(t));
     pendingSaves.current = {};
@@ -491,6 +562,14 @@ export default function PracticeTestPage() {
     tabSwitchCountRef.current = 0;
     setTabSwitchCount(0);
     setShowTabSwitchWarning(false);
+    // Reset the exam-specific UI simulators so a new attempt starts clean.
+    setLockdownEnabled(false);
+    setCalcOpen(false);
+    setGraphOpen(false);
+    setReviewDialogOpen(false);
+    setMarkedForReview(new Set());
+    setEliminatedOptions({});
+    setObjective(null);
   }
 
   function formatTime(sec: number) {
@@ -511,6 +590,49 @@ export default function PracticeTestPage() {
     [questions, sections, currentSection]
   );
   const currentQ = sectionQuestions[currentQuestion];
+
+  // ─── Exam family detection ────────────────────────────────────────────
+  // Drives which UI simulators are rendered. Each helper is pure and based
+  // on the active practice set's exam-type code, so the candidate only sees
+  // the affordances that exist on the real test they are practising for.
+  const activeExamCode = activeSet?.examType?.code ?? "";
+  const examFamily = useMemo(() => {
+    const code = activeExamCode.toUpperCase();
+    return {
+      isIELTS: code.includes("IELTS"),
+      isGRE: code.includes("GRE"),
+      isGMAT: code.includes("GMAT"),
+      isSAT: code.includes("SAT") && !code.includes("LSAT"),
+      isDET: code.includes("DET") || code.includes("DUOLINGO"),
+      isTOEFL: code.includes("TOEFL"),
+      // Quantitative exams expose the on-screen calculator.
+      hasCalculator: code.includes("GRE") || code.includes("GMAT") || (code.includes("SAT") && !code.includes("LSAT")),
+      // SAT exposes the Desmos-style graphing calculator.
+      hasGraphing: code.includes("SAT") && !code.includes("LSAT"),
+      // Mark & Review is a POWERPREP feature; useful on any multi-question paper.
+      hasMarkReview: code.includes("GRE") || code.includes("GMAT") || code.includes("SAT") || code.includes("DET"),
+      // Split-screen reading is the IELTS Familiarisation layout; also useful for TOEFL reading.
+      hasSplitReading: code.includes("IELTS") || code.includes("TOEFL"),
+      // Adaptive engine mirrors the DET practice affordance.
+      hasAdaptive: code.includes("DET") || code.includes("DUOLINGO"),
+      // SAT-style modules.
+      hasModules: code.includes("SAT") && !code.includes("LSAT"),
+    };
+  }, [activeExamCode]);
+
+  // Marked-questions list for the Mark & Review dialog.
+  const markedQuestionList: MarkedQuestion[] = useMemo(() => {
+    if (markedForReview.size === 0) return [];
+    return questions
+      .filter((q) => markedForReview.has(q.id))
+      .map((q) => ({
+        id: q.id,
+        section: q.section,
+        prompt: q.prompt,
+        order: q.order,
+        answered: Boolean(answers[q.id]?.trim()),
+      }));
+  }, [markedForReview, questions, answers]);
 
   if (loading || resuming) {
     return (
@@ -592,6 +714,19 @@ export default function PracticeTestPage() {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Auto-graded band score report — converts the objective raw
+              scores into IELTS-style 0–9 bands (Listening, Reading) using
+              the published raw → band tables, and reports an overall
+              practice indicator. Skipped silently when there are no
+              objective answers. */}
+          {objective && objective.total > 0 && (
+            <BandScoreReport
+              objective={objective}
+              examCode={activeSet?.examType?.code ?? ""}
+              serverOverall={result.overall ?? null}
+            />
           )}
 
           {/* The platform's own evaluation of the subjective sections. */}
@@ -703,9 +838,9 @@ export default function PracticeTestPage() {
       <div className="min-h-screen bg-slate-50">
         {/* Top bar */}
         <div className="sticky top-0 z-40 border-b bg-white px-4 py-3 shadow-sm">
-          <div className="mx-auto flex max-w-7xl items-center justify-between">
-            <div>
-              <h1 className="text-lg font-bold">{activeSet.title}</h1>
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-bold">{activeSet.title}</h1>
               <p className="text-xs text-slate-500">
                 Attempt: {attemptId.slice(-8)} · {answeredInSection}/{sectionQuestions.length} answered in section
                 {(() => {
@@ -723,8 +858,47 @@ export default function PracticeTestPage() {
                 })()}
               </p>
             </div>
-            <div className={`rounded-lg px-4 py-2 font-mono text-lg font-bold ${timeLeft < 300 ? "bg-red-100 text-red-700 animate-pulse" : "bg-slate-100 text-slate-700"}`}>
-              <Clock className="mr-1 inline h-5 w-5" />{formatTime(timeLeft)}
+            {/* Toolbar — exam-family-aware controls next to the clock */}
+            <div className="flex items-center gap-2">
+              {examFamily.hasCalculator && (
+                <button
+                  type="button"
+                  onClick={() => setCalcOpen((v) => !v)}
+                  aria-pressed={calcOpen}
+                  title="Toggle on-screen calculator"
+                  className={`flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium transition ${
+                    calcOpen
+                      ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-700"
+                      : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <Calculator className="h-4 w-4" />
+                  <span className="hidden sm:inline">Calculator</span>
+                </button>
+              )}
+              {examFamily.hasGraphing && (
+                <button
+                  type="button"
+                  onClick={() => setGraphOpen((v) => !v)}
+                  aria-pressed={graphOpen}
+                  title="Toggle graphing calculator"
+                  className={`flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium transition ${
+                    graphOpen
+                      ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-700"
+                      : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <LineChartIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Graph</span>
+                </button>
+              )}
+              <LockdownMode
+                enabled={lockdownEnabled}
+                onToggle={() => setLockdownEnabled((v) => !v)}
+              />
+              <div className={`rounded-lg px-4 py-2 font-mono text-lg font-bold ${timeLeft < 300 ? "bg-red-100 text-red-700 animate-pulse" : "bg-slate-100 text-slate-700"}`}>
+                <Clock className="mr-1 inline h-5 w-5" />{formatTime(timeLeft)}
+              </div>
             </div>
           </div>
         </div>
@@ -768,21 +942,27 @@ export default function PracticeTestPage() {
                 </p>
               </div>
             )}
-            {/* Section tabs */}
-            <div className="mb-4 flex gap-2">
+            {/* Section tabs — with SAT module badge when applicable */}
+            <div className="mb-4 flex flex-wrap gap-2">
               {sections.map((section, i) => {
                 const sectionCount = questions.filter((q) => q.section === section).length;
                 const sectionAnswered = questions.filter((q) => q.section === section && answers[q.id]).length;
+                const showModule = examFamily.hasModules && sectionCount > 1 && i === currentSection;
                 return (
                   <button
                     key={section}
                     onClick={() => { setCurrentSection(i); setCurrentQuestion(0); }}
-                    className={`flex-1 rounded-lg border p-3 text-sm font-medium ${
+                    className={`flex flex-1 flex-col items-start gap-1 rounded-lg border p-3 text-sm font-medium ${
                       currentSection === i ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                     }`}
                   >
-                    {section}
-                    <span className="block text-xs text-slate-400">{sectionAnswered}/{sectionCount}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{section.replace(/_/g, " ")}</span>
+                      {showModule && (
+                        <ModuleBadge module={moduleForPosition(currentQuestion, sectionCount)} />
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-400">{sectionAnswered}/{sectionCount}</span>
                   </button>
                 );
               })}
@@ -805,128 +985,194 @@ export default function PracticeTestPage() {
               </div>
             )}
 
-            {/* Passage (reading) / transcript (listening) */}
-            {currentQ.passage && (
-              <div className="mb-4 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <p className="mb-2 font-semibold text-slate-700">
-                  {currentQ.section === "LISTENING"
-                    ? currentQ.audioUrl
-                      ? "Audio Transcript:"
-                      : "Listening Script (no audio for this question):"
-                    : "Reading Passage:"}
-                </p>
-                <p className="whitespace-pre-line">{currentQ.passage}</p>
-              </div>
-            )}
+            {/* Passage + current question — split-screen for reading sections
+                (IELTS / TOEFL). The question card JSX is captured once and
+                rendered either inside the SplitScreenReading children slot
+                (passage on the left, questions on the right) or in the
+                default stacked layout (passage above, question below). */}
+            {(() => {
+              const passage = currentQ.passage;
+              const isReadingSplit =
+                examFamily.hasSplitReading &&
+                currentQ.section === "READING" &&
+                Boolean(passage) &&
+                currentQ.type !== "CHART_DESCRIPTION";
 
-            {/* Chart/image (if writing task 1) */}
-            {currentQ.passage && currentQ.type === "CHART_DESCRIPTION" && (
-              <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
-                <p className="mb-2 text-sm font-semibold text-slate-700">Chart Data:</p>
-                <p className="text-sm text-slate-600">{currentQ.passage}</p>
-              </div>
-            )}
+              // Shared question card — rendered in both layouts so the
+              // candidate always sees the same answer affordances.
+              const questionCard = (
+                <div className="rounded-xl border border-slate-200 bg-white p-6">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-bold">
+                        Question {currentQuestion + 1} of {sectionQuestions.length}
+                        <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-600">
+                          {currentQ.type.replace(/_/g, " ")}
+                        </span>
+                      </h3>
+                      {examFamily.hasModules && (
+                        <ModuleIndicator
+                          module={moduleForPosition(currentQuestion, sectionQuestions.length)}
+                          sectionName={currentQ.section}
+                          totalInSection={sectionQuestions.length}
+                          positionInSection={currentQuestion + 1}
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {examFamily.hasMarkReview && (
+                        <MarkButton
+                          marked={markedForReview.has(currentQ.id)}
+                          onToggle={() => toggleMark(currentQ.id)}
+                        />
+                      )}
+                      <button
+                        onClick={() => toggleFlag(currentQ.id)}
+                        className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-sm ${
+                          flagged.has(currentQ.id) ? "bg-yellow-100 text-yellow-700" : "text-slate-500 hover:bg-slate-100"
+                        }`}
+                      >
+                        <Flag className="h-4 w-4" /> {flagged.has(currentQ.id) ? "Flagged" : "Flag"}
+                      </button>
+                    </div>
+                  </div>
 
-            {/* Current question */}
-            <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-bold">
-                  Question {currentQuestion + 1} of {sectionQuestions.length}
-                  <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-600">
-                    {currentQ.type.replace(/_/g, " ")}
-                  </span>
-                </h3>
-                <button
-                  onClick={() => toggleFlag(currentQ.id)}
-                  className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-sm ${
-                    flagged.has(currentQ.id) ? "bg-yellow-100 text-yellow-700" : "text-slate-500 hover:bg-slate-100"
-                  }`}
-                >
-                  <Flag className="h-4 w-4" /> {flagged.has(currentQ.id) ? "Flagged" : "Flag"}
-                </button>
-              </div>
+                  <p className="mb-4 text-slate-700">{currentQ.prompt}</p>
 
-              <p className="mb-4 text-slate-700">{currentQ.prompt}</p>
-
-              {/* Answer input by canonical question type (see @/lib/exam/question-ui).
-                  Every recognised type maps to a control; an options-type question
-                  that somehow ships without options still gets a text box, so no
-                  served question can ever be unanswerable. */}
-              {(() => {
-                const kind = questionInputKind(currentQ.type);
-                const parsedOptions = parseQuestionOptions(currentQ.options);
-                const wordCount = (answers[currentQ.id] || "").trim().split(/\s+/).filter(Boolean).length;
-                if (kind === "options" && parsedOptions.length > 0) {
-                  return (
-                    <div className="space-y-2">
-                      {parsedOptions.map((opt, idx) => (
-                        <label
-                          key={idx}
-                          className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition ${
-                            answers[currentQ.id] === String(idx) ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:bg-slate-50"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={currentQ.id}
-                            value={idx}
-                            checked={answers[currentQ.id] === String(idx)}
-                            onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                            className="h-4 w-4"
+                  {/* Answer input by canonical question type (see @/lib/exam/question-ui).
+                      Every recognised type maps to a control; an options-type question
+                      that somehow ships without options still gets a text box, so no
+                      served question can ever be unanswerable. */}
+                  {(() => {
+                    const kind = questionInputKind(currentQ.type);
+                    const parsedOptions = parseQuestionOptions(currentQ.options);
+                    const wordCount = (answers[currentQ.id] || "").trim().split(/\s+/).filter(Boolean).length;
+                    if (kind === "options" && parsedOptions.length > 0) {
+                      // SAT Bluebook: render the answer eliminator over the option list.
+                      if (examFamily.isSAT) {
+                        return (
+                          <AnswerEliminator
+                            options={parsedOptions}
+                            selected={answers[currentQ.id]}
+                            eliminated={eliminatedOptions[currentQ.id] ?? new Set<number>()}
+                            onToggleEliminate={(idx) => toggleEliminate(currentQ.id, idx)}
+                            onSelect={(idx) => setAnswer(currentQ.id, String(idx))}
                           />
-                          <span className="font-medium text-slate-700">{String.fromCharCode(65 + idx)}.</span>
-                          <span className="text-slate-700">{opt}</span>
-                        </label>
-                      ))}
-                    </div>
-                  );
-                }
-                if (kind === "long-text") {
-                  const target = longTextWordTarget(currentQ.type, currentQ.wordLimit);
-                  return (
-                    <div>
-                      <textarea
+                        );
+                      }
+                      return (
+                        <div className="space-y-2">
+                          {parsedOptions.map((opt, idx) => (
+                            <label
+                              key={idx}
+                              className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition ${
+                                answers[currentQ.id] === String(idx) ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:bg-slate-50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={currentQ.id}
+                                value={idx}
+                                checked={answers[currentQ.id] === String(idx)}
+                                onChange={(e) => setAnswer(currentQ.id, e.target.value)}
+                                className="h-4 w-4"
+                              />
+                              <span className="font-medium text-slate-700">{String.fromCharCode(65 + idx)}.</span>
+                              <span className="text-slate-700">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      );
+                    }
+                    if (kind === "long-text") {
+                      const target = longTextWordTarget(currentQ.type, currentQ.wordLimit);
+                      return (
+                        <div>
+                          <textarea
+                            value={answers[currentQ.id] || ""}
+                            onChange={(e) => setAnswer(currentQ.id, e.target.value)}
+                            rows={12}
+                            className="w-full rounded-md border border-slate-300 p-3 text-sm"
+                            placeholder={`Write your response here... (aim for at least ${target} words)`}
+                          />
+                          <p className="mt-1 text-xs text-slate-400">
+                            {wordCount} words / {target} suggested
+                          </p>
+                        </div>
+                      );
+                    }
+                    if (kind === "speaking") {
+                      return (
+                        <div>
+                          <p className="mb-2 rounded-lg bg-yellow-50 p-3 text-sm text-yellow-700">
+                            Type your speaking response transcript below (in a real exam, you would speak aloud). For recorded speaking practice with an AI examiner, open the Live Speaking page from your dashboard.
+                          </p>
+                          <textarea
+                            value={answers[currentQ.id] || ""}
+                            onChange={(e) => setAnswer(currentQ.id, e.target.value)}
+                            rows={6}
+                            className="w-full rounded-md border border-slate-300 p-3 text-sm"
+                            placeholder="Type your response here..."
+                          />
+                          <p className="mt-1 text-xs text-slate-400">{wordCount} words</p>
+                        </div>
+                      );
+                    }
+                    // kind === "text", or an options-type question without usable options.
+                    return (
+                      <input
+                        type="text"
                         value={answers[currentQ.id] || ""}
                         onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                        rows={12}
                         className="w-full rounded-md border border-slate-300 p-3 text-sm"
-                        placeholder={`Write your response here... (aim for at least ${target} words)`}
+                        placeholder="Type your answer..."
                       />
-                      <p className="mt-1 text-xs text-slate-400">
-                        {wordCount} words / {target} suggested
-                      </p>
-                    </div>
-                  );
-                }
-                if (kind === "speaking") {
-                  return (
-                    <div>
-                      <p className="mb-2 rounded-lg bg-yellow-50 p-3 text-sm text-yellow-700">
-                        Type your speaking response transcript below (in a real exam, you would speak aloud). For recorded speaking practice with an AI examiner, open the Live Speaking page from your dashboard.
-                      </p>
-                      <textarea
-                        value={answers[currentQ.id] || ""}
-                        onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                        rows={6}
-                        className="w-full rounded-md border border-slate-300 p-3 text-sm"
-                        placeholder="Type your response here..."
-                      />
-                      <p className="mt-1 text-xs text-slate-400">{wordCount} words</p>
-                    </div>
-                  );
-                }
-                // kind === "text", or an options-type question without usable options.
+                    );
+                  })()}
+                </div>
+              );
+
+              if (isReadingSplit && passage) {
                 return (
-                  <input
-                    type="text"
-                    value={answers[currentQ.id] || ""}
-                    onChange={(e) => setAnswer(currentQ.id, e.target.value)}
-                    className="w-full rounded-md border border-slate-300 p-3 text-sm"
-                    placeholder="Type your answer..."
-                  />
+                  <SplitScreenReading
+                    passage={passage}
+                    questionId={currentQ.id}
+                    attemptId={attemptId}
+                    passageTitle="Reading Passage"
+                  >
+                    {questionCard}
+                  </SplitScreenReading>
                 );
-              })()}
-            </div>
+              }
+
+              return (
+                <>
+                  {/* Passage (reading) / transcript (listening) */}
+                  {passage && (
+                    <div className="mb-4 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                      <p className="mb-2 font-semibold text-slate-700">
+                        {currentQ.section === "LISTENING"
+                          ? currentQ.audioUrl
+                            ? "Audio Transcript:"
+                            : "Listening Script (no audio for this question):"
+                          : "Reading Passage:"}
+                      </p>
+                      <p className="whitespace-pre-line">{passage}</p>
+                    </div>
+                  )}
+
+                  {/* Chart/image (if writing task 1) */}
+                  {passage && currentQ.type === "CHART_DESCRIPTION" && (
+                    <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="mb-2 text-sm font-semibold text-slate-700">Chart Data:</p>
+                      <p className="text-sm text-slate-600">{passage}</p>
+                    </div>
+                  )}
+
+                  {questionCard}
+                </>
+              );
+            })()}
 
             {/* Navigation */}
             <div className="mt-4 flex items-center justify-between">
@@ -963,50 +1209,91 @@ export default function PracticeTestPage() {
             </div>
           </div>
 
-          {/* Right: Question palette */}
+          {/* Right: Question palette + exam-specific side panels */}
           <div className="hidden w-64 lg:block">
-            <div className="sticky top-20 rounded-xl border border-slate-200 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold text-slate-700">Question Palette</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {sectionQuestions.map((q, i) => {
-                  const isAnswered = !!answers[q.id];
-                  const isFlagged = flagged.has(q.id);
-                  const isCurrent = i === currentQuestion;
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => setCurrentQuestion(i)}
-                      className={`h-10 w-10 rounded-md text-sm font-medium ${
-                        isCurrent
-                          ? "ring-2 ring-blue-500"
-                          : isAnswered
-                          ? "bg-green-100 text-green-700"
-                          : isFlagged
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  );
-                })}
+            <div className="sticky top-20 space-y-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-slate-700">Question Palette</h3>
+                  {examFamily.hasMarkReview && (
+                    <ReviewMarkedButton
+                      markedCount={markedForReview.size}
+                      onClick={() => setReviewDialogOpen(true)}
+                    />
+                  )}
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {sectionQuestions.map((q, i) => {
+                    const isAnswered = !!answers[q.id];
+                    const isFlagged = flagged.has(q.id);
+                    const isMarked = markedForReview.has(q.id);
+                    const isCurrent = i === currentQuestion;
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => setCurrentQuestion(i)}
+                        className={`h-10 w-10 rounded-md text-sm font-medium ${
+                          isCurrent
+                            ? "ring-2 ring-blue-500"
+                            : isAnswered
+                            ? "bg-green-100 text-green-700"
+                            : isMarked
+                            ? "bg-purple-100 text-purple-700"
+                            : isFlagged
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                        title={`Question ${i + 1}${isAnswered ? " · answered" : ""}${isMarked ? " · marked for review" : ""}${isFlagged ? " · flagged" : ""}`}
+                      >
+                        {i + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 space-y-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-green-100" /> Answered</div>
+                  <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-purple-100" /> Marked</div>
+                  <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-yellow-100" /> Flagged</div>
+                  <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-slate-100" /> Not answered</div>
+                </div>
+                <button
+                  onClick={submitTest}
+                  disabled={submitting}
+                  className="mt-4 w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  {submitting ? "Evaluating..." : "Submit Test"}
+                </button>
+                {error && <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
               </div>
-              <div className="mt-4 space-y-2 text-xs text-slate-500">
-                <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-green-100" /> Answered</div>
-                <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-yellow-100" /> Flagged</div>
-                <div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-slate-100" /> Not answered</div>
-              </div>
-              <button
-                onClick={submitTest}
-                disabled={submitting}
-                className="mt-4 w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-              >
-                {submitting ? "Evaluating..." : "Submit Test"}
-              </button>
-              {error && <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+
+              {/* Adaptive engine panel — DET-style real-time tracker */}
+              {examFamily.hasAdaptive && (
+                <AdaptiveEngine
+                  questions={questions}
+                  answers={answers}
+                  currentQuestionId={currentQ.id}
+                  examCode={activeExamCode}
+                />
+              )}
             </div>
           </div>
         </div>
+
+        {/* Floating widgets — overlay, never claim column space.
+            - On-screen calculator (GRE/GMAT) — draggable.
+            - Graphing calculator (SAT) — anchored bottom-right.
+            Both mount on demand so their internal state resets every
+            time they are reopened (matches the GRE calculator posture). */}
+        {calcOpen && <OnScreenCalculator onClose={() => setCalcOpen(false)} />}
+        {graphOpen && <GraphingCalculator onClose={() => setGraphOpen(false)} />}
+
+        {/* Mark & Review dialog — opens from the palette toolbar */}
+        <ReviewMarkedDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          questions={markedQuestionList}
+          onJumpTo={jumpToQuestionById}
+        />
       </div>
     );
   }

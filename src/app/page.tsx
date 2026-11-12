@@ -5,9 +5,12 @@ import {
   ArrowRight,
   ArrowUpRight,
   BookOpen,
+  ClipboardList,
   Compass,
+  FileText,
   Globe,
   Headphones,
+  Lightbulb,
   Mic,
   PenLine,
   ShieldCheck,
@@ -219,6 +222,48 @@ export default function HomePage() {
           <div className="mt-5 text-center">
             <Link href="/exam-prep" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0B1F3A] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0057B8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057B8] focus-visible:ring-offset-2">
               Open active exam catalog <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="study-tools-title" className="py-14 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#C2410C]">Free preparation tools</p>
+            <h2 id="study-tools-title" className="mt-2 text-3xl font-extrabold tracking-tight text-[#0B1F3A] sm:text-4xl">Plan, revise and write — all in one place</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">Three free study tools that complement the practice catalog. No account required; drafts and progress save to your browser.</p>
+          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <Link href="/study-plan" className="group flex min-h-44 flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-blue-300 hover:bg-blue-50/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057B8] focus-visible:ring-offset-2">
+              <span className="grid size-11 place-items-center rounded-xl bg-[#EEF6FF] text-[#0057B8] transition-colors group-hover:bg-[#0057B8] group-hover:text-white">
+                <ClipboardList className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="mt-4 text-base font-bold text-[#0B1F3A]">Study plan builder</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">Pick your exam, target score, daily study time and test date. Get a day-by-day schedule with milestones and progress checkboxes.</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#0057B8]">
+                Build my plan <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </span>
+            </Link>
+            <Link href="/shortcuts" className="group flex min-h-44 flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-blue-300 hover:bg-blue-50/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057B8] focus-visible:ring-offset-2">
+              <span className="grid size-11 place-items-center rounded-xl bg-[#FFF7ED] text-[#C2410C] transition-colors group-hover:bg-[#C2410C] group-hover:text-white">
+                <Lightbulb className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="mt-4 text-base font-bold text-[#0B1F3A]">Exam-prep shortcuts</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">Real techniques for IELTS, TOEFL, PTE, GRE, GMAT, SAT and more — searchable by exam, skill and difficulty, each with a worked example.</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#0057B8]">
+                Browse shortcuts <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </span>
+            </Link>
+            <Link href="/sop-studio" className="group flex min-h-44 flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-blue-300 hover:bg-blue-50/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057B8] focus-visible:ring-offset-2">
+              <span className="grid size-11 place-items-center rounded-xl bg-[#EEF6FF] text-[#0057B8] transition-colors group-hover:bg-[#0057B8] group-hover:text-white">
+                <FileText className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="mt-4 text-base font-bold text-[#0B1F3A]">SOP &amp; research proposal studio</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">Guided Statement of Purpose writer with six sections, prompts, tips, word counts and examples. Auto-saves and exports to .txt.</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#0057B8]">
+                Start writing <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </span>
             </Link>
           </div>
         </div>

@@ -8,6 +8,9 @@ import { ArrowRight, Menu, X } from "lucide-react";
 const NAV_ITEMS = [
   { label: "Practice tests", href: "/practice-test" },
   { label: "Exam catalog", href: "/exam-prep" },
+  { label: "Shortcuts", href: "/shortcuts" },
+  { label: "Study plan", href: "/study-plan" },
+  { label: "SOP studio", href: "/sop-studio" },
   { label: "Study abroad", href: "/destinations" },
   { label: "Course finder", href: "/course-finder" },
   { label: "Handbook", href: "/ask-handbook" },

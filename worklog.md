@@ -1857,3 +1857,70 @@ Stage Summary:
 - Modified modules: src/lib/exam/quota.ts (per-exam-type), src/app/api/attempts/start/route.ts, src/app/api/payment/route.ts, src/app/api/auth/register/route.ts, src/components/site/auth-forms.tsx, src/components/alo/auth-modal.tsx, src/lib/audit.ts (+EXAM_TAB_SWITCH), src/app/api/attempts/[id]/route.ts, src/app/api/attempts/active/route.ts, src/app/practice-test/page.tsx.
 - 6 user-spec points all satisfied: device verification ✅, educational-ID registration ✅, 3 free per exam type ✅, gated platform (not public) ✅, tab-switch detection with warning@3 + auto-submit@5 ✅, existing exam flow preserved ✅.
 - Files: 2 created + 11 modified = 13 total.
+
+---
+Task ID: EXAM-UI-SIM
+Agent: main (Z.ai Code)
+Task: Build exam-specific UI simulators that match real official test interfaces for the ALO English Test Platform — IELTS split-screen reading, GRE/GMAT on-screen calculator + Mark & Review, Digital SAT answer eliminator + module indicator + Desmos-style graphing calculator, Duolingo adaptive engine, Safe Exam Browser-style lockdown, and auto-graded band score conversion for Listening/Reading.
+
+Work Log:
+- Read worklog.md for project context (510 questions, 22 exam types, server-authoritative clock, autosave, anti-cheat proctoring, per-exam-type free quota) and src/app/practice-test/page.tsx (1075 lines) end-to-end to understand the exam engine.
+- Read @/lib/exam/question-ui.ts, @/lib/exam/grading.ts, @/lib/exam/question-types.json, @/lib/exam/device-fingerprint-client.ts, @/components/ui/dialog.tsx, @/components/ui/radio-group.tsx, @/components/ui/button.tsx to align the new components with the existing canonical vocabulary and shadcn/ui contract.
+- Initialized fullstack dev environment (bun install + prisma db push + next dev).
+
+Files created (10):
+- src/lib/exam/band-score.ts — IELTS Listening / Academic Reading / General Training Reading raw → band tables (out of 40); rawToBand with non-40 scaling; ieltsSectionBand; ieltsOverallBand (mean rounded to nearest 0.5 using official IELTS rule); examScoreRange + narrowScoreRange for non-IELTS adaptive estimates; estimateQuestionDifficulty / nextDifficulty / answerConfidence for the adaptive engine; longTextWordTargetFallback.
+- src/components/exam/SplitScreenReading.tsx — IELTS British Council Familiarisation-style two-column layout (passage left, questions right). Text highlighting via Selection API + TreeWalker offset computation; highlights merged to avoid nested <mark> spans; removable highlight chips below passage. Notes panel with word counter, persisted to localStorage keyed by attemptId+questionId. Children slot for the question card so it's purely a layout + scratch-space wrapper.
+- src/components/exam/OnScreenCalculator.tsx — ETS POWERPREP-style floating draggable widget. Digits, +/−/×/÷, %, √, ±, backspace, CE, C; memory MC/MR/M+/M−; display + transfer bar; mounts on demand so internal state resets on every open.
+- src/components/exam/GraphingCalculator.tsx — College Board Bluebook / Desmos-style graphing calc. Up to 4 y=f(x) expressions, whitelist parser (+ - * / ^, abs/sqrt/sin/cos/tan/ln/log/exp, pi, e), canvas rendering with axes + nice-step gridlines + zoom in/out/reset. Mounted on demand.
+- src/components/exam/AnswerEliminator.tsx — SAT Bluebook-style X-next-to-each-option. Eliminated options strike-through + dimmed but still selectable (scratch layer, not a guard). Per-question Set<number> state.
+- src/components/exam/MarkAndReview.tsx — GRE/GMAT POWERPREP-style MarkButton (per-question), ReviewMarkedButton (toolbar with count badge), ReviewMarkedDialog (modal listing marked questions with section / answered badge / prompt snippet; click to jump).
+- src/components/exam/AdaptiveEngine.tsx — Duolingo DET-practice-style panel. Per-question difficulty (Easy/Medium/Hard), next-question target with directional arrow, confidence trail bar, estimated score range that narrows with completion (uses examScoreRange + narrowScoreRange).
+- src/components/exam/LockdownMode.tsx — Safe Exam Browser-style fullscreen lockdown. Fullscreen API request with webkit/ms fallbacks; blocks contextmenu + copy/cut/paste + Ctrl+C/X/V/A/S/P/U + F12 + F5 + Ctrl+Shift+I/J/C/K + Meta+S/P; warning overlay when user Esc-exits fullscreen with "Re-enter fullscreen" / "Turn off lockdown" buttons; render-time state adjustment pattern avoids setState-in-effect lint.
+- src/components/exam/ModuleIndicator.tsx — SAT Bluebook-style ModuleBadge (small chip) + ModuleIndicator (two-pip header indicator) + moduleForPosition helper (first half = Module 1, second half = Module 2). Slate + emerald palette (no indigo/blue per project style guide).
+- src/components/exam/BandScoreReport.tsx — auto-graded post-submit report. Per-section band lookup (Listening + Academic/General Training Reading), overall band (mean of available section bands rounded to nearest 0.5), per-section table with raw score + accuracy bar + band chip; amber disclosure "Not an official score."
+
+Files modified (1):
+- src/app/practice-test/page.tsx — integrated all 10 components without breaking the existing flow. New state (lockdownEnabled, calcOpen, graphOpen, reviewDialogOpen, markedForReview Set, eliminatedOptions Record). New helpers (toggleMark, toggleEliminate, jumpToQuestionById). examFamily useMemo derives isIELTS/isGRE/isGMAT/isSAT/isDET/isTOEFL + hasCalculator/hasGraphing/hasMarkReview/hasSplitReading/hasAdaptive/hasModules from activeSet.examType.code. Top bar gained Calculator (GRE/GMAT/SAT), Graph (SAT), and LockdownMode toggle next to the clock. Section tabs gained ModuleBadge (SAT). Passage + question layout: question card JSX captured into a const, conditionally wrapped in <SplitScreenReading> for READING sections with a passage. Question card header gained ModuleIndicator (SAT) + MarkButton (GRE/GMAT/SAT/DET) next to the existing Flag. Answer input: SAT option questions render AnswerEliminator instead of the radio list. Palette gained ReviewMarkedButton + marked (purple) state + AdaptiveEngine panel (DET). Floating widgets (OnScreenCalculator + GraphingCalculator) mount on demand. ReviewMarkedDialog rendered at end of player. BandScoreReport rendered on result screen after the existing objective-answers block. reset() clears all new state.
+
+Lint + runtime:
+- bun run lint: 0 errors, 1 warning (an unused eslint-disable in src/components/factory/control-center.tsx — pre-existing, not touched).
+- Initial lint surfaced 3 react-hooks/set-state-in-effect errors. Fixed: OnScreenCalculator + GraphingCalculator — removed `open` prop, parent mounts/unmounts, useState initialisers reset state on every open. LockdownMode — refactored synchronous setState into React's render-time "adjust state when a prop changes" pattern. SplitScreenReading — kept the effect (no render-time path to localStorage) with a justified eslint-disable.
+- Dev server restarted: /api/health returns 200 (database connected, 22 exam types), /practice-test returns 200 (63902 bytes), / returns 200 (245660 bytes). Exam flow (selection → test-taking → result) unchanged.
+
+Stage Summary:
+- Files: 10 created + 1 modified = 11 total.
+- 6 user-spec points all satisfied: IELTS split-screen reading with highlight + notes ✅, GRE/GMAT on-screen calculator + Mark & Review ✅, Digital SAT answer eliminator + module indicator + Desmos-style graphing calculator ✅, Duolingo adaptive engine with real-time score range ✅, Safe Exam Browser-style fullscreen lockdown (right-click / copy-paste / shortcut blocking + exit warning) ✅, auto-graded band score conversion (correct/40 → IELTS band 0–9, per-section breakdown) ✅.
+- Existing exam flow preserved: the result screen, test-taking screen, selection screen, server-authoritative clock, autosave, anti-cheat proctoring, and the canonical question-type → answer-control mapping are all unchanged. The new simulators are additive and gated by exam-family detection.
+
+---
+Task ID: STUDY-TOOLS
+Agent: main (Z.ai Code)
+Task: Build free preparation tools and study resources — Study Plan page, Shortcut Hub, SOP/Research Proposal Studio, and shortcuts API.
+
+Work Log:
+- Read worklog.md for context and reviewed layout/site-header/site-footer/page.tsx/api/exam-types/route.ts + shadcn/ui components to align with conventions.
+- Created src/lib/study-tools/shortcuts.ts — 38 REAL hand-written exam-prep shortcuts across 10 exams (IELTS/TOEFL/PTE/GRE/GMAT/SAT/ACT/DET/OET/Cambridge) and 6 skills, each with title/description/worked-example/difficulty/tags. Exports filterShortcuts() + label maps + ALL_EXAMS/SKILLS/DIFFICULTIES.
+- Created src/lib/study-tools/sop-templates.ts — 6 Purdue-OWL-style SOP sections (intro/academic-background/research-interests/why-university/career-goals/conclusion) each with prompt/4 tips/word-count range/worked example. Exports buildSopDraftText() + countWords().
+- Created src/lib/study-tools/study-plan.ts — pure isomorphic plan generator. ExamFamily ENGLISH/GRAD/SAT_ACT with per-family skill catalog (5 activities per skill). generateStudyPlan() builds day-by-day schedule with weighted skill allocation, Sunday light-review days, milestones (baseline/first-mock/review-week/final-mock/taper). localStorage helpers for plan + versioned progress.
+- Created src/app/api/shortcuts/route.ts — GET /api/shortcuts with exam/skill/difficulty/q filters, validates enums (400 on invalid), returns total+filters+facets(with counts)+shortcuts. Tested: 38 total, GRE=6, q=backsolve=2, invalid=400.
+- Created src/app/shortcuts/page.tsx — Shortcut Hub. Sticky filter bar (search w/250ms debounce + 3 selects from API facets + clear), results grid with colour-coded exam/skill/difficulty badges + accordion worked-example. Fetches via AbortController, setState only in async callbacks.
+- Created src/app/study-plan/page.tsx — Plan builder. Form (10 exams, score hint, hours 0.5-6, test date, adaptive weak-areas checkboxes) -> generates plan, saves to localStorage. Plan body: summary bar with progress %, weekly accordion with per-day per-block checkboxes (persisted), milestones sidebar, skill-allocation bars. Hydration effect wrapped in justified eslint-disable block.
+- Created src/app/sop-studio/page.tsx — Guided SOP writer. 6 section cards with prompt/live word count (amber/emerald/rose colour-coded)/textarea/collapsible tips/collapsible worked example/over-length warning. 400ms debounced auto-save to localStorage. Export: copy-to-clipboard (with execCommand fallback) + download .txt. Reset with confirm.
+- Modified src/components/site/site-header.tsx — added Shortcuts/Study plan/SOP studio nav items.
+- Modified src/components/site/site-footer.tsx — added 3 links to Practice footer group.
+- Modified src/app/page.tsx — added "Free preparation tools" section (3 cards) between exam-paths and StudentJourneyDiagram; imported ClipboardList/FileText/Lightbulb icons.
+
+Verification:
+- Lint: 0 errors, 1 pre-existing unrelated warning (factory/control-center.tsx).
+- Fixed 2 react-hooks/set-state-in-effect errors (shortcuts fetch effect restructured to async-only setState; study-plan hydration effect wrapped in justified eslint-disable block).
+- Fixed 1 TS18047 (typeof plan.days after null guard -> imported DayPlan type).
+- Typecheck: 0 errors in new/modified files.
+- HTTP: / -> 200, /shortcuts -> 200, /study-plan -> 200, /sop-studio -> 200.
+- API: /api/shortcuts -> 200 (38 shortcuts, 10 exams, 6 skills, 3 difficulties); ?exam=IELTS&skill=READING -> 5; ?exam=GRE -> 6; ?q=backsolve -> 2; ?exam=FOO -> 400.
+
+Stage Summary:
+- Files: 7 created + 3 modified = 10 total.
+- 4 user-spec points satisfied: Study Plan page (daily schedule by skill + checkboxes + milestones + localStorage) ✅; Shortcut Hub (filterable by exam/skill/difficulty + search, real techniques for IELTS/GRE/SAT/TOEFL etc.) ✅; SOP Studio (6 sections with prompt/tips/word-count/example + autosave + clipboard/txt export) ✅; API routes (GET /api/shortcuts all + filtered) ✅.
+- Existing functionality preserved: no schema/DB/existing-route changes; homepage/header/footer additions are additive.
+

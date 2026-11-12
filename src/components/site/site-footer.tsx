@@ -6,6 +6,9 @@ const FOOTER_GROUPS = [
     links: [
       { label: "Practice tests", href: "/practice-test" },
       { label: "Active exam catalog", href: "/exam-prep" },
+      { label: "Exam-prep shortcuts", href: "/shortcuts" },
+      { label: "Study plan builder", href: "/study-plan" },
+      { label: "SOP studio", href: "/sop-studio" },
       { label: "Language preparation", href: "/language-prep" },
       { label: "Ask the handbook", href: "/ask-handbook" },
     ],
