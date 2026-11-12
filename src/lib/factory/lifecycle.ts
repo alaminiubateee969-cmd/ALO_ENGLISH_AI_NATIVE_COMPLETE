@@ -52,7 +52,7 @@ export async function validateApplication(applicationId: string, actorUserId: st
     where: { id: applicationId },
     data: { status: passed ? "VALIDATED" : "TEST_FAILED", healthStatus: passed ? "READY" : "DEGRADED" },
   });
-  await factoryAudit({ actorUserId, action: passed ? "APPLICATION_VALIDATED" : "APPLICATION_VALIDATION_FAILED", resource: applicationId, companyId: application.companyId, applicationId, metadata: JSON.stringify({ checks }) });
+  await factoryAudit({ actorUserId, action: passed ? "APPLICATION_VALIDATED" : "APPLICATION_VALIDATION_FAILED", resource: applicationId, companyId: application.companyId, applicationId, metadata: JSON.stringify({ checks }) as any });
   return { application: updated, checks, passed };
 }
 

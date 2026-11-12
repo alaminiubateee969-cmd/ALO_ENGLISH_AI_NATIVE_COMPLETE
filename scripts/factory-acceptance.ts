@@ -132,7 +132,7 @@ await check("D — provisioning and fail-closed dedicated model", async () => {
   assert.equal(validation.passed, true);
   const provisioned = await lifecycle.provisionApplication(shared.application.id, operator.id);
   assert.equal(provisioned.status, "STAGING");
-  assert.ok(provisioned.checks.every((item) => item.status === "PASS"));
+  assert.ok((provisioned as any).checks.every((item) => item.status === "PASS"));
   await lifecycle.validateApplication(dedicated.application.id, operator.id);
   const blocked = await lifecycle.provisionApplication(dedicated.application.id, operator.id);
   assert.equal(blocked.status, "BLOCKED");

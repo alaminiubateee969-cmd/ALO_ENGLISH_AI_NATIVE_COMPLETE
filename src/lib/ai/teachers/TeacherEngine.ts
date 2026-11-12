@@ -114,9 +114,11 @@ export async function answerQuestion(
   }
 
   try {
-    // Created inside the try on purpose: with no provider configured,
-    // ZAI.create() throws and the grounded deterministic answer below must
-    // take over — an AI teacher never returns a 500 for a missing provider.
+    // Own AI: default to rule-based (no external LLM). Only use LLM when
+    // explicitly enabled via env var TEACHER_USE_LLM=true
+    if (process.env.TEACHER_USE_LLM !== "true") {
+      throw new Error("LLM disabled — using own AI (rule-based)");
+    }
     const zai = await getZAI();
     const grounding = context.chunks.slice(0, 3).join("\n\n---\n\n");
     const completion = await zai.chat.completions.create({

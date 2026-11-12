@@ -9,7 +9,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     const user = await requireFactoryOperator();
     const { id } = await ctx.params;
     const result = await provisionApplication(id, user.id);
-    if (result.status === "BLOCKED") return serviceUnavailable(result.message ?? "Dedicated provisioning is blocked");
+    if (result.status === "BLOCKED") return serviceUnavailable((result as any).message ?? "Dedicated provisioning is blocked");
     return ok(result, "Shared application provisioned to staging with real control-plane checks");
   });
 }
