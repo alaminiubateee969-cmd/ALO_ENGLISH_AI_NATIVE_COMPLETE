@@ -50,9 +50,9 @@ A complete map of every file in this project, organized by purpose.
 | `PROJECT-INDEX.md` | This file |
 | `docs/` | 83 documents (including the archived guides) |
 
-## Source — App Router (133 API routes, 53 pages, 3 layout)
+## Source — App Router (139 API routes, 57 pages, 3 layout)
 
-API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `teacher`, `teachers`, `webhooks`.
+API route groups: `admin`, `agents`, `analytics`, `applications`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `courses`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `subjects`, `teacher`, `teachers`, `webhooks`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -63,12 +63,14 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/admin` | 9 |
 | `api/agents` | 5 |
 | `api/analytics` | 1 |
+| `api/applications` | 3 |
 | `api/attempts` | 8 |
 | `api/audio` | 1 |
 | `api/auth` | 6 |
 | `api/blog` | 2 |
 | `api/certificate` | 3 |
 | `api/chat` | 1 |
+| `api/courses` | 2 |
 | `api/crm` | 46 |
 | `api/deliverable` | 1 |
 | `api/deliverables` | 1 |
@@ -90,10 +92,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/rbac` | 4 |
 | `api/shortcuts` | 1 |
 | `api/speaking` | 3 |
+| `api/subjects` | 1 |
 | `api/teacher` | 1 |
 | `api/teachers` | 2 |
 | `api/webhooks` | 1 |
-| **total** | **133** |
+| **total** | **139** |
 
 ## Source — Libraries
 
@@ -124,11 +127,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `src/hooks/` | Shared React hooks |
 
-## Database (86 models, 0 enums, 16 migrations)
+## Database (91 models, 0 enums, 16 migrations)
 
 | Path | Purpose |
 |---|---|
-| `prisma/schema.prisma` | 86 models |
+| `prisma/schema.prisma` | 91 models |
 | `prisma/migrations/` | 16 migration folders |
 | `prisma/seed.mjs`, `prisma/seed-rbac.ts` | Core data + RBAC seeds |
 | `prisma/seed-sample-bank.mjs` | Guarded synthetic sample bank (disposable databases only) |
@@ -157,7 +160,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `.github/workflows/` | `ci.yml`, `deploy.yml` |
 
-## Public Assets (32 files)
+## Public Assets (48 files)
 
 | Path | Purpose |
 |---|---|
@@ -171,10 +174,10 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 927 |
-| Prisma models | 86 |
-| API routes | 133 |
-| Pages | 53 |
+| Tracked files | 1013 |
+| Prisma models | 91 |
+| API routes | 139 |
+| Pages | 57 |
 | Migrations | 16 |
 | Test files | 46 |
 | Scripts | 34 |

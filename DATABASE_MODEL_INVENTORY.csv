@@ -1,5 +1,5 @@
 Model,Category,ScalarFields,Relations,Identifiers,Indexes
-User,Authentication & RBAC,16,21,id (@id); email (@unique); educationalId (@unique),@@index(role); @@index(status); @@index(branchId); @@index(departmentId)
+User,Authentication & RBAC,16,23,id (@id); email (@unique); educationalId (@unique),@@index(role); @@index(status); @@index(branchId); @@index(departmentId)
 Branch,Authentication & RBAC,8,3,id (@id); name (@unique),-
 Department,Authentication & RBAC,5,2,id (@id),-
 PasswordReset,Authentication & RBAC,6,1,id (@id); token (@unique),@@index(userId); @@index(token)
@@ -8,8 +8,8 @@ Student,"CRM Core: Leads, Students, Partners",21,13,id (@id); studentCode (@uniq
 Partner,"CRM Core: Leads, Students, Partners",12,4,id (@id); userId (@unique); referralCode (@unique),@@index(status)
 Commission,"CRM Core: Leads, Students, Partners",7,2,id (@id),@@index(partnerId); @@index(status)
 Country,Education Catalog,6,1,id (@id); name (@unique); code (@unique),-
-University,Education Catalog,11,3,id (@id),@@index(countryId); @@index(isPublished)
-Course,Education Catalog,13,2,id (@id),@@index(universityId); @@index(isPublished)
+University,Education Catalog,11,4,id (@id),@@index(countryId); @@index(isPublished)
+Course,Education Catalog,13,4,id (@id),@@index(universityId); @@index(isPublished)
 Scholarship,Education Catalog,11,1,id (@id),@@index(universityId)
 Application,Applications,10,5,id (@id),@@index(studentId); @@index(status); @@index(assignedTo)
 Document,Documents & OCR,25,3,id (@id),@@index(studentId); @@index(type); @@index(ocrStatus); @@index(verificationStatus); @@index(retentionClass)
@@ -85,3 +85,8 @@ FactoryIntegration,BDTECH360 Private Software Factory,9,0,"id (@id); @@unique(co
 FactoryChangeRequest,BDTECH360 Private Software Factory,10,1,id (@id),"@@index(status,kind)"
 FactoryAuditEvent,BDTECH360 Private Software Factory,8,2,id (@id),"@@index(companyId,createdAt); @@index(applicationId,createdAt); @@index(actorUserId,createdAt)"
 FactoryContact,BDTECH360 Private Software Factory,9,1,id (@id),"@@index(companyId,email); @@index(companyId,name)"
+Subject,Course Finder + Application System (restored),4,0,id (@id); name (@unique),@@index(category)
+CourseIntake,Course Finder + Application System (restored),5,1,"id (@id); @@unique(courseId,month,year)",@@index(courseId)
+ApplicationDraft,Course Finder + Application System (restored),8,5,id (@id),@@index(userId); @@index(status); @@index(courseId)
+ApplicationFormB,Course Finder + Application System (restored),57,2,id (@id); draftId (@unique),@@index(userId); @@index(status)
+ApplicationDocument,Course Finder + Application System (restored),12,1,id (@id),@@index(applicationId); @@index(section); @@index(status)

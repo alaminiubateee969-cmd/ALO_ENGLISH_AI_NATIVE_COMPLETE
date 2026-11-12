@@ -63,6 +63,8 @@ model User {
   // Phase 1: RBAC + Multi-tenancy relations
   teamMembers  TeamMember[]
   sessions     Session[]
+  drafts       ApplicationDraft[]
+  formBs       ApplicationFormB[]
 
   @@index([role])
   @@index([status])
@@ -265,6 +267,7 @@ model University {
   country   Country  @relation(fields: [countryId], references: [id])
   courses   Course[]
   scholarships Scholarship[]
+  drafts    ApplicationDraft[]
 
   @@index([countryId])
   @@index([isPublished])
@@ -287,6 +290,8 @@ model Course {
 
   university   University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
   applications Application[]
+  intakes      CourseIntake[]
+  drafts       ApplicationDraft[]
 
   @@index([universityId])
   @@index([isPublished])
@@ -2033,3 +2038,128 @@ model FactoryContact {
   @@index([companyId, email])
   @@index([companyId, name])
 }
+
+// ═══ Course Finder + Application System (restored) ═══════════════════════
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String
+  createdAt DateTime @default(now())
+  @@index([category])
+}
+
+model CourseIntake {
+  id        String   @id @default(cuid())
+  courseId  String
+  month     String
+  year      Int
+  deadline  DateTime?
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@unique([courseId, month, year])
+  @@index([courseId])
+}
+
+model ApplicationDraft {
+  id           String    @id @default(cuid())
+  userId       String
+  courseId     String?
+  universityId String?
+  status       String    @default("DRAFT")
+  source       String    @default("FORM_A")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course       Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  university   University? @relation(fields: [universityId], references: [id], onDelete: SetNull)
+  formB        ApplicationFormB?
+  documents    ApplicationDocument[]
+  @@index([userId])
+  @@index([status])
+  @@index([courseId])
+}
+
+model ApplicationFormB {
+  id              String   @id @default(cuid())
+  draftId         String   @unique
+  userId          String
+  givenName       String
+  familyName      String
+  gender          String?
+  nationality     String?
+  dateOfBirth     DateTime?
+  maritalStatus   String?
+  cityOfBirth     String?
+  countryOfBirth  String?
+  officeAddress   String?
+  primaryEmail    String
+  altEmail        String?
+  mobileCountryCode String?
+  mobileNumber    String?
+  altCountryCode  String?
+  altNumber       String?
+  presentAddress  String?
+  permanentAddress String?
+  emergencyName   String?
+  emergencyRelation String?
+  emergencyCountryCode String?
+  emergencyNumber String?
+  hasPassport     Boolean  @default(false)
+  passportNumber  String?
+  placeOfIssue    String?
+  issueDate       DateTime?
+  expireDate      DateTime?
+  educationHistory String
+  hasEnglishTest  Boolean  @default(false)
+  englishTests    String
+  hasWorkExperience Boolean @default(false)
+  workExperience  String
+  hasReferences   Boolean  @default(false)
+  references      String
+  hasVisa         Boolean  @default(false)
+  visaHistory     String
+  hasVisaRefusal  Boolean  @default(false)
+  visaRefusalDetails String?
+  hasImmigrationHistory Boolean @default(false)
+  immigrationDetails String?
+  hasMedicalCondition Boolean @default(false)
+  medicalDetails  String?
+  hasCriminalOffense Boolean @default(false)
+  criminalDetails String?
+  admissionPreferences String
+  fundingStatus   String?
+  sponsor         String?
+  sourceOfFund    String?
+  notes           String?
+  status          String   @default("DRAFT")
+  counselorId     String?
+  counselorComment String?
+  submittedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  draft        ApplicationDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([status])
+}
+
+model ApplicationDocument {
+  id            String   @id @default(cuid())
+  applicationId String
+  section       String
+  fileName      String
+  filePath      String
+  fileSize      Int
+  mimeType      String
+  status        String   @default("PENDING")
+  counselorComment String?
+  uploadedAt    DateTime @default(now())
+  reviewedAt    DateTime?
+  reviewedBy    String?
+  application   ApplicationDraft @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId])
+  @@index([section])
+  @@index([status])
+}
+
+// ═══ Anti-repeat system ═════════════════════════════════════════════════

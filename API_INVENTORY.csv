@@ -15,6 +15,9 @@ Path,Methods,Auth,Runtime,Source
 /api/agents/status,GET,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/agents/status/route.ts
 /api/agents/worker/run,GET POST,authenticated,nodejs,src/app/api/agents/worker/run/route.ts
 /api/analytics/events,POST,public intended (allowlist; verify handler),nodejs,src/app/api/analytics/events/route.ts
+/api/applications/draft,POST,authenticated,nodejs,src/app/api/applications/draft/route.ts
+/api/applications/my,GET,authenticated,nodejs,src/app/api/applications/my/route.ts
+/api/applications/submit,POST,authenticated,nodejs,src/app/api/applications/submit/route.ts
 /api/attempts,GET,authenticated,nodejs,src/app/api/attempts/route.ts
 /api/attempts/{id},GET,authenticated,nodejs,src/app/api/attempts/[id]/route.ts
 /api/attempts/{id}/evaluation,GET,authenticated,nodejs,src/app/api/attempts/[id]/evaluation/route.ts
@@ -36,6 +39,8 @@ Path,Methods,Auth,Runtime,Source
 /api/certificate/{id}/express-interest,POST,authenticated,nodejs,src/app/api/certificate/[id]/express-interest/route.ts
 /api/certificate/generate,POST,authenticated,nodejs,src/app/api/certificate/generate/route.ts
 /api/chat,POST,none declared,nodejs,src/app/api/chat/route.ts
+/api/courses,GET,none declared,nodejs,src/app/api/courses/route.ts
+/api/courses/{id},GET,none declared,nodejs,src/app/api/courses/[id]/route.ts
 /api/crm/applications,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/route.ts
 /api/crm/applications/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/[id]/route.ts
 /api/crm/appointments,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/route.ts
@@ -128,6 +133,7 @@ Path,Methods,Auth,Runtime,Source
 /api/speaking/examiner-respond,POST,authenticated,nodejs,src/app/api/speaking/examiner-respond/route.ts
 /api/speaking/examiner-voice,POST,authenticated,nodejs,src/app/api/speaking/examiner-voice/route.ts
 /api/speaking/transcribe,POST,authenticated,nodejs,src/app/api/speaking/transcribe/route.ts
+/api/subjects,GET,none declared,nodejs,src/app/api/subjects/route.ts
 /api/teacher/overview,GET,authenticated,nodejs,src/app/api/teacher/overview/route.ts
 /api/teachers,GET,none declared,nodejs,src/app/api/teachers/route.ts
 /api/teachers/ask,POST,authenticated,nodejs,src/app/api/teachers/ask/route.ts

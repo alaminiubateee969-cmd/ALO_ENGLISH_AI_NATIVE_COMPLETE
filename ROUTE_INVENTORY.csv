@@ -6,6 +6,7 @@
 /admin/learning,not public allowlisted; page guard required,static shell + client,src/app/admin/learning/page.tsx
 /admin/seo,not public allowlisted; page guard required,static shell + client,src/app/admin/seo/page.tsx
 /admin/settings,not public allowlisted; page guard required,static shell + client,src/app/admin/settings/page.tsx
+/apply/{courseId},not public allowlisted; page guard required,static shell + client,src/app/apply/[courseId]/page.tsx
 /ask-handbook,public (page allowlist),static shell + client,src/app/ask-handbook/page.tsx
 /blog,public (page allowlist),dynamic (per request),src/app/blog/page.tsx
 /blog/{slug},not public allowlisted; page guard required,dynamic (per request),src/app/blog/[slug]/page.tsx
@@ -14,6 +15,7 @@
 /contact,public (page allowlist),static (prerendered),src/app/contact/page.tsx
 /cookie-policy,public (page allowlist),static (prerendered),src/app/cookie-policy/page.tsx
 /course-finder,public (page allowlist),static (prerendered),src/app/course-finder/page.tsx
+/courses/{id},not public allowlisted; page guard required,static shell + client,src/app/courses/[id]/page.tsx
 /destinations,public (page allowlist),static (prerendered),src/app/destinations/page.tsx
 /employee/consent,not public allowlisted; page guard required,static shell + client,src/app/employee/consent/page.tsx
 /employee/crm/{entity},not public allowlisted; page guard required,static shell + client,src/app/employee/crm/[entity]/page.tsx
@@ -42,6 +44,7 @@
 /shortcuts,not public allowlisted; page guard required,static shell + client,src/app/shortcuts/page.tsx
 /sop-studio,not public allowlisted; page guard required,static shell + client,src/app/sop-studio/page.tsx
 /student/ai-teachers,not public allowlisted; page guard required,static shell + client,src/app/student/ai-teachers/page.tsx
+/student/applications,not public allowlisted; page guard required,static shell + client,src/app/student/applications/page.tsx
 /student/dashboard,not public allowlisted; page guard required,static shell + client,src/app/student/dashboard/page.tsx
 /student/exam-history,not public allowlisted; page guard required,static shell + client,src/app/student/exam-history/page.tsx
 /student/materials,not public allowlisted; page guard required,static shell + client,src/app/student/materials/page.tsx
@@ -51,4 +54,5 @@
 /teacher/dashboard,not public allowlisted; page guard required,static shell + client,src/app/teacher/dashboard/page.tsx
 /terms,public (page allowlist),static (prerendered),src/app/terms/page.tsx
 /universities,public (page allowlist),static (prerendered),src/app/universities/page.tsx
+/universities/{id},not public allowlisted; page guard required,static shell + client,src/app/universities/[id]/page.tsx
 Path,Access,Rendering,Source
