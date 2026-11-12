@@ -52,7 +52,7 @@ export async function validateApplication(applicationId: string, actorUserId: st
     where: { id: applicationId },
     data: { status: passed ? "VALIDATED" : "TEST_FAILED", healthStatus: passed ? "READY" : "DEGRADED" },
   });
-  await factoryAudit({ actorUserId, action: passed ? "APPLICATION_VALIDATED" : "APPLICATION_VALIDATION_FAILED", resource: applicationId, companyId: application.companyId, applicationId, metadata: { checks } });
+  await factoryAudit({ actorUserId, action: passed ? "APPLICATION_VALIDATED" : "APPLICATION_VALIDATION_FAILED", resource: applicationId, companyId: application.companyId, applicationId, metadata: JSON.stringify({ checks }) });
   return { application: updated, checks, passed };
 }
 
@@ -109,7 +109,7 @@ export async function provisionApplication(applicationId: string, actorUserId: s
     });
     const run = await tx.factoryProvisioningRun.create({ data: { applicationId, status: passed ? "PASSED" : "TEST_FAILED", checks: JSON.stringify(checks), startedBy: actorUserId, finishedAt: new Date() } });
     const updated = await tx.factoryApplication.update({ where: { id: applicationId }, data: { status: passed ? "STAGING" : "TEST_FAILED", currentReleaseId: release.id, healthStatus: passed ? "CONTROL_PLANE_READY" : "DEGRADED", lastHealthCheckAt: new Date() } });
-    await tx.factoryAuditEvent.create({ data: { actorUserId, action: passed ? "APPLICATION_PROVISIONED" : "APPLICATION_TEST_FAILED", resource: applicationId, companyId: application.companyId, applicationId, metadata: { checks } } });
+    await tx.factoryAuditEvent.create({ data: { actorUserId, action: passed ? "APPLICATION_PROVISIONED" : "APPLICATION_TEST_FAILED", resource: applicationId, companyId: application.companyId, applicationId, metadata: JSON.stringify({ checks }) } });
     return { status: updated.status, run, release, checks };
   });
   return result;
@@ -136,7 +136,7 @@ export async function activateApplication(applicationId: string, actorUserId: st
     await tx.factoryDeployment.upsert({ where: { applicationId_environment: { applicationId, environment: "PRODUCTION" } }, create: { applicationId, environment: "PRODUCTION", status: "DEPLOYED", adapter: "INTERNAL_SHARED", details: "Human-approved shared application activation." }, update: { status: "DEPLOYED", adapter: "INTERNAL_SHARED", details: "Human-approved shared application activation." } });
     const approval = await tx.factoryApproval.create({ data: { applicationId, action: application.status === "STAGING" ? "ACTIVATE" : "UPGRADE", status: "APPROVED", requestedBy: actorUserId, decidedBy: actorUserId, decidedAt: new Date(), note } });
     const updated = await tx.factoryApplication.update({ where: { id: applicationId }, data: { status: "LIVE", currentReleaseId: release.id, healthStatus: "CONTROL_PLANE_READY", lastHealthCheckAt: new Date() } });
-    await tx.factoryAuditEvent.create({ data: { actorUserId, action: "APPLICATION_ACTIVATED", resource: applicationId, companyId: application.companyId, applicationId, metadata: { releaseId: release.id, approvalId: approval.id } } });
+    await tx.factoryAuditEvent.create({ data: { actorUserId, action: "APPLICATION_ACTIVATED", resource: applicationId, companyId: application.companyId, applicationId, metadata: JSON.stringify({ releaseId: release.id, approvalId: approval.id }) } });
     return { application: updated, release, approval };
   });
 }
@@ -156,7 +156,7 @@ export async function rollbackApplication(applicationId: string, actorUserId: st
     const approval = await tx.factoryApproval.create({ data: { applicationId, action: "ROLLBACK", status: "APPROVED", requestedBy: actorUserId, decidedBy: actorUserId, decidedAt: new Date(), note } });
     const updated = await tx.factoryApplication.update({ where: { id: applicationId }, data: { status: "ROLLED_BACK", templateVersionId: target.templateVersionId, currentReleaseId: target.id, healthStatus: "CONTROL_PLANE_READY", lastHealthCheckAt: new Date() } });
     await tx.factoryDeployment.updateMany({ where: { applicationId, environment: "PRODUCTION" }, data: { status: "ROLLED_BACK", details: `Rolled back to ${target.version}` } });
-    await tx.factoryAuditEvent.create({ data: { actorUserId, action: "APPLICATION_ROLLED_BACK", resource: applicationId, companyId: application.companyId, applicationId, metadata: { from: current.id, to: target.id, approvalId: approval.id } } });
+    await tx.factoryAuditEvent.create({ data: { actorUserId, action: "APPLICATION_ROLLED_BACK", resource: applicationId, companyId: application.companyId, applicationId, metadata: JSON.stringify({ from: current.id, to: target.id, approvalId: approval.id }) } });
     return { application: updated, target, approval };
   });
 }

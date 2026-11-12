@@ -186,16 +186,16 @@ export function checkPublish(input: { title: string; excerpt: string; body: stri
   const text = `${input.title}\n\n${input.excerpt}\n\n${input.body}`;
 
   const claimViolations = findUnsafeClaims(text).map((violation) => ({
-    ruleId: violation.toString(),
+    ruleId: violation.ruleId,
     match: violation.match,
     reason: violation.reason,
   }));
 
   const report = checkStyle(text);
   const styleFindings = report.findings.map((finding) => ({
-    ruleId: finding.toString(),
-    match: finding.match,
-    problem: finding.problem,
+    ruleId: finding.ruleId || finding.toString(),
+    match: String(finding.match),
+    problem: String(finding.problem || ""),
   }));
 
   const styleOverCeiling = report.tellIndex > STYLE_INDEX_CEILING;

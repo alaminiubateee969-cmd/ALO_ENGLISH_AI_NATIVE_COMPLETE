@@ -185,7 +185,7 @@ export function LockdownMode({ enabled, onToggle }: LockdownModeProps) {
     // Some browsers fire `selectstart` from Ctrl+A before the keydown handler
     // can cancel — block the event directly to keep text selectable=false
     // behaviour consistent.
-    const onSelectStart = (e: Event) => {
+    const onSelectStart = (e: any) => {
       if (e.ctrlKey) {
         e.preventDefault();
       }
