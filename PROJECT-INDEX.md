@@ -50,9 +50,9 @@ A complete map of every file in this project, organized by purpose.
 | `PROJECT-INDEX.md` | This file |
 | `docs/` | 83 documents (including the archived guides) |
 
-## Source — App Router (127 API routes, 49 pages, 3 layout)
+## Source — App Router (133 API routes, 53 pages, 3 layout)
 
-API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `speaking`, `teacher`, `teachers`, `webhooks`.
+API route groups: `admin`, `agents`, `analytics`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `teacher`, `teachers`, `webhooks`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -63,10 +63,12 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/admin` | 9 |
 | `api/agents` | 5 |
 | `api/analytics` | 1 |
-| `api/attempts` | 7 |
+| `api/attempts` | 8 |
 | `api/audio` | 1 |
 | `api/auth` | 6 |
 | `api/blog` | 2 |
+| `api/certificate` | 3 |
+| `api/chat` | 1 |
 | `api/crm` | 46 |
 | `api/deliverable` | 1 |
 | `api/deliverables` | 1 |
@@ -86,17 +88,18 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/questions` | 1 |
 | `api/rag` | 3 |
 | `api/rbac` | 4 |
+| `api/shortcuts` | 1 |
 | `api/speaking` | 3 |
 | `api/teacher` | 1 |
 | `api/teachers` | 2 |
 | `api/webhooks` | 1 |
-| **total** | **127** |
+| **total** | **133** |
 
 ## Source — Libraries
 
 | Path | Purpose |
 |---|---|
-| `src/lib/` (37 modules) | `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth.ts`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db.ts`, `env.ts`, `exam`, `exam-catalog.ts`, `factory`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `utils.ts`, `validation.ts`, `writing` |
+| `src/lib/` (42 modules) | `QuestionExposure.ts`, `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth`, `auth.ts`, `certificate`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db.ts`, `email`, `env.ts`, `exam`, `exam-catalog.ts`, `factory`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `study-tools`, `utils.ts`, `validation.ts`, `writing` |
 
 ## Source — Middleware
 
@@ -109,9 +112,9 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | Group | Files |
 |---|---|
 | `src/components/ai-os` | 20 — Hidden admin modules. |
-| `src/components/alo` | 28 — Public platform components. |
+| `src/components/alo` | 29 — Public platform components. |
 | `src/components/site` | 10 — Public site sections. |
-| `src/components/exam` | 1 — Exam-taking components. |
+| `src/components/exam` | 10 — Exam-taking components. |
 | `src/components/speaking` | 1 — Speaking practice components. |
 | `src/components/ui` | 48 — Component library. |
 
@@ -121,20 +124,20 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `src/hooks/` | Shared React hooks |
 
-## Database (82 models, 0 enums, 16 migrations)
+## Database (86 models, 0 enums, 16 migrations)
 
 | Path | Purpose |
 |---|---|
-| `prisma/schema.prisma` | 82 models |
+| `prisma/schema.prisma` | 86 models |
 | `prisma/migrations/` | 16 migration folders |
 | `prisma/seed.mjs`, `prisma/seed-rbac.ts` | Core data + RBAC seeds |
 | `prisma/seed-sample-bank.mjs` | Guarded synthetic sample bank (disposable databases only) |
 
-## Scripts (33 files)
+## Scripts (34 files)
 
 | Path | Purpose |
 |---|---|
-| `scripts/` | `agent-worker.mjs`, `audit-source-questions.mjs`, `audit-with-rea.sh`, `backup.sh`, `bootstrap-admin.ts`, `check-manifest.mjs`, `check-schema-migrations.mjs`, `daily-question-pipeline.mjs`, `ensure-prisma-client.mjs`, `factory-acceptance.ts`, `finalize-standalone.mjs`, `generate-daily-questions.ts`, `generate-favicon.mjs`, `generate-inventories.mjs`, `generate-listening-audio.mjs`, `generate-missing-migration.sh`, `generate-project-index.mjs`, `healthcheck.sh`, `import-question-bank.mjs`, `initialize-exam-types.mjs`, `install.sh`, `lib`, `listening-audio-utils.mjs`, `restore-drill.sh`, `restore.sh`, `rollback.sh`, `smoke-standalone.mjs`, `update.sh`, `validate-content.mjs`, `validate-question-bank.ts`, `validate-question-provenance.mjs`, `verify-listening-audio.mjs`, `verify.sh` |
+| `scripts/` | `agent-worker.mjs`, `audit-source-questions.mjs`, `audit-with-rea.sh`, `backup.sh`, `bootstrap-admin.ts`, `check-manifest.mjs`, `check-schema-migrations.mjs`, `daily-question-pipeline.mjs`, `ensure-prisma-client.mjs`, `factory-acceptance.ts`, `finalize-standalone.mjs`, `generate-daily-questions.ts`, `generate-favicon.mjs`, `generate-inventories.mjs`, `generate-listening-audio.mjs`, `generate-listening-audio.ts`, `generate-missing-migration.sh`, `generate-project-index.mjs`, `healthcheck.sh`, `import-question-bank.mjs`, `initialize-exam-types.mjs`, `install.sh`, `lib`, `listening-audio-utils.mjs`, `restore-drill.sh`, `restore.sh`, `rollback.sh`, `smoke-standalone.mjs`, `update.sh`, `validate-content.mjs`, `validate-question-bank.ts`, `validate-question-provenance.mjs`, `verify-listening-audio.mjs`, `verify.sh` |
 
 ## Server Configuration (6 files)
 
@@ -168,11 +171,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 885 |
-| Prisma models | 82 |
-| API routes | 127 |
-| Pages | 49 |
+| Tracked files | 927 |
+| Prisma models | 86 |
+| API routes | 133 |
+| Pages | 53 |
 | Migrations | 16 |
 | Test files | 46 |
-| Scripts | 33 |
+| Scripts | 34 |
 | Environment variables (template) | 31 |

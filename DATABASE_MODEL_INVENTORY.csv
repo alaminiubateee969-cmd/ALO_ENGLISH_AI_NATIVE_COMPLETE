@@ -1,5 +1,5 @@
 Model,Category,ScalarFields,Relations,Identifiers,Indexes
-User,Authentication & RBAC,15,20,id (@id); email (@unique),@@index(role); @@index(status); @@index(branchId); @@index(departmentId)
+User,Authentication & RBAC,16,21,id (@id); email (@unique); educationalId (@unique),@@index(role); @@index(status); @@index(branchId); @@index(departmentId)
 Branch,Authentication & RBAC,8,3,id (@id); name (@unique),-
 Department,Authentication & RBAC,5,2,id (@id),-
 PasswordReset,Authentication & RBAC,6,1,id (@id); token (@unique),@@index(userId); @@index(token)
@@ -22,16 +22,19 @@ AuditLog,Audit & Settings,7,1,id (@id),@@index(userId); @@index(action); @@index
 Setting,Audit & Settings,3,0,id (@id); key (@unique),-
 ExamType,Exam Platform,7,1,id (@id); code (@unique),-
 PracticeSet,Exam Platform,8,3,id (@id),@@index(examTypeId)
-Attempt,Exam Platform,11,6,id (@id),"@@index(userId); @@index(status); @@index(userId,practiceSetId); @@index(expiresAt)"
+Attempt,Exam Platform,15,8,id (@id),"@@index(userId); @@index(status); @@index(userId,practiceSetId); @@index(expiresAt); @@index(deviceId)"
 AttemptQuestion,Exam Platform,6,2,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId); @@index(questionId)
 AttemptAnswer,Exam Platform,6,1,"id (@id); @@unique(attemptId,questionId)",@@index(attemptId)
 AttemptEvaluation,Exam Platform,9,1,"id (@id); @@unique(attemptId,section)",@@index(attemptId); @@index(examTypeCode)
 Score,Exam Platform,12,2,id (@id); attemptId (@unique),@@index(userId)
+Certificate,Completion Certificates,19,2,id (@id); certificateNumber (@unique); attemptId (@unique),@@index(userId); @@index(attemptId); @@index(examTypeCode); @@index(certificateNumber)
 Question,Exam Questions,16,3,id (@id),@@index(practiceSetId); @@index(section)
 QuestionAudioAsset,Exam Questions,14,1,id (@id); questionId (@unique),@@index(status)
-FreeQuota,Free Quota + Payment,7,0,id (@id); userId (@unique),@@index(userId)
+FreeQuota,Free Quota + Payment,8,0,"id (@id); @@unique(userId,examTypeCode)","@@index(userId); @@index(examTypeCode); @@index(userId,examTypeCode)"
 Payment,Free Quota + Payment,10,0,id (@id),@@index(userId); @@index(status)
-DailyQuestionSet,Free Quota + Payment,6,0,"id (@id); @@unique(examTypeCode,date)","@@index(examTypeCode,date)"
+DailyQuestionSet,Free Quota + Payment,6,1,"id (@id); @@unique(examTypeCode,date)","@@index(examTypeCode,date)"
+DailyQuestionVariant,Free Quota + Payment,7,2,"id (@id); @@unique(dailySetId,variantIndex)",@@index(dailySetId)
+AttemptVariantExposure,Free Quota + Payment,5,2,"id (@id); attemptId (@unique); @@unique(userId,variantId)",@@index(userId); @@index(variantId)
 LearningMemory,Student Learning Memory,10,0,"id (@id); @@unique(userId,weaknessArea)",@@index(userId); @@index(weaknessType)
 AgentLearning,Agent Learning & Self-Development,11,0,id (@id),"@@index(agentId,learnDate); @@index(agentType); @@index(examTypeCode)"
 AgentEvolution,Agent Learning & Self-Development,13,0,id (@id),"@@index(agentId,version); @@index(isActive)"
@@ -46,6 +49,7 @@ Permission,Phase 1: RBAC + Multi-Tenancy + Session Management,4,1,id (@id); key 
 RolePermission,Phase 1: RBAC + Multi-Tenancy + Session Management,2,2,-,@@index(permissionId)
 Session,Phase 1: RBAC + Multi-Tenancy + Session Management,8,1,id (@id); token (@unique),@@index(userId); @@index(expiresAt); @@index(token)
 StudentIdSequence,Communication Hub,3,0,year (@id),-
+CertificateSequence,Communication Hub,3,0,year (@id),-
 ChannelAccount,Communication Hub,14,2,"id (@id); @@unique(kind,externalId)",@@index(status); @@index(ownerUserId)
 Conversation,Communication Hub,15,4,"id (@id); @@unique(channel,externalThreadId)",@@index(studentId); @@index(status); @@index(needsReview); @@index(lastMessageAt)
 DocumentVersion,Communication Hub,15,1,"id (@id); @@unique(documentId,version)",@@index(documentId); @@index(reviewStatus)

@@ -18,6 +18,7 @@ Path,Methods,Auth,Runtime,Source
 /api/attempts,GET,authenticated,nodejs,src/app/api/attempts/route.ts
 /api/attempts/{id},GET,authenticated,nodejs,src/app/api/attempts/[id]/route.ts
 /api/attempts/{id}/evaluation,GET,authenticated,nodejs,src/app/api/attempts/[id]/evaluation/route.ts
+/api/attempts/{id}/proctoring,POST,authenticated,nodejs,src/app/api/attempts/[id]/proctoring/route.ts
 /api/attempts/active,GET,authenticated,nodejs,src/app/api/attempts/active/route.ts
 /api/attempts/save,POST,authenticated,nodejs,src/app/api/attempts/save/route.ts
 /api/attempts/start,POST,authenticated,nodejs,src/app/api/attempts/start/route.ts
@@ -27,10 +28,14 @@ Path,Methods,Auth,Runtime,Source
 /api/auth/login,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/login/route.ts
 /api/auth/logout,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/logout/route.ts
 /api/auth/me,GET,public intended (allowlist; verify handler),nodejs,src/app/api/auth/me/route.ts
-/api/auth/register,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/register/route.ts
+/api/auth/register,POST,role:SUPER_ADMIN,nodejs,src/app/api/auth/register/route.ts
 /api/auth/reset-password,POST,public intended (allowlist; verify handler),nodejs,src/app/api/auth/reset-password/route.ts
 /api/blog/posts,GET POST,role:ADMIN+SUPER_ADMIN+MARKETING_MANAGER,nodejs,src/app/api/blog/posts/route.ts
 /api/blog/posts/{slug},GET PATCH,role:multiple,nodejs,src/app/api/blog/posts/[slug]/route.ts
+/api/certificate/{id},GET,none declared,nodejs,src/app/api/certificate/[id]/route.ts
+/api/certificate/{id}/express-interest,POST,authenticated,nodejs,src/app/api/certificate/[id]/express-interest/route.ts
+/api/certificate/generate,POST,authenticated,nodejs,src/app/api/certificate/generate/route.ts
+/api/chat,POST,none declared,nodejs,src/app/api/chat/route.ts
 /api/crm/applications,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/route.ts
 /api/crm/applications/{id},GET PUT DELETE,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/applications/[id]/route.ts
 /api/crm/appointments,GET POST,role:COUNSELOR (shared CRUD helper),nodejs,src/app/api/crm/appointments/route.ts
@@ -119,6 +124,7 @@ Path,Methods,Auth,Runtime,Source
 /api/rbac/roles,GET POST,permission-based,nodejs,src/app/api/rbac/roles/route.ts
 /api/rbac/team-members,GET POST DELETE,permission-based,nodejs,src/app/api/rbac/team-members/route.ts
 /api/rbac/teams,GET POST,permission-based,nodejs,src/app/api/rbac/teams/route.ts
+/api/shortcuts,GET,none declared,nodejs,src/app/api/shortcuts/route.ts
 /api/speaking/examiner-respond,POST,authenticated,nodejs,src/app/api/speaking/examiner-respond/route.ts
 /api/speaking/examiner-voice,POST,authenticated,nodejs,src/app/api/speaking/examiner-voice/route.ts
 /api/speaking/transcribe,POST,authenticated,nodejs,src/app/api/speaking/transcribe/route.ts
