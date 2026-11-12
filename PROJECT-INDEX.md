@@ -50,9 +50,9 @@ A complete map of every file in this project, organized by purpose.
 | `PROJECT-INDEX.md` | This file |
 | `docs/` | 83 documents (including the archived guides) |
 
-## Source — App Router (139 API routes, 57 pages, 3 layout)
+## Source — App Router (141 API routes, 58 pages, 3 layout)
 
-API route groups: `admin`, `agents`, `analytics`, `applications`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `courses`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `subjects`, `teacher`, `teachers`, `webhooks`.
+API route groups: `admin`, `agents`, `analytics`, `applications`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `courses`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `leaderboard`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `subjects`, `teacher`, `teachers`, `webhooks`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -81,11 +81,12 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/grammar` | 1 |
 | `api/health` | 1 |
 | `api/lead` | 1 |
+| `api/leaderboard` | 1 |
 | `api/learning` | 3 |
 | `api/learning-memory` | 1 |
 | `api/linkis` | 2 |
 | `api/partner` | 2 |
-| `api/payment` | 1 |
+| `api/payment` | 2 |
 | `api/practice-sets` | 1 |
 | `api/questions` | 1 |
 | `api/rag` | 3 |
@@ -96,7 +97,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/teacher` | 1 |
 | `api/teachers` | 2 |
 | `api/webhooks` | 1 |
-| **total** | **139** |
+| **total** | **141** |
 
 ## Source — Libraries
 
@@ -117,7 +118,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `src/components/ai-os` | 20 — Hidden admin modules. |
 | `src/components/alo` | 29 — Public platform components. |
 | `src/components/site` | 10 — Public site sections. |
-| `src/components/exam` | 10 — Exam-taking components. |
+| `src/components/exam` | 15 — Exam-taking components. |
 | `src/components/speaking` | 1 — Speaking practice components. |
 | `src/components/ui` | 48 — Component library. |
 
@@ -174,10 +175,10 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 1019 |
+| Tracked files | 1028 |
 | Prisma models | 91 |
-| API routes | 139 |
-| Pages | 57 |
+| API routes | 141 |
+| Pages | 58 |
 | Migrations | 17 |
 | Test files | 46 |
 | Scripts | 34 |

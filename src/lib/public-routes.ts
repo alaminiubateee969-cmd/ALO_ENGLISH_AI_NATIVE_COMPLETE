@@ -44,6 +44,9 @@ export const INDEXABLE_PUBLIC_ROUTES: readonly PublicRoute[] = [
   { path: '/destinations', label: 'Destinations', changeFrequency: 'monthly', priority: 0.8, lastModified: '2026-10-14' },
   { path: '/universities', label: 'Universities', changeFrequency: 'monthly', priority: 0.7, lastModified: '2026-10-14' },
   { path: '/scholarships', label: 'Scholarships', changeFrequency: 'monthly', priority: 0.7, lastModified: '2026-10-14' },
+  // Public leaderboard of practice scores — masked names, practice indicators
+  // only, never official scores. Revalidated every 5 minutes on the server.
+  { path: '/leaderboard', label: 'Practice leaderboard', changeFrequency: 'hourly', priority: 0.6, lastModified: '2026-11-13' },
   { path: '/course-finder', label: 'Course finder', changeFrequency: 'monthly', priority: 0.7, lastModified: '2026-10-14' },
   { path: '/services', label: 'Services', changeFrequency: 'monthly', priority: 0.6, lastModified: '2026-10-14' },
   { path: '/ask-handbook', label: 'Study handbook', changeFrequency: 'monthly', priority: 0.6, lastModified: '2026-10-14' },

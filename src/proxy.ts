@@ -17,7 +17,7 @@
  *   /contact, /book-consultation, /ask-handbook
  *   /privacy-policy, /terms, /cookie-policy, /portals, /blog (and /blog/<slug>)
  *   /api/auth/*, /api/health, /api/lead, /api/rag/ask, /api/rag/materials (GET)
- *   /api/exam-types, /api/practice-sets, /api/examiners
+ *   /api/exam-types, /api/practice-sets, /api/examiners, /api/leaderboard
  *   /api/webhooks/*  (public endpoint, but NOT unauthenticated: every request
  *                     must carry a valid provider HMAC signature, checked in the
  *                     route before any database work. See
@@ -60,6 +60,9 @@ const PUBLIC_PAGES = new Set([
   // reached by crawling the index; the proxy list is exact-match, so the prefix
   // is documented in the header comment rather than here.
   '/blog',
+  // Public leaderboard — reads the public /api/leaderboard endpoint and only
+  // exposes practice indicators (not official scores) and masked names.
+  '/leaderboard',
 ]);
 
 const PUBLIC_API_PATTERNS = [
@@ -71,6 +74,7 @@ const PUBLIC_API_PATTERNS = [
   /^\/api\/exam-types$/,
   /^\/api\/practice-sets$/,
   /^\/api\/examiners$/,
+  /^\/api\/leaderboard$/,   // public top-50 practice leaderboard (masked names)
   /^\/api\/webhooks\/.+/,      // signature-verified inbound providers (see route)
   /^\/api\/analytics\/events$/, // anonymous beacon; aggregate counters only, rate limited,
                                  // and nothing about a visitor is stored (src/lib/analytics/events.ts)

@@ -111,6 +111,7 @@ Path,Methods,Auth,Runtime,Source
 /api/grammar/check,POST,none declared,nodejs,src/app/api/grammar/check/route.ts
 /api/health,GET,public intended (allowlist; verify handler),nodejs,src/app/api/health/route.ts
 /api/lead,POST,public intended (allowlist; verify handler),nodejs,src/app/api/lead/route.ts
+/api/leaderboard,GET,public intended (allowlist; verify handler),nodejs,src/app/api/leaderboard/route.ts
 /api/learning-memory,GET,authenticated,nodejs,src/app/api/learning-memory/route.ts
 /api/learning/daily,GET POST,role:ADMIN+SUPER_ADMIN,nodejs,src/app/api/learning/daily/route.ts
 /api/learning/dashboard,GET,authenticated,nodejs,src/app/api/learning/dashboard/route.ts
@@ -120,6 +121,7 @@ Path,Methods,Auth,Runtime,Source
 /api/partner/dashboard,GET,role:PARTNER,nodejs,src/app/api/partner/dashboard/route.ts
 /api/partner/profile,GET,role:PARTNER,nodejs,src/app/api/partner/profile/route.ts
 /api/payment,GET POST,authenticated,nodejs,src/app/api/payment/route.ts
+/api/payment/wallet,POST,authenticated,nodejs,src/app/api/payment/wallet/route.ts
 /api/practice-sets,GET,public intended (allowlist; verify handler),nodejs,src/app/api/practice-sets/route.ts
 /api/questions,GET,authenticated,nodejs,src/app/api/questions/route.ts
 /api/rag/ask,POST,public intended (allowlist; verify handler),nodejs,src/app/api/rag/ask/route.ts
