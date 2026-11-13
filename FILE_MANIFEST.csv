@@ -10,7 +10,7 @@ docs,87,"Architecture decisions, audits and archived documentation"
 download,1,Runtime downloads (contents git-ignored)
 examples,2,"Reference examples, not part of the build"
 mini-services,4,"Optional standalone sidecar services, not deployed by default"
-prisma,36,"Schema, migrations and seed scripts — the only way to provision prod"
+prisma,37,"Schema, migrations and seed scripts — the only way to provision prod"
 public,48,"Static assets, copied into .next/standalone by the build"
 scripts,35,"Build, verification, backup and seeding tooling"
 server-config,6,"Optional self-managed deployment (systemd, Caddy, nginx)"
@@ -22,4 +22,4 @@ src/lib,129,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
 tests,47,bun test suites run by CI
 upload,1,Runtime uploads (contents git-ignored)
 vendor,1,
-TOTAL,1052,Tracked and intended worktree content for a deploy
+TOTAL,1053,Tracked and intended worktree content for a deploy
