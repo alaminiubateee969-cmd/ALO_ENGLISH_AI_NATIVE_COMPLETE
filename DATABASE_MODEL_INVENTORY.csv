@@ -90,3 +90,11 @@ CourseIntake,Course Finder + Application System (restored),5,1,"id (@id); @@uniq
 ApplicationDraft,Course Finder + Application System (restored),8,5,id (@id),@@index(userId); @@index(status); @@index(courseId)
 ApplicationFormB,Course Finder + Application System (restored),57,2,id (@id); draftId (@unique),@@index(userId); @@index(status)
 ApplicationDocument,Course Finder + Application System (restored),12,1,id (@id),@@index(applicationId); @@index(section); @@index(status)
+AIModel,Super Admin AI Command Center,9,0,id (@id); name (@unique),"@@index(provider,status); @@index(status)"
+Skill,Super Admin AI Command Center,9,0,id (@id); name (@unique),"@@index(category,status); @@index(status)"
+PromptTemplate,Super Admin AI Command Center,9,0,id (@id),"@@index(department,status); @@index(agent,status); @@index(status)"
+SOP,Super Admin AI Command Center,10,0,id (@id),"@@index(department,status); @@index(status)"
+ConstitutionalRule,Super Admin AI Command Center,8,0,id (@id),"@@index(category,active); @@index(active)"
+DCCAssessment,Super Admin AI Command Center,13,0,id (@id),"@@index(departmentId,status); @@index(status)"
+Workflow,Super Admin AI Command Center,7,0,id (@id),"@@index(department,status); @@index(trigger,status); @@index(status)"
+EnterpriseEvent,Super Admin AI Command Center,5,0,id (@id),"@@index(type,createdAt); @@index(createdAt); @@index(source)"

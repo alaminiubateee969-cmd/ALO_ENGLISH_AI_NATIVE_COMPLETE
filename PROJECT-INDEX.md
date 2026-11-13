@@ -50,9 +50,9 @@ A complete map of every file in this project, organized by purpose.
 | `PROJECT-INDEX.md` | This file |
 | `docs/` | 83 documents (including the archived guides) |
 
-## Source — App Router (141 API routes, 58 pages, 3 layout)
+## Source — App Router (146 API routes, 73 pages, 3 layout)
 
-API route groups: `admin`, `agents`, `analytics`, `applications`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `courses`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `leaderboard`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `subjects`, `teacher`, `teachers`, `webhooks`.
+API route groups: `admin`, `agents`, `analytics`, `applications`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `courses`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `leaderboard`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `subjects`, `super-admin`, `teacher`, `teachers`, `webhooks`.
 
 Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
@@ -94,16 +94,17 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/shortcuts` | 1 |
 | `api/speaking` | 3 |
 | `api/subjects` | 1 |
+| `api/super-admin` | 5 |
 | `api/teacher` | 1 |
 | `api/teachers` | 2 |
 | `api/webhooks` | 1 |
-| **total** | **141** |
+| **total** | **146** |
 
 ## Source — Libraries
 
 | Path | Purpose |
 |---|---|
-| `src/lib/` (43 modules) | `QuestionExposure.ts`, `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth`, `auth.ts`, `certificate`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db-sync.ts`, `db.ts`, `email`, `env.ts`, `exam`, `exam-catalog.ts`, `factory`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `study-tools`, `utils.ts`, `validation.ts`, `writing` |
+| `src/lib/` (44 modules) | `QuestionExposure.ts`, `agent-data.ts`, `agents`, `ai`, `alo-data.ts`, `analytics`, `audio`, `audit.ts`, `auth`, `auth.ts`, `certificate`, `content`, `copy`, `crm`, `crud-scope.ts`, `crud.ts`, `db-sync.ts`, `db.ts`, `email`, `enterprise`, `env.ts`, `exam`, `exam-catalog.ts`, `factory`, `http`, `integrations`, `linkis`, `marketing-content.ts`, `marketing-kit.ts`, `paths.ts`, `platform-data.ts`, `public-routes.ts`, `question-bank.ts`, `rate-limit.ts`, `rbac.ts`, `referral-code.ts`, `responses.ts`, `sanitize.ts`, `seo`, `speech`, `study-tools`, `utils.ts`, `validation.ts`, `writing` |
 
 ## Source — Middleware
 
@@ -128,11 +129,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 |---|---|
 | `src/hooks/` | Shared React hooks |
 
-## Database (91 models, 0 enums, 17 migrations)
+## Database (99 models, 0 enums, 17 migrations)
 
 | Path | Purpose |
 |---|---|
-| `prisma/schema.prisma` | 91 models |
+| `prisma/schema.prisma` | 99 models |
 | `prisma/migrations/` | 17 migration folders |
 | `prisma/seed.mjs`, `prisma/seed-rbac.ts` | Core data + RBAC seeds |
 | `prisma/seed-sample-bank.mjs` | Guarded synthetic sample bank (disposable databases only) |
@@ -175,10 +176,10 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 1028 |
-| Prisma models | 91 |
-| API routes | 141 |
-| Pages | 58 |
+| Tracked files | 1052 |
+| Prisma models | 99 |
+| API routes | 146 |
+| Pages | 73 |
 | Migrations | 17 |
 | Test files | 46 |
 | Scripts | 34 |

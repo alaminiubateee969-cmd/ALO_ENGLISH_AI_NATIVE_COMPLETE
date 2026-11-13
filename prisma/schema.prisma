@@ -2163,3 +2163,132 @@ model ApplicationDocument {
 }
 
 // ═══ Anti-repeat system ═════════════════════════════════════════════════
+
+// ═══ Super Admin AI Command Center ═══════════════════════════════════════
+// The command center's own registry tables. These hold the AI workforce's
+// declarative inventory: which models are approved, which skills exist,
+// which prompts/SOPs/rules govern them, which departments are certified,
+// and which workflows orchestrate them. They are populated lazily from the
+// static enterprise registry in src/lib/enterprise/registries.ts and remain
+// under super-admin control.
+
+model AIModel {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  provider    String
+  version     String
+  status      String    @default("PENDING") // PENDING|EVALUATING|APPROVED|REJECTED|DEPRECATED
+  capabilities String   // JSON
+  evaluatedAt DateTime?
+  approvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([provider, status])
+  @@index([status])
+}
+
+model Skill {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  category           String
+  description        String
+  requiredKnowledge  String?
+  compatibleAgents   String?
+  version            String   @default("1.0.0")
+  status             String   @default("ACTIVE")
+  createdAt          DateTime @default(now())
+
+  @@index([category, status])
+  @@index([status])
+}
+
+model PromptTemplate {
+  id                String   @id @default(cuid())
+  department        String
+  agent             String?
+  purpose           String
+  version           String   @default("1.0.0")
+  variables         String?
+  systemInstructions String
+  status            String   @default("DRAFT") // DRAFT|TESTING|APPROVED|DEPRECATED
+  createdAt         DateTime @default(now())
+
+  @@index([department, status])
+  @@index([agent, status])
+  @@index([status])
+}
+
+model SOP {
+  id              String   @id @default(cuid())
+  department      String
+  name            String
+  purpose         String
+  steps           String   // JSON array
+  requiredSkills  String?
+  allowedAgents   String?
+  version         String   @default("1.0.0")
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+
+  @@index([department, status])
+  @@index([status])
+}
+
+model ConstitutionalRule {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  description String
+  enforcement String   @default("BLOCK") // BLOCK|WARN|LOG
+  version     String   @default("1.0.0")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([category, active])
+  @@index([active])
+}
+
+model DCCAssessment {
+  id                    String   @id @default(cuid())
+  departmentId          String
+  sopCoverage           Float    @default(0)
+  knowledgeCoverage     Float    @default(0)
+  skillCoverage         Float    @default(0)
+  testPassRate          Float    @default(0)
+  kpiAchievement        Float    @default(0)
+  securityCompliance    Float    @default(100)
+  auditCompliance       Float    @default(100)
+  selfRecoverySuccess   Float    @default(0)
+  humanEscalationRate   Float    @default(100)
+  status                String   @default("UNDER_REVIEW") // CERTIFIED|CONDITIONALLY_CERTIFIED|FAILED|EXPIRED|UNDER_REVIEW
+  assessedAt            DateTime @default(now())
+
+  @@index([departmentId, status])
+  @@index([status])
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  department  String?
+  trigger     String   // SCHEDULED|EVENT|AGENT|HUMAN|API
+  status      String   @default("DRAFT") // DRAFT|TESTING|APPROVED|ACTIVE|PAUSED|FAILED
+  steps       String   // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([department, status])
+  @@index([trigger, status])
+  @@index([status])
+}
+
+model EnterpriseEvent {
+  id        String   @id @default(cuid())
+  type      String   // LEAD_CREATED|STUDENT_CREATED|AGENT_FAILED|etc
+  payload   String   // JSON
+  source    String?
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@index([source])
+}
