@@ -1,7 +1,7 @@
 Directory,Files,Purpose
 .github,7,CI and deployment-readiness workflows
 .zscripts,6,Local dev/build/start helpers for the optional self-managed path
-(root),82,"Application config, entry point and top-level documentation"
+(root),84,"Application config, entry point and top-level documentation"
 agent-ctx,7,
 cpanel-production,186,"Legacy PHP deliverables, served to SUPER_ADMIN by /api/deliverable*"
 db,1,Runtime database directory (contents git-ignored)
@@ -22,4 +22,4 @@ src/lib,129,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
 tests,47,bun test suites run by CI
 upload,1,Runtime uploads (contents git-ignored)
 vendor,1,
-TOTAL,1053,Tracked and intended worktree content for a deploy
+TOTAL,1055,Tracked and intended worktree content for a deploy

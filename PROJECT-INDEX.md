@@ -28,7 +28,7 @@ A complete map of every file in this project, organized by purpose.
 | `tailwind.config.ts` | Configuration |
 | `postcss.config.mjs` | Configuration |
 | `components.json` | Configuration |
-| `.env.example` | Environment template (31 variables, no secrets) |
+| `.env.example` | Environment template (46 variables, no secrets) |
 | `.gitignore` | Configuration |
 | `Makefile` | Workflow shortcuts (`make help` for all commands) |
 | `server.js` | Production entry point for the standalone build |
@@ -176,11 +176,11 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 1053 |
+| Tracked files | 1055 |
 | Prisma models | 99 |
 | API routes | 146 |
 | Pages | 73 |
 | Migrations | 18 |
 | Test files | 46 |
 | Scripts | 34 |
-| Environment variables (template) | 31 |
+| Environment variables (template) | 46 |

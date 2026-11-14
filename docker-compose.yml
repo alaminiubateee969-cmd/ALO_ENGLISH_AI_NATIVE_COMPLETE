@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alo-english
+    ports:
+      - "3060:3060"
+    volumes:
+      - ./db:/app/db
+      - ./upload:/app/upload
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3060
+      - HOSTNAME=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3060/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  examiner-stream:
+    image: oven/bun:latest
+    container_name: alo-examiner-stream
+    working_dir: /app
+    volumes:
+      - ./mini-services/examiner-stream:/app
+      - ./mini-services/examiner-stream/node_modules:/app/node_modules
+    command: bun run dev
+    ports:
+      - "3003:3003"
+    restart: unless-stopped
+    depends_on:
+      - app
