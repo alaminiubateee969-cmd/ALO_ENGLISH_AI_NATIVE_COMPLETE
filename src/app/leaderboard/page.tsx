@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ArrowRight, Award, Crown, Medal, Trophy } from "lucide-react";
 import { db } from "@/lib/db";
