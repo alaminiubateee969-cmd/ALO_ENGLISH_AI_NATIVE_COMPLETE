@@ -191,6 +191,15 @@ export const SEO_PAGE_METADATA: readonly SeoPageMetadata[] = [
     supportingKeywords: ['cookies', 'privacy-first analytics'],
     declaredIn: 'PAGE',
   },
+  {
+    path: '/leaderboard',
+    title: 'Practice Leaderboard',
+    description:
+      'Top practice scores from ALO English mock tests. Scores are practice indicators only — not official exam results.',
+    primaryKeyword: 'english test leaderboard',
+    supportingKeywords: ['practice scores', 'student ranking', 'mock test results'],
+    declaredIn: 'PAGE',
+  },
 ];
 
 /**
