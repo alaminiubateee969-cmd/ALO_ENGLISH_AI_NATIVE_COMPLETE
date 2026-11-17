@@ -19,7 +19,8 @@ src/app,228,"App Router: pages, layouts and API route handlers"
 src/components,131,"React components (alo/, ai-os/, site/, ui/ shadcn primitives)"
 src/hooks,2,Client hooks
 src/lib,129,"Server libraries: db, auth, rbac, paths, exam engine, AI agents"
+storage,2,
 tests,47,bun test suites run by CI
 upload,1,Runtime uploads (contents git-ignored)
 vendor,1,
-TOTAL,1055,Tracked and intended worktree content for a deploy
+TOTAL,1057,Tracked and intended worktree content for a deploy

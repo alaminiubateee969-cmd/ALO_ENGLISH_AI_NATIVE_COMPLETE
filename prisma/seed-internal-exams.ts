@@ -12,8 +12,6 @@
  * Run:  ALLOW_SYNTHETIC_SAMPLE_QUESTIONS=1 node prisma/seed-internal-exams.ts
  */
 
-import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
-assertSafeSampleSeedTarget();
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();

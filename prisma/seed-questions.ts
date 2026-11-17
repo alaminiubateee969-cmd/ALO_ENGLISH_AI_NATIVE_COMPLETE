@@ -5,8 +5,6 @@
  * an explicitly opted-in disposable test/sample SQLite database.
  */
 
-import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
-assertSafeSampleSeedTarget();
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();

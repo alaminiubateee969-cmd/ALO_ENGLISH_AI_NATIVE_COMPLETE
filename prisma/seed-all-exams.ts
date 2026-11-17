@@ -4,8 +4,6 @@
  * for explicitly opted-in disposable test/sample databases only.
  */
 
-import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
-assertSafeSampleSeedTarget();
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 

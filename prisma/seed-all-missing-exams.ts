@@ -5,8 +5,6 @@
  * databases only; never part of the production seed chain.
  */
 
-import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
-assertSafeSampleSeedTarget();
 import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 

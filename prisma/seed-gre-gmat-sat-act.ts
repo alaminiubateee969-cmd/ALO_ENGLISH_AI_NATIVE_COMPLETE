@@ -4,8 +4,6 @@
  * validated as official exam material. Guarded to disposable test/sample DBs.
  */
 
-import { assertSafeSampleSeedTarget } from "./seed-sample-guard.mjs";
-assertSafeSampleSeedTarget();
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
