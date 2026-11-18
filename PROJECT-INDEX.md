@@ -50,7 +50,7 @@ A complete map of every file in this project, organized by purpose.
 | `PROJECT-INDEX.md` | This file |
 | `docs/` | 83 documents (including the archived guides) |
 
-## Source — App Router (146 API routes, 73 pages, 3 layout)
+## Source — App Router (148 API routes, 74 pages, 3 layout)
 
 API route groups: `admin`, `agents`, `analytics`, `applications`, `attempts`, `audio`, `auth`, `blog`, `certificate`, `chat`, `courses`, `crm`, `deliverable`, `deliverables`, `exam`, `exam-types`, `examiners`, `factory`, `grammar`, `health`, `lead`, `leaderboard`, `learning`, `learning-memory`, `linkis`, `partner`, `payment`, `practice-sets`, `questions`, `rag`, `rbac`, `shortcuts`, `speaking`, `subjects`, `super-admin`, `teacher`, `teachers`, `webhooks`.
 
@@ -60,7 +60,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Group | Route files |
 |---|---|
-| `api/admin` | 9 |
+| `api/admin` | 11 |
 | `api/agents` | 5 |
 | `api/analytics` | 1 |
 | `api/applications` | 3 |
@@ -98,7 +98,7 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 | `api/teacher` | 1 |
 | `api/teachers` | 2 |
 | `api/webhooks` | 1 |
-| **total** | **146** |
+| **total** | **148** |
 
 ## Source — Libraries
 
@@ -176,10 +176,10 @@ Each API route is a folder under `src/app/api/` containing a `route.ts`.
 
 | Measure | Value |
 |---|---|
-| Tracked files | 1058 |
+| Tracked files | 1062 |
 | Prisma models | 99 |
-| API routes | 146 |
-| Pages | 73 |
+| API routes | 148 |
+| Pages | 74 |
 | Migrations | 18 |
 | Test files | 46 |
 | Scripts | 34 |
