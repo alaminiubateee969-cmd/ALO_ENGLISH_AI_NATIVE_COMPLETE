@@ -275,29 +275,6 @@ export default function PracticeTestPage() {
   }, [attemptId]);
 
   // ─── Timer ───────────────────────────────────────────────────────────
-  // Section-level timer: counts down the current section's allocation.
-  useEffect(() => {
-    if (!useSectionTimers || !sectionRules || !sections[currentSection]) return;
-    const rule = sectionRules.find(r => r.section === sections[currentSection]);
-    if (!rule) return;
-    setSectionTimeLeft(rule.durationMin * 60);
-    const interval = setInterval(() => {
-      setSectionTimeLeft(prev => {
-        if (prev === null) return null;
-        if (prev <= 1) {
-          // Auto-advance to next section when time runs out
-          if (currentSection < sections.length - 1) {
-            setCurrentSection(currentSection + 1);
-            setCurrentQuestion(0);
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [useSectionTimers, sectionRules, sections, currentSection]);
-
   // Counts down to the server's deadline. The local clock is only used to
   // interpolate between server readings; a resync every 60s (and whenever
   // the tab regains focus) corrects drift or a manipulated system clock.
@@ -615,7 +592,30 @@ export default function PracticeTestPage() {
     () => Array.from(new Set(questions.map((question) => question.section))),
     [questions]
   );
-  const sectionQuestions = useMemo(
+// Section-level timer: counts down the current section's allocation.
+  useEffect(() => {
+    if (!useSectionTimers || !sectionRules || !sections[currentSection]) return;
+    const rule = sectionRules.find(r => r.section === sections[currentSection]);
+    if (!rule) return;
+    setSectionTimeLeft(rule.durationMin * 60);
+    const interval = setInterval(() => {
+      setSectionTimeLeft(prev => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          // Auto-advance to next section when time runs out
+          if (currentSection < sections.length - 1) {
+            setCurrentSection(currentSection + 1);
+            setCurrentQuestion(0);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [useSectionTimers, sectionRules, sections, currentSection]);
+
+    const sectionQuestions = useMemo(
     () => questions.filter((question) => question.section === sections[currentSection]),
     [questions, sections, currentSection]
   );
