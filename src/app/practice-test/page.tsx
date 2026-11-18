@@ -1,14 +1,9 @@
 "use client";
 
-import {
-  getSectionRules,
-  hasSectionTimers, useState, useEffect, useCallback, useMemo, useRef } from "react";
-import {
-  getSectionRules,
-  hasSectionTimers, Clock, Flag, ArrowLeft, ArrowRight, Check, Info, ShieldAlert, MonitorSmartphone, Calculator, LineChart as LineChartIcon } from "lucide-react";
-import {
-  getSectionRules,
-  hasSectionTimers, questionInputKind, parseQuestionOptions, longTextWordTarget } from "@/lib/exam/question-ui";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { getSectionRules, hasSectionTimers } from "@/lib/exam/exam-rules";
+import { Clock, Flag, ArrowLeft, ArrowRight, Check, Info, ShieldAlert, MonitorSmartphone, Calculator, LineChart as LineChartIcon } from "lucide-react";
+import { questionInputKind, parseQuestionOptions, longTextWordTarget } from "@/lib/exam/question-ui";
 import {
   collectDeviceFingerprint,
   TAB_SWITCH_WARNING_THRESHOLD,
