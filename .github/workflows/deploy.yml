@@ -27,7 +27,7 @@ name: Deployment readiness (Hostinger)
 
 on:
   push:
-    branches: [m[main, master]
+    branches: [main, master]
   workflow_dispatch:
     inputs:
       enforce_live_probe:
