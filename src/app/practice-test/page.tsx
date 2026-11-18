@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Clock, Flag, ArrowLeft, ArrowRight, Check, Info, ShieldAlert, MonitorSmartphone, Calculator, LineChart as LineChartIcon } from "lucide-react";
-import { questionInputKind, parseQuestionOptions, longTextWordTarget } from "@/lib/exam/question-ui";
+import {
+  getSectionRules,
+  hasSectionTimers, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import {
+  getSectionRules,
+  hasSectionTimers, Clock, Flag, ArrowLeft, ArrowRight, Check, Info, ShieldAlert, MonitorSmartphone, Calculator, LineChart as LineChartIcon } from "lucide-react";
+import {
+  getSectionRules,
+  hasSectionTimers, questionInputKind, parseQuestionOptions, longTextWordTarget } from "@/lib/exam/question-ui";
 import {
   collectDeviceFingerprint,
   TAB_SWITCH_WARNING_THRESHOLD,
@@ -69,6 +75,12 @@ export default function PracticeTestPage() {
     sections: { section: string; correct: number; total: number }[];
   } | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [sectionTimeLeft, setSectionTimeLeft] = useState<number | null>(null);
+  const sectionRules = useMemo(() => {
+    if (!activeSet?.examType?.code) return undefined;
+    return getSectionRules(activeSet.examType.code);
+  }, [activeSet?.examType?.code]);
+  const useSectionTimers = !!sectionRules && sectionRules.length > 0;
   const [testStarted, setTestStarted] = useState(false);
 
   // ─── Exam-specific UI simulators ──────────────────────────────────────
@@ -268,6 +280,29 @@ export default function PracticeTestPage() {
   }, [attemptId]);
 
   // ─── Timer ───────────────────────────────────────────────────────────
+  // Section-level timer: counts down the current section's allocation.
+  useEffect(() => {
+    if (!useSectionTimers || !sectionRules || !sections[currentSection]) return;
+    const rule = sectionRules.find(r => r.section === sections[currentSection]);
+    if (!rule) return;
+    setSectionTimeLeft(rule.durationMin * 60);
+    const interval = setInterval(() => {
+      setSectionTimeLeft(prev => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          // Auto-advance to next section when time runs out
+          if (currentSection < sections.length - 1) {
+            setCurrentSection(currentSection + 1);
+            setCurrentQuestion(0);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [useSectionTimers, sectionRules, sections, currentSection]);
+
   // Counts down to the server's deadline. The local clock is only used to
   // interpolate between server readings; a resync every 60s (and whenever
   // the tab regains focus) corrects drift or a manipulated system clock.
